@@ -91,9 +91,9 @@ cdef class Position(util.Initializable):
     cdef void _check_and_update_size(self, object size_update)
     cdef void _update_margin(self)
     cdef void _reset_entry_price(self)
-    cdef void _update_side(self)
+    cdef void _update_side(self, bint reset_entry_price)
     cdef void _update_exit_data(self, object size_update, object price)
-    cdef void _on_side_update(self)
+    cdef void _on_side_update(self, bint reset_entry_price)
     cdef object _on_size_update(self,
                                 object size_update,
                                 object realised_pnl_update,

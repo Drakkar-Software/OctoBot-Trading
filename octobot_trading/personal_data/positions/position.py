@@ -188,7 +188,7 @@ class Position(util.Initializable):
 
         self._update_quantity_or_size_if_necessary()
         # update side after quantity as it relies on self.quantity
-        self._update_side()
+        self._update_side(not entry_price)
         self._update_prices_if_necessary(mark_price)
         return changed
 
@@ -409,7 +409,7 @@ class Position(util.Initializable):
                 update_price=self.mark_price, trigger_source=trigger_source)
         self._check_and_update_size(size_update)
         self._update_quantity()
-        self._update_side()
+        self._update_side(True)
         if self.exchange_manager.is_simulated:
             margin_update = self._update_initial_margin()
             self.update_fee_to_close()
@@ -670,11 +670,12 @@ class Position(util.Initializable):
         """
         self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_from_pnl(self)
 
-    def _on_side_update(self):
+    def _on_side_update(self, reset_entry_price):
         """
         Resets the side related data when a position side changes
         """
-        self._reset_entry_price()
+        if reset_entry_price:
+            self._reset_entry_price()
         self.exit_price = constants.ZERO
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
         logging.get_logger(self.get_logger_name()).info(f"Changed position side: now {self.side.name}")
@@ -770,7 +771,7 @@ class Position(util.Initializable):
         self.entry_price = constants.ZERO
         self._update_prices_if_necessary(self.mark_price)
 
-    def _update_side(self):
+    def _update_side(self, reset_entry_price):
         """
         Checks if self.side still represents the position side
         Only relevant when account is using one way position mode
@@ -788,7 +789,7 @@ class Position(util.Initializable):
             else:
                 self.side = enums.PositionSide.UNKNOWN
             if changed_side:
-                self._on_side_update()
+                self._on_side_update(reset_entry_price)
 
     def __str__(self):
         return self.to_string()
