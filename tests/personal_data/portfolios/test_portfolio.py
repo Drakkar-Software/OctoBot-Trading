@@ -83,7 +83,7 @@ async def test_get_currency_portfolio(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
-    assert portfolio_manager.portfolio.get_currency_portfolio("NANO").total == decimal.Decimal('0')
+    assert portfolio_manager.portfolio.get_currency_portfolio("DOT").total == decimal.Decimal('0')
 
 
 async def test_update_portfolio_from_balance(backtesting_trader):
@@ -120,7 +120,7 @@ async def test_update_portfolio_from_balance_with_deltas(backtesting_trader):
     assert portfolio_manager.portfolio.portfolio['USDT'].available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.portfolio['USDT'].total == decimal.Decimal('1000')
 
-    test_portfolio_2 = {"NANO": {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('1'),
+    test_portfolio_2 = {"DOT": {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('1'),
                                  commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('2')}}
 
     assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_2, force_replace=False)
@@ -128,8 +128,8 @@ async def test_update_portfolio_from_balance_with_deltas(backtesting_trader):
     assert portfolio_manager.portfolio.portfolio['BTC'].total == decimal.Decimal('1')
     assert portfolio_manager.portfolio.portfolio['USDT'].available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.portfolio['USDT'].total == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.portfolio['NANO'].available == decimal.Decimal('1')
-    assert portfolio_manager.portfolio.portfolio['NANO'].total == decimal.Decimal('2')
+    assert portfolio_manager.portfolio.portfolio['DOT'].available == decimal.Decimal('1')
+    assert portfolio_manager.portfolio.portfolio['DOT'].total == decimal.Decimal('2')
 
     test_portfolio_3 = {"USDT": {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('250'),
                                  commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('500')}}
@@ -139,8 +139,8 @@ async def test_update_portfolio_from_balance_with_deltas(backtesting_trader):
     assert portfolio_manager.portfolio.portfolio['BTC'].total == decimal.Decimal('1')
     assert portfolio_manager.portfolio.portfolio['USDT'].available == decimal.Decimal('250')
     assert portfolio_manager.portfolio.portfolio['USDT'].total == decimal.Decimal('500')
-    assert portfolio_manager.portfolio.portfolio['NANO'].available == decimal.Decimal('1')
-    assert portfolio_manager.portfolio.portfolio['NANO'].total == decimal.Decimal('2')
+    assert portfolio_manager.portfolio.portfolio['DOT'].available == decimal.Decimal('1')
+    assert portfolio_manager.portfolio.portfolio['DOT'].total == decimal.Decimal('2')
 
     test_portfolio_4 = {"USDT": {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('100'),
                                  commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('100')}}
@@ -874,7 +874,7 @@ async def test_reset_portfolio_available(backtesting_trader):
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
-                     symbol="VEN/BTC",
+                     symbol="ADA/BTC",
                      current_price=decimal.Decimal(str(0.5)),
                      quantity=decimal.Decimal(str(4)),
                      price=decimal.Decimal(str(0.5)))

@@ -54,7 +54,7 @@ pytestmark = pytest.mark.asyncio
 FEES_MOCK = {
     FeePropertyColumns.RATE.value: 0.1, # huge fees for tests
     FeePropertyColumns.COST.value: 0.1,
-    FeePropertyColumns.CURRENCY.value: "BQX"
+    FeePropertyColumns.CURRENCY.value: "SOL"
 }
 
 
@@ -257,7 +257,7 @@ class TestTrader:
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
-                          symbol="NANO/USDT",
+                          symbol="DOT/USDT",
                           current_price=decimal.Decimal("70"),
                           quantity=decimal.Decimal("10"),
                           price=decimal.Decimal("70"))
@@ -404,7 +404,7 @@ class TestTrader:
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
-                          symbol="NANO/USDT",
+                          symbol="DOT/USDT",
                           current_price=decimal.Decimal("70"),
                           quantity=decimal.Decimal("10"),
                           price=decimal.Decimal("70"))
@@ -447,7 +447,7 @@ class TestTrader:
         # Test buy order
         limit_buy = create_order_instance(trader=trader_inst,
                                           order_type=TraderOrderType.BUY_LIMIT,
-                                          symbol="BQX/BTC",
+                                          symbol="SOL/BTC",
                                           current_price=decimal.Decimal("4"),
                                           quantity=decimal.Decimal("2"),
                                           price=decimal.Decimal("4"))
@@ -478,7 +478,7 @@ class TestTrader:
         # Test buy order
         stop_order = create_order_instance(trader=trader_inst,
                                            order_type=TraderOrderType.BUY_LIMIT,
-                                           symbol="BQX/BTC",
+                                           symbol="SOL/BTC",
                                            current_price=decimal.Decimal("4"),
                                            quantity=decimal.Decimal("2"),
                                            price=decimal.Decimal("4"),
@@ -510,7 +510,7 @@ class TestTrader:
         # Test buy order
         stop_order = create_order_instance(trader=trader_inst,
                                            order_type=TraderOrderType.BUY_LIMIT,
-                                           symbol="BQX/BTC",
+                                           symbol="SOL/BTC",
                                            current_price=decimal.Decimal("4"),
                                            quantity=decimal.Decimal("2"),
                                            price=decimal.Decimal("4"),
@@ -542,7 +542,7 @@ class TestTrader:
         # Test buy order
         limit_buy = create_order_instance(trader=trader_inst,
                                           order_type=TraderOrderType.BUY_LIMIT,
-                                          symbol="BQX/BTC",
+                                          symbol="SOL/BTC",
                                           current_price=decimal.Decimal("4"),
                                           quantity=decimal.Decimal("2"),
                                           price=decimal.Decimal("4"))
@@ -552,7 +552,7 @@ class TestTrader:
         # Test second buy order
         second_limit_buy = create_order_instance(trader=trader_inst,
                                                  order_type=TraderOrderType.BUY_LIMIT,
-                                                 symbol="VEN/BTC",
+                                                 symbol="ADA/BTC",
                                                  current_price=decimal.Decimal("1"),
                                                  quantity=decimal.Decimal("1.5"),
                                                  price=decimal.Decimal("1"))
@@ -562,7 +562,7 @@ class TestTrader:
         assert not trades_manager.trades
 
         with pytest.raises(KeyError):
-            assert portfolio_manager.portfolio.portfolio["BQX"].available == 0
+            assert portfolio_manager.portfolio.portfolio["SOL"].available == 0
         assert portfolio_manager.portfolio.portfolio["BTC"].available == 0.5
 
         # Fill only 1st one
@@ -583,7 +583,7 @@ class TestTrader:
 
         assert initial_portfolio != portfolio_manager.portfolio
         # (mocked) fees are taken into account
-        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal(str(2 - 0.1))
+        assert portfolio_manager.portfolio.portfolio["SOL"].available == decimal.Decimal(str(2 - 0.1))
         assert portfolio_manager.portfolio.portfolio["BTC"].available == decimal.Decimal("0.5")
         assert portfolio_manager.portfolio.portfolio["BTC"].total == decimal.Decimal("2")
 
@@ -599,7 +599,7 @@ class TestTrader:
         # Test buy order
         limit_buy = create_order_instance(trader=trader_inst,
                                           order_type=TraderOrderType.BUY_LIMIT,
-                                          symbol="BQX/BTC",
+                                          symbol="SOL/BTC",
                                           current_price=decimal.Decimal("0.1"),
                                           quantity=decimal.Decimal("10"),
                                           price=decimal.Decimal("0.1"))
@@ -627,8 +627,8 @@ class TestTrader:
         assert portfolio_manager.portfolio.portfolio["BTC"].available == decimal.Decimal("9")
         assert portfolio_manager.portfolio.portfolio["BTC"].total == decimal.Decimal("9")
         # 0.1 as fee
-        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal("9.9")
-        assert portfolio_manager.portfolio.portfolio["BQX"].total == decimal.Decimal("9.9")
+        assert portfolio_manager.portfolio.portfolio["SOL"].available == decimal.Decimal("9.9")
+        assert portfolio_manager.portfolio.portfolio["SOL"].total == decimal.Decimal("9.9")
 
         await self.stop(exchange_manager)
 
@@ -648,7 +648,7 @@ class TestTrader:
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
-                          symbol="NANO/USDT",
+                          symbol="DOT/USDT",
                           current_price=decimal.Decimal("70"),
                           quantity=decimal.Decimal("10"),
                           price=decimal.Decimal("70"))
@@ -798,8 +798,8 @@ class TestTrader:
                 orders = await trader_inst.sell_all(currencies_to_sell=[""])
             assert len(orders) == 0
 
-            portfolio_manager.portfolio.portfolio["ICX"] = portfolio_assets.SpotAsset(
-                name="ICX",
+            portfolio_manager.portfolio.portfolio["UNI"] = portfolio_assets.SpotAsset(
+                name="UNI",
                 available=decimal.Decimal("0.0000001"),
                 total=decimal.Decimal("0.0000001")
             )
@@ -808,7 +808,7 @@ class TestTrader:
             # currency in portfolio but with close to 0 quantity
             with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies_to_sell=["ICX"])
+                orders = await trader_inst.sell_all(currencies_to_sell=["UNI"])
             assert len(orders) == 0
 
         await self.stop(exchange_manager)

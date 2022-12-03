@@ -100,7 +100,7 @@ def test_get_all_currencies(config):
 
 def test_get_pairs(config):
     assert util.get_pairs(config, "BTC") == _select_by_base_or_quote(FULL_PAIRS_LIST, "BTC")
-    assert util.get_pairs(config, "ICX") == ["ICX/BTC"]
+    assert util.get_pairs(config, "UNI") == ["UNI/BTC"]
 
     # with disabled currency
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
@@ -160,14 +160,14 @@ FULL_PAIRS_LIST = [
     'BTC/USDT',
     'BTC/EUR',
     'BTC/USDC',
-    'NEO/BTC',
+    'AVAX/BTC',
     'ETH/USDT',
-    'ICX/BTC',
+    'UNI/BTC',
     'VEN/BTC',
     'XRB/BTC',
     'ADA/BTC',
     'ONT/BTC',
-    'XLM/BTC',
+    'MATIC/BTC',
     'POWR/BTC',
     'ETC/BTC',
     'WAX/BTC',
@@ -177,14 +177,14 @@ FULL_PAIRS_LIST = [
 
 FULL_PAIRS_BY_CRYPTO_DICT = {
     'Bitcoin': ['BTC/USDT', 'BTC/EUR', 'BTC/USDC'],
-    'Neo': ['NEO/BTC'],
+    'Neo': ['AVAX/BTC'],
     'Ethereum': ['ETH/USDT'],
-    'Icon': ['ICX/BTC'],
+    'Uniswap': ['UNI/BTC'],
     'VeChain': ['VEN/BTC'],
     'Nano': ['XRB/BTC'],
     'Cardano': ['ADA/BTC'],
     'Ontology': ['ONT/BTC'],
-    'Stellar': ['XLM/BTC'],
+    'Polygon': ['MATIC/BTC'],
     'Power Ledger': ['POWR/BTC'],
     'Ethereum Classic': ['ETC/BTC'],
     'WAX': ['WAX/BTC'],
