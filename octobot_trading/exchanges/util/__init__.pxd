@@ -33,11 +33,11 @@ from octobot_trading.exchanges.util.websockets_util cimport (
 )
 from octobot_trading.exchanges.parser cimport parser
 from octobot_trading.exchanges.parser cimport PositionsParser, OrdersParser, \
-    TradesParser, ExchangeMarketStatusFixer, is_ms_valid, TickerParser
+    TradesParser, ExchangeMarketStatusParser, is_ms_valid, TickerParser
 
 
 __all__ = [
-    "ExchangeMarketStatusFixer",
+    "ExchangeMarketStatusParser",
     "is_ms_valid",
     "get_margin_exchange_class",
     "get_future_exchange_class",

@@ -41,6 +41,21 @@ class TradeOrderType(enum.Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
+class CryptoFeedTradeOrderType(enum.Enum):
+    # copied from cryptofeed.defines
+    LIMIT = 'limit'
+    MARKET = 'market'
+    STOP_LIMIT = 'stop-limit'
+    STOP_MARKET = 'stop-market'
+    MAKER_OR_CANCEL = 'maker-or-cancel'
+    FILL_OR_KILL = 'fill-or-kill'
+    IMMEDIATE_OR_CANCEL = 'immediate-or-cancel'
+    GOOD_TIL_CANCELED = 'good-til-canceled'
+    TRIGGER_LIMIT = 'trigger-limit'
+    TRIGGER_MARKET = 'trigger-market'
+    MARGIN_LIMIT = 'margin-limit'
+    MARGIN_MARKET = 'margin-market'
+
 class EvaluatorStates(enum.Enum):
     SHORT = "SHORT"
     VERY_SHORT = "VERY_SHORT"
@@ -61,7 +76,25 @@ class OrderStatus(enum.Enum):
     EXPIRED = "expired"
     REJECTED = "rejected"
     UNKNOWN = "unknown"
+    ORDER_CANCELED = "ORDER_CANCELED"
+    ORDER_FILLED = "ORDER_FILLED"
+    PARTIALLY_FILLED_CANCELED = "PARTIALLY_FILLED_CANCELED"
+    ORDER_NEW = "ORDER_NEW"
 
+class CryptoFeedOrderStatus(enum.Enum):
+    # copied from cryptofeed.defines
+    OPEN = 'open'
+    PENDING = 'pending'
+    FILLED = 'filled'
+    PARTIAL = 'partial'
+    CANCELLED = 'cancelled'
+    UNFILLED = 'unfilled'
+    EXPIRED = 'expired'
+    SUSPENDED = 'suspended'
+    FAILED = 'failed'
+    SUBMITTING = 'submitting'
+    CANCELLING = 'cancelling'
+    CLOSED = 'closed'
 
 class States(enum.Enum):
     PENDING_CREATION = "pending_creation"
@@ -190,11 +223,12 @@ class ExchangePositionCCXTColumns(enum.Enum):
     PERCENTAGE = "percentage"
     SIDE = "side"
     INFO = "info"
-    
+
+
 class CCXTExchangeConfigMethods(enum.Enum):
     GET_ORDER_DEFAULT = "get_order_default"
     GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS = "get_order_from_open_and_closed_orders"
-    GET_ORDER_USING_STOP_ID = "get_order_using_stop_id"
+    GET_ORDER_USING_STOP_PARAMS = "get_order_using_stop_params"
     GET_ORDER_FROM_TRADES = "get_order_from_trades"
     
     GET_ALL_ORDERS_DEFAULT = "get_all_orders_default"
@@ -403,6 +437,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     REMAINING = "remaining"
     STATUS = "status"
     FEE = "fee"
+    FEES = "fees"
     TRADES = "trades"
     MAKER = "maker"
     TAKER = "taker"

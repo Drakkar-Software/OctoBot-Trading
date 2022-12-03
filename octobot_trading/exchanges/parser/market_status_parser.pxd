@@ -24,7 +24,7 @@ cdef void calculate_costs(dict market_limit)
 cdef void calculate_prices(dict market_limit)
 cdef void fix_market_status_limits_from_current_data(dict market_limit)
 
-cdef class ExchangeMarketStatusFixer:
+cdef class ExchangeMarketStatusParser:
     cdef public dict market_status
     cdef object logger
     cdef object price_example

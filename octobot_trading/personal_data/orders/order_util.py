@@ -94,7 +94,7 @@ def check_cost(total_order_price, min_cost):
         => otherwise order is impossible as is => split order into smaller ones and returns the list
     => returns the quantity and price list of possible order(s)
     - if exchange symbol data are not enough
-        => try fixing exchange data using ExchangeMarketStatusFixer are start again (once only)
+        => try fixing exchange data using ExchangeMarketStatusParser are start again (once only)
     """
     if total_order_price < min_cost:
         if min_cost is None:

@@ -11,7 +11,7 @@ class CCXTExchangeConfig:
     ALL_GET_ORDER_METHODS = [
         enums.CCXTExchangeConfigMethods.GET_ORDER_DEFAULT.value,
         enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_ID.value,
+        enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_PARAMS.value,
         enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_TRADES.value,
     ]
     ALL_GET_ALL_ORDERS_METHODS = [
@@ -44,7 +44,7 @@ class CCXTExchangeConfig:
     # set this for each exchange if tested on testnet and real money
 
     IS_FULLY_TESTED_AND_SUPPORTED = False  # not recommended
-    
+
     CANDLE_LOADING_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED = False
     MAX_RECENT_TRADES_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED = False
     MAX_ORDER_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED = False
@@ -84,9 +84,11 @@ class CCXTExchangeConfig:
 
     MARKET_STATUS_FIX_PRECISION = False
     MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS = False
-    
+
     FUNDING_IN_TICKER = True
     MARK_PRICE_IN_TICKER = True
+    FUNDING_WITH_MARK_PRICE = True
+    MARK_PRICE_IN_POSITION = True
 
     CANDLE_LOADING_LIMIT = 0
     MAX_RECENT_TRADES_PAGINATION_LIMIT = 0
@@ -95,7 +97,7 @@ class CCXTExchangeConfig:
     GET_ORDER_METHODS = [
         enums.CCXTExchangeConfigMethods.GET_ORDER_DEFAULT.value,
         enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_ID.value,
+        enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_PARAMS.value,
         enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_TRADES.value,
     ]
     GET_ALL_ORDERS_METHODS = [

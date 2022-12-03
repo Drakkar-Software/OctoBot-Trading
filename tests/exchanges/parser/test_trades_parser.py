@@ -16,6 +16,7 @@
 import decimal
 import pytest
 from octobot_trading.enums import (
+    ExchangeConstantsFeesColumns,
     ExchangeConstantsMarketPropertyColumns,
     OrderStatus,
     TradeOrderSide,
@@ -55,7 +56,7 @@ def get_raw_trades():
             },
             "timestamp": 1669900764000,
             "datetime": "2022-12-01T13:19:24.000Z",
-            "symbol": "BTC/USDT:USDT",
+            "symbol": "BTC/USDT",
             "order": None,
             "type": None,
             "side": "buy",
@@ -63,8 +64,8 @@ def get_raw_trades():
             "price": 17171.5,
             "amount": 0.055,
             "cost": 944.4325,
-            "fee": None,
-            "fees": [],
+            "fee": [{"code": "USDT", "cost": -0.015922}],
+            "fee": {},
         }
     ]
 
@@ -74,8 +75,8 @@ def get_parsed_trades():
         {
             "id": "761324763710",
             "status": OrderStatus.CLOSED.value,
-            "timestamp": 1669900764.0,
-            "symbol": "BTC/USDT:USDT",
+            "timestamp": 1669900764,
+            "symbol": "BTC/USDT",
             "side": TradeOrderSide.BUY.value,
             "type": TradeOrderType.MARKET.value,
             "octobot_order_type": TraderOrderType.BUY_MARKET.value,
@@ -88,11 +89,14 @@ def get_parsed_trades():
             "filled": decimal.Decimal("0.055"),
             "cost": decimal.Decimal("944.4325"),
             "reduceOnly": None,
-            "fee": None,
+            "fee": {
+                ExchangeConstantsFeesColumns.COST.value: -0.015922,
+                ExchangeConstantsFeesColumns.CURRENCY.value: "USDT",
+            },
         }
     ]
 
 
-async def test_parse_default_closed_position():
+async def test_parse_default_trade():
     just_parsed_trades = await active_parser(get_raw_trades())
     assert get_parsed_trades() == just_parsed_trades

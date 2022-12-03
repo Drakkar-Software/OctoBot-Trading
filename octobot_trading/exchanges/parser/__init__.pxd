@@ -19,12 +19,12 @@ from octobot_trading.exchanges.parser.orders_parser cimport OrdersParser
 from octobot_trading.exchanges.parser.trades_parser cimport TradesParser
 from octobot_trading.exchanges.parser.ticker_parser cimport TickerParser
 from octobot_trading.exchanges.parser.exchange_market_status_parser cimport (
-    ExchangeMarketStatusFixer,
+    ExchangeMarketStatusParser,
     is_ms_valid,
 )
 
 __all__ = [
-    "ExchangeMarketStatusFixer",
+    "ExchangeMarketStatusParser",
     "is_ms_valid",
     "PositionsParser",
     "OrdersParser",

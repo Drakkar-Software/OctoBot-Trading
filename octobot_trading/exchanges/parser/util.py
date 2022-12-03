@@ -1,4 +1,6 @@
+import datetime
 import decimal
+from octobot_commons import timestamp_util
 from octobot_trading import constants as trading_constants
 from octobot_trading.enums import (
     ExchangePositionCCXTColumns,
@@ -397,3 +399,20 @@ class Parser:
             tried_message=tried_message,
             additional_message=f"with method: {type(method).__name__ if method else 'no method provided'} - error: {error}\n",
         )
+
+
+def convert_any_time_to_seconds(raw_time):
+    if type(raw_time) is str and "T" in raw_time and "Z" in raw_time:
+        return int(
+            datetime.datetime.timestamp(
+                datetime.datetime.strptime(raw_time, "%Y-%m-%dT%H:%M:%SZ")
+            )
+        )
+    else:
+        # change this before the year 5138
+        if (_time := int(raw_time)) < 100000000000:
+            return _time
+        _time = int(_time / 1000)
+        if timestamp_util.is_valid_timestamp(_time):
+            return _time
+    raise ValueError(f"Invalid timestamp ({raw_time or 'no time provided'})")

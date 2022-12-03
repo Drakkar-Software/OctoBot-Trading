@@ -188,7 +188,7 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
 
     if not fixed_symbol_data:
         # case 2: try fixing data from exchanges
-        fixed_data = exchanges.ExchangeMarketStatusFixer(symbol_market, price).market_status
+        fixed_data = exchanges.ExchangeMarketStatusParser(symbol_market, price).market_status
         return check_and_adapt_order_details_if_necessary(quantity, price, fixed_data,
                                                           fixed_symbol_data=True)
     else:
@@ -219,7 +219,7 @@ def add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, current_s
 
     if not (personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value) and
             personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value)):
-        fixed_market_status = exchanges.ExchangeMarketStatusFixer(symbol_market, price).market_status
+        fixed_market_status = exchanges.ExchangeMarketStatusParser(symbol_market, price).market_status
         limit_amount = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value]
         limit_cost = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value]
 

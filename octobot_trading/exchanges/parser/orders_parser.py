@@ -1,14 +1,11 @@
-import asyncio
 import decimal
-import time
 import typing
-import cryptofeed.defines as cryptofeed_constants
-from octobot_commons.symbols import symbol_util
 
 from octobot_trading import constants
 from octobot_trading.enums import (
+    CryptoFeedOrderStatus,
+    CryptoFeedTradeOrderType,
     ExchangeConstantsFeesColumns,
-    ExchangeConstantsMarketStatusColumns,
     ExchangeConstantsOrderColumns as OrderCols,
     OrderStatus,
     TradeOrderSide,
@@ -16,10 +13,10 @@ from octobot_trading.enums import (
 )
 from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns as MarketCols
 from octobot_trading.enums import TradeOrderType as TradeOrderType
-from .util import Parser
+import octobot_trading.exchanges.parser.util as parser_util
 
 
-class OrdersParser(Parser):
+class OrdersParser(parser_util.Parser):
     """
     overwrite OrdersParser class methods if necessary
     always/only include bulletproof custom code into the parser to improve generic support
@@ -32,7 +29,9 @@ class OrdersParser(Parser):
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "orders"
-        self.fetched_order = None
+        self.fetched_order: dict = {}
+        self.TEST_AND_FIX_SPOT_QUANTITIES: bool = False
+        self.TEST_AND_FIX_FUTURES_QUANTITIES: bool = False
 
     async def parse_orders(
         self,
@@ -140,13 +139,22 @@ class OrdersParser(Parser):
         self._parse_price(price)  # parse after type, status
         self._parse_filled_price()  # parse after price
         self._parse_average_price()
-        self._parse_amount(quantity)
-        self._parse_remaining()  # parse after amount and status
+        self._parse_amount(quantity)  # parse after price
+        self._parse_remaining(quantity)  # parse after amount and status
         self._parse_filled_amount()  # parse after amount and remaining
         await self._parse_cost()
         self._parse_reduce_only()  # parse after type
         self._parse_tag()
         self._parse_fees()
+        if (
+            self.exchange.exchange_manager.is_spot_only
+            and self.TEST_AND_FIX_SPOT_QUANTITIES
+        ) or (
+            self.exchange.exchange_manager.is_future
+            and self.TEST_AND_FIX_FUTURES_QUANTITIES
+        ):
+            self._test_and_fix_quantities()
+
         # self._parse_datetime(timestamp)  # remove? is it used?
         # self._parse_last_trade_timestamp()  # remove? is it used?
         # self._parse_quantity_currency()  # remove? is it used?
@@ -186,21 +194,9 @@ class OrdersParser(Parser):
         self._try_to_find_and_set(
             OrderCols.TIMESTAMP.value,
             [OrderCols.TIMESTAMP.value],
-            parse_method=self.found_timestamp,
+            parse_method=parser_util.convert_any_time_to_seconds,
             not_found_val=missing_timestamp_value,
         )
-
-    # def _parse_datetime(self, missing_timestamp_value):
-    #     # todo is it even used?
-    #     self._try_to_find_and_set(OrderCols.DATETIME.value, [OrderCols.DATETIME.value])
-
-    # def _parse_last_trade_timestamp(self):
-    #     # todo is this important?
-    #     self._try_to_find_and_set(
-    #         OrderCols.LAST_TRADE_TIMESTAMP.value,
-    #         [OrderCols.LAST_TRADE_TIMESTAMP.value],
-    #         enable_log=False,
-    #     )
 
     # def _parse_quantity_currency(self):
     #     # todo is this important?
@@ -211,8 +207,6 @@ class OrdersParser(Parser):
     #     )
 
     def _parse_symbol(self, missing_symbol):
-        # todo convert to symbol object
-        # symbol_util.parse_symbol()
         self._try_to_find_and_set(
             OrderCols.SYMBOL.value,
             [OrderCols.SYMBOL.value],
@@ -228,6 +222,7 @@ class OrdersParser(Parser):
             [OrderCols.TYPE.value],
             parse_method=type_found,
             not_found_method=self.missing_type,
+            not_found_val=missing_type_value,
             enable_log=False,
         )
         # market orders with no price but with stop price are stop orders
@@ -285,21 +280,106 @@ class OrdersParser(Parser):
         )
 
     def _parse_amount(self, missing_quantity_value):
+        def handle_amount_found(amount):
+            return self._amount_found(amount, missing_quantity_value)
+
         self._try_to_find_and_set_decimal(
             OrderCols.AMOUNT.value,
             [OrderCols.AMOUNT.value],
+            parse_method=handle_amount_found,
             not_found_val=missing_quantity_value,
             enable_log=False if missing_quantity_value else True,
         )
+        if self.formatted_record.get(OrderCols.AMOUNT.value) > 1:
+            test = 1
+
+    def _amount_found(self, amount, missing_quantity_value):
+        if (
+            missing_quantity_value
+            and self.formatted_record.get(OrderCols.STATUS.value)
+            == OrderStatus.OPEN.value
+            and self.formatted_record.get(OrderCols.TYPE.value)
+            == TradeOrderType.MARKET.value
+            # and self.exchange.exchange_manager.is_spot_only
+            # and self.SPOT_USES_QUOTE_CURRENCY
+            # and (price := self.formatted_record.get(OrderCols.PRICE.value))
+        ):
+            # on open market orders dont use values from the response as they are often wrong
+            return missing_quantity_value
+        return amount
 
     async def _parse_cost(self):
-
         await self._try_to_find_and_set_decimal_async(
             OrderCols.COST.value,
             [OrderCols.COST.value],
             not_found_method=self.missing_cost,
             not_found_method_is_async=True,
         )
+
+    def _test_and_fix_quantities(self):
+        amount = self.formatted_record.get(OrderCols.AMOUNT.value)
+        cost = self.formatted_record.get(OrderCols.COST.value)
+        filled = self.formatted_record.get(OrderCols.FILLED.value)
+        remaining = self.formatted_record.get(OrderCols.REMAINING.value)
+        status = self.formatted_record.get(OrderCols.STATUS.value)
+        price = self.formatted_record.get(OrderCols.PRICE.value)
+        # fix amount
+        if (
+            status == OrderStatus.CLOSED.value
+            or status == OrderStatus.FILLED.value
+            or status == OrderStatus.CANCELED.value
+            or status == OrderStatus.PARTIALLY_FILLED_CANCELED.value
+        ):
+            if price and amount and cost:
+                if amount * price != cost:
+                    # amount mismatch - calculate based on cost
+                    amount = self.formatted_record[OrderCols.AMOUNT.value] = (
+                        cost / price
+                    )
+            elif status != OrderStatus.CANCELED.value:
+                self._log_missing(
+                    OrderCols.AMOUNT.value,
+                    f"price ({price or 'no price'}),"
+                    f" amount ({amount or 'no amount'}) and "
+                    f"cost ({cost or 'no cost'}) is required to test and fix quantities",
+                )
+
+        # fix filled and remaining and cost
+        if (
+            status == OrderStatus.OPEN.value
+            or status == OrderStatus.PENDING_CREATION.value
+        ):
+            if filled != constants.ZERO:
+                self.formatted_record[OrderCols.FILLED.value] = constants.ZERO
+            if cost != constants.ZERO:
+                self.formatted_record[OrderCols.COST.value] = constants.ZERO
+            if remaining != amount:
+                self.formatted_record[OrderCols.REMAINING.value] = amount
+
+        elif status == OrderStatus.CLOSED.value or status == OrderStatus.FILLED.value:
+            if filled != amount:
+                self.formatted_record[OrderCols.FILLED.value] = amount
+            if remaining != constants.ZERO:
+                self.formatted_record[OrderCols.REMAINING.value] = constants.ZERO
+
+        elif (
+            status == OrderStatus.CANCELED.value
+            or status == OrderStatus.EXPIRED.value
+            or status == OrderStatus.REJECTED.value
+        ):
+            if filled != amount:
+                self.formatted_record[OrderCols.FILLED.value] = amount
+            if remaining != constants.ZERO:
+                self.formatted_record[OrderCols.REMAINING.value] = constants.ZERO
+            if cost != constants.ZERO:
+                self.formatted_record[OrderCols.COST.value] = constants.ZERO
+        elif (
+            status == OrderStatus.PARTIALLY_FILLED_CANCELED.value
+            or status == OrderStatus.PARTIALLY_FILLED.value
+        ):
+            if filled == amount:
+                self.formatted_record[OrderCols.REMAINING.value] = constants.ZERO
+                self.formatted_record[OrderCols.STATUS.value] = OrderStatus.CLOSED.value
 
     def _parse_average_price(self):
         self._try_to_find_and_set_decimal(
@@ -311,12 +391,22 @@ class OrdersParser(Parser):
             ],
         )
 
-    def _parse_remaining(self):
-        self._try_to_find_and_set_decimal(
-            OrderCols.REMAINING.value,
-            [OrderCols.REMAINING.value],
-            not_found_method=self.missing_remaining,
-        )
+    def _parse_remaining(self, missing_quantity_value):
+        if (
+            missing_quantity_value
+            and self.formatted_record.get(OrderCols.STATUS.value)
+            == OrderStatus.OPEN.value
+            and self.formatted_record.get(OrderCols.TYPE.value)
+            == TradeOrderType.MARKET.value
+        ):
+            # dont use fetched value on open market orders
+            self.formatted_record[OrderCols.REMAINING.value] = missing_quantity_value
+        else:
+            self._try_to_find_and_set_decimal(
+                OrderCols.REMAINING.value,
+                [OrderCols.REMAINING.value],
+                not_found_method=self.missing_remaining,
+            )
 
     def _parse_filled_amount(self):
         self._try_to_find_and_set_decimal(
@@ -396,11 +486,6 @@ class OrdersParser(Parser):
             self.debugging_report_dict.pop(key)
 
     # Parse helper methods
-    def found_timestamp(self, raw_timestamp):
-        # change this before the year 5138
-        if (timestamp := int(raw_timestamp)) < 100000000000:
-            return timestamp
-        return self.exchange.get_uniformized_timestamp(raw_timestamp)
 
     def parse_exchange_order_type(self, raw_order_type, missing_type_value):
         raw_order_type = raw_order_type.lower()  # just in case
@@ -471,6 +556,7 @@ class OrdersParser(Parser):
         )
 
     def found_price(self, raw_price, missing_price_value):
+        order_type = None
         if (status := self.formatted_record.get(OrderCols.STATUS.value)) and (
             order_type := self.formatted_record.get(OrderCols.TYPE.value)
         ):
@@ -479,8 +565,10 @@ class OrdersParser(Parser):
             # tried with current(1.95.36) and latest (2.1.92) ccxt version
             if (
                 missing_price_value
-                and status == OrderStatus.OPEN.value
-                or status == OrderStatus.PENDING_CREATION.value
+                and (
+                    status == OrderStatus.OPEN.value
+                    or status == OrderStatus.PENDING_CREATION.value
+                )
                 and order_type == TradeOrderType.MARKET.value
             ):
                 return missing_price_value
@@ -496,7 +584,10 @@ class OrdersParser(Parser):
         filled_quantity = None
         if status := self.formatted_record.get(OrderCols.STATUS.value):
             if (
-                status == OrderStatus.FILLED.value or status == OrderStatus.CLOSED.value
+                status == OrderStatus.FILLED.value
+                or status == OrderStatus.CLOSED.value
+                or status == OrderStatus.PARTIALLY_FILLED.value
+                or status == OrderStatus.PARTIALLY_FILLED_CANCELED.value
             ) and (price := self.formatted_record.get(OrderCols.PRICE.value)):
                 return price
             if (
@@ -508,8 +599,6 @@ class OrdersParser(Parser):
                 or status == OrderStatus.REJECTED.value
             ):
                 return 0  # to check - should we set it to None?
-            if status == OrderStatus.PARTIALLY_FILLED.value:
-                pass  # just here so you know whats unhandled
         if (cost := self.formatted_record.get(OrderCols.COST.value)) and (
             filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)
         ):
@@ -608,16 +697,16 @@ class OrdersParser(Parser):
         return None  # dont raise as it's optional
 
     def missing_fees(self, _):
-        # only required for CLOSED and FILLED orders
-        if status := self.formatted_record.get(OrderCols.STATUS.value):
-            if status == OrderStatus.CLOSED.value or status == OrderStatus.FILLED.value:
-                # fees are missing on bybit trades
-                # getting it from the order is also not possible as trade id != order id
-                pass
-                # self._log_missing(
-                #     OrderCols.FEE.value,
-                #     f"key: {OrderCols.FEE.value} - fee is required for order_status ({status})",
-                # )
+        # try only for CLOSED and FILLED orders
+        if (status := self.formatted_record.get(OrderCols.STATUS.value)) and (
+            status == OrderStatus.CLOSED.value or status == OrderStatus.FILLED.value
+        ):
+            # sometimes fees are in fees list and not in fee dict
+            if (fees := self.formatted_record.get(OrderCols.FEES.value)) and type(
+                fees
+            ) is list:
+                if (fee := self.found_fees(fees[0])) and type(fee) is dict:
+                    return fee
 
     def found_fees(self, fees_dict):
         # fees example for paid fees in USDT:
@@ -628,43 +717,26 @@ class OrdersParser(Parser):
             currency := fees_dict.get("code")
         ):
             fees_dict[ExchangeConstantsFeesColumns.CURRENCY.value] = currency
+            fees_dict.pop("code")
         if fee := fees_dict[ExchangeConstantsFeesColumns.COST.value]:
             fees_dict[ExchangeConstantsFeesColumns.COST.value] = (
-                fee * -1 if fee < 0 else fee
+                fee if fee < 0 else fee * -1
             )
         if (
             fees_dict[ExchangeConstantsFeesColumns.CURRENCY.value]
             and fees_dict[ExchangeConstantsFeesColumns.COST.value]
         ):
-            return
+            return fees_dict
         self.missing_fees(None)
 
     async def missing_cost(self, _):
         # check and should it be with fees?
-        symbol = self.formatted_record.get(OrderCols.SYMBOL.value)
-
-        market_status = (
-            self.exchange.get_market_status(symbol, with_fixer=False)
-            if symbol
-            else None
-        )
-        if not market_status or not symbol:
-            self._log_missing(
-                OrderCols.COST.value,
-                f"key: {OrderCols.COST.value} and calculating not "
-                "possible because market_status not loaded",
-            )
-            return 0
-        parsed_symbol = symbol_util.parse_symbol(symbol)
-
-        if (filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)) is not None and (
-            market_status[ExchangeConstantsMarketStatusColumns.MARKET.value]
-            == parsed_symbol.quote
-        ):
-            return filled_quantity
+        filled_price = None
         if (
+            filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)
+        ) is not None and (
             filled_price := self.formatted_record.get(OrderCols.FILLED_PRICE.value)
-        ) and filled_quantity:
+        ):
             return filled_quantity * filled_price
         if (
             (status := self.formatted_record.get(OrderCols.STATUS.value))
@@ -682,7 +754,14 @@ class OrdersParser(Parser):
 
     def found_status(self, raw_status):
         try:
-            return OrderStatus(raw_status).value
+            order_status = OrderStatus(raw_status).value
+            if order_status == OrderStatus.ORDER_NEW.value:
+                return OrderStatus.OPEN.value
+            if order_status == OrderStatus.ORDER_FILLED.value:
+                return OrderStatus.FILLED.value
+            if order_status == OrderStatus.ORDER_CANCELED.value:
+                return OrderStatus.CANCELED.value
+            return order_status
         except ValueError:
             if order_status := try_cryptofeed_order_status(raw_status):
                 return order_status
@@ -694,29 +773,29 @@ def found_side(raw_side):
 
 
 def try_cryptofeed_order_status(raw_order_status):
-    if raw_order_status == cryptofeed_constants.OPEN:
+    if raw_order_status == CryptoFeedOrderStatus.OPEN.value:
         return OrderStatus.OPEN.value
-    elif raw_order_status == cryptofeed_constants.PENDING:
+    elif raw_order_status == CryptoFeedOrderStatus.PENDING.value:
         return OrderStatus.OPEN.value
-    elif raw_order_status == cryptofeed_constants.FILLED:
+    elif raw_order_status == CryptoFeedOrderStatus.FILLED.value:
         return OrderStatus.FILLED.value
-    elif raw_order_status == cryptofeed_constants.PARTIAL:
+    elif raw_order_status == CryptoFeedOrderStatus.PARTIAL.value:
         return OrderStatus.PARTIALLY_FILLED.value
-    elif raw_order_status == cryptofeed_constants.CANCELLED:
+    elif raw_order_status == CryptoFeedOrderStatus.CANCELLED.value:
         return OrderStatus.CANCELED.value
-    elif raw_order_status == cryptofeed_constants.UNFILLED:
+    elif raw_order_status == CryptoFeedOrderStatus.UNFILLED.value:
         return OrderStatus.OPEN.value
-    elif raw_order_status == cryptofeed_constants.EXPIRED:
+    elif raw_order_status == CryptoFeedOrderStatus.EXPIRED.value:
         return OrderStatus.EXPIRED.value
-    elif raw_order_status == cryptofeed_constants.FAILED:
+    elif raw_order_status == CryptoFeedOrderStatus.FAILED.value:
         return OrderStatus.REJECTED.value
-    elif raw_order_status == cryptofeed_constants.SUBMITTING:
+    elif raw_order_status == CryptoFeedOrderStatus.SUBMITTING.value:
         return OrderStatus.PENDING_CREATION.value
-    elif raw_order_status == cryptofeed_constants.CANCELLING:
+    elif raw_order_status == CryptoFeedOrderStatus.CANCELLING.value:
         return OrderStatus.PENDING_CANCEL.value
-    elif raw_order_status == cryptofeed_constants.CLOSED:
+    elif raw_order_status == CryptoFeedOrderStatus.CLOSED.value:
         return OrderStatus.CLOSED.value
-    elif raw_order_status == cryptofeed_constants.SUSPENDED:
+    elif raw_order_status == CryptoFeedOrderStatus.SUSPENDED.value:
         pass  # todo is it canceled?
 
 
@@ -743,24 +822,7 @@ def convert_trade_to_trader_order_type(parser, exchange_order_type):
 def convert_type_to_trade_order_type(
     raw_order_type: str, missing_type_value: str
 ) -> typing.Union[TradeOrderType, None]:
-    # try cryptofeed_constants
-    if raw_order_type == cryptofeed_constants.LIMIT:
-        return TradeOrderType.LIMIT.value
-    if raw_order_type == cryptofeed_constants.MARKET:
-        return TradeOrderType.MARKET.value
-    if raw_order_type == cryptofeed_constants.STOP_LIMIT:
-        return TradeOrderType.STOP_LOSS_LIMIT.value
-    if raw_order_type == cryptofeed_constants.STOP_MARKET:
-        return TradeOrderType.STOP_LOSS.value
-    # if raw_order_type == cryptofeed_constants.MAKER_OR_CANCEL:
-    #     pass
-    # if raw_order_type == cryptofeed_constants.FILL_OR_KILL:
-    #     pass
-    # if raw_order_type == cryptofeed_constants.IMMEDIATE_OR_CANCEL:
-    #     pass
-    # if raw_order_type == cryptofeed_constants.GOOD_TIL_CANCELED:
-    #     pass
-
+    raw_order_type = try_cryptofeed_order_type(raw_order_type)
     # convert from TraderOrderType
     try:
         trader_order_type = TraderOrderType(raw_order_type)
@@ -792,6 +854,35 @@ def convert_type_to_trade_order_type(
         return TradeOrderType.TAKE_PROFIT.value
 
     return None
+
+
+def try_cryptofeed_order_type(raw_order_type) -> str:
+    # try cryptofeed_constants
+    if raw_order_type == CryptoFeedTradeOrderType.LIMIT.value:
+        return TradeOrderType.LIMIT.value
+    if raw_order_type == CryptoFeedTradeOrderType.MARKET.value:
+        return TradeOrderType.MARKET.value
+    if raw_order_type == CryptoFeedTradeOrderType.STOP_LIMIT.value:
+        return TradeOrderType.STOP_LOSS_LIMIT.value
+    if raw_order_type == CryptoFeedTradeOrderType.STOP_MARKET.value:
+        return TradeOrderType.STOP_LOSS.value
+    if raw_order_type == CryptoFeedTradeOrderType.MAKER_OR_CANCEL.value:
+        return TradeOrderType.LIMIT_MAKER.value
+    # if raw_order_type == CryptoFeedTradeOrderType.FILL_OR_KILL.value:
+    #     pass
+    # if raw_order_type == CryptoFeedTradeOrderType.IMMEDIATE_OR_CANCEL.value:
+    #     pass
+    # if raw_order_type == CryptoFeedTradeOrderType.GOOD_TIL_CANCELED.value:
+    #     pass
+    # if raw_order_type == CryptoFeedTradeOrderType.TRIGGER_LIMIT.value:
+    #     pass
+    # if raw_order_type == CryptoFeedTradeOrderType.TRIGGER_MARKET.value:
+    #     pass
+    # if raw_order_type == CryptoFeedTradeOrderType.MARGIN_LIMIT.value:
+    #     pass
+    # if raw_order_type == CryptoFeedTradeOrderType.MARGIN_MARKET.value:
+    #     pass
+    return raw_order_type
 
 
 class ReduceOnlySynonyms:

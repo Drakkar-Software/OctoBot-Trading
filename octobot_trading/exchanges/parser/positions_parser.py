@@ -9,10 +9,10 @@ from octobot_trading.enums import (
     PositionMode,
     PositionStatus,
 )
-from octobot_trading.exchanges.parser.util import Parser
+import octobot_trading.exchanges.parser.util as parser_util
 
 
-class PositionsParser(Parser):
+class PositionsParser(parser_util.Parser):
     """
     overwrite PositionsParser class methods if necessary
     always/only include bulletproof custom code into the parser to improve generic support
@@ -305,7 +305,7 @@ class PositionsParser(Parser):
         self._try_to_find_and_set(
             PositioCols.TIMESTAMP.value,
             [ExchangeCols.TIMESTAMP.value],
-            parse_method=int,
+            parse_method=parser_util.convert_any_time_to_seconds,
             not_found_method=self.timestamp_not_found,
         )
 
