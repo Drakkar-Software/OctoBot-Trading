@@ -37,8 +37,8 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         'BTC': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'ETH': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'XRP': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
-        'NANO': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
-        'XLM': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
+        'DOT': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
+        'MATIC': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'USDT': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()}
     }, True)
     portfolio_manager.handle_balance_updated()
@@ -47,38 +47,38 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         'BTC': constants.ONE,
         'ETH': constants.ZERO,
         'XRP': constants.ZERO,
-        'NANO': constants.ZERO,
-        'XLM': constants.ZERO,
+        'DOT': constants.ZERO,
+        'MATIC': constants.ZERO,
         'USDT': constants.ZERO
     }
 
-    exchange_manager.client_symbols.append("XLM/BTC")
+    exchange_manager.client_symbols.append("MATIC/BTC")
     exchange_manager.client_symbols.append("XRP/BTC")
     if not os.getenv('CYTHON_IGNORE'):
         portfolio_value_holder.missing_currency_data_in_exchange.remove("XRP")
         portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal("0.005"))
-        exchange_manager.client_symbols.append("NANO/BTC")
-        portfolio_value_holder.missing_currency_data_in_exchange.remove("NANO")
-        portfolio_manager.handle_mark_price_update("NANO/BTC", decimal.Decimal("0.05"))
+        exchange_manager.client_symbols.append("DOT/BTC")
+        portfolio_value_holder.missing_currency_data_in_exchange.remove("DOT")
+        portfolio_manager.handle_mark_price_update("DOT/BTC", decimal.Decimal("0.05"))
         exchange_manager.client_symbols.append("BTC/USDT")
 
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
             'BTC': constants.ONE,
             'ETH': constants.ZERO,
             'XRP': decimal.Decimal("0.005"),
-            'NANO': decimal.Decimal("0.05"),
-            'XLM': constants.ZERO,
+            'DOT': decimal.Decimal("0.05"),
+            'MATIC': constants.ZERO,
             'USDT': constants.ZERO
         }
-        xlm_btc_price = decimal_random_price(max_value=decimal.Decimal(0.05))
-        portfolio_value_holder.missing_currency_data_in_exchange.remove("XLM")
-        portfolio_manager.handle_mark_price_update("XLM/BTC", xlm_btc_price)
+        matic_btc_price = decimal_random_price(max_value=decimal.Decimal(0.05))
+        portfolio_value_holder.missing_currency_data_in_exchange.remove("MATIC")
+        portfolio_manager.handle_mark_price_update("MATIC/BTC", matic_btc_price)
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
             'BTC': constants.ONE,
             'ETH': constants.ZERO,
             'XRP': decimal.Decimal("0.005"),
-            'NANO': decimal.Decimal("0.05"),
-            'XLM': xlm_btc_price,
+            'DOT': decimal.Decimal("0.05"),
+            'MATIC': matic_btc_price,
             'USDT': constants.ZERO
         }
         usdt_btc_price = decimal_random_price(max_value=decimal.Decimal('0.01'))
@@ -88,8 +88,8 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
             'BTC': constants.ONE,
             'ETH': constants.ZERO,
             'XRP': decimal.Decimal("0.005"),
-            'NANO': decimal.Decimal("0.05"),
-            'XLM': xlm_btc_price,
+            'DOT': decimal.Decimal("0.05"),
+            'MATIC': matic_btc_price,
             'USDT': constants.ONE / usdt_btc_price
         }
         eth_btc_price = decimal_random_price(max_value=constants.ONE)
@@ -100,8 +100,8 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
             'BTC': constants.ONE,
             'ETH': decimal.Decimal(str(eth_btc_price)),
             'XRP': decimal.Decimal("0.005"),
-            'NANO': decimal.Decimal("0.05"),
-            'XLM': xlm_btc_price,
+            'DOT': decimal.Decimal("0.05"),
+            'MATIC': matic_btc_price,
             'USDT': constants.ONE / usdt_btc_price
         }
 

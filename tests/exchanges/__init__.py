@@ -36,6 +36,7 @@ pytestmark = pytest.mark.asyncio
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
 DEFAULT_EXCHANGE_NAME = "binanceus"
+DEFAULT_FUTURE_EXCHANGE_NAME = "bybit"
 
 
 @pytest_asyncio.fixture
@@ -93,7 +94,7 @@ async def margin_simulated_exchange_manager():
 
 @pytest_asyncio.fixture
 async def future_exchange_manager():
-    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_FUTURE_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_future = True
     await exchange_manager_instance.initialize()
@@ -106,7 +107,7 @@ async def future_exchange_manager():
 
 @pytest_asyncio.fixture
 async def future_simulated_exchange_manager():
-    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_FUTURE_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_simulated = True
     exchange_manager_instance.is_future = True

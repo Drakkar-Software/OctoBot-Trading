@@ -40,16 +40,16 @@ class TestExchangeConfig:
     async def test_traded_pairs(self):
         config = load_test_config()
         config[CONFIG_CRYPTO_CURRENCIES] = {
-            "Neo": {
-                "pairs": ["NEO/BTC"]
+            "Avalanche": {
+                "pairs": ["AVAX/BTC"]
             },
             "Ethereum": {
                 "enabled": True,
                 "pairs": ["ETH/USDT"]
             },
-            "Icon": {
+            "Uniswap": {
                 "enabled": False,
-                "pairs": ["ICX/BTC"]
+                "pairs": ["UNI/BTC"]
             }
         }
 
@@ -57,10 +57,10 @@ class TestExchangeConfig:
 
         assert exchange_manager.exchange_config.traded_cryptocurrencies == {
             "Ethereum": ["ETH/USDT"],
-            "Neo": ["NEO/BTC"]
+            "Avalanche": ["AVAX/BTC"]
         }
-        all_pairs = sorted(["NEO/BTC", "ETH/USDT", "ICX/BTC"])
-        all_enabled_pairs = sorted(["NEO/BTC", "ETH/USDT"])
+        all_pairs = sorted(["AVAX/BTC", "ETH/USDT", "UNI/BTC"])
+        all_enabled_pairs = sorted(["AVAX/BTC", "ETH/USDT"])
         assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == all_enabled_pairs
         assert sorted(exchange_manager.exchange_config.all_config_symbol_pairs) == all_pairs
         cancel_ccxt_throttle_task()
@@ -81,14 +81,14 @@ class TestExchangeConfig:
         }
         _, exchange_manager = await self.init_default(config=config)
 
-        assert "ICX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "NEO/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "VEN/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "XLM/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "UNI/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "AVAX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "ADA/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "MATIC/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ONT/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "NEO/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
         assert "ETH/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
 
@@ -106,24 +106,24 @@ class TestExchangeConfig:
         # missing quote key
         config[CONFIG_CRYPTO_CURRENCIES] = {
             "Bitcoin": {
-                "pairs": ["*"]
-            },
-            "Ethereum": {
                 "enabled": True,
                 "pairs": ["*"],
-                "quote": "ETH"
+                "quote": "BTC"
+            },
+            "Ethereum": {
+                "pairs": ["*"],
             }
         }
         _, exchange_manager = await self.init_default(config=config)
 
-        assert "ETC/ETH" in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "ADA/ETH" in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "BNB/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
-        assert "ADA/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
-        assert "Ethereum" in exchange_manager.exchange_config.traded_cryptocurrencies
+        assert "TRX/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "ADA/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "BNB/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
+        assert "ADA/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
+        assert "Bitcoin" in exchange_manager.exchange_config.traded_cryptocurrencies
 
-        # invalid BTC wildcard config
-        assert "Bitcoin" not in exchange_manager.exchange_config.traded_cryptocurrencies
+        # invalid ETH wildcard config
+        assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
 
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
@@ -146,14 +146,14 @@ class TestExchangeConfig:
 
         _, exchange_manager = await self.init_default(config=config)
 
-        assert "ICX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "NEO/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "VEN/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "XLM/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "UNI/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "AVAX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "ADA/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "MATIC/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ONT/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "NEO/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_symbol_pairs
         assert "BTC/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
 
