@@ -151,7 +151,10 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     # linear
     with patch.object(ccxt.async_support.bybit, "calculate_fee",
                       Mock(return_value=get_fees_mock_value(
-                          "USDT", rate=0.0004, fee_type=enums.ExchangeConstantsMarketPropertyColumns.TAKER.value))):
+                          "USDT",
+                          rate=0.0004,
+                          fee_type=enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                          with_exchange_fees=False))):
         assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                                decimal.Decimal(10000), "taker") == \
                _get_fees("taker", "USDT", 0.0004, decimal.Decimal("1.800000"))
@@ -164,7 +167,9 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     fut_exchange_manager_inst.exchange.pair_contracts[future_symbol] = contract
     with patch.object(ccxt.async_support.bybit, "calculate_fee",
                       Mock(return_value=get_fees_mock_value(
-                          "USDT", rate=0.0004, fee_type=enums.ExchangeConstantsMarketPropertyColumns.TAKER.value))):
+                          "USDT", rate=0.0004,
+                          fee_type=enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                          with_exchange_fees=False))):
         assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                                decimal.Decimal(10000), "taker") == \
                _get_fees("taker", "BTC", 0.0004, decimal.Decimal("0.00018"))

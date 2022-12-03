@@ -217,16 +217,22 @@ def storage_mock():
 def get_fees_mock_value(currency,
                         rate=0.1, cost=0.1,  # huge fees for tests
                         taker=0.0004, maker=0.0004, fee=0.0004,
-                        fee_type=ExchangeConstantsMarketPropertyColumns.TAKER.value):
-    return {
+                        fee_type=ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                        with_exchange_fees=True):
+    fees = {
         FeePropertyColumns.RATE.value: rate,
         FeePropertyColumns.COST.value: cost,
         FeePropertyColumns.CURRENCY.value: currency,
-        FeePropertyColumns.TYPE.value: fee_type,
+        FeePropertyColumns.TYPE.value: fee_type
+    }
+    exchange_fees = {
         ExchangeConstantsMarketPropertyColumns.TAKER.value: taker,
         ExchangeConstantsMarketPropertyColumns.MAKER.value: maker,
         ExchangeConstantsMarketPropertyColumns.FEE.value: fee
     }
+    if with_exchange_fees:
+        fees.update(exchange_fees)
+    return fees
 
 
 @pytest_asyncio.fixture
