@@ -21,7 +21,6 @@ jobs:
     secrets:
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       http_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
-      https_proxy: ${{ secrets.EXCHANGE_HTTPS_PROXY }}
 
   publish:
     needs: tests

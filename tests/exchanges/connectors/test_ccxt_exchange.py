@@ -141,7 +141,7 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
            _get_fees("taker", "BTC", 0.001, decimal.Decimal("0.00045"))
     assert spot_ccxt_exchange.get_trade_fee("BTC/USDT", enums.TraderOrderType.SELL_LIMIT, decimal.Decimal("0.45"),
                                             decimal.Decimal(10000), "maker") == \
-           _get_fees("maker", "USDT", 0.001, decimal.Decimal("10"))
+           _get_fees("maker", "USDT", 0.001, decimal.Decimal("4.5"))
     # future trading
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
     await fut_ccxt_exchange.client.load_markets()
