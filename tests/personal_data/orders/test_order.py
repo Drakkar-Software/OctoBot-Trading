@@ -174,7 +174,7 @@ def test_update_from_raw(trader_simulator):
         'timestamp': 1637579281.377,
         'datetime': '2021-11-22T11:08:01.377Z',
         'lastTradeTimestamp': None,
-        'symbol': 'WIN/USDT',
+        'symbol': 'UNI/USDT',
         'type': 'market',
         'timeInForce': 'GTC',
         'postOnly': False,
@@ -196,8 +196,8 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.order_id == "362550114"
     assert order_inst.side is enums.TradeOrderSide.SELL
     assert order_inst.status is enums.OrderStatus.CLOSED
-    assert order_inst.symbol == "WIN/USDT"
-    assert order_inst.currency == "WIN"
+    assert order_inst.symbol == "UNI/USDT"
+    assert order_inst.currency == "UNI"
     assert order_inst.market == "USDT"
     assert order_inst.taker_or_maker is enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
     assert order_inst.origin_price == constants.ZERO
@@ -220,7 +220,7 @@ def test_update_from_raw(trader_simulator):
         'timestamp': 1637579281.377,
         'datetime': '2021-11-22T11:08:01.377Z',
         'lastTradeTimestamp': None,
-        'symbol': 'WIN/USDT',
+        'symbol': 'UNI/USDT',
         'type': 'limit',
         'timeInForce': 'GTC',
         'postOnly': False,
@@ -242,8 +242,8 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.order_id == "362550114"
     assert order_inst.side is enums.TradeOrderSide.BUY
     assert order_inst.status is enums.OrderStatus.CLOSED
-    assert order_inst.symbol == "WIN/USDT"
-    assert order_inst.currency == "WIN"
+    assert order_inst.symbol == "UNI/USDT"
+    assert order_inst.currency == "UNI"
     assert order_inst.market == "USDT"
     assert order_inst.taker_or_maker is enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
     assert order_inst.origin_price == decimal.Decimal("12.664")
