@@ -24,7 +24,7 @@ import octobot_commons.tests.test_config as test_config
 pytestmark = pytest.mark.asyncio
 
 
-EXCHANGE_NAME = "binance"
+EXCHANGE_NAME = "binanceus"
 
 
 @pytest.fixture

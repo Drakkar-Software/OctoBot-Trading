@@ -1,7 +1,7 @@
 {
   "time_frame": ["1h", "4h", "1d"],
   "exchanges": {
-    "binance": {
+    "binanceus": {
       "api-key": "",
       "api-secret": "",
       "web-socket": false

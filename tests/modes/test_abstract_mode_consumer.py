@@ -42,7 +42,7 @@ async def _get_tools():
     config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]["BNB"] = \
         0.000000000000000000005
     config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]["USDT"] = 2000
-    exchange_manager = ExchangeManager(config, "binance")
+    exchange_manager = ExchangeManager(config, "binanceus")
 
     # use backtesting not to spam exchanges apis
     exchange_manager.is_simulated = True

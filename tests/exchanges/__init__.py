@@ -35,7 +35,7 @@ pytestmark = pytest.mark.asyncio
 
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
-DEFAULT_EXCHANGE_NAME = "binance"
+DEFAULT_EXCHANGE_NAME = "binanceus"
 
 
 @pytest_asyncio.fixture

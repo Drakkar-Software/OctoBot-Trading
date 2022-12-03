@@ -285,7 +285,7 @@ class TestExchangeMarketStatusFixer:
         pass
 
     def test_fix_market_status_limits_with_specific(self):
-        # binance specific
+        # binanceus specific
         market_status = {
             Ecmsc.INFO.value: {
                 Ecmsic.FILTERS.value: [
