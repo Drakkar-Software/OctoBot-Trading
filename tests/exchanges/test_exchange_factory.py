@@ -51,13 +51,13 @@ async def test_create(exchange_builder):
 
 
 @pytest.mark.usefixtures("event_loop", "exchange_builder")
-@pytest.mark.parametrize("exchange_builder", [(None, "bitmex")], indirect=["exchange_builder"])
+@pytest.mark.parametrize("exchange_builder", [(None, "binanceus")], indirect=["exchange_builder"])
 async def test_create_basic(exchange_builder):
     exchange_builder.disable_trading_mode()
     exchange_manager = await exchange_builder.build()
 
     assert exchange_manager is not None
-    assert exchange_manager.exchange_name == "bitmex"
+    assert exchange_manager.exchange_name == "binanceus"
 
     cancel_ccxt_throttle_task()
     await exchange_manager.stop()

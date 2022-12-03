@@ -18,6 +18,7 @@ import decimal
 import pytest_asyncio
 
 import octobot_commons.constants as commons_constants
+import octobot_commons.symbols.symbol_util as symbol_util
 from octobot_commons.tests.test_config import load_test_config
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
@@ -65,7 +66,7 @@ async def margin_trader_simulator(margin_simulated_exchange_manager):
     return await create_trader_from_exchange_manager(margin_simulated_exchange_manager, simulated=True)
 
 
-DEFAULT_FUTURE_SYMBOL = "BTC/USDT"
+DEFAULT_FUTURE_SYMBOL = str(symbol_util.parse_symbol("BTC/USDT:USDT"))
 DEFAULT_FUTURE_FUNDING_RATE = decimal.Decimal('0.01')
 DEFAULT_FUTURE_SYMBOL_LEVERAGE = constants.ONE
 DEFAULT_FUTURE_SYMBOL_MAX_LEVERAGE = constants.ONE_HUNDRED

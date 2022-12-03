@@ -46,7 +46,7 @@ async def symbol_data(time_frame):
     symbol_kline = KlineManager()
     await symbol_kline.initialize()
     symbol_kline.kline_update(_get_candle(11))
-    manager = ExchangeManager({}, "binance")
+    manager = ExchangeManager({}, "binanceus")
     symbol_data = ExchangeSymbolData(manager, "BTC/USDT")
     tf = TimeFrames(time_frame)
     symbol_data.symbol_candles[tf] = symbol_candles

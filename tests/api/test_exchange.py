@@ -29,15 +29,15 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_create_exchange_builder():
-    exchange_builder = create_exchange_builder(load_test_config(), "binance")
+    exchange_builder = create_exchange_builder(load_test_config(), "binanceus")
     assert exchange_builder
 
 
 async def test_get_exchange_configurations_from_exchange_name(exchange_manager):
     Exchanges.instance().add_exchange(exchange_manager, None)
-    assert get_exchange_configurations_from_exchange_name("binance")
+    assert get_exchange_configurations_from_exchange_name("binanceus")
     with pytest.raises(KeyError):
-        get_exchange_configurations_from_exchange_name("bitmex")
+        get_exchange_configurations_from_exchange_name("bybit")
 
 
 async def test_get_exchange_manager_from_exchange_name_and_id(exchange_manager):
@@ -46,4 +46,4 @@ async def test_get_exchange_manager_from_exchange_name_and_id(exchange_manager):
     with pytest.raises(KeyError):
         get_exchange_manager_from_exchange_name_and_id(exchange_manager.exchange_name, "test")
     with pytest.raises(KeyError):
-        get_exchange_manager_from_exchange_name_and_id("bitmex", exchange_manager.id)
+        get_exchange_manager_from_exchange_name_and_id("bybit", exchange_manager.id)

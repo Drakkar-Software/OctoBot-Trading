@@ -29,7 +29,7 @@ import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
-from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns, \
+from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, \
     ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
@@ -45,27 +45,21 @@ import octobot_trading.constants as constants
 import octobot_commons.symbols as commons_symbols
 
 from tests import event_loop
-from tests.exchanges import future_simulated_exchange_manager
+from tests.exchanges import future_simulated_exchange_manager, get_fees_mock_value, DEFAULT_EXCHANGE_NAME, DEFAULT_FUTURE_EXCHANGE_NAME
 from tests.exchanges.traders import future_trader_simulator_with_default_linear
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
-FEES_MOCK = {
-    FeePropertyColumns.RATE.value: 0.1, # huge fees for tests
-    FeePropertyColumns.COST.value: 0.1,
-    FeePropertyColumns.CURRENCY.value: "SOL"
-}
-
 
 class TestTrader:
     DEFAULT_SYMBOL = "BTC/USDT"
-    EXCHANGE_MANAGER_CLASS_STRING = "binance"
 
     @staticmethod
     async def init_default(simulated=True, is_future=False):
         config = load_test_config()
-        exchange_manager = ExchangeManager(config, TestTrader.EXCHANGE_MANAGER_CLASS_STRING)
+        exchange_manager = ExchangeManager(config,
+                                           DEFAULT_FUTURE_EXCHANGE_NAME if is_future else DEFAULT_EXCHANGE_NAME)
         exchange_manager.is_simulated = simulated
         exchange_manager.is_future = is_future
         await exchange_manager.initialize()
@@ -310,7 +304,7 @@ class TestTrader:
         # Test buy order
         market_buy = BuyMarketOrder(trader_inst)
         market_buy.update(order_type=TraderOrderType.BUY_MARKET,
-                          symbol="BTC/USDC",
+                          symbol="BTC/USDT",
                           current_price=decimal.Decimal("70"),
                           quantity=decimal.Decimal("10"),
                           price=decimal.Decimal("70"))
@@ -318,7 +312,7 @@ class TestTrader:
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
-                          symbol="XRP/BTC",
+                          symbol="LINK/BTC",
                           current_price=decimal.Decimal("70"),
                           quantity=decimal.Decimal("10"),
                           price=decimal.Decimal("70"))
@@ -360,7 +354,7 @@ class TestTrader:
 
         assert len(trades_manager.trades) == 2
 
-        assert await trader_inst.cancel_all_open_orders_with_currency("XRP") is True
+        assert await trader_inst.cancel_all_open_orders_with_currency("LINK") is True
 
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
@@ -568,7 +562,7 @@ class TestTrader:
         # Fill only 1st one
         limit_buy.filled_price = 4
         limit_buy.status = OrderStatus.FILLED
-        with patch.object(ccxt.async_support.binance, "calculate_fee", Mock(return_value=FEES_MOCK)) \
+        with patch.object(ccxt.async_support.binanceus, "calculate_fee", Mock(return_value=get_fees_mock_value("SOL"))) \
                 as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
             # ensure call ccxt calculate_fee for order fees
@@ -612,7 +606,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        with patch.object(ccxt.async_support.binance, "calculate_fee", Mock(return_value=FEES_MOCK)) \
+        with patch.object(ccxt.async_support.binanceus, "calculate_fee", Mock(return_value=get_fees_mock_value("SOL"))) \
                 as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
             calculate_fee_mock.assert_called_once()
@@ -778,8 +772,8 @@ class TestTrader:
                 orders = await trader_inst.sell_all(currencies_to_sell=["XBT"])
             assert len(orders) == 0
 
-            portfolio_manager.portfolio.portfolio["XRP"] = portfolio_assets.SpotAsset(
-                name="XRP",
+            portfolio_manager.portfolio.portfolio["LINK"] = portfolio_assets.SpotAsset(
+                name="LINK",
                 available=constants.ZERO,
                 total=constants.ZERO
             )
@@ -788,7 +782,7 @@ class TestTrader:
             # currency in portfolio but with 0 quantity
             with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies_to_sell=["XRP"])
+                orders = await trader_inst.sell_all(currencies_to_sell=["LINK"])
             assert len(orders) == 0
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -984,7 +978,8 @@ async def test_close_position(future_trader_simulator_with_default_linear):
             assert orders[0].reduce_only is True
 
         with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
-                   new=AsyncMock(return_value=20)):
+                   new=AsyncMock(return_value=20)), \
+                patch.object(ccxt.async_support.bybit, "calculate_fee", Mock(return_value=get_fees_mock_value("SOL"))):
             orders = await trader_inst.close_position(position_inst)
             assert len(orders) == 1
             assert orders[0].order_type is TraderOrderType.SELL_MARKET
