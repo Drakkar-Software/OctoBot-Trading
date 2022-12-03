@@ -7,10 +7,6 @@ on:
       - '*'
   pull_request:
 
-env:
-  http_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
-  https_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
-
 jobs:
   lint:
     uses: Drakkar-Software/.github/.github/workflows/python3_lint_workflow.yml@master
@@ -24,6 +20,8 @@ jobs:
       use_cython: true
     secrets:
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      http_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
+      https_proxy: ${{ secrets.EXCHANGE_HTTPS_PROXY }}
 
   publish:
     needs: tests
