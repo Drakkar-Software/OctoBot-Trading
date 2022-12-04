@@ -24,7 +24,7 @@ import octobot_trading.enums as enums
 import octobot_trading.exchange_data.contracts as contracts
 import pytest
 
-from tests.exchanges import exchange_manager, future_simulated_exchange_manager
+from tests.exchanges import exchange_manager, future_simulated_exchange_manager, set_future_exchange_fees
 from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, \
     DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, DEFAULT_FUTURE_SYMBOL_LEVERAGE
 
@@ -131,6 +131,7 @@ async def test_get_ccxt_order_type(exchange_manager):
 
 async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_default_linear):
     future_symbol = "BTC/USDT:USDT"
+    future_fees_value = 0.0004
     spot_symbol = "BTC/USDT"
     config, fut_exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     fut_exchange_manager_inst.is_future = True
@@ -149,12 +150,11 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
     await fut_ccxt_exchange.client.load_markets()
     # enforce taker and maker values
-    fut_ccxt_exchange.client.markets[future_symbol]['taker'] = 0.0004
-    fut_ccxt_exchange.client.markets[future_symbol]['maker'] = 0.0004
+    set_future_exchange_fees(fut_ccxt_exchange, future_symbol, taker=future_fees_value, maker=future_fees_value)
     # linear
     assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                            decimal.Decimal(10000), "taker") == \
-           _get_fees("taker", "USDT", 0.0004, decimal.Decimal("1.800000"))
+           _get_fees("taker", "USDT", future_fees_value, decimal.Decimal("1.800000"))
     # inverse
     fut_ccxt_exchange.client.markets[future_symbol]["inverse"] = True
     fut_ccxt_exchange.client.markets[future_symbol]["linear"] = False
@@ -164,7 +164,7 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     fut_exchange_manager_inst.exchange.pair_contracts[future_symbol] = contract
     assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                            decimal.Decimal(10000), "taker") == \
-           _get_fees("taker", "BTC", 0.0004, decimal.Decimal("0.00018"))
+           _get_fees("taker", "BTC", future_fees_value, decimal.Decimal("0.00018"))
 
 
 def _get_fees(type, currency, rate, cost):
