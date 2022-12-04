@@ -1012,23 +1012,19 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         """
         defined_methods = self.connector_config.GET_POSITION_METHODS
         positions = []
-        if self.get_position_default.__name__ in defined_methods:
-            positions += await self.get_position_default(**kwargs)
-        if self.get_position_by_sub_type.__name__ in defined_methods:
-            positions += await self.get_position_by_sub_type(**kwargs)
-        if self.get_position_with_private_get_position_risk.__name__ in defined_methods:
-            positions += await self.get_position_with_private_get_position_risk()
+        if self.get_positions_linear.__name__ in defined_methods:
+            positions += await self.get_positions_linear(**kwargs)
+        if self.get_positions_inverse.__name__ in defined_methods:
+            positions += await self.get_positions_inverse(**kwargs)
+        if self.get_positions_swap.__name__ in defined_methods:
+            positions += await self.get_positions_swap(**kwargs)
+        if self.get_positions_option.__name__ in defined_methods:
+            positions += await self.get_positions_option(**kwargs)
+        if self.get_positions_with_private_get_position_risk.__name__ in defined_methods:
+            positions += await self.get_positions_with_private_get_position_risk()
         return positions
 
-    async def get_position_default(self, **kwargs: dict) -> list:
-        try:
-            raw_positions = await self.client.fetch_positions(params=kwargs)
-            return await self.parse_positions(raw_positions)
-        except Exception as e:
-            self.logger.exception(e, True, f"Failed to load positions using get_position_default")
-            return []
-
-    async def get_position_with_private_get_position_risk(self) -> list:
+    async def get_positions_with_private_get_position_risk(self) -> list:
         try:
             if self.client.has.get("fapiPrivate_get_positionrisk"):
                 return await self.parse_positions(await self.client.fapiPrivate_get_positionrisk())
@@ -1036,34 +1032,57 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.logger.exception(e, True, f"Failed to load positions using private_get_position_risk")
         return []
 
-    async def get_position_by_sub_type(self, **kwargs: dict) -> list:
-        params = {**kwargs}
-        positions = []
-        position_types = []
-        # if self.exchange_manager.exchange.is_linear_symbol():
-        position_types.append({"type": "linear", "settleCoins": ["USDT", "USDC"]})
-        # if self.exchange_manager.exchange.is_inverse_symbol():
-        position_types.append({"type": "inverse", "settleCoins": ["ETH", "BTC"]})
-        # if self.exchange_manager.exchange.is_swap_symbol():
-        position_types.append({"type": "swap"})
-        # if self.exchange_manager.exchange.is_option_symbol():
-        position_types.append({"type": "option"})
-        for position_type in position_types:
-            try:
-                params["subType"] = position_type["type"]
-                if "settleCoins" in position_type:
-                    for coin in position_type["settleCoins"]:
-                        params["settleCoin"] = coin
-                        positions += await self.get_position_default(**params)
+    async def get_positions_linear(self, symbol=None, **kwargs: dict) -> list:
+        return await self.get_position_by_sub_type("linear", symbol, ["USDT", "USDC"], **kwargs)
+
+    async def get_positions_inverse(self, symbol=None, **kwargs: dict) -> list:
+        return await self.get_position_by_sub_type("inverse", symbol, ["ETH", "BTC"], **kwargs)
+
+    async def get_positions_swap(self, symbol=None, **kwargs: dict) -> list:
+        return await self.get_position_by_sub_type("swap", symbol, **kwargs)
+
+    async def get_positions_option(self, symbol=None, **kwargs: dict) -> list:
+        return await self.get_position_by_sub_type("option", symbol, **kwargs)
+
+    async def get_position_by_sub_type(self, sub_type, symbol, settle_coins: list = None, **kwargs: dict) -> list:
+        params = {**kwargs, "subType": sub_type}
+        if settle_coins:
+            positions = []
+            for coin in settle_coins:
+                params["settleCoin"] = coin
+                if symbol:
+                    positions += await self._get_positions(**params)
                 else:
-                    positions += await self.get_position_default(**params)
-            except Exception as e:
-                self.logger.info(f"Failed to load positions using: "
-                                 f"get_position_by_sub_type - {position_type} positions: ({e})")
+                    positions += await self._get_symbol_positions(symbol, **params)
+            return positions
+        if symbol:
+            return await self._get_positions(**params)
+        return await self._get_symbol_positions(symbol, **params)
+
+    async def _get_positions(self, **kwargs: dict) -> list:
+        try:
+            raw_positions = await self.client.fetch_positions(params=kwargs)
+            return await self.parse_positions(raw_positions)
+        except Exception as e:
+            self.logger.exception(e, True, "Failed to load positions using get_position_default "
+                                           f"{f'with params: {kwargs}' if kwargs else ''}")
+            return []
+
+    async def get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
+        defined_methods = self.connector_config.GET_SYMBOL_POSITION_METHODS
+        positions = []
+        if self.get_positions_linear.__name__ in defined_methods:
+            positions += await self.get_positions_linear(symbol, **kwargs)
+        if self.get_positions_inverse.__name__ in defined_methods:
+            positions += await self.get_positions_inverse(symbol, **kwargs)
+        if self.get_positions_swap.__name__ in defined_methods:
+            positions += await self.get_positions_swap(symbol, **kwargs)
+        if self.get_positions_option.__name__ in defined_methods:
+            positions += await self.get_positions_option(symbol, **kwargs)
         return positions
 
-    async def get_position(self, symbol: str, **kwargs: dict) -> dict:
-        return await self.client.fetch_position(symbol=symbol, params=kwargs)
+    async def _get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
+        return await self.client.fetch_positions(symbols=[symbol], params=kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         try:
