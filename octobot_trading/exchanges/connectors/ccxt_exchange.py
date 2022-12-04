@@ -25,7 +25,6 @@ import typing
 import octobot_commons.constants
 import octobot_commons.enums
 import octobot_commons.symbols as commons_symbols
-
 import octobot_trading
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
@@ -744,6 +743,189 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 return trade
         return None  # TradeNotFound
 
+    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
+                           price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
+                           side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
+                           params: dict = None) \
+            -> typing.Optional[dict]:
+        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
+            raw_created_order = await self._create_order_with_retry(order_type, symbol, quantity,
+                                                                    price, side, current_price, params)
+            return await self.connector.parse_order(raw_created_order, order_type=order_type.value, quantity=quantity,
+                                                    price=price, status=enums.OrderStatus.OPEN.value,
+                                                    symbol=symbol, side=side, timestamp=time.time())
+
+    async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                         quantity: decimal.Decimal, price: decimal.Decimal,
+                         stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
+                         current_price: decimal.Decimal = None,
+                         params: dict = None):
+        # Note: on most exchange, this implementation will just replace the order by cancelling the one
+        # which id is given and create a new one
+        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
+            float_quantity = float(quantity)
+            float_price = float(price)
+            float_stop_price = None if stop_price is None else float(stop_price)
+            float_current_price = None if current_price is None else float(current_price)
+            side = None if side is None else side.value
+            params = {} if params is None else params
+            params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
+            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
+                                                  price=float_price, stop_price=float_stop_price, side=side,
+                                                  current_price=float_current_price, params=params)
+            return await self.connector.parse_order(edited_order, order_type=order_type.value, quantity=quantity,
+                                                    price=price, symbol=symbol, side=side)
+
+    async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                          quantity: float, price: float, stop_price: float = None, side: str = None,
+                          current_price: float = None, params: dict = None):
+        ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
+        price_to_use = price
+        if ccxt_order_type == enums.TradeOrderType.MARKET.value:
+            # can't set price in market orders
+            price_to_use = None
+        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
+        return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
+                                                      quantity, price_to_use, params)
+
+    @contextlib.asynccontextmanager
+    async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
+        try:
+            yield
+        except ccxt.InsufficientFunds as e:
+            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
+            self.logger.warning(str(e))
+            raise octobot_trading.errors.MissingFunds(e)
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except Exception as e:
+            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
+            self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
+
+    async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
+                                       price: decimal.Decimal, side: enums.TradeOrderSide,
+                                       current_price: decimal.Decimal, params) -> dict:
+        try:
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+                                                     current_price=current_price, params=params)
+        except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
+            # can be raised when exchange precision/limits rules change
+            self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
+                              f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
+            await self.connector.client.load_markets(reload=True)
+            # retry order creation with updated markets (ccxt will use the updated market values)
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+                                                     current_price=current_price, params=params)
+
+    async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
+                                     side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
+                                     params=None) -> dict:
+        raw_created_order = None
+        float_quantity = float(quantity)
+        float_price = float(price)
+        float_current_price = float(current_price)
+        side = None if side is None else side.value
+        params = {} if params is None else params
+        params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
+        if order_type == enums.TraderOrderType.BUY_MARKET:
+            raw_created_order = await self.exchange_manager.exchange.create_market_buy_order(
+                symbol, float_quantity, price=float_price, params=params)
+        elif order_type == enums.TraderOrderType.BUY_LIMIT:
+            raw_created_order = await self.exchange_manager.exchange.create_limit_buy_order(
+                symbol, float_quantity, price=float_price, params=params)
+        elif order_type == enums.TraderOrderType.SELL_MARKET:
+            raw_created_order = await self.exchange_manager.exchange.create_market_sell_order(
+                symbol, float_quantity, price=float_price, params=params)
+        elif order_type == enums.TraderOrderType.SELL_LIMIT:
+            raw_created_order = await self.exchange_manager.exchange.create_limit_sell_order(
+                symbol, float_quantity, price=float_price, params=params)
+        elif order_type == enums.TraderOrderType.STOP_LOSS:
+            raw_created_order = await self.exchange_manager.exchange.create_market_stop_loss_order(
+                symbol, float_quantity, price=float_price, side=side,
+                current_price=float_current_price, params=params)
+        elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
+            raw_created_order = await self.exchange_manager.exchange.create_limit_stop_loss_order(
+                symbol, float_quantity, price=float_price, side=side, params=params)
+        elif order_type == enums.TraderOrderType.TAKE_PROFIT:
+            raw_created_order = await self.exchange_manager.exchange.create_market_take_profit_order(
+                symbol, float_quantity, price=float_price, side=side, params=params)
+        elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
+            raw_created_order = await self.exchange_manager.exchange.create_limit_take_profit_order(
+                symbol, float_quantity, price=float_price, side=side, params=params)
+        elif order_type == enums.TraderOrderType.TRAILING_STOP:
+            raw_created_order = await self.exchange_manager.exchange.create_market_trailing_stop_order(
+                symbol, float_quantity, price=float_price, side=side, params=params)
+        elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
+            raw_created_order = await self.exchange_manager.exchange.create_limit_trailing_stop_order(
+                symbol, float_quantity, price=float_price, side=side, params=params)
+        return raw_created_order
+
+    async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_market_buy_order(
+            symbol,
+            quantity,
+            params=self.add_cost_to_market_order(quantity, price, params),
+        )
+
+    async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
+
+    async def create_market_sell_order(
+            self, symbol, quantity, price=None, params=None
+    ) -> dict:
+        return await self.connector.client.create_market_sell_order(
+            symbol,
+            quantity,
+            params=self.add_cost_to_market_order(quantity, price, params),
+        )
+
+    async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
+
+    async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        if self.connector.client.has.get("createStopOrder"):
+            return await self.connector.client.create_stop_order(
+                symbol,
+                enums.TradeOrderType.MARKET.value,
+                side,
+                quantity,
+                price,
+                current_price,
+                params=params,
+            )
+        if self.connector.client.has.get("createStopMarketOrder"):
+            return await self.connector.client.create_stop_market_order(
+                symbol, side, quantity, price, params=params
+            )
+        raise NotImplementedError("_create_market_stop_loss_order is not implemented")
+
+    async def create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        if self.connector.client.has.get("createStopLimitOrder"):
+            return await self.connector.client.create_stop_limit_order(
+                symbol, side, quantity, price, params=params
+            )
+        raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
+
+    async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_market_take_profit_order is not implemented")
+
+    async def create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_limit_take_profit_order is not implemented")
+
+    async def create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
+
+    async def create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
+
+    def add_cost_to_market_order(self, quantity, price, params) -> dict:
+        if (
+                self.connector_config.ADD_COST_TO_CREATE_SPOT_MARKET_ORDER
+                or self.connector_config.ADD_COST_TO_CREATE_FUTURE_MARKET_ORDER
+        ):
+            return {**params, "cost": quantity * price}
+        return params
+
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         defined_methods = self.connector_config.CANCEL_ORDERS_METHODS
         messages = ""
@@ -1041,7 +1223,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     """
 
     def parse_balance(self, balance):
-        return self.client.parse_balance(balance)
+        return personal_data.parse_decimal_portfolio(self.client.parse_balance(balance))
 
     def parse_ohlcv(self, ohlcv):
         return self.uniformize_candles_if_necessary(self.client.parse_ohlcv(ohlcv))

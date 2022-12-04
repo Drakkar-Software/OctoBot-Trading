@@ -90,6 +90,7 @@ from octobot_trading.exchanges.implementations cimport (
     MarginCCXTExchange,
     CCXTWebSocketExchange,
     CryptofeedWebSocketExchange,
+    CCXTExchangeCommons,
 )
 
 from octobot_trading.exchanges.exchange_builder cimport (
@@ -144,6 +145,7 @@ __all__ = [
     "get_default_exchange_type",
     "get_supported_exchange_types",
     "get_exchange_class_from_name",
+    "CCXTExchangeCommons",
     "SpotExchangeSimulator",
     "SpotCCXTExchange",
     "FutureExchangeSimulator",
