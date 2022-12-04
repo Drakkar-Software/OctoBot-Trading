@@ -190,9 +190,12 @@ class ExchangeMarketStatusParser:
     LIMIT_AMOUNT_MAX_MINUS_3_ATTENUATION = 1  # when log(price, 10) > -3
     LIMIT_AMOUNT_MIN_ATTENUATION = 3  # when log(price, 10) < 0
     LIMIT_AMOUNT_MIN_SUP_ATTENUATION = 1  # when log(price, 10) >= 0
+    
+    FIX_PRECISION = True
+    REMOVE_INVALID_PRICE_LIMITS = False
 
     """
-    Utility class that performs exchange_self.market_status fixes
+        Utility class that performs exchange_self.market_status fixes
     """
 
     def __init__(
@@ -200,13 +203,11 @@ class ExchangeMarketStatusParser:
         market_status,
         price_example=None,
         with_fixer=True,
-        fix_precision=False,
-        remove_invalid_price_limits=False,
     ):
         self.logger = logging.get_logger(self.__class__.__name__)
         self.market_status = copy.deepcopy(market_status)
         self.price_example = price_example
-        if fix_precision and self.market_status.get(Ecmsc.PRECISION.value):
+        if self.FIX_PRECISION and self.market_status.get(Ecmsc.PRECISION.value):
             if (
                 amount := self.market_status[Ecmsc.PRECISION.value].get(
                     Ecmsc.PRECISION_AMOUNT.value
@@ -231,7 +232,7 @@ class ExchangeMarketStatusParser:
                 raise RuntimeError(
                     "Failed to fix precision price, precision price not available"
                 )
-        if remove_invalid_price_limits:
+        if self.REMOVE_INVALID_PRICE_LIMITS:
             self.market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][
                 Ecmsc.LIMITS_PRICE_MIN.value
             ] = None

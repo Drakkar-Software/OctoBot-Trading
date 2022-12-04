@@ -26,12 +26,13 @@ class OrdersParser(parser_util.Parser):
                     order = await parser.parse_order(raw_order)
     """
 
+    TEST_AND_FIX_SPOT_QUANTITIES: bool = False
+    TEST_AND_FIX_FUTURES_QUANTITIES: bool = False
+    
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "orders"
         self.fetched_order: dict = {}
-        self.TEST_AND_FIX_SPOT_QUANTITIES: bool = False
-        self.TEST_AND_FIX_FUTURES_QUANTITIES: bool = False
 
     async def parse_orders(
         self,
@@ -290,8 +291,6 @@ class OrdersParser(parser_util.Parser):
             not_found_val=missing_quantity_value,
             enable_log=False if missing_quantity_value else True,
         )
-        if self.formatted_record.get(OrderCols.AMOUNT.value) > 1:
-            test = 1
 
     def _amount_found(self, amount, missing_quantity_value):
         if (

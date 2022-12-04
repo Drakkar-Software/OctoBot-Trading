@@ -21,11 +21,11 @@ class TickerParser(parser_util.Parser):
     """
 
     fetched_symbol_prices: list = None
+    FUNDING_TIME_UPDATE_PERIOD = 8 * commons_constants.HOURS_TO_SECONDS
 
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "ticker"
-        self.FUNDING_TIME_UPDATE_PERIOD = 8 * commons_constants.HOURS_TO_SECONDS
 
     async def parse_ticker_list(self, raw_tickers: list) -> list:
         """
@@ -140,7 +140,7 @@ class TickerParser(parser_util.Parser):
         )
 
     def missing_timestamp(self, _):
-        self.exchange.connector.client.milliseconds
+        return self.exchange.connector.client.milliseconds
 
     def _parse_quote_volume(self):
         self._try_to_find_and_set_decimal(

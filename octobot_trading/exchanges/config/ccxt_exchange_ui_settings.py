@@ -97,18 +97,18 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 parent_input_name=experimental_settings_name,
             )
         if not settings.MARKET_STATUS_IS_FULLY_TESTED_AND_SUPPORTED:
-            settings.MARKET_STATUS_FIX_PRECISION = exchange.UI.user_input(
+            settings.MARKET_STATUS_PARSER.FIX_PRECISION = exchange.UI.user_input(
                 "market_status_fix_precision",
                 common_enums.UserInputTypes.BOOLEAN,
-                def_val=settings.MARKET_STATUS_FIX_PRECISION,
+                def_val=settings.MARKET_STATUS_PARSER.FIX_PRECISION,
                 registered_inputs=inputs,
                 title="Fix market status precision: ",  # todo
                 parent_input_name=experimental_settings_name,
             )
-            settings.MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS = exchange.UI.user_input(
+            settings.MARKET_STATUS_PARSER.REMOVE_INVALID_PRICE_LIMITS = exchange.UI.user_input(
                 "MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS",
                 common_enums.UserInputTypes.BOOLEAN,
-                def_val=settings.MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS,
+                def_val=settings.MARKET_STATUS_PARSER.REMOVE_INVALID_PRICE_LIMITS,
                 registered_inputs=inputs,
                 title="Remove invalid price limits from market status: Some exchanges send an invalid value for the minimum and maximum position size. "
                 "Which can lead to OctoBot not being able to place a trade. With this enabled, new trade sizes will not be adjusted according to minimum and maximum sizes.",  # todo

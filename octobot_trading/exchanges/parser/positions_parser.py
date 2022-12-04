@@ -1,5 +1,3 @@
-import decimal
-import octobot_commons.enums as commons_enums
 import octobot_trading.constants as constants
 from octobot_trading.enums import (
     ExchangeConstantsPositionColumns as PositioCols,
@@ -22,14 +20,13 @@ class PositionsParser(parser_util.Parser):
                     position = parser.parse_position(raw_position)
 
     """
+    MODE_KEY_NAMES: list = ["hedged"]
+    ONEWAY_VALUES: tuple = (False,)
+    HEDGE_VALUES: tuple = (True,)
 
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "positions"
-
-        self.MODE_KEY_NAMES: list = ["hedged"]
-        self.ONEWAY_VALUES: tuple = (False,)
-        self.HEDGE_VALUES: tuple = (True,)
 
     async def parse_positions(self, raw_positions: list) -> list:
         """
@@ -217,14 +214,14 @@ class PositionsParser(parser_util.Parser):
 
     def _parse_side(self):
         if (
-            mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
+                mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
         ) is PositionMode.ONE_WAY:
             self.formatted_record[PositioCols.SIDE.value] = PositionSide.BOTH
         elif mode is PositionMode.HEDGE:
             if (
-                original_side := self.formatted_record.get(
-                    PositioCols.ORIGINAL_SIDE.value
-                )
+                    original_side := self.formatted_record.get(
+                        PositioCols.ORIGINAL_SIDE.value
+                    )
             ) == PositionSide.LONG.value:
                 self.formatted_record[PositioCols.SIDE.value] = PositionSide.LONG
             elif original_side == PositionSide.SHORT.value:
@@ -300,7 +297,7 @@ class PositionsParser(parser_util.Parser):
     def handle_missing_value(self, keys_to_find):
         quantity = None
         if (mark_price := self.formatted_record.get(PositioCols.MARK_PRICE.value)) and (
-            quantity := self.formatted_record.get(PositioCols.QUANTITY.value)
+                quantity := self.formatted_record.get(PositioCols.QUANTITY.value)
         ):
             return quantity / mark_price
         self._log_missing(

@@ -18,6 +18,7 @@ import asyncio
 import contextlib
 import decimal
 import logging
+import time
 
 import ccxt.async_support as ccxt
 import typing
@@ -34,6 +35,7 @@ import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus
+from octobot_trading.exchanges.config import CCXTExchangeConfig
 
 
 class CCXTExchange(abstract_exchange.AbstractExchange):
@@ -49,7 +51,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                  ):
         super().__init__(config, exchange_manager)
         self.connector_config: ccxt_exchange_settings.CCXTExchangeConfig = connector_config
-
         self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED = 100
 
         self.client = None
@@ -110,7 +111,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
         :return: formatted order dict (100% complete or we raise NotImplemented)
         """
-        _parser = self.connector_config.ORDERS_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.ORDERS_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_order(raw_order, order_type=order_type, quantity=quantity,
                                          price=price, status=status, symbol=symbol, side=side,
                                          timestamp=timestamp, check_completeness=check_completeness)
@@ -140,7 +141,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         :return: formatted orders list (100% complete or we raise NotImplemented report)
             
         """
-        _parser = self.connector_config.ORDERS_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.ORDERS_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_orders(raw_orders, order_type=order_type, quantity=quantity,
                                           price=price, status=status, symbol=symbol, side=side,
                                           timestamp=timestamp, check_completeness=check_completeness)
@@ -156,7 +157,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
         :return: formatted trade dict (100% complete or we raise NotImplemented)
         """
-        _parser = self.connector_config.TRADES_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.TRADES_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_trade(raw_trade, check_completeness=check_completeness)
 
     async def parse_trades(self, raw_trades, check_completeness: bool = True) -> list:
@@ -171,7 +172,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         :return: formatted trades list (100% complete or we raise NotImplemented report)
             
         """
-        _parser = self.connector_config.TRADES_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.TRADES_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_trades(raw_trades, check_completeness=check_completeness)
 
     async def parse_position(self, raw_position: dict) -> dict:
@@ -182,7 +183,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
         :return: formatted position dict (100% complete or we raise NotImplemented)
         """
-        _parser = self.connector_config.POSITIONS_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.POSITIONS_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_position(raw_position)
 
     async def parse_positions(self, raw_positions: list) -> list:
@@ -194,23 +195,22 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         :return: formatted positions list (100% complete or we raise NotImplemented report)
             
         """
-        _parser = self.connector_config.POSITIONS_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.POSITIONS_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_positions(raw_positions)
 
     async def parse_ticker(self, raw_ticker: dict, symbol: str, also_get_mini_ticker: bool = False) -> dict:
-        _parser = self.connector_config.TICKER_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.TICKER_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_ticker(
             raw_ticker=raw_ticker, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
 
     async def parse_tickers(self, raw_tickers: list) -> list:
-        _parser = self.connector_config.TICKER_PARSER_CLASS(self.exchange_manager.exchange)
+        _parser = self.connector_config.TICKER_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_ticker_list(raw_tickers=raw_tickers)
 
     def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
-        return self.connector_config.MARKET_STATUS_PARSER_CLASS(
-            market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example,
-            fix_precision=self.connector_config.MARKET_STATUS_FIX_PRECISION,
-            remove_invalid_price_limits=self.connector_config.MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS).market_status
+        return self.connector_config.MARKET_STATUS_PARSER(
+            market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example
+        ).market_status
 
     def get_client_symbols(self):
         return set(self.client.symbols) \
@@ -402,7 +402,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     def cut_candle_limit(self, limit) -> typing.Optional[int]:
         if self.connector_config.CANDLE_LOADING_LIMIT:
             if limit:
-                limit = min(limit, self.connector_config.CANDLE_LOADING_LIMIT)
+                return min(limit, self.connector_config.CANDLE_LOADING_LIMIT)
             return self.connector_config.CANDLE_LOADING_LIMIT
         return limit
 
@@ -473,13 +473,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 (order := await self.get_order_default(order_id, symbol,
                                                        check_completeness=check_completeness, **kwargs)):
             return order
-        if self.get_order_from_open_and_closed_orders.__name__  in defined_methods and \
+        if self.get_order_from_open_and_closed_orders.__name__ in defined_methods and \
                 (order := await self.get_order_from_open_and_closed_orders(order_id, symbol,
                                                                            check_completeness=check_completeness,
                                                                            **kwargs)):
             return order
         if self.get_order_from_open_and_closed_orders.__name__ in defined_methods and \
-                (order := await self.get_order_using_stop_params(order_id, symbol, check_completeness=check_completeness)):
+                (order := await self.get_order_using_stop_params(order_id, symbol,
+                                                                 check_completeness=check_completeness)):
             return order
         if self.get_trade.__name__ in defined_methods and \
                 (order := await self.get_trade(order_id, symbol, check_completeness=check_completeness)):
@@ -503,8 +504,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 self.logger.exception(e, True, "Failed to fetch order using get_order_default")
         return None
 
-    async def get_order_using_stop_params(self, order_id: str, symbol: str = None, 
-                                          check_completeness: bool = True,**kwargs: dict) -> typing.Optional[dict]:
+    async def get_order_using_stop_params(self, order_id: str, symbol: str = None,
+                                          check_completeness: bool = True, **kwargs: dict) -> typing.Optional[dict]:
         if self.client.has.get('fetchOrder'):
             try:
                 with self.error_describer():
