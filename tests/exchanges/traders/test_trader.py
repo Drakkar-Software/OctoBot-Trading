@@ -21,7 +21,6 @@ import decimal
 import pytest
 import time
 from mock import AsyncMock, patch, Mock
-from octobot_commons import asyncio_tools
 
 from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue, OrderEditError
 from octobot_trading.personal_data import LinearPosition
@@ -45,7 +44,8 @@ import octobot_trading.constants as constants
 import octobot_commons.symbols as commons_symbols
 
 from tests import event_loop
-from tests.exchanges import future_simulated_exchange_manager, get_fees_mock_value, DEFAULT_EXCHANGE_NAME, DEFAULT_FUTURE_EXCHANGE_NAME
+from tests.exchanges import future_simulated_exchange_manager, get_fees_mock_value, \
+    DEFAULT_EXCHANGE_NAME, DEFAULT_FUTURE_EXCHANGE_NAME
 from tests.exchanges.traders import future_trader_simulator_with_default_linear
 
 # All test coroutines will be treated as marked.
@@ -562,8 +562,8 @@ class TestTrader:
         # Fill only 1st one
         limit_buy.filled_price = 4
         limit_buy.status = OrderStatus.FILLED
-        with patch.object(ccxt.async_support.binanceus, "calculate_fee", Mock(return_value=get_fees_mock_value("SOL"))) \
-                as calculate_fee_mock:
+        with patch.object(ccxt.async_support.binanceus, "calculate_fee",
+                          Mock(return_value=get_fees_mock_value("SOL"))) as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
             # ensure call ccxt calculate_fee for order fees
             calculate_fee_mock.assert_called_once()
