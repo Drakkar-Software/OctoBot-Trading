@@ -193,6 +193,7 @@ class PositionsParser(parser_util.Parser):
         self._try_to_find_and_set_decimal(
             PositioCols.MARK_PRICE.value,
             [ExchangeCols.MARK_PRICE.value],
+            use_info_sub_dict=True,
         )
 
     def _parse_collateral(self):

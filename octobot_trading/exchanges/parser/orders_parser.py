@@ -702,7 +702,7 @@ class OrdersParser(parser_util.Parser):
             status == OrderStatus.CLOSED.value or status == OrderStatus.FILLED.value
         ):
             # sometimes fees are in fees list and not in fee dict
-            if (fees := self.formatted_record.get(OrderCols.FEES.value)) and type(
+            if (fees := self.raw_record.get(OrderCols.FEES.value)) and type(
                 fees
             ) is list:
                 if (fee := self.found_fees(fees[0])) and type(fee) is dict:

@@ -198,8 +198,8 @@ class ExchangeMarketStatusParser:
     def __init__(
         self,
         market_status,
-        with_fixer=True,
         price_example=None,
+        with_fixer=True,
         fix_precision=False,
         remove_invalid_price_limits=False,
     ):

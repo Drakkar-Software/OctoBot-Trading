@@ -56,7 +56,10 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         
     @classmethod
     def initialize_connector_config(cls):
-        cls.CONNECTOR_CONFIG = cls.CONNECTOR_CONFIG(cls.CONNECTOR_CLASS)
+        try:
+            cls.CONNECTOR_CONFIG = cls.CONNECTOR_CONFIG(cls.CONNECTOR_CLASS)
+        except TypeError:
+            pass # already initialized
         
     async def initialize_impl(self):
         await self.connector.initialize()

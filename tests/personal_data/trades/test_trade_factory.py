@@ -21,7 +21,7 @@ import pytest
 
 from tests import event_loop
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.enums import TraderOrderType, OrderStatus, FeePropertyColumns
+from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, TradeOrderSide, TradeOrderType, TraderOrderType, OrderStatus, FeePropertyColumns
 from octobot_trading.constants import ZERO
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance_from_raw
@@ -60,23 +60,29 @@ class TestTradeFactory:
     async def test_create_trade_instance_from_raw(self):
         _, exchange_manager, trader = await self.init_default()
         raw_trade = {	
-              "id": "12345-67890:09876/54321",
-              "timestamp": 1502962946,
-              "symbol": "ETH/BTC",
-              "order": "12345-67890:09876/54321",
-              "type": "limit",
-              ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_MARKET.value,
-              "side": "buy",
-              "takerOrMaker": "taker",
-              "price": decimal.Decimal("0.06917684"),
-              "amount": decimal.Decimal("1.5"),
-              "cost": decimal.Decimal("0.10376526"),
-              "fee": {
+            "id": "12345-67890:09876/54321",
+            "status": OrderStatus.CLOSED.value,
+            "timestamp": 1502962946,
+            "symbol": "ETH/BTC",
+            "order": "12345-67890:09876/54321",
+            "type":TradeOrderType.LIMIT.value,
+            ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_MARKET.value,
+            "side": TradeOrderSide.BUY.value,
+            "takerOrMaker": ExchangeConstantsMarketPropertyColumns.MAKER.value,
+            "price": decimal.Decimal("0.06917684"),
+            "amount": decimal.Decimal("1.5"),
+            "cost": decimal.Decimal("0.10376526"),
+            "average": decimal.Decimal("0.06917684"),
+            "remaining": decimal.Decimal("0"),
+            "filled": decimal.Decimal("1.5"),
+            "reduceOnly": None,
+            "fee": {
                 "cost": 0.0015,
                 "currency": "ETH",
                 "rate": 0.002
-              }
             }
+        }
+
 
         trade = create_trade_instance_from_raw(trader, raw_trade)
 

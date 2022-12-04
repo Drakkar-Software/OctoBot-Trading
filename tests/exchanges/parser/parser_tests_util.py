@@ -32,10 +32,6 @@ def mock_get_pair_from_exchange(raw_symbol):
     return raw_symbol
 
 
-async def mock_get_kline_price(symbol, time_frame):
-    return [[456456546456, 4000, 5000, 3000, 4500, 43543534534]]
-
-
 def mock_get_contract_type(symbol):
     return FutureContractType.LINEAR_PERPETUAL
 
@@ -46,11 +42,8 @@ def mock_abstract_exchange():
         config, exchanges.ExchangeManager(config, EXCHANGE_NAME)
     )
     exchange.get_pair_from_exchange = mock_get_pair_from_exchange
-    exchange.get_kline_price = mock_get_kline_price
     exchange.get_contract_type = mock_get_contract_type
-#         # connector.get_exchange_current_time
 #         # get_pair_from_exchange
-#         # get_kline_price
     return exchange
 
 

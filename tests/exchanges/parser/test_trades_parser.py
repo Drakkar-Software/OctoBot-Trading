@@ -64,7 +64,7 @@ def get_raw_trades():
             "price": 17171.5,
             "amount": 0.055,
             "cost": 944.4325,
-            "fee": [{"code": "USDT", "cost": -0.015922}],
+            "fees": [{"code": "USDT", "cost": -0.015922}],
             "fee": {},
         }
     ]

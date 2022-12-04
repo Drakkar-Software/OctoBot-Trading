@@ -33,6 +33,7 @@ from .parser_tests_util import (
 
 pytestmark = pytest.mark.asyncio
 
+
 def active_parser_class():
     return parser.PositionsParser(exchange=mock_abstract_exchange())
 
@@ -72,6 +73,7 @@ def get_raw_closed_positions():
                 "position_idx": "0",
                 "mode": "MergedSingle",
                 active_parser_class().MODE_KEY_NAMES[0]: False,
+                ExchangePositionCCXTColumns.MARK_PRICE.value: 4500.55,
             },
             "id": None,
             "symbol": "10000NFT/USDT:USDT",
@@ -128,6 +130,7 @@ def get_raw_open_positions():
                 "position_idx": "0",
                 "mode": "MergedSingle",
                 active_parser_class().MODE_KEY_NAMES[0]: False,
+                ExchangePositionCCXTColumns.MARK_PRICE.value: 4500.55,
             },
             "id": None,
             "symbol": "BTC/USDT:USDT",
@@ -160,13 +163,14 @@ def get_parsed_closed_positions():
             PositionCols.SYMBOL.value: "10000NFT/USDT:USDT",
             PositionCols.ORIGINAL_SIDE.value: "short",
             PositionCols.POSITION_MODE.value: PositionMode.ONE_WAY,
-            PositionCols.STATUS.value: PositionStatus.CLOSED,
             PositionCols.SIDE.value: PositionSide.BOTH,
-            PositionCols.SIZE.value: decimal.Decimal("0.0"),
+            PositionCols.SIZE.value: decimal.Decimal("0"),
             PositionCols.CONTRACT_TYPE.value: FutureContractType.LINEAR_PERPETUAL,
             PositionCols.MARGIN_TYPE.value: TraderPositionType.CROSS,
             PositionCols.LEVERAGE.value: decimal.Decimal("5.0"),
             PositionCols.REALIZED_PNL.value: decimal.Decimal("-12.12747167"),
+            PositionCols.STATUS.value: PositionStatus.CLOSED,
+            PositionCols.MARK_PRICE.value: decimal.Decimal("4500.55"),
         }
     ]
 
@@ -191,7 +195,7 @@ def get_parsed_open_positions():
             PositionCols.UNREALIZED_PNL.value: decimal.Decimal("2.50941072"),
             PositionCols.LIQUIDATION_PRICE.value: decimal.Decimal("13522.0"),
             PositionCols.CLOSING_FEE.value: decimal.Decimal("0.080628"),
-            PositionCols.MARK_PRICE.value: decimal.Decimal("4500"),
+            PositionCols.MARK_PRICE.value: decimal.Decimal("4500.55"),
             PositionCols.VALUE.value: decimal.Decimal("167.96968928"),
             PositionCols.INITIAL_MARGIN.value: decimal.Decimal("33.5939353"),
             PositionCols.ENTRY_PRICE.value: decimal.Decimal("16796.96892692"),
