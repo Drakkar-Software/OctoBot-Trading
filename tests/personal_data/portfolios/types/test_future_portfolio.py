@@ -848,8 +848,7 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
 
     if not os.getenv('CYTHON_IGNORE'):
-        with patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                          Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+        with patch.object(exchange_manager_inst.exchange, "get_trade_fee", Mock(return_value=get_fees_mock_value())):
 
             # Open short position
             await fill_market_order(market_sell)
@@ -909,8 +908,7 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
 
     if not os.getenv('CYTHON_IGNORE'):
-        with patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                          Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+        with patch.object(exchange_manager_inst.exchange, "get_trade_fee", Mock(return_value=get_fees_mock_value())):
 
             await fill_market_order(market_sell)
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('791.9')
@@ -1090,8 +1088,7 @@ async def test_update_portfolio_data_with_fees(future_trader_simulator_with_defa
 
     if not os.getenv('CYTHON_IGNORE'):
         with patch.object(market_sell, "get_total_fees", Mock(return_value=5)) as get_total_fees_mock, \
-                patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                         Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+                patch.object(exchange_manager_inst.exchange, "get_trade_fee", Mock(return_value=get_fees_mock_value())):
             portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
@@ -1140,7 +1137,7 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
     if not os.getenv('CYTHON_IGNORE'):
         with patch.object(market_buy, "get_total_fees", Mock(return_value=fees_per_order)) \
                 as get_total_fees_mock, patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                                                     Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+                                                     Mock(return_value=get_fees_mock_value())):
             # create buy order
             portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
             position = exchange_manager_inst.exchange_personal_data.positions_manager.get_symbol_positions()[0]
@@ -1170,7 +1167,7 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
 
         with patch.object(market_sell, "get_total_fees", Mock(return_value=fees_per_order)) \
                 as get_total_fees_mock, patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                                                     Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+                                                     Mock(return_value=get_fees_mock_value())):
             # create sell order
             portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
             position = exchange_manager_inst.exchange_personal_data.positions_manager.get_symbol_positions()[0]
@@ -1232,8 +1229,7 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
     if not os.getenv('CYTHON_IGNORE'):
-        with patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                          Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+        with patch.object(exchange_manager_inst.exchange, "get_trade_fee", Mock(return_value=get_fees_mock_value())):
 
             # fill order
             await fill_market_order(market_sell)
@@ -1269,8 +1265,7 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
 
     if not os.getenv('CYTHON_IGNORE'):
-        with patch.object(exchange_manager_inst.exchange, "get_trade_fee",
-                          Mock(return_value=get_fees_mock_value("USDT", rate=0, cost=0.2))):
+        with patch.object(exchange_manager_inst.exchange, "get_trade_fee", Mock(return_value=get_fees_mock_value())):
             await fill_market_order(market_sell)
 
             # Test reducing buy order

@@ -435,6 +435,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                          amount=float(quantity),
                                          price=float(price),
                                          takerOrMaker=taker_or_maker)
+        fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
         if self.exchange_manager.is_future:
             # fees on futures are wrong
             rate = fees[enums.FeePropertyColumns.RATE.value]
@@ -447,8 +448,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             else:
                 fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
                 fees[enums.FeePropertyColumns.CURRENCY.value] = parsed_symbol.quote
-        else:
-            fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
         return fees
 
     def get_fees(self, symbol):
