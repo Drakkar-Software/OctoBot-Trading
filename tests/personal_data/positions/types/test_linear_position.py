@@ -17,8 +17,6 @@
 import decimal
 import os
 
-from mock import Mock, patch
-
 import pytest
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
@@ -26,7 +24,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 
 from tests import event_loop
-from tests.exchanges import future_simulated_exchange_manager, get_fees_mock_value
+from tests.exchanges import future_simulated_exchange_manager, set_future_exchange_fees
 from tests.personal_data import check_created_transaction, get_latest_transaction
 from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
     future_trader_simulator_with_default_inverse, DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
@@ -422,77 +420,76 @@ async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_defa
 
 async def test_get_order_cost(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    set_future_exchange_fees(exchange_manager_inst.exchange.connector, default_contract.pair)
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
-    with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value())):
-        await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
-        assert position_inst.get_order_cost() == constants.ZERO
-        await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
-        assert position_inst.get_order_cost() == decimal.Decimal("1000.8")
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+    assert position_inst.get_order_cost() == constants.ZERO
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.get_order_cost() == decimal.Decimal("1000.8")
 
 
 async def test_get_fee_to_open(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    set_future_exchange_fees(exchange_manager_inst.exchange.connector, default_contract.pair)
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_fee_to_open(constants.ZERO, constants.ZERO, position_inst.symbol) == constants.ZERO
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
-
-    with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value())):
-        assert position_inst.get_fee_to_open(TWENTY_FIVE, FORTY, position_inst.symbol) == decimal.Decimal("0.4")
-        assert position_inst.get_fee_to_open(decimal.Decimal(2), FORTY, position_inst.symbol) == decimal.Decimal("0.0320")
-        assert position_inst.get_fee_to_open(TWENTY_FIVE, decimal.Decimal(2), position_inst.symbol) == decimal.Decimal("0.02")
-        assert position_inst.get_fee_to_open(decimal.Decimal(2), decimal.Decimal(2), position_inst.symbol) == \
-               decimal.Decimal("0.0016")
+    assert position_inst.get_fee_to_open(TWENTY_FIVE, FORTY, position_inst.symbol) == decimal.Decimal("0.4")
+    assert position_inst.get_fee_to_open(decimal.Decimal(2), FORTY, position_inst.symbol) == decimal.Decimal("0.0320")
+    assert position_inst.get_fee_to_open(TWENTY_FIVE, decimal.Decimal(2), position_inst.symbol) == decimal.Decimal("0.02")
+    assert position_inst.get_fee_to_open(decimal.Decimal(2), decimal.Decimal(2), position_inst.symbol) == \
+           decimal.Decimal("0.0016")
 
 
 async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    set_future_exchange_fees(exchange_manager_inst.exchange.connector, default_contract.pair)
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
-    with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value())):
-        await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
-        position_inst.update_fee_to_close()
-        assert position_inst.fee_to_close == constants.ZERO
-        await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
-        position_inst.update_fee_to_close()
-        assert position_inst.fee_to_close == decimal.Decimal("0.4")
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+    position_inst.update_fee_to_close()
+    assert position_inst.fee_to_close == constants.ZERO
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    position_inst.update_fee_to_close()
+    assert position_inst.fee_to_close == decimal.Decimal("0.4")
 
 
 def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    set_future_exchange_fees(exchange_manager_inst.exchange.connector, default_contract.pair)
 
-    with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value())):
-        # no need to initialize the position
-        leverage = decimal.Decimal("2")
-        default_contract.set_current_leverage(leverage)
-        assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-            decimal.Decimal("0.01") * leverage, decimal.Decimal("38497.5"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-        ) == decimal.Decimal("0.46197")     # open fees + closing fees in case of liquidation
+    # no need to initialize the position
+    leverage = decimal.Decimal("2")
+    default_contract.set_current_leverage(leverage)
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("0.01") * leverage, decimal.Decimal("38497.5"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal("0.46197")     # open fees + closing fees in case of liquidation
 
-        assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-            decimal.Decimal("10") * leverage, constants.ONE_HUNDRED, enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-        ) == decimal.Decimal('1.2')     # open fees + closing fees in case of liquidation
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10") * leverage, constants.ONE_HUNDRED, enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal('1.2')     # open fees + closing fees in case of liquidation
 
-        leverage = decimal.Decimal("50")
-        default_contract.set_current_leverage(leverage)
-        assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-            decimal.Decimal("10") * leverage, decimal.Decimal("100"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-        ) == decimal.Decimal("39.6")     # open fees + closing fees in case of liquidation
+    leverage = decimal.Decimal("50")
+    default_contract.set_current_leverage(leverage)
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10") * leverage, decimal.Decimal("100"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal("39.6")     # open fees + closing fees in case of liquidation
 
-        leverage = constants.ONE_HUNDRED
-        default_contract.set_current_leverage(leverage)
-        assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-            decimal.Decimal("10") * leverage, decimal.Decimal("100"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-        ) == decimal.Decimal("79.6")     # open fees + closing fees in case of liquidation
+    leverage = constants.ONE_HUNDRED
+    default_contract.set_current_leverage(leverage)
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10") * leverage, decimal.Decimal("100"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal("79.6")     # open fees + closing fees in case of liquidation
 
-        assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-            decimal.Decimal("10") * leverage, decimal.Decimal("100"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-        ) == decimal.Decimal("80.400000")     # open fees + closing fees in case of liquidation
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10") * leverage, decimal.Decimal("100"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal("80.400000")     # open fees + closing fees in case of liquidation
 
 
 async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_linear):

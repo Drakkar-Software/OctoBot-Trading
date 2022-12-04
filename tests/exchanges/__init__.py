@@ -214,12 +214,17 @@ def storage_mock():
     )
 
 
-def get_fees_mock_value(taker=0.0004, maker=0.0004, fee=0.0004):
+def get_fees_mock(symbol, rate=0.1, cost=0.1):  # huge fees for tests
     return {
-        ExchangeConstantsMarketPropertyColumns.TAKER.value: taker,
-        ExchangeConstantsMarketPropertyColumns.MAKER.value: maker,
-        ExchangeConstantsMarketPropertyColumns.FEE.value: fee
+        FeePropertyColumns.RATE.value: rate,
+        FeePropertyColumns.COST.value: cost,
+        FeePropertyColumns.CURRENCY.value: symbol
     }
+
+
+def set_future_exchange_fees(exchange, symbol, taker=0.0004, maker=0.0004):
+    exchange.client.markets[symbol]['taker'] = taker
+    exchange.client.markets[symbol]['maker'] = maker
 
 
 @pytest_asyncio.fixture
