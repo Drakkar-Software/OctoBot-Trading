@@ -332,7 +332,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
     DATETIME = 'datetime'
-    LAST_TRADE_TIMESTAMP = "lastTradeTimestamp"
+    LAST_TRADE_TIMESTAMP = "last_trade_timestamp"
     SYMBOL = "symbol"
     QUANTITY_CURRENCY = "quantity_currency"
     TYPE = "type"
@@ -349,10 +349,10 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     MAKER = "maker"
     TAKER = "taker"
     ORDER = "order"
-    TAKERORMAKER = "takerOrMaker"
-    REDUCE_ONLY = "reduceOnly"
-    STOP_PRICE = "stopPrice"
-    TRIGGER_ABOVE = "triggerAbove"
+    TAKER_OR_MAKER = "taker_or_maker"
+    REDUCE_ONLY = "reduce_only"
+    STOP_PRICE = "stop_price"
+    TRIGGER_ABOVE = "trigger_above"
     TAG = "tag"
 
 

@@ -339,7 +339,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                 order_to_update[ecoc.AMOUNT.value] = trade[ecoc.AMOUNT.value]
                 order_to_update[ecoc.DATETIME.value] = trade[ecoc.DATETIME.value]
                 order_to_update[ecoc.SIDE.value] = trade[ecoc.SIDE.value]
-                order_to_update[ecoc.TAKERORMAKER.value] = trade[ecoc.TAKERORMAKER.value]
+                order_to_update[ecoc.TAKER_OR_MAKER.value] = trade[ecoc.TAKER_OR_MAKER.value]
                 order_to_update[ecoc.PRICE.value] = trade[ecoc.PRICE.value]
                 order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
                                                                             trade[ecoc.TIMESTAMP.value])

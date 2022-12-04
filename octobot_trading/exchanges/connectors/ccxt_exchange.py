@@ -598,7 +598,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             recent_trade.pop(ecoc.ORDER.value)
             recent_trade.pop(ecoc.FEE.value)
             recent_trade.pop(ecoc.TYPE.value)
-            recent_trade.pop(ecoc.TAKERORMAKER.value)
+            recent_trade.pop(ecoc.TAKER_OR_MAKER.value)
             recent_trade[ecoc.TIMESTAMP.value] = \
                 self.get_uniformized_timestamp(recent_trade[ecoc.TIMESTAMP.value])
         except KeyError as e:
