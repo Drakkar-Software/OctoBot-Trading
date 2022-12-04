@@ -101,7 +101,7 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.get_quantity(),
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value: self.quantity_currency,
-            enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
+            enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: self.taker_or_maker,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
