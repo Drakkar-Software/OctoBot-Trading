@@ -13,12 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import pytest
 from octobot_commons.tests.test_config import load_test_config
 
 from tests import event_loop
 from octobot_trading.personal_data.orders import Order, parse_order_type
-from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType
+from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, ExchangeConstantsOrderColumns, OrderStatus, TradeOrderSide, TradeOrderType, TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
@@ -53,8 +54,23 @@ class TestOrderFactory:
         assert order_to_test.simulated is True
 
         ccxt_order_buy_market = {
-            "side": TradeOrderSide.BUY,
-            "type": TradeOrderType.MARKET
+            ExchangeConstantsOrderColumns.ID.value: "16b1bf6c-b3eb-4145-9a31-c24e68562d8a",
+            ExchangeConstantsOrderColumns.STATUS.value: OrderStatus.OPEN.value,
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: 1669905894,
+            ExchangeConstantsOrderColumns.SYMBOL.value: "BTC/USDT",
+            ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
+            ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.MARKET.value,
+            ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_MARKET.value,
+            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
+            ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("17964.5"),
+            ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
+            ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17964.5"),
+            ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("0.006"),
+            ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0.006"),
+            ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("0"),
+            ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("0"),
+            ExchangeConstantsOrderColumns.REDUCE_ONLY.value: False,
+            ExchangeConstantsOrderColumns.FEE.value: None,
         }
 
         order_to_test.update_from_raw(ccxt_order_buy_market)
