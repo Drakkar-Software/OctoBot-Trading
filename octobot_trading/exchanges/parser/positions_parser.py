@@ -1,6 +1,6 @@
 import octobot_trading.constants as constants
 from octobot_trading.enums import (
-    ExchangeConstantsPositionColumns as PositioCols,
+    ExchangeConstantsPositionColumns as PositionCols,
     ExchangePositionCCXTColumns as ExchangeCols,
     TraderPositionType,
     PositionSide,
@@ -63,7 +63,7 @@ class PositionsParser(parser_util.Parser):
         self._parse_status()
         if self.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION:
             await self._parse_mark_price()
-        if self.formatted_record[PositioCols.STATUS.value] == PositionStatus.CLOSED:
+        if self.formatted_record[PositionCols.STATUS.value] == PositionStatus.CLOSED:
             # todo check what is required for empty
             # partially parse empty position as we might need it to create contracts
             self._create_debugging_report_for_record()
@@ -89,7 +89,7 @@ class PositionsParser(parser_util.Parser):
         """
         if self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEY_NAMES:
             self._try_to_find_and_set(
-                PositioCols.POSITION_MODE.value,
+                PositionCols.POSITION_MODE.value,
                 self.MODE_KEY_NAMES,
                 parse_method=self.mode_found,
                 use_info_sub_dict=True,
@@ -97,30 +97,30 @@ class PositionsParser(parser_util.Parser):
             )
         else:
             self._log_missing(
-                PositioCols.POSITION_MODE.value, "not implemented for this exchange"
+                PositionCols.POSITION_MODE.value, "not implemented for this exchange"
             )
 
     def _parse_symbol(self):
         # check is get_pair_from_exchange required? isn't ccxt already doing this?
         self._try_to_find_and_set(
-            PositioCols.SYMBOL.value,
+            PositionCols.SYMBOL.value,
             [ExchangeCols.SYMBOL.value],
             parse_method=self.exchange.get_pair_from_exchange,
         )
 
     def _parse_notional(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.NOTIONAL.value, [ExchangeCols.NOTIONAL.value]
+            PositionCols.NOTIONAL.value, [ExchangeCols.NOTIONAL.value]
         )
 
     def _parse_leverage(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.LEVERAGE.value, [ExchangeCols.LEVERAGE.value]
+            PositionCols.LEVERAGE.value, [ExchangeCols.LEVERAGE.value]
         )
 
     def _parse_realized_pnl(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.REALIZED_PNL.value,
+            PositionCols.REALIZED_PNL.value,
             [ExchangeCols.REALIZED_PNL.value] + RealizedPnlSynonyms.keys,
             use_info_sub_dict=True,
             allow_zero=True,
@@ -128,40 +128,40 @@ class PositionsParser(parser_util.Parser):
 
     def _parse_unrealized_pnl(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.UNREALIZED_PNL.value,
+            PositionCols.UNREALIZED_PNL.value,
             [ExchangeCols.UNREALIZED_PNL.value] + UnrealizedPnlSynonyms.keys,
             allow_zero=True,
         )
 
     def _parse_status(self):
         # todo improve - add LIQUIDATING, LIQUIDATED and ADL
-        if size := self.formatted_record.get(PositioCols.SIZE.value):
+        if size := self.formatted_record.get(PositionCols.SIZE.value):
             if size > 0 or size < 0:
-                self.formatted_record[PositioCols.STATUS.value] = PositionStatus.OPEN
+                self.formatted_record[PositionCols.STATUS.value] = PositionStatus.OPEN
                 return
         if size == constants.ZERO:
-            self.formatted_record[PositioCols.STATUS.value] = PositionStatus.CLOSED
+            self.formatted_record[PositionCols.STATUS.value] = PositionStatus.CLOSED
             return
         self._log_missing(
-            PositioCols.STATUS.value,
+            PositionCols.STATUS.value,
             f"a valid size ({size or 'no size'}) is required to parse status",
         )
 
     def _parse_liquidation_price(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.LIQUIDATION_PRICE.value,
+            PositionCols.LIQUIDATION_PRICE.value,
             [ExchangeCols.LIQUIDATION_PRICE.value] + LiquidationSynonyms.keys,
             use_info_sub_dict=True,
         )
 
     def _parse_value(self):
-        keys_to_find = [PositioCols.VALUE.value] + ValueSynonyms.keys
+        keys_to_find = [PositionCols.VALUE.value] + ValueSynonyms.keys
 
         def missing_value(_):
             self.handle_missing_value(keys_to_find)
 
         self._try_to_find_and_set_decimal(
-            PositioCols.VALUE.value,
+            PositionCols.VALUE.value,
             keys_to_find,
             not_found_method=missing_value,
             use_info_sub_dict=True,
@@ -169,13 +169,13 @@ class PositionsParser(parser_util.Parser):
 
     def _parse_entry_price(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.ENTRY_PRICE.value, [ExchangeCols.ENTRY_PRICE.value]
+            PositionCols.ENTRY_PRICE.value, [ExchangeCols.ENTRY_PRICE.value]
         )
 
     def _parse_closing_fee(self):
         # optional
         self._try_to_find_and_set_decimal(
-            PositioCols.CLOSING_FEE.value,
+            PositionCols.CLOSING_FEE.value,
             ClosingFeeSynonyms.keys,
             enable_log=False,
             use_info_sub_dict=True,
@@ -183,62 +183,62 @@ class PositionsParser(parser_util.Parser):
 
     def _parse_initial_margin(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.INITIAL_MARGIN.value, [ExchangeCols.COLLATERAL.value]
+            PositionCols.INITIAL_MARGIN.value, [ExchangeCols.COLLATERAL.value]
         )
 
     async def _parse_mark_price(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.MARK_PRICE.value,
+            PositionCols.MARK_PRICE.value,
             [ExchangeCols.MARK_PRICE.value],
             use_info_sub_dict=True,
         )
 
     def _parse_collateral(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.COLLATERAL.value, [ExchangeCols.COLLATERAL.value]
+            PositionCols.COLLATERAL.value, [ExchangeCols.COLLATERAL.value]
         )
 
     def _parse_margin_type(self):
         self._try_to_find_and_set(
-            PositioCols.MARGIN_TYPE.value,
+            PositionCols.MARGIN_TYPE.value,
             [ExchangeCols.MARGIN_TYPE.value, ExchangeCols.MARGIN_MODE.value],
             parse_method=TraderPositionType,
         )
 
     def _parse_original_side(self):
         self._try_to_find_and_set(
-            PositioCols.ORIGINAL_SIDE.value,
+            PositionCols.ORIGINAL_SIDE.value,
             [ExchangeCols.SIDE.value, SideSynonyms.keys],
             use_info_sub_dict=True,
         )
 
     def _parse_side(self):
         if (
-                mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
+                mode := self.formatted_record.get(PositionCols.POSITION_MODE.value)
         ) is PositionMode.ONE_WAY:
-            self.formatted_record[PositioCols.SIDE.value] = PositionSide.BOTH
+            self.formatted_record[PositionCols.SIDE.value] = PositionSide.BOTH
         elif mode is PositionMode.HEDGE:
             if (
                     original_side := self.formatted_record.get(
-                        PositioCols.ORIGINAL_SIDE.value
+                        PositionCols.ORIGINAL_SIDE.value
                     )
             ) == PositionSide.LONG.value:
-                self.formatted_record[PositioCols.SIDE.value] = PositionSide.LONG
+                self.formatted_record[PositionCols.SIDE.value] = PositionSide.LONG
             elif original_side == PositionSide.SHORT.value:
-                self.formatted_record[PositioCols.SIDE.value] = PositionSide.SHORT
+                self.formatted_record[PositionCols.SIDE.value] = PositionSide.SHORT
             else:
                 self._log_missing(
-                    PositioCols.SIDE.value,
+                    PositionCols.SIDE.value,
                     "position original side is required to parse side",
                 )
         else:
             self._log_missing(
-                PositioCols.SIDE.value, "position mode is required to parse side"
+                PositionCols.SIDE.value, "position mode is required to parse side"
             )
 
     def _parse_size(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.SIZE.value,
+            PositionCols.SIZE.value,
             SizeSynonyms.keys,
             use_info_sub_dict=True,
             allow_zero=True,
@@ -249,33 +249,33 @@ class PositionsParser(parser_util.Parser):
         quantity is the size for a single contract
         """
         self._try_to_find_and_set_decimal(
-            PositioCols.QUANTITY.value,
+            PositionCols.QUANTITY.value,
             QuantitySynonyms.keys,
             parse_method=self.quantity_found,
             use_info_sub_dict=True,
         )
 
     def _parse_contract_type(self):
-        if symbol := self.formatted_record.get(PositioCols.SYMBOL.value):
+        if symbol := self.formatted_record.get(PositionCols.SYMBOL.value):
             try:
                 self.formatted_record[
-                    PositioCols.CONTRACT_TYPE.value
+                    PositionCols.CONTRACT_TYPE.value
                 ] = self.exchange.get_contract_type(symbol)
             except Exception as e:
                 self._log_missing(
-                    PositioCols.CONTRACT_TYPE.value,
+                    PositionCols.CONTRACT_TYPE.value,
                     f"Failed to get contract type with symbol: " f"{symbol}",
                     error=e,
                 )
         else:
             self._log_missing(
-                PositioCols.CONTRACT_TYPE.value,
+                PositionCols.CONTRACT_TYPE.value,
                 "symbol is required to parse contract type",
             )
 
     def _parse_timestamp(self):
         self._try_to_find_and_set(
-            PositioCols.TIMESTAMP.value,
+            PositionCols.TIMESTAMP.value,
             [ExchangeCols.TIMESTAMP.value],
             parse_method=parser_util.convert_any_time_to_seconds,
             not_found_method=self.timestamp_not_found,
@@ -287,7 +287,7 @@ class PositionsParser(parser_util.Parser):
         if raw_mode in self.HEDGE_VALUES:
             return PositionMode.HEDGE
         self._log_missing(
-            PositioCols.POSITION_MODE.value,
+            PositionCols.POSITION_MODE.value,
             f"key: {self.MODE_KEY_NAMES}, "
             f"got raw_mode: {raw_mode or 'no raw mode'}, "
             f"allowed oneway values: {self.ONEWAY_VALUES}, "
@@ -296,12 +296,12 @@ class PositionsParser(parser_util.Parser):
 
     def handle_missing_value(self, keys_to_find):
         quantity = None
-        if (mark_price := self.formatted_record.get(PositioCols.MARK_PRICE.value)) and (
-                quantity := self.formatted_record.get(PositioCols.QUANTITY.value)
+        if (mark_price := self.formatted_record.get(PositionCols.MARK_PRICE.value)) and (
+                quantity := self.formatted_record.get(PositionCols.QUANTITY.value)
         ):
             return quantity / mark_price
         self._log_missing(
-            PositioCols.VALUE.value,
+            PositionCols.VALUE.value,
             f"keys: {keys_to_find} and using quantity ({quantity or 'no quantity'}) "
             f"/ mark price ({mark_price or 'no mark price'})",
         )
@@ -309,14 +309,14 @@ class PositionsParser(parser_util.Parser):
     def quantity_found(self, quantity):
         if quantity == constants.ZERO:
             return quantity
-        if side := self.formatted_record.get(PositioCols.ORIGINAL_SIDE.value):
+        if side := self.formatted_record.get(PositionCols.ORIGINAL_SIDE.value):
             if side == PositionSide.LONG.value:
                 return quantity
             elif side == PositionSide.SHORT.value:
                 # short - so we set it to negative if it isn't already
                 return -quantity if quantity > 0 else quantity
         self._log_missing(
-            PositioCols.QUANTITY.value,
+            PositionCols.QUANTITY.value,
             f"requires valid side ({side or 'no side'}) to parse",
         )
 
@@ -325,9 +325,9 @@ class PositionsParser(parser_util.Parser):
             return int(self.exchange.connector.get_exchange_current_time())
         except Exception as e:
             self._log_missing(
-                PositioCols.CONTRACT_TYPE.value,
+                PositionCols.CONTRACT_TYPE.value,
                 f"Failed to get time with get_exchange_current_time: "
-                f"{self.formatted_record[PositioCols.SYMBOL.value]}",
+                f"{self.formatted_record[PositionCols.SYMBOL.value]}",
                 error=e,
             )
 
