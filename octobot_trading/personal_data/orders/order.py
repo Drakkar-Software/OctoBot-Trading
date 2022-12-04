@@ -674,7 +674,7 @@ def parse_order_type(raw_order):
         except ValueError as e:
             if raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value] is None:
                 # Last chance: try to infer order type from taker / maker status
-                if enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value in raw_order:
+                if enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value in raw_order:
                     return side, _infer_order_type_from_maker_or_taker(raw_order, side)
                 # No order type info: use unknown order type
                 return side, enums.TraderOrderType.UNKNOWN
@@ -704,7 +704,7 @@ def parse_order_type(raw_order):
 
 
 def _infer_order_type_from_maker_or_taker(raw_order, side):
-    is_taker = raw_order[enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value] \
+    is_taker = raw_order[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value] \
                == enums.ExchangeConstantsOrderColumns.TAKER.value
     if side is enums.TradeOrderSide.BUY:
         if is_taker:

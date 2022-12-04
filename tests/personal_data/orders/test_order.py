@@ -141,7 +141,7 @@ def test_parse_order_type():
     }
     untyped_raw_with_maker_order = {
         enums.ExchangeConstantsOrderColumns.SIDE.value: enums.TradeOrderSide.BUY.value,
-        enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: enums.ExchangeConstantsOrderColumns.MAKER.value,
+        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: enums.ExchangeConstantsOrderColumns.MAKER.value,
         enums.ExchangeConstantsOrderColumns.TYPE.value: None,
     }
     typed_raw_order = {

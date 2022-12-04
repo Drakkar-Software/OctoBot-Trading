@@ -29,7 +29,7 @@ class LimitOrder(order_class.Order):
         self.allow_instant_fill = True
 
     def update_from_raw(self, raw_order):
-        updated = super(order_class.Order, self).update_from_raw(raw_order)
+        updated = super().update_from_raw(raw_order)
         if enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value in raw_order \
                 and self.trigger_above != raw_order[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value]:
             updated = True
