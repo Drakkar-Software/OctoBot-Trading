@@ -130,6 +130,7 @@ async def test_get_ccxt_order_type(exchange_manager):
 
 
 async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_default_linear):
+    spot_fees_value = 0.001
     future_symbol = "BTC/USDT:USDT"
     future_fees_value = 0.0004
     spot_symbol = "BTC/USDT"
@@ -137,20 +138,24 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     fut_exchange_manager_inst.is_future = True
     fut_ccxt_exchange = exchange_connectors.CCXTExchange(config, fut_exchange_manager_inst)
     spot_ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+
     # spot trading
     spot_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.SPOT.value
     await spot_ccxt_exchange.client.load_markets()
+    assert spot_fees_value / 5 <= spot_ccxt_exchange.client.markets[spot_symbol]['taker'] <= spot_fees_value * 5
     assert spot_ccxt_exchange.get_trade_fee(spot_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                             decimal.Decimal(10000), "taker") == \
            _get_fees("taker", "BTC", 0.001, decimal.Decimal("0.00045"))
     assert spot_ccxt_exchange.get_trade_fee(spot_symbol, enums.TraderOrderType.SELL_LIMIT, decimal.Decimal("0.45"),
                                             decimal.Decimal(10000), "maker") == \
            _get_fees("maker", "USDT", 0.001, decimal.Decimal("4.5"))
+
     # future trading
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
     await fut_ccxt_exchange.client.load_markets()
     # enforce taker and maker values
     set_future_exchange_fees(fut_ccxt_exchange, future_symbol, taker=future_fees_value, maker=future_fees_value)
+    assert future_fees_value / 5 <= fut_ccxt_exchange.client.markets[future_symbol]['taker'] <= future_fees_value * 5
     # linear
     assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                            decimal.Decimal(10000), "taker") == \
