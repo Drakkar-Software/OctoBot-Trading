@@ -16,3 +16,4 @@
 #  License along with this library.
 
 cdef class CCXTExchangeConfig
+cdef class CCXTExchangeTestStatus

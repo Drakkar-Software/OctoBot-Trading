@@ -1,13 +1,42 @@
 import octobot_trading.exchanges.parser as parser
 
 
+class CCXTExchangeTestStatus:
+    """
+    pass either is_fully_tested=True or
+    or set it for each separate
+    """
+
+    def __init__(
+        self,
+        is_fully_tested: bool = False,
+        spot_real_tested: bool = False,
+        spot_testnet_tested: bool = False,
+        futures_real_tested: bool = False,
+        futures_testnet_tested: bool = False,
+    ):
+        self.spot_real_tested = is_fully_tested or spot_real_tested
+        self.spot_testnet_tested = is_fully_tested or spot_testnet_tested
+        self.futures_real_tested = is_fully_tested or futures_real_tested
+        self.futures_testnet_tested = is_fully_tested or futures_testnet_tested
+        self.is_fully_tested = is_fully_tested or (
+            spot_real_tested
+            and spot_testnet_tested
+            and futures_real_tested
+            and futures_testnet_tested
+        )
+
+
 class CCXTExchangeConfig:
     """
     override this class if you need custom settings
+    see bybit tentacle as an example
     """
 
     # override classes if you need a different parser
-    MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = parser.ExchangeMarketStatusParser
+    MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = (
+        parser.ExchangeMarketStatusParser
+    )
     ORDERS_PARSER: parser.OrdersParser = parser.OrdersParser
     TRADES_PARSER: parser.TradesParser = parser.TradesParser
     POSITIONS_PARSER: parser.PositionsParser = parser.PositionsParser
@@ -23,57 +52,71 @@ class CCXTExchangeConfig:
     def set_connector_settings(cls, exchange_connector) -> None:
         """
         override this method to change default settings
-        
+
         for example:
             self.MARKET_STATUS_PARSER.FIX_PRECISION = True
             self.MARK_PRICE_IN_POSITION = True
         """
         pass
 
-    # set test status for each exchange if tested on testnet and real money
+    # set test status for each exchange
 
     IS_FULLY_TESTED_AND_SUPPORTED = False  # not recommended
 
-    CANDLE_LOADING_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED = False
-    MAX_RECENT_TRADES_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED = False
-    MAX_ORDER_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED = False
+    CANDLE_LOADING_LIMIT_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
+    MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
 
-    MARKET_STATUS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    ORDERS_PARSER_IS_FULLY_TESTED_AND_SUPPORTED = False
-    TRADES_PARSER_IS_FULLY_TESTED_AND_SUPPORTED = False
-    POSITIONS_PARSER_IS_FULLY_TESTED_AND_SUPPORTED = False
-    TICKER_PARSER_IS_FULLY_TESTED_AND_SUPPORTED = False
-    FUNDING_RATE_PARSER_IS_FULLY_TESTED_AND_SUPPORTED = False
+    MARKET_STATUS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    ORDERS_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    TRADES_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    POSITIONS_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    TICKER_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    FUNDING_RATE_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
 
-    GET_ORDER_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    GET_ALL_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    GET_OPEN_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    GET_CLOSED_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    CANCEL_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    GET_MY_RECENT_TRADES_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    GET_POSITION_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
-    GET_SYMBOL_POSITIONS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
+    GET_ORDER_METHODS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    GET_ALL_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
+    GET_OPEN_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
+    GET_CLOSED_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
+    CANCEL_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    GET_MY_RECENT_TRADES_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
+    GET_POSITION_METHODS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
+    GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
+        CCXTExchangeTestStatus()
+    )
 
     @classmethod
     def is_fully_tested_and_supported(cls):
         return cls.IS_FULLY_TESTED_AND_SUPPORTED or (
-                cls.CANDLE_LOADING_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.MAX_RECENT_TRADES_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.MAX_ORDER_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.MARKET_STATUS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.ORDERS_PARSER_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.TRADES_PARSER_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.POSITIONS_PARSER_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.TICKER_PARSER_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.FUNDING_RATE_PARSER_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_ORDER_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_ALL_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_OPEN_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_CLOSED_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.CANCEL_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_MY_RECENT_TRADES_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_POSITION_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
-                and cls.GET_SYMBOL_POSITIONS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
+            cls.CANDLE_LOADING_LIMIT_TEST_STATUS.is_fully_tested
+            and cls.MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
+            and cls.MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
+            and cls.MARKET_STATUS_TEST_STATUS.is_fully_tested
+            and cls.ORDERS_PARSER_TEST_STATUS.is_fully_tested
+            and cls.TRADES_PARSER_TEST_STATUS.is_fully_tested
+            and cls.POSITIONS_PARSER_TEST_STATUS.is_fully_tested
+            and cls.TICKER_PARSER_TEST_STATUS.is_fully_tested
+            and cls.FUNDING_RATE_PARSER_TEST_STATUS.is_fully_tested
+            and cls.GET_ORDER_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_ALL_ORDERS_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_OPEN_ORDERS_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_CLOSED_ORDERS_METHODS_TEST_STATUS.is_fully_tested
+            and cls.CANCEL_ORDERS_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_MY_RECENT_TRADES_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_POSITION_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS.is_fully_tested
         )
 
     @classmethod
@@ -95,23 +138,35 @@ class CCXTExchangeConfig:
 
         # market status parser
         cls.MARKET_STATUS_PARSER.FIX_PRECISION = cls.MARKET_STATUS_PARSER.FIX_PRECISION
-        cls.MARKET_STATUS_PARSER.REMOVE_INVALID_PRICE_LIMITS = cls.MARKET_STATUS_PARSER.REMOVE_INVALID_PRICE_LIMITS
-        cls.MARKET_STATUS_PARSER.LIMIT_PRICE_MULTIPLIER = cls.MARKET_STATUS_PARSER.LIMIT_PRICE_MULTIPLIER
-        cls.MARKET_STATUS_PARSER.LIMIT_COST_MULTIPLIER = cls.MARKET_STATUS_PARSER.LIMIT_COST_MULTIPLIER
+        cls.MARKET_STATUS_PARSER.REMOVE_INVALID_PRICE_LIMITS = (
+            cls.MARKET_STATUS_PARSER.REMOVE_INVALID_PRICE_LIMITS
+        )
+        cls.MARKET_STATUS_PARSER.LIMIT_PRICE_MULTIPLIER = (
+            cls.MARKET_STATUS_PARSER.LIMIT_PRICE_MULTIPLIER
+        )
+        cls.MARKET_STATUS_PARSER.LIMIT_COST_MULTIPLIER = (
+            cls.MARKET_STATUS_PARSER.LIMIT_COST_MULTIPLIER
+        )
         cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MAX_SUP_ATTENUATION = (
             cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MAX_SUP_ATTENUATION
         )
         cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MAX_MINUS_3_ATTENUATION = (
             cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MAX_MINUS_3_ATTENUATION
         )
-        cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_ATTENUATION = cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_ATTENUATION
+        cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_ATTENUATION = (
+            cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_ATTENUATION
+        )
         cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_SUP_ATTENUATION = (
             cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_SUP_ATTENUATION
         )
 
         # orders parser
-        cls.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES = cls.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES
-        cls.ORDERS_PARSER.TEST_AND_FIX_FUTURES_QUANTITIES = cls.ORDERS_PARSER.TEST_AND_FIX_FUTURES_QUANTITIES
+        cls.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES = (
+            cls.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES
+        )
+        cls.ORDERS_PARSER.TEST_AND_FIX_FUTURES_QUANTITIES = (
+            cls.ORDERS_PARSER.TEST_AND_FIX_FUTURES_QUANTITIES
+        )
 
         # positions parser
         cls.POSITIONS_PARSER.MODE_KEY_NAMES = cls.POSITIONS_PARSER.MODE_KEY_NAMES
@@ -201,4 +256,3 @@ class CCXTExchangeConfig:
     ALL_GET_MY_RECENT_TRADES_METHODS: list = None
     ALL_GET_POSITION_METHODS: list = None
     ALL_GET_SYMBOL_POSITION_METHODS: list = None
-    POSITION_TYPES: list = None

@@ -34,7 +34,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             title="Pagination limit settings",
             parent_input_name=experimental_settings_name,
         )
-        if not settings.CANDLE_LOADING_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.CANDLE_LOADING_LIMIT_TEST_STATUS.is_fully_tested:
             settings.CANDLE_LOADING_LIMIT = exchange.UI.user_input(
                 "candle_loading_limit",
                 common_enums.UserInputTypes.INT,
@@ -45,7 +45,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 parent_input_name=pagination_settings_name,
             )
         if (
-            not settings.MAX_RECENT_TRADES_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED
+            not settings.MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
         ):
             settings.MAX_RECENT_TRADES_PAGINATION_LIMIT = exchange.UI.user_input(
                 "max_recent_trades_pagination_limit",
@@ -56,7 +56,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 "(Hint: OctoBot will still be able to download trades and automatically split it up into multiple requests)",
                 parent_input_name=pagination_settings_name,
             )
-        if not settings.MAX_ORDER_PAGINATION_LIMIT_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested:
             settings.MAX_ORDER_PAGINATION_LIMIT = exchange.UI.user_input(
                 "max_order_pagination_limit",
                 common_enums.UserInputTypes.INT,
@@ -75,7 +75,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             title="Market Status Parser Settings",
             parent_input_name=experimental_settings_name,
         )
-        if not settings.MARKET_STATUS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.MARKET_STATUS_TEST_STATUS.is_fully_tested:
             settings.MARKET_STATUS_PARSER.FIX_PRECISION = exchange.UI.user_input(
                 "fix_precision",
                 common_enums.UserInputTypes.BOOLEAN,
@@ -156,7 +156,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             title="Orders Parser Settings",
             parent_input_name=experimental_settings_name,
         )
-        if not settings.ORDERS_PARSER_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.ORDERS_PARSER_TEST_STATUS.is_fully_tested:
             settings.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES = (
                 exchange.UI.user_input(
                     "test_and_fix_spot_quantities",
@@ -183,14 +183,14 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             common_enums.UserInputTypes.OBJECT,
             def_val=None,
             registered_inputs=inputs,
-            title="Ticker Parser Settings",
+            title="Funding rate parser settings",
             parent_input_name=experimental_settings_name,
         )
-        if not settings.TICKER_PARSER_IS_FULLY_TESTED_AND_SUPPORTED:
-            settings.TICKER_PARSER.FUNDING_TIME_UPDATE_PERIOD = exchange.UI.user_input(
+        if not settings.FUNDING_RATE_PARSER_TEST_STATUS.is_fully_tested:
+            settings.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD = exchange.UI.user_input(
                 "funding_time_update_period",
                 common_enums.UserInputTypes.INT,
-                def_val=settings.TICKER_PARSER.FUNDING_TIME_UPDATE_PERIOD,
+                def_val=settings.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD,
                 registered_inputs=inputs,
                 title="Funding time update period: Time in seconds between funding rate updates. "
                 "For example every 8 hours would be 28800 seconds (8 x 3600)",
@@ -205,7 +205,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             title="Get methods settings",
             parent_input_name=experimental_settings_name,
         )
-        if not settings.GET_ORDER_METHODS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.GET_ORDER_METHODS_TEST_STATUS.is_fully_tested:
             settings.GET_ORDER_METHODS = exchange.UI.user_input(
                 "get_order_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,
@@ -215,7 +215,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 title="Get order methods: Each method will be tried until OctoBot finds a single order with the requested order id",
                 parent_input_name=get_methods_settings_name,
             )
-        if not settings.GET_OPEN_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.GET_OPEN_ORDERS_METHODS_TEST_STATUS.is_fully_tested:
             settings.GET_OPEN_ORDERS_METHODS = exchange.UI.user_input(
                 "get_open_orders_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,
@@ -225,7 +225,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 title="Get open orders methods: All methods will be used and orders will be merged and duplicates removed",
                 parent_input_name=get_methods_settings_name,
             )
-        if not settings.GET_CLOSED_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.GET_CLOSED_ORDERS_METHODS_TEST_STATUS.is_fully_tested:
             settings.GET_CLOSED_ORDERS_METHODS = exchange.UI.user_input(
                 "get_closed_orders_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,
@@ -235,7 +235,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 title="Get closed orders methods: All methods will be used and orders will be merged and duplicates removed",
                 parent_input_name=get_methods_settings_name,
             )
-        if not settings.GET_POSITION_METHODS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.GET_POSITION_METHODS_TEST_STATUS.is_fully_tested:
             settings.GET_POSITION_METHODS = exchange.UI.user_input(
                 "get_position_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,
@@ -245,7 +245,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 title="Get positions methods: All methods will be used and duplicates will be ignored",
                 parent_input_name=get_methods_settings_name,
             )
-        if not settings.GET_SYMBOL_POSITIONS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS.is_fully_tested:
             settings.GET_CLOSED_ORDERS_METHODS = exchange.UI.user_input(
                 "get_symbol_position_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,
@@ -255,7 +255,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 title="Get symbol positions methods: All methods will be used and duplicates will be ignored",
                 parent_input_name=get_methods_settings_name,
             )
-        if not settings.GET_MY_RECENT_TRADES_METHODS_IS_FULLY_TESTED_AND_SUPPORTED:
+        if not settings.GET_MY_RECENT_TRADES_METHODS_TEST_STATUS.is_fully_tested:
             settings.GET_MY_RECENT_TRADES_METHODS = exchange.UI.user_input(
                 "get_my_recent_trades_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,

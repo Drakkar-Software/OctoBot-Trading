@@ -28,8 +28,28 @@ class FutureCCXTExchange(exchanges_types.FutureExchange,
     async def get_positions(self, **kwargs: dict) -> list:
         return await self.connector.get_positions(**kwargs)
 
-    async def get_position(self, symbol: str, **kwargs: dict) -> dict:
-        return await self.connector.get_position(symbol=symbol, **kwargs)
+    async def get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
+        return await self.connector.get_symbol_positions(symbol=symbol, **kwargs)
+    
+    async def get_positions_linear_settle_coins(self) -> None or list:
+        """
+        override if exchange has different settle coins for linear positions
+
+        Returns:
+            None or list: list of currencies
+        """
+        # todo find a way to automate
+        return ["USDT", "USDC"]
+    
+    async def get_positions_inverse_settle_coins(self) -> None or list:
+        """
+        override if exchange has different settle coins for inverse positions
+
+        Returns:
+            None or list: list of currencies
+        """
+        # todo find a way to automate
+        return ["BTC", "ETH", "MANA", "XRP", "ADA", "DOT", "EOS", "LTC"]
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         return await self.connector.get_funding_rate(symbol=symbol, **kwargs)

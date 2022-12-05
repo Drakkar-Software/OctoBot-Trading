@@ -1045,10 +1045,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return []
 
     async def get_positions_linear(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type("linear", symbol, ["USDT", "USDC"], **kwargs)
+        return await self.get_position_by_sub_type(
+            "linear", symbol, 
+            await self.exchange_manager.exchange.get_positions_linear_settle_coins()
+            , **kwargs)
 
     async def get_positions_inverse(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type("inverse", symbol, ["ETH", "BTC"], **kwargs)
+        return await self.get_position_by_sub_type(
+            "inverse", symbol, 
+            await self.exchange_manager.exchange.get_positions_inverse_settle_coins()
+            , **kwargs)
 
     async def get_positions_swap(self, symbol=None, **kwargs: dict) -> list:
         return await self.get_position_by_sub_type("swap", symbol, **kwargs)
@@ -1056,7 +1062,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_positions_option(self, symbol=None, **kwargs: dict) -> list:
         return await self.get_position_by_sub_type("option", symbol, **kwargs)
 
-    async def get_position_by_sub_type(self, sub_type, symbol, settle_coins: list = None, **kwargs: dict) -> list:
+    async def get_position_by_sub_type(
+        self, sub_type, symbol, settle_coins: list = None, **kwargs: dict
+        ) -> list:
         params = {**kwargs, "subType": sub_type}
         if settle_coins:
             positions = []

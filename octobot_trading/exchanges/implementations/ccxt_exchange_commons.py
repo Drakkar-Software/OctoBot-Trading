@@ -131,16 +131,16 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
             symbol=symbol, quantity=quantity, price=price, side=side, params=params)
 
     async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_market_take_profit_order is not implemented")
+        raise NotImplementedError("create_market_take_profit_order is not implemented")
 
     async def create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_limit_take_profit_order is not implemented")
+        raise NotImplementedError("create_limit_take_profit_order is not implemented")
 
     async def create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
+        raise NotImplementedError("create_market_trailing_stop_order is not implemented")
 
     async def create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
+        raise NotImplementedError("create_limit_trailing_stop_order is not implemented")
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()

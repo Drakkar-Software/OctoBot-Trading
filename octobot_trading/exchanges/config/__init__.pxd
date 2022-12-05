@@ -26,6 +26,7 @@ from octobot_trading.exchanges.config.backtesting_exchange_config cimport (
 from octobot_trading.exchanges.config cimport ccxt_exchange_settings
 from octobot_trading.exchanges.config.ccxt_exchange_settings cimport (
     CCXTExchangeConfig,
+    CCXTExchangeTestStatus
 )
 
 from octobot_trading.exchanges.config cimport ccxt_exchange_ui_settings
@@ -36,5 +37,6 @@ __all__ = [
     "ExchangeConfig",
     "BacktestingExchangeConfig",
     "CCXTExchangeConfig",
+    "CCXTExchangeTestStatus",
     "initialize_experimental_exchange_settings",
 ]
