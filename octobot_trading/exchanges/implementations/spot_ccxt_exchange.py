@@ -138,7 +138,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
         # on some exchange, market order are not including price, add it manually to ensure uniformity
         if created_order[ecc.PRICE.value] is None and price is not None:
-            created_order[ecc.PRICE.value] = float(price)
+            created_order[ecoc.PRICE.value] = float(price)
 
         return self.clean_order(created_order)
 

@@ -415,7 +415,7 @@ class Order(util.Initializable):
 
     def should_be_created(self):
         return not self.is_created() and self.is_waiting_for_chained_trigger and \
-               not self._are_simultaneously_triggered_grouped_orders_closed()
+            not self._are_simultaneously_triggered_grouped_orders_closed()
 
     def _are_simultaneously_triggered_grouped_orders_closed(self):
         if self.triggered_by is None:
@@ -479,8 +479,8 @@ class Order(util.Initializable):
 
     def is_self_managed(self):
         return self.trader.allow_artificial_orders and \
-               not self.is_synchronized_with_exchange and \
-               not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
+            not self.is_synchronized_with_exchange and \
+            not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
     def is_long(self):
         return self.side is enums.TradeOrderSide.BUY
@@ -674,8 +674,8 @@ def parse_order_type(raw_order):
         except ValueError as e:
             if raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value] is None:
                 # Last chance: try to infer order type from taker / maker status
-                if enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value in raw_order:
-                    return side, _infer_order_type_from_maker_or_taker(raw_order, side)
+                if enums.ExchangeOrderCCXTColumns.TAKER_OR_MAKER.value in raw_order:
+                    return side, _infer_order_type_from_maker_or_taker(raw_order, side) # shouldn't be ccxt enum
                 # No order type info: use unknown order type
                 return side, enums.TraderOrderType.UNKNOWN
             else:
@@ -704,8 +704,8 @@ def parse_order_type(raw_order):
 
 
 def _infer_order_type_from_maker_or_taker(raw_order, side):
-    is_taker = raw_order[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value] \
-               == enums.ExchangeConstantsOrderColumns.TAKER.value
+    is_taker = raw_order[enums.ExchangeOrderCCXTColumns.TAKER_OR_MAKER.value] \
+               == enums.ExchangeConstantsOrderColumns.TAKER.value  # shouldn't be ccxt enum
     if side is enums.TradeOrderSide.BUY:
         if is_taker:
             return enums.TraderOrderType.BUY_MARKET
