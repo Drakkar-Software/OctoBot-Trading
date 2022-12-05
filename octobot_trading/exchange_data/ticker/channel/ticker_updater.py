@@ -133,8 +133,6 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
                 ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value],
             )
-        except KeyError:
-            pass  # error already handled in parser
         except Exception as e:
             self.logger.exception(
                 e, True, f"Fail to update funding rate from ticker : {e}"
