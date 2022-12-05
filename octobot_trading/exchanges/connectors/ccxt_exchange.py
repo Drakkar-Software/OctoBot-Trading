@@ -384,11 +384,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.logger.exception(e, True, f"Order {order_id} failed to cancel | {e} ({e.__class__.__name__})")
         return cancel_resp is not None
 
-    async def get_positions(self, **kwargs: dict) -> list:
-        return await self.client.fetch_positions(params=kwargs)
+    async def get_positions(self, symbols=None, **kwargs: dict) -> list:
+        return await self.client.fetch_positions(symbols=symbols, params=kwargs)
 
-    async def get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
-        return await self.client.fetch_positions(symbols=[symbol], params=kwargs)
+    async def get_position(self, symbol: str, **kwargs: dict) -> list:
+        return await self.client.fetch_position(symbol=symbol, params=kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         return await self.client.fetch_funding_rate(symbol=symbol, params=kwargs)
