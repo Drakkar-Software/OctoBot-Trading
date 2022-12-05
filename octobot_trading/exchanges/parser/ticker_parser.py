@@ -1,11 +1,8 @@
 import typing
 from octobot_commons import enums as commons_enums
-from octobot_commons import constants as commons_constants
-from octobot_trading import constants as trading_constants
 from octobot_trading.enums import (
     ExchangeConstantsTickersColumns as TickerCols,
     ExchangeConstantsMiniTickerColumns as mTickerCols,
-    ExchangeConstantsFundingColumns as FundingCols,
     ExchangeConstantsMarkPriceColumns as MarkPriceCols,
 )
 import octobot_trading.exchanges.parser.util as parser_util
@@ -21,7 +18,6 @@ class TickerParser(parser_util.Parser):
     """
 
     fetched_symbol_prices: list = None
-    FUNDING_TIME_UPDATE_PERIOD = 8 * commons_constants.HOURS_TO_SECONDS
 
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
@@ -61,35 +57,46 @@ class TickerParser(parser_util.Parser):
         """
         self._ensure_dict(raw_ticker)
         self.fetched_symbol_prices: list = []  # clear previously fetched data
-        self._parse_symbol(symbol)
-        self._parse_timestamp()
-        self._parse_average()
-        self._parse_bid()
-        self._parse_bid_volume()
-        self._parse_ask()
-        self._parse_ask_volume()
-        self._parse_last_price()
-        self._parse_previous_close_price()
-        self._parse_change()
-        self._parse_percentage()
-        await self._parse_open_price()
-        await self._parse_high_price()
-        await self._parse_low_price()
-        await self._parse_close_price()
-        self._parse_quote_volume()
-        self._parse_base_volume()  # parse after mark price and quote volume
-        if self.exchange.connector.CONNECTOR_CONFIG.MARK_PRICE_IN_TICKER:
-            self._parse_mark_price()
-        if self.exchange.exchange_manager.is_future:
-            if self.exchange.connector.CONNECTOR_CONFIG.FUNDING_IN_TICKER:
-                self._parse_funding_rate()
-                self._parse_predicted_funding_rate()
-                self._parse_next_funding_time()
-                self._parse_last_funding_time()
+        try:
+            self._parse_symbol(symbol)
+            self._parse_timestamp()
+            self._parse_average()
+            self._parse_bid()
+            self._parse_bid_volume()
+            self._parse_ask()
+            self._parse_ask_volume()
+            self._parse_last_price()
+            self._parse_previous_close_price()
+            self._parse_change()
+            self._parse_percentage()
+            await self._parse_open_price()
+            await self._parse_high_price()
+            await self._parse_low_price()
+            await self._parse_close_price()
+            self._parse_quote_volume()
+            self._parse_base_volume()  # parse after mark price and quote volume
+            if self.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_TICKER:
+                self._parse_mark_price()
+            if self.exchange.exchange_manager.is_future:
+                if self.exchange.CONNECTOR_CONFIG.FUNDING_IN_TICKER:
+                    self.formatted_record = {
+                        **self.formatted_record,
+                        **self.exchange.connector.parse_funding_rate(
+                            raw_ticker, from_ticker=True
+                        ),
+                    }
 
-        self._create_debugging_report_for_record()
-        if also_get_mini_ticker:
-            return self.formatted_record, self._parse_mini_ticker()
+            self._create_debugging_report_for_record()
+            if also_get_mini_ticker:
+                return self.formatted_record, self._parse_mini_ticker()
+        except Exception as e:
+            # just in case something bad happens
+            self._log_missing(
+                "ticker parser broken",
+                "failed to complete ticker parser, this should "
+                "never happen, check the parser code",
+                error=e,
+            )
         return self.formatted_record
 
     def _parse_mini_ticker(self) -> dict:
@@ -318,60 +325,3 @@ class TickerParser(parser_util.Parser):
                 "Failed to fetch symbol prices - got an empty response",
             )
             return False
-
-    def _parse_funding_rate(self):
-        self._try_to_find_and_set_decimal(
-            FundingCols.FUNDING_RATE.value,
-            [FundingCols.FUNDING_RATE.value] + FundingRateSynonyms.keys,
-            use_info_sub_dict=True,
-            allow_zero=True,
-        )
-
-    def _parse_predicted_funding_rate(self):
-        self._try_to_find_and_set_decimal(
-            FundingCols.PREDICTED_FUNDING_RATE.value,
-            [FundingCols.PREDICTED_FUNDING_RATE.value],
-            use_info_sub_dict=True,
-            not_found_val=trading_constants.NaN,
-            allow_zero=True,
-        )
-
-    def _parse_next_funding_time(self):
-        self._try_to_find_and_set(
-            FundingCols.NEXT_FUNDING_TIME.value,
-            [FundingCols.NEXT_FUNDING_TIME.value] + NextFundingTimeSynonyms.keys,
-            use_info_sub_dict=True,
-            parse_method=parser_util.convert_any_time_to_seconds,
-        )
-
-    def _parse_last_funding_time(self):
-        self._try_to_find_and_set(
-            FundingCols.LAST_FUNDING_TIME.value,
-            [FundingCols.LAST_FUNDING_TIME.value] + LastFundingTimeSynonyms.keys,
-            parse_method=parser_util.convert_any_time_to_seconds,
-            not_found_method=self.missing_last_funding_time,
-            use_info_sub_dict=True,
-        )
-
-    def missing_last_funding_time(self, _):
-        if next_funding := self.formatted_record.get(
-            FundingCols.NEXT_FUNDING_TIME.value
-        ):
-            return next_funding - self.FUNDING_TIME_UPDATE_PERIOD
-        self._log_missing(
-            FundingCols.LAST_FUNDING_TIME.value,
-            f"{FundingCols.LAST_FUNDING_TIME.value} not found, tried to "
-            f"calculate based on {FundingCols.NEXT_FUNDING_TIME.value} which is also missing",
-        )
-
-
-class FundingRateSynonyms:
-    keys = ["fundingRate"]
-
-
-class NextFundingTimeSynonyms:
-    keys = ["nextFundingTime"]
-
-
-class LastFundingTimeSynonyms:
-    keys = ["fundingTime"]

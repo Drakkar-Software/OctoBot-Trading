@@ -55,6 +55,7 @@ from octobot_trading.exchanges.parser import (
     ExchangeMarketStatusParser,
     is_ms_valid,
     TickerParser,
+    FundingRateParser,
 )
 
 from octobot_trading.exchanges import exchange_factory
@@ -200,4 +201,5 @@ __all__ = [
     "OrdersParser",
     "TradesParser",
     "TickerParser",
+    "FundingRateParser",
 ]

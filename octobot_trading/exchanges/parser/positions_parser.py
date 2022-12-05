@@ -35,7 +35,6 @@ class PositionsParser(parser_util.Parser):
         :param raw_positions: raw positions list
         :return: formatted positions list
         """
-        # todo remove duplicates as we try to get positions from different endpoints
         self._ensure_list(raw_positions)
         self.formatted_records = (
             [await self.parse_position(position) for position in raw_positions]
@@ -52,34 +51,42 @@ class PositionsParser(parser_util.Parser):
         :return: formatted position dict
         """
         self._ensure_dict(raw_position)
-        self._parse_symbol()
-        self._parse_original_side()
-        self._parse_position_mode()
-        self._parse_side()
-        self._parse_size()
-        self._parse_contract_type()
-        self._parse_margin_type()
-        self._parse_leverage()
-        self._parse_realized_pnl()
-        self._parse_status()
-        if self.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION:
-            await self._parse_mark_price()
-        if self.formatted_record[PositionCols.STATUS.value] == PositionStatus.CLOSED:
-            # todo check what is required for empty
-            # partially parse empty position as we might need it to create contracts
-            self._create_debugging_report_for_record()
-            return self.formatted_record
-        self._parse_quantity()
-        self._parse_timestamp()
-        self._parse_collateral()
-        self._parse_notional()
-        self._parse_unrealized_pnl()
-        self._parse_liquidation_price()
-        self._parse_closing_fee()
-        self._parse_value()  # parse after mark_price and quantity
-        self._parse_initial_margin()
-        self._parse_entry_price()
-
+        try:
+            self._parse_symbol()
+            self._parse_original_side()
+            self._parse_position_mode()
+            self._parse_side()
+            self._parse_size()
+            self._parse_contract_type()
+            self._parse_margin_type()
+            self._parse_leverage()
+            self._parse_realized_pnl()
+            self._parse_status()
+            if self.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION:
+                await self._parse_mark_price()
+            if self.formatted_record[PositionCols.STATUS.value] == PositionStatus.CLOSED:
+                # todo check what is required for empty
+                # partially parse empty position as we might need it to create contracts
+                self._create_debugging_report_for_record()
+                return self.formatted_record
+            self._parse_quantity()
+            self._parse_timestamp()
+            self._parse_collateral()
+            self._parse_notional()
+            self._parse_unrealized_pnl()
+            self._parse_liquidation_price()
+            self._parse_closing_fee()
+            self._parse_value()  # parse after mark_price and quantity
+            self._parse_initial_margin()
+            self._parse_entry_price()
+        except Exception as e:
+            # just in case something bad happens
+            self._log_missing(
+                "positions parser broken",
+                "failed to complete positions parser, this should "
+                "never happen, check the parser code",
+                error=e,
+            )
         self._create_debugging_report_for_record()
         return self.formatted_record
 
@@ -145,6 +152,8 @@ class PositionsParser(parser_util.Parser):
         
     def _status_found(self, raw_status):
         if raw_status in ("Normal", PositionStatus.OPEN.value):
+            if self.formatted_record.get(PositionCols.SIZE.value) == constants.ZERO:
+                return PositionStatus.CLOSED
             return PositionStatus.OPEN
         if raw_status in ("Liq", PositionStatus.LIQUIDATING.value):
             return PositionStatus.LIQUIDATING
@@ -311,14 +320,15 @@ class PositionsParser(parser_util.Parser):
         )
 
     def handle_missing_value(self, keys_to_find):
-        quantity = None
-        if (mark_price := self.formatted_record.get(PositionCols.MARK_PRICE.value)) and (
-                quantity := self.formatted_record.get(PositionCols.QUANTITY.value)
-        ):
-            return quantity / mark_price
+        size = mark_price = None
+        if size := self.formatted_record.get(PositionCols.SIZE.value):
+            if not (mark_price := self.formatted_record.get(PositionCols.MARK_PRICE.value)):
+                mark_price = None  # add get and wait for mark price from channel
+            if mark_price:
+                return size / mark_price
         self._log_missing(
             PositionCols.VALUE.value,
-            f"keys: {keys_to_find} and using quantity ({quantity or 'no quantity'}) "
+            f"keys: {keys_to_find} and using quantity ({size or 'no size'}) "
             f"/ mark price ({mark_price or 'no mark price'})",
         )
 

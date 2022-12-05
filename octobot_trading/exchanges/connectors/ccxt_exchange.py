@@ -197,14 +197,22 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         _parser = self.connector_config.POSITIONS_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_positions(raw_positions)
 
-    async def parse_ticker(self, raw_ticker: dict, symbol: str, also_get_mini_ticker: bool = False) -> dict:
+    async def parse_ticker(self, raw_funding_rate: dict, symbol: str, also_get_mini_ticker: bool = False) -> dict:
         _parser = self.connector_config.TICKER_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_ticker(
-            raw_ticker=raw_ticker, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
+            raw_ticker=raw_funding_rate, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
 
     async def parse_tickers(self, raw_tickers: list) -> list:
         _parser = self.connector_config.TICKER_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_ticker_list(raw_tickers=raw_tickers)
+
+    def parse_funding_rates(self, raw_funding_rates: list) -> list:
+        _parser = self.connector_config.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
+        return _parser.parse_funding_rate_list(raw_funding_rates=raw_funding_rates)
+
+    def parse_funding_rate(self, raw_funding_rate: dict, from_ticker: bool = False) -> dict:
+        _parser = self.connector_config.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
+        return _parser.parse_funding_rate(raw_funding_rate=raw_funding_rate, from_ticker=from_ticker)
 
     def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
         return self.connector_config.MARKET_STATUS_PARSER(
@@ -751,7 +759,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             raw_created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                     price, side, current_price, params)
-            return await self.connector.parse_order(raw_created_order, order_type=order_type.value, quantity=quantity,
+            return await self.parse_order(raw_created_order, order_type=order_type.value, quantity=quantity,
                                                     price=price, status=enums.OrderStatus.OPEN.value,
                                                     symbol=symbol, side=side, timestamp=time.time())
 
@@ -773,13 +781,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
                                                   price=float_price, stop_price=float_stop_price, side=side,
                                                   current_price=float_current_price, params=params)
-            return await self.connector.parse_order(edited_order, order_type=order_type.value, quantity=quantity,
+            return await self.parse_order(edited_order, order_type=order_type.value, quantity=quantity,
                                                     price=price, symbol=symbol, side=side)
 
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                           quantity: float, price: float, stop_price: float = None, side: str = None,
                           current_price: float = None, params: dict = None):
-        ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
+        ccxt_order_type = self.get_ccxt_order_type(order_type)
         price_to_use = price
         if ccxt_order_type == enums.TradeOrderType.MARKET.value:
             # can't set price in market orders
@@ -790,7 +798,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         ):
             params = self.exchange_manager.exchange.custom_edit_stop_orders_params(order_id, stop_price, params)
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
-        return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
+        return await self.client.edit_order(order_id, symbol, ccxt_order_type, side,
                                                       quantity, price_to_use, params)
 
     @contextlib.asynccontextmanager
@@ -817,7 +825,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             # can be raised when exchange precision/limits rules change
             self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
-            await self.connector.client.load_markets(reload=True)
+            await self.client.load_markets(reload=True)
             # retry order creation with updated markets (ccxt will use the updated market values)
             return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
                                                      current_price=current_price, params=params)
@@ -866,30 +874,30 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return raw_created_order
 
     async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_buy_order(
+        return await self.client.create_market_buy_order(
             symbol,
             quantity,
             params=self.add_cost_to_market_order(quantity, price, params),
         )
 
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
+        return await self.client.create_limit_buy_order(symbol, quantity, price, params=params)
 
     async def create_market_sell_order(
             self, symbol, quantity, price=None, params=None
     ) -> dict:
-        return await self.connector.client.create_market_sell_order(
+        return await self.client.create_market_sell_order(
             symbol,
             quantity,
             params=self.add_cost_to_market_order(quantity, price, params),
         )
 
     async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
+        return await self.client.create_limit_sell_order(symbol, quantity, price, params=params)
 
     async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
-        if self.connector.client.has.get("createStopOrder"):
-            return await self.connector.client.create_stop_order(
+        if self.client.has.get("createStopOrder"):
+            return await self.client.create_stop_order(
                 symbol,
                 enums.TradeOrderType.MARKET.value,
                 side,
@@ -898,15 +906,15 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 current_price,
                 params=params,
             )
-        if self.connector.client.has.get("createStopMarketOrder"):
-            return await self.connector.client.create_stop_market_order(
+        if self.client.has.get("createStopMarketOrder"):
+            return await self.client.create_stop_market_order(
                 symbol, side, quantity, price, params=params
             )
         raise NotImplementedError("_create_market_stop_loss_order is not implemented")
 
     async def create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        if self.connector.client.has.get("createStopLimitOrder"):
-            return await self.connector.client.create_stop_limit_order(
+        if self.client.has.get("createStopLimitOrder"):
+            return await self.client.create_stop_limit_order(
                 symbol, side, quantity, price, params=params
             )
         raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
@@ -1055,13 +1063,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             for coin in settle_coins:
                 params["settleCoin"] = coin
                 if symbol:
-                    positions += await self._get_positions(**params)
-                else:
                     positions += await self._get_symbol_positions(symbol, **params)
+                else:
+                    positions += await self._get_positions(**params)
             return positions
         if symbol:
-            return await self._get_positions(**params)
-        return await self._get_symbol_positions(symbol, **params)
+            return await self._get_symbol_positions(symbol, **params)
+        return await self._get_positions(**params)
 
     async def _get_positions(self, **kwargs: dict) -> list:
         try:
@@ -1089,18 +1097,25 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return await self.client.fetch_positions(symbols=[symbol], params=kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
-        try:
-            if funding_rate := await self.client.fetch_funding_rate(symbol=symbol, params=kwargs):
-                return funding_rate
-        except Exception as e:
-            self.logger.exception(
-                e, True, "Failed to get funding rate - OctoBot is trying to use get_funding_rate_history instead ")
-            # continue on every error as there is another way
-        return (await self.get_funding_rate_history(symbol=symbol, limit=1))[-1]
+        if self.client.has.get("fetchFundingRate"):
+            try:
+                if raw_rate := await self.client.fetch_funding_rate(symbol=symbol, params=kwargs):
+                    return self.parse_funding_rate(raw_rate)
+            except Exception as e:
+                self.logger.exception(
+                    e, True, "Failed to get funding rate - OctoBot is trying to use get_funding_rate_history instead ")
+        else:
+            self.logger.error("fetchFundingRate is not implemented for this exchange")
+        # continue on every error as there is another way
+        return (await self.exchange_manager.exchange.get_funding_rate_history(symbol=symbol, limit=1))[-1]
 
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
-        return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
-
+        if self.client.has.get("fetchFundingRateHistory"):
+            raw_rate = await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
+            return self.parse_funding_rates(raw_rate)
+        else:
+            raise NotImplementedError("fetchFundingRateHistory is not implemented for this exchange")
+    
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
@@ -1116,7 +1131,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         raise NotImplementedError("set_symbol_partial_take_profit_stop_loss is not implemented")
 
     def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
-        return self.connector.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
+        return self.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
                                                            take_profit_price=take_profit_price)
 
     @staticmethod

@@ -1,98 +1,151 @@
-from octobot_commons import enums as commons_enums
-from octobot_trading.enums import (
-    ExchangeConstantsOrderColumns as ecoc,
-    ExchangeConstantsTickersColumns as t_cols,
-)
+from octobot_trading.enums import ExchangeConstantsFundingColumns as FundingCols
 from octobot_trading.exchanges.parser.util import Parser
+import octobot_trading.exchanges.parser.util as parser_util
+from octobot_trading import constants as trading_constants
+from octobot_commons import constants as commons_constants
 
-# todo WIP
+
 class FundingRateParser(Parser):
     """
     overwrite FundingRateParser class methods if necessary
     always/only include bulletproof custom code into the parser to improve generic support
 
         parser usage:   parser = FundingRateParser(exchange)
-                        funding_rate = await parser.parse_funding_rate(raw_funding_rate)
+                        funding_rate = parser.parse_funding_rate(raw_funding_rate)
+                        funding_rates = parser.parse_funding_rate_list(raw_funding_rates)
     """
+    
+    FUNDING_TIME_UPDATE_PERIOD = 8 * commons_constants.HOURS_TO_SECONDS
 
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "funding rate"
-        
-    def parse_funding_rate(self, funding_rate: dict):
+
+    def parse_funding_rate_list(self, raw_funding_rates: list) -> list:
         """
-
-        use this method to parse a raw ticker
-
-        :param symbol:
-        :param ticker:
-        :param exchange:
-
-        :return: formatted ticker
-
+        use this method to format a list of funding rates
+        :param raw_funding_rates: raw funding rate list
+        :return: formatted funding rate list
         """
-        self._ensure_dict(funding_rate)
-#         self._parse_symbol()
-#     def parse_funding(self, funding_dict, from_ticker=False):
-        
-# '            last_funding_time = self.connector.get_uniform_timestamp(
-#                 self.connector.client.safe_float(funding_dict, self.BINANCE_LAST_FUNDING_TIME))
-#             funding_dict = {
-#                 trading_enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value: last_funding_time,
-#                 trading_enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value:
-#                     self.connector.client.safe_float(funding_dict, self.BINANCE_FUNDING_RATE),
-#                 trading_enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value:
-#                     last_funding_time + self.BINANCE_FUNDING_DURATION
-#             }
-#                         funding_next_timestamp = self.parse_timestamp(
-#                 funding_dict, trading_enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value)
-#             funding_dict.update({
-#                 trading_enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value:
-#                     funding_next_timestamp - self.BYBIT_DEFAULT_FUNDING_TIME,
-#                 trading_enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value: decimal.Decimal(
-#                     funding_dict.get(trading_enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value, 0)),
-#                 trading_enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value: funding_next_timestamp
-#             })'
+        self._ensure_list(raw_funding_rates)
+        self.formatted_records = (
+            [
+                self.parse_funding_rate(raw_funding_rate)
+                for raw_funding_rate in raw_funding_rates
+            ]
+            if self.raw_records
+            else []
+        )
+        self._create_debugging_report()
+        return self.formatted_records
 
+    def parse_funding_rate(self, raw_funding_rate: dict, from_ticker=False):
+        """
+        use this method to parse a raw funding rate
+        :param raw_funding_rate:
+        :return: formatted funding rate
+        """
+        self._ensure_dict(raw_funding_rate)
+        try:
+            if from_ticker:
+                self.PARSER_TITLE = "funding rate from ticker"
+            else:
+                self._parse_timestamp()
+                self._parse_symbol()
+            self._parse_funding_rate()
+            self._parse_predicted_funding_rate()
+            self._parse_next_funding_time()
+            self._parse_last_funding_time()
 
-    @staticmethod
-    def _parse_timestamp(ticker, exchange):
-        if not ticker.get(ecoc.TIMESTAMP.value):
-            ticker[t_cols.TIMESTAMP.value] = exchange.connector.client.milliseconds()
-
-    @staticmethod
-    async def _parse_base_volume(ticker, exchange, symbol):
-        if not ticker.get(t_cols.BASE_VOLUME.value):
-            if quote_volume := ticker.get(t_cols.QUOTE_VOLUME.value):
-                if close_price := ticker.get(t_cols.CLOSE.value):
-                    ticker[t_cols.BASE_VOLUME.value] = quote_volume / close_price
-                    return
-                # try to fetch close price
-                try:
-                    symbol_prices = await exchange.get_symbol_prices(
-                        symbol=symbol,
-                        time_frame=commons_enums.TimeFrames.ONE_MINUTE,
-                        limit=1,
-                    )
-                    close_price = symbol_prices[0][4]
-                    ticker[t_cols.BASE_VOLUME.value] = quote_volume / close_price
-                except KeyError:
-                    exchange.logger.exception(
-                        f"Failed to calculate ticker base volume using: quote_volume ({quote_volume or 'no quote volume'}) "
-                        f"/ close_price (failed to fetch close price)"
-                    )
-                    raise RuntimeError
-                except Exception as e:
-                    exchange.logger.exception(
-                        e,
-                        True,
-                        f"Failed to calculate ticker base volume using: quote_volume ({quote_volume or 'no quote volume'}) "
-                        f"/ close_price (failed to fetch close price)",
-                    )
-                    raise RuntimeError
-
-            raise NotImplementedError(
-                "Failed to parse ticker base volume: base volume is missing "
-                f"and not able to calculate based on quote volume ({quote_volume or 'no quote volume'}) "
-                f"/ close_price ({close_price or 'no close price'})"
+        except Exception as e:
+            # just in case something bad happens
+            self._log_missing(
+                "funding rate parser broken",
+                "failed to complete funding rate parser, this should "
+                "never happen, check the parser code",
+                error=e,
             )
+        self._create_debugging_report_for_record()
+        return self.formatted_record
+
+    def _parse_timestamp(self):
+        self._try_to_find_and_set(
+            FundingCols.TIMESTAMP.value,
+            [FundingCols.TIMESTAMP.value],
+            parse_method=parser_util.convert_any_time_to_seconds,
+            not_found_method=self.timestamp_not_found,
+        )
+
+    def timestamp_not_found(self, _):
+        try:
+            return int(self.exchange.connector.get_exchange_current_time())
+        except Exception as e:
+            self._log_missing(
+                FundingCols.TIMESTAMP.value,
+                f"{FundingCols.TIMESTAMP.value} not found and failed to get "
+                "time with get_exchange_current_time: ",
+                error=e,
+            )
+
+    def _parse_symbol(self):
+        self._try_to_find_and_set(
+            FundingCols.SYMBOL.value,
+            [FundingCols.SYMBOL.value],
+        )
+
+    def _parse_funding_rate(self):
+        self._try_to_find_and_set_decimal(
+            FundingCols.FUNDING_RATE.value,
+            [FundingCols.FUNDING_RATE.value] + FundingRateSynonyms.keys,
+            use_info_sub_dict=True,
+            allow_zero=True,
+        )
+
+    def _parse_predicted_funding_rate(self):
+        self._try_to_find_and_set_decimal(
+            FundingCols.PREDICTED_FUNDING_RATE.value,
+            [FundingCols.PREDICTED_FUNDING_RATE.value],
+            use_info_sub_dict=True,
+            not_found_val=trading_constants.NaN,
+            allow_zero=True,
+        )
+
+    def _parse_next_funding_time(self):
+        self._try_to_find_and_set(
+            FundingCols.NEXT_FUNDING_TIME.value,
+            [FundingCols.NEXT_FUNDING_TIME.value] + NextFundingTimeSynonyms.keys,
+            use_info_sub_dict=True,
+            parse_method=parser_util.convert_any_time_to_seconds,
+        )
+
+    def _parse_last_funding_time(self):
+        self._try_to_find_and_set(
+            FundingCols.LAST_FUNDING_TIME.value,
+            [FundingCols.LAST_FUNDING_TIME.value] + LastFundingTimeSynonyms.keys,
+            parse_method=parser_util.convert_any_time_to_seconds,
+            not_found_method=self.missing_last_funding_time,
+            use_info_sub_dict=True,
+        )
+
+    def missing_last_funding_time(self, _):
+        if next_funding := self.formatted_record.get(
+            FundingCols.NEXT_FUNDING_TIME.value
+        ):
+            return next_funding - self.FUNDING_TIME_UPDATE_PERIOD
+        self._log_missing(
+            FundingCols.LAST_FUNDING_TIME.value,
+            f"{FundingCols.LAST_FUNDING_TIME.value} not found, tried to "
+            f"calculate based on {FundingCols.NEXT_FUNDING_TIME.value} which is also missing",
+        )
+
+
+class FundingRateSynonyms:
+    keys = ["fundingRate"]
+
+
+class NextFundingTimeSynonyms:
+    keys = ["nextFundingTime"]
+
+
+class LastFundingTimeSynonyms:
+    keys = ["fundingTime"]

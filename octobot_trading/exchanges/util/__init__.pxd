@@ -31,14 +31,9 @@ from octobot_trading.exchanges.util.websockets_util cimport (
     check_web_socket_config,
     search_websocket_class,
 )
-from octobot_trading.exchanges.parser cimport parser
-from octobot_trading.exchanges.parser cimport PositionsParser, OrdersParser, \
-    TradesParser, ExchangeMarketStatusParser, is_ms_valid, TickerParser
 
 
 __all__ = [
-    "ExchangeMarketStatusParser",
-    "is_ms_valid",
     "get_margin_exchange_class",
     "get_future_exchange_class",
     "get_spot_exchange_class",
@@ -50,8 +45,4 @@ __all__ = [
     "get_default_exchange_type",
     "get_supported_exchange_types",
     "get_exchange_class_from_name",
-    "PositionsParser",
-    "OrdersParser",
-    "TradesParser",
-    "TickerParser",
 ]

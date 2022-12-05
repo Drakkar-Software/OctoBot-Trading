@@ -19,8 +19,8 @@ import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.enums as trading_enums
 
 
-class FutureCCXTExchange(ccxt_exchange_commons.CCXTExchangeCommons, 
-                         exchanges_types.FutureExchange):
+class FutureCCXTExchange(exchanges_types.FutureExchange, 
+                         ccxt_exchange_commons.CCXTExchangeCommons):
     
     def get_default_type(self):
         return 'future'

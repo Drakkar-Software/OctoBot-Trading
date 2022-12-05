@@ -1,3 +1,4 @@
+from octobot_trading.exchanges.parser.funding_rate_parser import FundingRateParser
 from octobot_trading.exchanges.parser.positions_parser import PositionsParser
 from octobot_trading.exchanges.parser.orders_parser import OrdersParser
 from octobot_trading.exchanges.parser.trades_parser import TradesParser
@@ -14,4 +15,5 @@ __all__ = [
     "OrdersParser",
     "TradesParser",
     "TickerParser",
+    "FundingRateParser",
 ]

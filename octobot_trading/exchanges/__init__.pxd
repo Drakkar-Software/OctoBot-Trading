@@ -56,8 +56,8 @@ from octobot_trading.exchanges cimport parser
 from octobot_trading.parser cimport (
     ExchangeMarketStatusParser,
     is_ms_valid,
-    OrdersParser, PositionsParser, 
-    TradesParser, TickerParser
+    OrdersParser, PositionsParser,
+    TradesParser, TickerParser, FundingRateParser
 )
 from octobot_trading.exchanges.types cimport (
     FutureExchange,
@@ -156,6 +156,7 @@ __all__ = [
     "CryptofeedWebSocketExchange",
     "CryptofeedWebsocketConnector",
     "PositionsParser",
+    "FundingRateParser",
     "OrdersParser",
     "TradesParser",
     "TickerParser",

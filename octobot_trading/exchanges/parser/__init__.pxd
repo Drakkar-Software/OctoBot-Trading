@@ -15,6 +15,7 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.parser.positions_parser cimport PositionsParser
+from octobot_trading.exchanges.parser.funding_rate_parser cimport FundingRateParser
 from octobot_trading.exchanges.parser.orders_parser cimport OrdersParser
 from octobot_trading.exchanges.parser.trades_parser cimport TradesParser
 from octobot_trading.exchanges.parser.ticker_parser cimport TickerParser
@@ -30,4 +31,5 @@ __all__ = [
     "OrdersParser",
     "TradesParser",
     "TickerParser",
+    "FundingRateParser",
 ]

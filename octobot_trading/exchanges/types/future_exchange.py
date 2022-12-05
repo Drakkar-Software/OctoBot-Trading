@@ -257,14 +257,6 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     Parsers
     """
 
-    def parse_funding(self, funding_dict, from_ticker=False) -> dict:
-        """
-        :param from_ticker: when True, the funding dict is extracted from ticker data
-        :param funding_dict: the funding dict
-        :return: the uniformized funding dict
-        """
-        raise NotImplementedError("parse_funding is not implemented")
-
     def parse_mark_price(self, mark_price_dict, from_ticker=False) -> dict:
         """
         :param from_ticker: when True, the mark price dict is extracted from ticker data

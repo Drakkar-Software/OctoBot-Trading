@@ -130,35 +130,44 @@ class OrdersParser(parser_util.Parser):
         # todo post only
         self.fetched_order = None  # clear previous fetched order
         self._ensure_dict(raw_order)
-        self._parse_timestamp(timestamp)
-        self._parse_status(status)
-        self._parse_id()  # parse after status and timestamp
-        self._parse_symbol(symbol)
-        self._parse_side(side)
-        self._parse_type(order_type)  # parse after side
-        self._parse_taker_or_maker()  # parse after type
-        self._parse_price(price)  # parse after type, status
-        self._parse_filled_price()  # parse after price
-        self._parse_average_price()
-        self._parse_amount(quantity)  # parse after price
-        self._parse_remaining(quantity)  # parse after amount and status
-        self._parse_filled_amount()  # parse after amount and remaining
-        await self._parse_cost()
-        self._parse_reduce_only()  # parse after type
-        self._parse_tag()
-        self._parse_fees()
-        if (
-            self.exchange.exchange_manager.is_spot_only
-            and self.TEST_AND_FIX_SPOT_QUANTITIES
-        ) or (
-            self.exchange.exchange_manager.is_future
-            and self.TEST_AND_FIX_FUTURES_QUANTITIES
-        ):
-            self._test_and_fix_quantities()
+        try:
+            self._parse_timestamp(timestamp)
+            self._parse_status(status)
+            self._parse_id()  # parse after status and timestamp
+            self._parse_symbol(symbol)
+            self._parse_side(side)
+            self._parse_type(order_type)  # parse after side
+            self._parse_taker_or_maker()  # parse after type
+            self._parse_price(price)  # parse after type, status
+            self._parse_filled_price()  # parse after price
+            self._parse_average_price()
+            self._parse_amount(quantity)  # parse after price
+            self._parse_remaining(quantity)  # parse after amount and status
+            self._parse_filled_amount()  # parse after amount and remaining
+            await self._parse_cost()
+            self._parse_reduce_only()  # parse after type
+            self._parse_tag()
+            self._parse_fees()
+            if (
+                self.exchange.exchange_manager.is_spot_only
+                and self.TEST_AND_FIX_SPOT_QUANTITIES
+            ) or (
+                self.exchange.exchange_manager.is_future
+                and self.TEST_AND_FIX_FUTURES_QUANTITIES
+            ):
+                self._test_and_fix_quantities()
 
-        # self._parse_datetime(timestamp)  # remove? is it used?
-        # self._parse_last_trade_timestamp()  # remove? is it used?
-        # self._parse_quantity_currency()  # remove? is it used?
+            # self._parse_datetime(timestamp)  # remove? is it used?
+            # self._parse_last_trade_timestamp()  # remove? is it used?
+            # self._parse_quantity_currency()  # remove? is it used?
+        except Exception as e:
+            # just in case something bad happens
+            self._log_missing(
+                "orders parser broken",
+                "failed to complete orders parser, this should "
+                "never happen, check the parser code",
+                error=e,
+            )
 
         if check_completeness:
             await self._fetch_if_missing()
