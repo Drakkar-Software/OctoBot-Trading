@@ -131,7 +131,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
                 params = params or {}
-                created_order = await self.exchange_manager.exchange.get_order_with_retry(
+                created_order = await self.exchange_manager.exchange.get_order(
                     created_order[ecoc.ID.value], symbol=symbol, params=params
                 )
 

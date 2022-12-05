@@ -362,17 +362,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
-    async def _ensure_cancelled_order(self, order):
-        return order is None or personal_data.parse_is_cancelled(order)
-
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         cancel_resp = None
         try:
             with self.error_describer():
                 cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
             try:
-                cancelled_order = await self.exchange_manager.exchange.get_order_with_retry(
-                    order_id, symbol=symbol, retry_func=self._ensure_cancelled_order
+                cancelled_order = await self.exchange_manager.exchange.get_order(
+                    order_id, symbol=symbol
                 )
                 return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
             except ccxt.OrderNotFound:
