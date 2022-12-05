@@ -74,7 +74,7 @@ class Parser:
 
     def debugging_report_template(self, report) -> str:
         return (
-            f"\n!!!!!!!!!!!!  DEBUGGING REPORT {self.PARSER_TITLE.upper()} START  !!!!!!!!!!!!\n"
+            f"\n!!!!!!!!!!!!  DEBUGGING REPORT {self.PARSER_TITLE.upper()} PARSER START  !!!!!!!!!!!!\n"
             "\n"
             f"Post this report into OctoBot discord -> bug_report\n"
             "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
@@ -83,7 +83,7 @@ class Parser:
             f"OctoBot is not able to parse all {self.PARSER_TITLE} attributes\n"
             f"{report}"
             "\n"
-            f"!!!!!!!!!!!!  DEBUGGING REPORT {self.PARSER_TITLE.upper()} END  !!!!!!!!!!!!"
+            f"!!!!!!!!!!!!  DEBUGGING REPORT {self.PARSER_TITLE.upper()} PARSER END  !!!!!!!!!!!!"
         )
 
     def _try_to_find_and_set(
@@ -386,7 +386,7 @@ class Parser:
     ):
         _message = (
             f"> Failed to parse {self.PARSER_TITLE} attribute: {key_to_set} - tried: {tried_message}\n"
-            f"{additional_message}{' - Error: '+error if error else ''}\n"
+            f"{additional_message}{' - Error: '+repr(error) if error else ''}\n"
         )
         if key_to_set in self.debugging_report_dict:
             self.debugging_report_dict[key_to_set].append(_message)
@@ -397,7 +397,7 @@ class Parser:
         self._log_missing(
             key_to_set=key_to_set,
             tried_message=tried_message,
-            additional_message=f"with method: {type(method).__name__ if method else 'no method provided'} - error: {error}\n",
+            additional_message=f"with method: {type(method).__name__ if method else 'no method provided'} - error: {repr(error)}\n",
         )
 
 

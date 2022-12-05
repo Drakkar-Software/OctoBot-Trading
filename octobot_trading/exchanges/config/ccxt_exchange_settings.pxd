@@ -15,5 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cdef class CCXTExchangeConfig
-cdef class CCXTExchangeTestStatus
+cdef class CCXTExchangeConfig:
+    pass
+cdef class ExchangeTestStatus:
+    pass

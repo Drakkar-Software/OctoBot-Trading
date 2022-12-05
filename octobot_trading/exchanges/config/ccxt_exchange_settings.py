@@ -1,35 +1,11 @@
+import octobot_trading.exchanges.config.exchange_test_status as exchange_test_status
+import octobot_trading.exchanges.config.generic_exchange_settings as generic_exchange_settings
 import octobot_trading.exchanges.parser as parser
 
 
-class CCXTExchangeTestStatus:
+class CCXTExchangeConfig(generic_exchange_settings.GenericExchangeConfig):
     """
-    pass either is_fully_tested=True or
-    or set it for each separate
-    """
-
-    def __init__(
-        self,
-        is_fully_tested: bool = False,
-        spot_real_tested: bool = False,
-        spot_testnet_tested: bool = False,
-        futures_real_tested: bool = False,
-        futures_testnet_tested: bool = False,
-    ):
-        self.spot_real_tested = is_fully_tested or spot_real_tested
-        self.spot_testnet_tested = is_fully_tested or spot_testnet_tested
-        self.futures_real_tested = is_fully_tested or futures_real_tested
-        self.futures_testnet_tested = is_fully_tested or futures_testnet_tested
-        self.is_fully_tested = is_fully_tested or (
-            spot_real_tested
-            and spot_testnet_tested
-            and futures_real_tested
-            and futures_testnet_tested
-        )
-
-
-class CCXTExchangeConfig:
-    """
-    override this class if you need custom settings
+    override this class in the exchange tentacle if you need custom settings
     see bybit tentacle as an example
     """
 
@@ -42,83 +18,23 @@ class CCXTExchangeConfig:
     POSITIONS_PARSER: parser.PositionsParser = parser.PositionsParser
     TICKER_PARSER: parser.TickerParser = parser.TickerParser
     FUNDING_RATE_PARSER: parser.FundingRateParser = parser.FundingRateParser
-
+    
     def __init__(self, exchange_connector):
         self.set_all_get_methods(exchange_connector)
         self.set_default_settings(exchange_connector)
         self.set_connector_settings(exchange_connector)
-
+    
     @classmethod
     def set_connector_settings(cls, exchange_connector) -> None:
         """
-        override this method to change default settings
+        override this method in the exchange tentacle to change default settings
 
         for example:
             self.MARKET_STATUS_PARSER.FIX_PRECISION = True
             self.MARK_PRICE_IN_POSITION = True
         """
         pass
-
-    # set test status for each exchange
-
-    IS_FULLY_TESTED_AND_SUPPORTED = False  # not recommended
-
-    CANDLE_LOADING_LIMIT_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-    MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-
-    MARKET_STATUS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    ORDERS_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    TRADES_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    POSITIONS_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    TICKER_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    FUNDING_RATE_PARSER_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-
-    GET_ORDER_METHODS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    GET_ALL_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-    GET_OPEN_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-    GET_CLOSED_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-    CANCEL_ORDERS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    GET_MY_RECENT_TRADES_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-    GET_POSITION_METHODS_TEST_STATUS: CCXTExchangeTestStatus = CCXTExchangeTestStatus()
-    GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS: CCXTExchangeTestStatus = (
-        CCXTExchangeTestStatus()
-    )
-
-    @classmethod
-    def is_fully_tested_and_supported(cls):
-        return cls.IS_FULLY_TESTED_AND_SUPPORTED or (
-            cls.CANDLE_LOADING_LIMIT_TEST_STATUS.is_fully_tested
-            and cls.MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
-            and cls.MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
-            and cls.MARKET_STATUS_TEST_STATUS.is_fully_tested
-            and cls.ORDERS_PARSER_TEST_STATUS.is_fully_tested
-            and cls.TRADES_PARSER_TEST_STATUS.is_fully_tested
-            and cls.POSITIONS_PARSER_TEST_STATUS.is_fully_tested
-            and cls.TICKER_PARSER_TEST_STATUS.is_fully_tested
-            and cls.FUNDING_RATE_PARSER_TEST_STATUS.is_fully_tested
-            and cls.GET_ORDER_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_ALL_ORDERS_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_OPEN_ORDERS_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_CLOSED_ORDERS_METHODS_TEST_STATUS.is_fully_tested
-            and cls.CANCEL_ORDERS_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_MY_RECENT_TRADES_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_POSITION_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS.is_fully_tested
-        )
-
+    
     @classmethod
     def set_default_settings(cls, exchange_connector):
         # pagination limits
@@ -127,7 +43,11 @@ class CCXTExchangeConfig:
         cls.MAX_ORDER_PAGINATION_LIMIT = 0
 
         # define available get methods
-        cls.GET_ORDER_METHODS = cls.ALL_GET_ORDER_METHODS
+        cls.GET_ORDER_METHODS = [
+            exchange_connector.get_order_default.__name__,
+            exchange_connector.get_order_from_open_and_closed_orders.__name__,
+            exchange_connector.get_order_using_stop_params.__name__,
+        ]
         cls.GET_ALL_ORDERS_METHODS = cls.ALL_GET_ALL_ORDERS_METHODS
         cls.GET_OPEN_ORDERS_METHODS = cls.ALL_GET_OPEN_ORDERS_METHODS
         cls.GET_CLOSED_ORDERS_METHODS = cls.ALL_GET_CLOSED_ORDERS_METHODS
@@ -239,10 +159,6 @@ class CCXTExchangeConfig:
     GET_MY_RECENT_TRADES_METHODS: list = None
     GET_POSITION_METHODS: list = None
     GET_SYMBOL_POSITION_METHODS: list = None
-    FUNDING_IN_TICKER: bool = None
-    MARK_PRICE_IN_TICKER: bool = None
-    FUNDING_WITH_MARK_PRICE: bool = None
-    MARK_PRICE_IN_POSITION: bool = None
     CANDLE_LOADING_LIMIT: int = None
     MAX_RECENT_TRADES_PAGINATION_LIMIT: int = None
     MAX_ORDER_PAGINATION_LIMIT: int = None

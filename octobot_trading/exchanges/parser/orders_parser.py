@@ -1,10 +1,9 @@
 import decimal
 import typing
+import cryptofeed.defines as cryptofeed_constants
 
 from octobot_trading import constants
 from octobot_trading.enums import (
-    CryptoFeedOrderStatus,
-    CryptoFeedTradeOrderType,
     ExchangeConstantsFeesColumns,
     ExchangeConstantsOrderColumns as OrderCols,
     OrderStatus,
@@ -162,10 +161,10 @@ class OrdersParser(parser_util.Parser):
             # self._parse_quantity_currency()  # remove? is it used?
         except Exception as e:
             # just in case something bad happens
+            # this should never happen, check the parser code
             self._log_missing(
-                "orders parser broken",
-                "failed to complete orders parser, this should "
-                "never happen, check the parser code",
+                "failed to parse orders",
+                "not able to complete orders parser",
                 error=e,
             )
 
@@ -425,8 +424,8 @@ class OrdersParser(parser_util.Parser):
 
     def _parse_taker_or_maker(self):
         self._try_to_find_and_set(
-            OrderCols.TAKERORMAKER.value,
-            [OrderCols.TAKERORMAKER.value],
+            OrderCols.TAKER_OR_MAKER.value,
+            [OrderCols.TAKER_OR_MAKER.value],
             not_found_method=self.missing_taker_or_maker,
         )
 
@@ -470,7 +469,7 @@ class OrdersParser(parser_util.Parser):
                     OrderCols.SIDE.value,
                     OrderCols.OCTOBOT_ORDER_TYPE.value,
                     OrderCols.TYPE.value,
-                    OrderCols.TAKERORMAKER.value,
+                    OrderCols.TAKER_OR_MAKER.value,
                     OrderCols.PRICE.value,
                     OrderCols.FILLED_PRICE.value,
                     OrderCols.AVERAGE.value,
@@ -533,7 +532,7 @@ class OrdersParser(parser_util.Parser):
         taker_or_maker = None
         if missing_type_value:
             new_type = missing_type_value
-        elif taker_or_maker := self.raw_record.get(OrderCols.TAKERORMAKER.value):
+        elif taker_or_maker := self.raw_record.get(OrderCols.TAKER_OR_MAKER.value):
             # todo check - is it safe?
             if self.formatted_record[OrderCols.SIDE.value] == TradeOrderSide.BUY.value:
                 if taker_or_maker == MarketCols.TAKER.value:
@@ -691,8 +690,8 @@ class OrdersParser(parser_util.Parser):
             ):
                 return MarketCols.MAKER.value
         self._log_missing(
-            OrderCols.TAKERORMAKER.value,
-            f"with key {OrderCols.TAKERORMAKER.value} and based on"
+            OrderCols.TAKER_OR_MAKER.value,
+            f"with key {OrderCols.TAKER_OR_MAKER.value} and based on"
             f" order type ({order_type or 'no order_type'})",
         )
 
@@ -781,29 +780,29 @@ def found_side(raw_side):
 
 
 def try_cryptofeed_order_status(raw_order_status):
-    if raw_order_status == CryptoFeedOrderStatus.OPEN.value:
+    if raw_order_status == cryptofeed_constants.OPEN:
         return OrderStatus.OPEN.value
-    elif raw_order_status == CryptoFeedOrderStatus.PENDING.value:
+    elif raw_order_status == cryptofeed_constants.PENDING:
         return OrderStatus.OPEN.value
-    elif raw_order_status == CryptoFeedOrderStatus.FILLED.value:
+    elif raw_order_status == cryptofeed_constants.FILLED:
         return OrderStatus.FILLED.value
-    elif raw_order_status == CryptoFeedOrderStatus.PARTIAL.value:
+    elif raw_order_status == cryptofeed_constants.PARTIAL:
         return OrderStatus.PARTIALLY_FILLED.value
-    elif raw_order_status == CryptoFeedOrderStatus.CANCELLED.value:
+    elif raw_order_status == cryptofeed_constants.CANCELLED:
         return OrderStatus.CANCELED.value
-    elif raw_order_status == CryptoFeedOrderStatus.UNFILLED.value:
+    elif raw_order_status == cryptofeed_constants.UNFILLED:
         return OrderStatus.OPEN.value
-    elif raw_order_status == CryptoFeedOrderStatus.EXPIRED.value:
+    elif raw_order_status == cryptofeed_constants.EXPIRED:
         return OrderStatus.EXPIRED.value
-    elif raw_order_status == CryptoFeedOrderStatus.FAILED.value:
+    elif raw_order_status == cryptofeed_constants.FAILED:
         return OrderStatus.REJECTED.value
-    elif raw_order_status == CryptoFeedOrderStatus.SUBMITTING.value:
+    elif raw_order_status == cryptofeed_constants.SUBMITTING:
         return OrderStatus.PENDING_CREATION.value
-    elif raw_order_status == CryptoFeedOrderStatus.CANCELLING.value:
+    elif raw_order_status == cryptofeed_constants.CANCELLING:
         return OrderStatus.PENDING_CANCEL.value
-    elif raw_order_status == CryptoFeedOrderStatus.CLOSED.value:
+    elif raw_order_status == cryptofeed_constants.CLOSED:
         return OrderStatus.CLOSED.value
-    elif raw_order_status == CryptoFeedOrderStatus.SUSPENDED.value:
+    elif raw_order_status == cryptofeed_constants.SUSPENDED:
         pass  # todo is it canceled?
 
 
@@ -866,29 +865,29 @@ def convert_type_to_trade_order_type(
 
 def try_cryptofeed_order_type(raw_order_type) -> str:
     # try cryptofeed_constants
-    if raw_order_type == CryptoFeedTradeOrderType.LIMIT.value:
+    if raw_order_type == cryptofeed_constants.LIMIT:
         return TradeOrderType.LIMIT.value
-    if raw_order_type == CryptoFeedTradeOrderType.MARKET.value:
+    if raw_order_type == cryptofeed_constants.MARKET:
         return TradeOrderType.MARKET.value
-    if raw_order_type == CryptoFeedTradeOrderType.STOP_LIMIT.value:
+    if raw_order_type == cryptofeed_constants.STOP_LIMIT:
         return TradeOrderType.STOP_LOSS_LIMIT.value
-    if raw_order_type == CryptoFeedTradeOrderType.STOP_MARKET.value:
+    if raw_order_type == cryptofeed_constants.STOP_MARKET:
         return TradeOrderType.STOP_LOSS.value
-    if raw_order_type == CryptoFeedTradeOrderType.MAKER_OR_CANCEL.value:
+    if raw_order_type == cryptofeed_constants.MAKER_OR_CANCEL:
         return TradeOrderType.LIMIT_MAKER.value
-    # if raw_order_type == CryptoFeedTradeOrderType.FILL_OR_KILL.value:
+    # if raw_order_type == cryptofeed_constants.FILL_OR_KILL:
     #     pass
-    # if raw_order_type == CryptoFeedTradeOrderType.IMMEDIATE_OR_CANCEL.value:
+    # if raw_order_type == cryptofeed_constants.IMMEDIATE_OR_CANCEL:
     #     pass
-    # if raw_order_type == CryptoFeedTradeOrderType.GOOD_TIL_CANCELED.value:
+    # if raw_order_type == cryptofeed_constants.GOOD_TIL_CANCELED:
     #     pass
-    # if raw_order_type == CryptoFeedTradeOrderType.TRIGGER_LIMIT.value:
+    # if raw_order_type == cryptofeed_constants.TRIGGER_LIMIT:
     #     pass
-    # if raw_order_type == CryptoFeedTradeOrderType.TRIGGER_MARKET.value:
+    # if raw_order_type == cryptofeed_constants.TRIGGER_MARKET:
     #     pass
-    # if raw_order_type == CryptoFeedTradeOrderType.MARGIN_LIMIT.value:
+    # if raw_order_type == cryptofeed_constants.MARGIN_LIMIT:
     #     pass
-    # if raw_order_type == CryptoFeedTradeOrderType.MARGIN_MARKET.value:
+    # if raw_order_type == cryptofeed_constants.MARGIN_MARKET:
     #     pass
     return raw_order_type
 

@@ -86,139 +86,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except ccxt.AuthenticationError:
             raise ccxt.AuthenticationError
 
-    async def parse_order(self, raw_order: dict, order_type: str = None,
-                          quantity: decimal.Decimal = None, price: decimal.Decimal = None,
-                          status: str = None, symbol: str = None,
-                          side: str = None, timestamp: int or float = None,
-                          check_completeness: bool = True) -> dict:
-        """
-        use this method to parse a single order
-
-        :param raw_order:
-
-        optional:
-        :param status: to use if it's missing in the order
-        :param order_type: to use if it's missing in the order
-        :param price: to use if it's missing in the order
-        :param quantity: to use if it's missing in the order
-        :param symbol: to use if it's missing in the order
-        :param side: to use if it's missing in the order
-        :param timestamp: to use if it's missing in the order
-
-        :param check_completeness: if true checks all attributes, 
-            if somethings missing it'll try to fetch it from the exchange
-
-        :return: formatted order dict (100% complete or we raise NotImplemented)
-        """
-        _parser = self.connector_config.ORDERS_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_order(raw_order, order_type=order_type, quantity=quantity,
-                                         price=price, status=status, symbol=symbol, side=side,
-                                         timestamp=timestamp, check_completeness=check_completeness)
-
-    async def parse_orders(self, raw_orders: list, order_type: str = None,
-                           quantity: decimal.Decimal = None, price: decimal.Decimal = None,
-                           status: str = None, symbol: str = None,
-                           side: str = None, timestamp: int or float = None,
-                           check_completeness: bool = True) -> list:
-        """
-        use this method to format a list of order dicts
-
-        :param raw_orders: raw orders with eventually missing data
-
-        optional:
-        :param status: to use if it's missing in the order
-        :param order_type: to use if it's missing in the order
-        :param price: to use if it's missing in the order
-        :param quantity: to use if it's missing in the order
-        :param symbol: to use if it's missing in the order
-        :param side: to use if it's missing in the order
-        :param timestamp: to use if it's missing in the order
-
-        :param check_completeness: if true checks all attributes, 
-            if somethings missing it'll try to fetch it from the exchange
-
-        :return: formatted orders list (100% complete or we raise NotImplemented report)
-            
-        """
-        _parser = self.connector_config.ORDERS_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_orders(raw_orders, order_type=order_type, quantity=quantity,
-                                          price=price, status=status, symbol=symbol, side=side,
-                                          timestamp=timestamp, check_completeness=check_completeness)
-
-    async def parse_trade(self, raw_trade: dict, check_completeness: bool = True) -> dict:
-        """
-        use this method to parse a single trade
-
-        :param raw_trade:
-
-        :param check_completeness: if true checks all attributes, 
-            if somethings missing it'll try to fetch it from the exchange
-
-        :return: formatted trade dict (100% complete or we raise NotImplemented)
-        """
-        _parser = self.connector_config.TRADES_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_trade(raw_trade, check_completeness=check_completeness)
-
-    async def parse_trades(self, raw_trades, check_completeness: bool = True) -> list:
-        """
-        use this method to format a list of trade dicts
-
-        :param raw_trades: raw trades with eventually missing data
-
-        :param check_completeness: if true checks all attributes, 
-            if somethings missing it'll try to fetch it from the exchange
-
-        :return: formatted trades list (100% complete or we raise NotImplemented report)
-            
-        """
-        _parser = self.connector_config.TRADES_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_trades(raw_trades, check_completeness=check_completeness)
-
-    async def parse_position(self, raw_position: dict) -> dict:
-        """
-        use this method to parse a single position
-
-        :param raw_position:
-
-        :return: formatted position dict (100% complete or we raise NotImplemented)
-        """
-        _parser = self.connector_config.POSITIONS_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_position(raw_position)
-
-    async def parse_positions(self, raw_positions: list) -> list:
-        """
-        use this method to format a list of position dicts
-
-        :param raw_positions: raw positions with eventually missing data
-
-        :return: formatted positions list (100% complete or we raise NotImplemented report)
-            
-        """
-        _parser = self.connector_config.POSITIONS_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_positions(raw_positions)
-
-    async def parse_ticker(self, raw_funding_rate: dict, symbol: str, also_get_mini_ticker: bool = False) -> dict:
-        _parser = self.connector_config.TICKER_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_ticker(
-            raw_ticker=raw_funding_rate, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
-
-    async def parse_tickers(self, raw_tickers: list) -> list:
-        _parser = self.connector_config.TICKER_PARSER(self.exchange_manager.exchange)
-        return await _parser.parse_ticker_list(raw_tickers=raw_tickers)
-
-    def parse_funding_rates(self, raw_funding_rates: list) -> list:
-        _parser = self.connector_config.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
-        return _parser.parse_funding_rate_list(raw_funding_rates=raw_funding_rates)
-
-    def parse_funding_rate(self, raw_funding_rate: dict, from_ticker: bool = False) -> dict:
-        _parser = self.connector_config.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
-        return _parser.parse_funding_rate(raw_funding_rate=raw_funding_rate, from_ticker=from_ticker)
-
-    def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
-        return self.connector_config.MARKET_STATUS_PARSER(
-            market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example
-        ).market_status
-
     def get_client_symbols(self):
         return set(self.client.symbols) \
             if hasattr(self.client, "symbols") and self.client.symbols is not None else set()
@@ -342,7 +209,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     def get_market_status(self, symbol, price_example=None, with_fixer=True, ) -> dict:
         try:
             raw_market_status = self.client.market(symbol)
-            return self.parse_market_status(
+            return self.exchange_manager.exchange.parse_market_status(
                 raw_market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
@@ -378,7 +245,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                 time_frame: octobot_commons.enums.TimeFrames,
                                 limit: int = None,
                                 since: int = None,
-                                **kwargs: dict) -> typing.Optional[list]:
+                                **kwargs: dict) -> list:
         try:
             with self.error_describer():
                 if limit := self.cut_candle_limit(limit):
@@ -386,19 +253,29 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                          since=since, params=kwargs)
                 return await self.client.fetch_ohlcv(symbol, time_frame.value, since=since, params=kwargs)
         except ccxt.NotSupported:
-            if limit:
-                raise octobot_trading.errors.NotSupported
+            if not limit:
+                return await self.retry_get_symbol_prices_with_limit(
+                    symbol=symbol, time_frame=time_frame, since=since, **kwargs)
+            raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            if limit:
-                raise octobot_trading.errors.FailedRequest(
+            if not limit:
+                return await self.retry_get_symbol_prices_with_limit(
+                    symbol=symbol, time_frame=time_frame, since=since, **kwargs)
+            raise octobot_trading.errors.FailedRequest(
                     f"Failed to get_symbol_prices: {e.__class__.__name__} on {e}")
         except Exception as e:
-            if limit:
-                raise octobot_trading.errors.FailedRequest(
+            if not limit:
+                return await self.retry_get_symbol_prices_with_limit(
+                    symbol=symbol, time_frame=time_frame, since=since, **kwargs)
+            raise octobot_trading.errors.FailedRequest(
                     f"Failed to get_symbol_prices: Unknown error on {symbol}/{time_frame} {e}")
-        # try again with a limit
+    
+    async def retry_get_symbol_prices_with_limit(
+        self, symbol: str, time_frame: octobot_commons.enums.TimeFrames,
+        since: int = None, **kwargs: dict
+        ) -> list:
         if prices := await self.get_symbol_prices(symbol=symbol, time_frame=time_frame, since=since,
-                                                  limit=self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED, **kwargs):
+                                                limit=self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED, **kwargs):
             self.logger.warning("Failed to get symbol prices without a pagination limit. "
                                 f"But succeeded with a limit of {self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED}. "
                                 "This can lead to rate limits getting triggered. "
@@ -439,7 +316,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                 check_completeness: bool = True, **kwargs: dict) -> typing.Optional[list]:
         try:
             with self.error_describer():
-                return await self.parse_trades(
+                return await self.exchange_manager.exchange.parse_trades(
                     await self.client.fetchTrades(symbol, limit=limit, params=kwargs),
                     check_completeness=check_completeness)
         except ccxt.NotSupported:
@@ -453,7 +330,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         try:
             with self.error_describer():
                 raw_ticker = await self.client.fetch_ticker(symbol, params=kwargs)
-            return await self.parse_ticker(
+            return await self.exchange_manager.exchange.parse_ticker(
                 raw_ticker=raw_ticker,
                 symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
         except ccxt.NotSupported:
@@ -465,7 +342,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         try:
             with self.error_describer():
                 symbols = kwargs.pop("symbols", None)
-                self.all_currencies_price_ticker = await self.parse_tickers(
+                self.all_currencies_price_ticker = await self.exchange_manager.exchange.parse_tickers(
                     await self.client.fetch_tickers(symbols, params=kwargs))
             return self.all_currencies_price_ticker
         except ccxt.NotSupported:
@@ -501,7 +378,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 with self.error_describer():
                     params = kwargs.pop("params", {})
                     if order := await self.client.fetch_order(order_id, symbol, params=params):
-                        await self.parse_order(order, check_completeness=check_completeness)
+                        await self.exchange_manager.exchange.parse_order(order, check_completeness=check_completeness)
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 pass
@@ -519,7 +396,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     params = kwargs.pop("params", {})
                     if params := self.exchange_manager.exchange.custom_get_order_stop_params(order_id, params):
                         if order := await self.client.fetch_order(order_id, symbol, params=params):
-                            await self.parse_order(order, check_completeness=check_completeness)
+                            await self.exchange_manager.exchange.parse_order(order,
+                                                                             check_completeness=check_completeness)
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled
                 pass
@@ -556,7 +434,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                      check_completeness: bool = True, **kwargs: dict) -> list:
         if self.client.has.get('fetchOrders'):
             with self.error_describer():
-                return await self.parse_orders(
+                return await self.exchange_manager.exchange.parse_orders(
                     await self.client.fetch_orders(symbol=symbol, since=since,
                                                    limit=limit, params=kwargs),
                     check_completeness=check_completeness, )
@@ -597,7 +475,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                       check_completeness: bool = True, **kwargs: dict) -> list:
         if self.client.has.get('fetchOpenOrders'):
             with self.error_describer():
-                return await self.parse_orders(
+                return await self.exchange_manager.exchange.parse_orders(
                     await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
                     check_completeness=check_completeness)
         else:
@@ -630,8 +508,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                            **kwargs)
         if self.get_closed_stop_orders_using_stop_loss_params.__name__ in defined_methods:
             orders += await self.get_closed_stop_orders_using_stop_loss_params(symbol, since, limit,
-                                                                                 check_completeness=check_completeness,
-                                                                                 **kwargs)
+                                                                               check_completeness=check_completeness,
+                                                                               **kwargs)
         return orders
 
     async def get_closed_orders_default(self, symbol: str = None, since: int = None, limit: int = None,
@@ -640,12 +518,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             with self.error_describer():
                 raw_order = await self.client.fetch_closed_orders(
                     symbol=symbol, since=since, limit=limit, params=kwargs)
-                return await self.parse_orders(raw_order, check_completeness=check_completeness)
+                return await self.exchange_manager.exchange.parse_orders(raw_order,
+                                                                         check_completeness=check_completeness)
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
     async def get_closed_stop_orders_using_stop_loss_params(self, symbol, since, limit,
-                                                              check_completeness: bool = True, **kwargs) -> list:
+                                                            check_completeness: bool = True, **kwargs) -> list:
         try:
             if kwargs := self.exchange_manager.exchange.custom_get_closed_orders_stop_params(kwargs):
                 orders = await self.get_closed_orders_default(symbol=symbol, since=since, limit=limit,
@@ -705,7 +584,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                            **kwargs: dict) -> typing.Tuple[list or None, str or None]:
         try:
             if self.client.has.get('fetchMyTrades'):
-                return await self.parse_trades(
+                return await self.exchange_manager.exchange.parse_trades(
                     await self.client.fetchMyTrades(symbol=symbol, since=since, limit=limit, params=kwargs),
                     check_completeness=check_completeness), None
             else:
@@ -759,9 +638,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             raw_created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                     price, side, current_price, params)
-            return await self.parse_order(raw_created_order, order_type=order_type.value, quantity=quantity,
-                                                    price=price, status=enums.OrderStatus.OPEN.value,
-                                                    symbol=symbol, side=side, timestamp=time.time())
+            return await self.exchange_manager.exchange.parse_order(raw_created_order, order_type=order_type.value,
+                                                                    quantity=quantity,
+                                                                    price=price, status=enums.OrderStatus.OPEN.value,
+                                                                    symbol=symbol, side=side, timestamp=time.time())
 
     async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                          quantity: decimal.Decimal, price: decimal.Decimal,
@@ -781,8 +661,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
                                                   price=float_price, stop_price=float_stop_price, side=side,
                                                   current_price=float_current_price, params=params)
-            return await self.parse_order(edited_order, order_type=order_type.value, quantity=quantity,
-                                                    price=price, symbol=symbol, side=side)
+            return await self.exchange_manager.exchange.parse_order(edited_order, order_type=order_type.value,
+                                                                    quantity=quantity,
+                                                                    price=price, symbol=symbol, side=side)
 
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                           quantity: float, price: float, stop_price: float = None, side: str = None,
@@ -793,13 +674,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             # can't set price in market orders
             price_to_use = None
         if order_type in (
-            enums.TraderOrderType.STOP_LOSS,
-            enums.TraderOrderType.STOP_LOSS_LIMIT,
+                enums.TraderOrderType.STOP_LOSS,
+                enums.TraderOrderType.STOP_LOSS_LIMIT,
         ):
             params = self.exchange_manager.exchange.custom_edit_stop_orders_params(order_id, stop_price, params)
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
         return await self.client.edit_order(order_id, symbol, ccxt_order_type, side,
-                                                      quantity, price_to_use, params)
+                                            quantity, price_to_use, params)
 
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
@@ -1039,20 +920,21 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_positions_with_private_get_position_risk(self) -> list:
         try:
             if self.client.has.get("fapiPrivate_get_positionrisk"):
-                return await self.parse_positions(await self.client.fapiPrivate_get_positionrisk())
+                return await self.exchange_manager.exchange.parse_positions(
+                    await self.client.fapiPrivate_get_positionrisk())
         except Exception as e:
             self.logger.exception(e, True, f"Failed to load positions using private_get_position_risk")
         return []
 
     async def get_positions_linear(self, symbol=None, **kwargs: dict) -> list:
         return await self.get_position_by_sub_type(
-            "linear", symbol, 
+            "linear", symbol,
             await self.exchange_manager.exchange.get_positions_linear_settle_coins()
             , **kwargs)
 
     async def get_positions_inverse(self, symbol=None, **kwargs: dict) -> list:
         return await self.get_position_by_sub_type(
-            "inverse", symbol, 
+            "inverse", symbol,
             await self.exchange_manager.exchange.get_positions_inverse_settle_coins()
             , **kwargs)
 
@@ -1063,8 +945,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return await self.get_position_by_sub_type("option", symbol, **kwargs)
 
     async def get_position_by_sub_type(
-        self, sub_type, symbol, settle_coins: list = None, **kwargs: dict
-        ) -> list:
+            self, sub_type, symbol, settle_coins: list = None, **kwargs: dict
+    ) -> list:
         params = {**kwargs, "subType": sub_type}
         if settle_coins:
             positions = []
@@ -1082,7 +964,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def _get_positions(self, **kwargs: dict) -> list:
         try:
             raw_positions = await self.client.fetch_positions(params=kwargs)
-            return await self.parse_positions(raw_positions)
+            return await self.exchange_manager.exchange.parse_positions(raw_positions)
         except Exception as e:
             self.logger.exception(e, True, "Failed to load positions using get_position_default "
                                            f"{f'with params: {kwargs}' if kwargs else ''}")
@@ -1108,7 +990,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.client.has.get("fetchFundingRate"):
             try:
                 if raw_rate := await self.client.fetch_funding_rate(symbol=symbol, params=kwargs):
-                    return self.parse_funding_rate(raw_rate)
+                    return self.exchange_manager.exchange.parse_funding_rate(raw_rate)
             except Exception as e:
                 self.logger.exception(
                     e, True, "Failed to get funding rate - OctoBot is trying to use get_funding_rate_history instead ")
@@ -1120,10 +1002,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
         if self.client.has.get("fetchFundingRateHistory"):
             raw_rate = await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
-            return self.parse_funding_rates(raw_rate)
+            return self.exchange_manager.exchange.parse_funding_rates(raw_rate)
         else:
             raise NotImplementedError("fetchFundingRateHistory is not implemented for this exchange")
-    
+
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
@@ -1140,7 +1022,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
         return self.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
-                                                           take_profit_price=take_profit_price)
+                                                 take_profit_price=take_profit_price)
 
     @staticmethod
     def get_ccxt_order_type(order_type: enums.TraderOrderType):

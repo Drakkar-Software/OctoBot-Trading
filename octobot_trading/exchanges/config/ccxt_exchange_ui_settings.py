@@ -24,7 +24,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             "unexpected side effects might still occur. "
             "This allows you to try different variants of how OctoBot talks with an exchange without the need of writing code",
         )
-        
+
         pagination_settings_name = "pagination_settings"
         exchange.UI.user_input(
             pagination_settings_name,
@@ -44,9 +44,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 "(Hint: OctoBot will still be able to download candle history and automatically split it up into multiple requests)",
                 parent_input_name=pagination_settings_name,
             )
-        if (
-            not settings.MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
-        ):
+        if not settings.MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested:
             settings.MAX_RECENT_TRADES_PAGINATION_LIMIT = exchange.UI.user_input(
                 "max_recent_trades_pagination_limit",
                 common_enums.UserInputTypes.INT,

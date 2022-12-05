@@ -91,10 +91,10 @@ class TickerParser(parser_util.Parser):
                 return self.formatted_record, self._parse_mini_ticker()
         except Exception as e:
             # just in case something bad happens
+            # this should never happen, check the parser code
             self._log_missing(
-                "ticker parser broken",
-                "failed to complete ticker parser, this should "
-                "never happen, check the parser code",
+                "failed to parse ticker",
+                "not able to complete ticker parser",
                 error=e,
             )
         return self.formatted_record

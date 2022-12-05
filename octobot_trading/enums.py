@@ -41,21 +41,6 @@ class TradeOrderType(enum.Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
-class CryptoFeedTradeOrderType(enum.Enum):
-    # copied from cryptofeed.defines
-    LIMIT = 'limit'
-    MARKET = 'market'
-    STOP_LIMIT = 'stop-limit'
-    STOP_MARKET = 'stop-market'
-    MAKER_OR_CANCEL = 'maker-or-cancel'
-    FILL_OR_KILL = 'fill-or-kill'
-    IMMEDIATE_OR_CANCEL = 'immediate-or-cancel'
-    GOOD_TIL_CANCELED = 'good-til-canceled'
-    TRIGGER_LIMIT = 'trigger-limit'
-    TRIGGER_MARKET = 'trigger-market'
-    MARGIN_LIMIT = 'margin-limit'
-    MARGIN_MARKET = 'margin-market'
-
 class EvaluatorStates(enum.Enum):
     SHORT = "SHORT"
     VERY_SHORT = "VERY_SHORT"
@@ -81,20 +66,6 @@ class OrderStatus(enum.Enum):
     PARTIALLY_FILLED_CANCELED = "PARTIALLY_FILLED_CANCELED"
     ORDER_NEW = "ORDER_NEW"
 
-class CryptoFeedOrderStatus(enum.Enum):
-    # copied from cryptofeed.defines
-    OPEN = 'open'
-    PENDING = 'pending'
-    FILLED = 'filled'
-    PARTIAL = 'partial'
-    CANCELLED = 'cancelled'
-    UNFILLED = 'unfilled'
-    EXPIRED = 'expired'
-    SUSPENDED = 'suspended'
-    FAILED = 'failed'
-    SUBMITTING = 'submitting'
-    CANCELLING = 'cancelling'
-    CLOSED = 'closed'
 
 class States(enum.Enum):
     PENDING_CREATION = "pending_creation"
@@ -421,6 +392,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     REDUCE_ONLY = "reduceOnly"
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
+    POST_ONLY = "post_only"
     TAG = "tag"
 
 

@@ -61,7 +61,7 @@ class TestOrderFactory:
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.MARKET.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_MARKET.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("17964.5"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17964.5"),

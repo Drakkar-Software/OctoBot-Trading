@@ -59,10 +59,10 @@ class FundingRateParser(Parser):
 
         except Exception as e:
             # just in case something bad happens
+            # this should never happen, check the parser code
             self._log_missing(
-                "funding rate parser broken",
-                "failed to complete funding rate parser, this should "
-                "never happen, check the parser code",
+                "failed to parse funding rate",
+                "not able to complete funding rate parser",
                 error=e,
             )
         self._create_debugging_report_for_record()

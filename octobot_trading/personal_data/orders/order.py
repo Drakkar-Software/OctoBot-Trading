@@ -493,7 +493,7 @@ class Order(util.Initializable):
             if self.side is None or self.order_type is None:
                 self._update_type_from_raw(raw_order)
             if self.taker_or_maker is None:
-                self.taker_or_maker = raw_order[enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value]
+                self.taker_or_maker = raw_order[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
             price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
             return self.update(
                 order_id=raw_order[enums.ExchangeConstantsOrderColumns.ID.value],
@@ -578,7 +578,7 @@ class Order(util.Initializable):
                 enums.ExchangeConstantsOrderColumns.PRICE.value
             ]
         self.taker_or_maker = raw_order[
-            enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value
+            enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value
         ]
         self.fee = raw_order[enums.ExchangeConstantsOrderColumns.FEE.value]
         self.executed_time = raw_order[

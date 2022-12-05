@@ -81,10 +81,10 @@ class PositionsParser(parser_util.Parser):
             self._parse_entry_price()
         except Exception as e:
             # just in case something bad happens
+            # this should never happen, check the parser code
             self._log_missing(
-                "positions parser broken",
-                "failed to complete positions parser, this should "
-                "never happen, check the parser code",
+                "failed to parse positions",
+                "not able to complete positions parser",
                 error=e,
             )
         self._create_debugging_report_for_record()

@@ -17,7 +17,8 @@ import octobot_trading.exchanges.implementations.ccxt_exchange_commons \
     as ccxt_exchange_commons
 import octobot_trading.exchanges.types as exchanges_types
 
-class MarginCCXTExchange(ccxt_exchange_commons.CCXTExchangeCommons,
-                         exchanges_types.MarginExchange):
+
+class MarginCCXTExchange(exchanges_types.MarginExchange, 
+                         ccxt_exchange_commons.CCXTExchangeCommons):
     def get_default_type(self):
         return 'margin'

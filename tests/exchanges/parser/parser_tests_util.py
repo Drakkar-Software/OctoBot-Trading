@@ -25,7 +25,7 @@ import octobot_commons.tests.test_config as test_config
 pytestmark = pytest.mark.asyncio
 
 
-EXCHANGE_NAME = "binance"
+EXCHANGE_NAME = "bybit"
 
 
 def mock_get_pair_from_exchange(raw_symbol):

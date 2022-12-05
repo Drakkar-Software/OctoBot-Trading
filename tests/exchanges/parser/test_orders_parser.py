@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 import pytest
+import cryptofeed.defines as cryptofeed_constants
 from octobot_trading.enums import (
     ExchangeConstantsMarketPropertyColumns,
     ExchangeConstantsOrderColumns,
@@ -356,7 +357,7 @@ def get_parsed_canceled_orders():
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.SELL.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.LIMIT.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_LIMIT.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("17349.0"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17349.0"),
@@ -380,7 +381,7 @@ def get_parsed_open_market_orders():
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.MARKET.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_MARKET.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("17964.5"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17964.5"),
@@ -404,7 +405,7 @@ def get_parsed_open_long_limit_tp_orders():
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.SELL.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.LIMIT.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_LIMIT.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("18394.0"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("18394.0"),
@@ -428,7 +429,7 @@ def get_parsed_open_short_limit_tp_orders():
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.LIMIT.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_LIMIT.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("15785.5"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("15785.5"),
@@ -452,7 +453,7 @@ def get_parsed_open_short_sl_orders():
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.STOP_LOSS.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.STOP_LOSS.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("17170"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17170"),
@@ -476,7 +477,7 @@ def get_parsed_open_long_sl_orders():
             ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.SELL.value,
             ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.STOP_LOSS.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.STOP_LOSS.value,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.TAKER.value,
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("16938"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("16938"),
@@ -530,3 +531,36 @@ async def test_parse_default_open_short_sl_orders(
 ):
     just_parsed_orders = await active_parser(raw_open_short_sl_orders)
     assert get_parsed_open_short_sl_orders() == just_parsed_orders
+
+
+def test_cryptofeed_constants_change():
+    # update orders parser if it fails
+    assert cryptofeed_constants.OPEN == 'open'
+    assert cryptofeed_constants.PENDING == 'pending'
+    assert cryptofeed_constants.FILLED == 'filled'
+    assert cryptofeed_constants.PARTIAL == 'partial'
+    assert cryptofeed_constants.CANCELLED == 'cancelled'
+    assert cryptofeed_constants.UNFILLED == 'unfilled'
+    assert cryptofeed_constants.EXPIRED == 'expired'
+    assert cryptofeed_constants.SUSPENDED == 'suspended'
+    assert cryptofeed_constants.FAILED == 'failed'
+    assert cryptofeed_constants.SUBMITTING == 'submitting'
+    assert cryptofeed_constants.CANCELLING == 'cancelling'
+    assert cryptofeed_constants.CLOSED == 'closed'
+    
+    
+def test_cryptofeed_order_types_constants_change():
+    # update orders parser if it fails
+    assert cryptofeed_constants.LIMIT == 'limit'
+    assert cryptofeed_constants.MARKET == 'market'
+    assert cryptofeed_constants.STOP_LIMIT == 'stop-limit'
+    assert cryptofeed_constants.STOP_MARKET == 'stop-market'
+    assert cryptofeed_constants.MAKER_OR_CANCEL == 'maker-or-cancel'
+    assert cryptofeed_constants.FILL_OR_KILL == 'fill-or-kill'
+    assert cryptofeed_constants.IMMEDIATE_OR_CANCEL == 'immediate-or-cancel'
+    assert cryptofeed_constants.GOOD_TIL_CANCELED == 'good-til-canceled'
+    assert cryptofeed_constants.TRIGGER_LIMIT == 'trigger-limit'
+    assert cryptofeed_constants.TRIGGER_MARKET == 'trigger-market'
+    assert cryptofeed_constants.MARGIN_LIMIT == 'margin-limit'
+    assert cryptofeed_constants.MARGIN_MARKET == 'margin-market'
+    

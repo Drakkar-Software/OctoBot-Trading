@@ -17,13 +17,10 @@
 import decimal
 import typing
 
-from octobot_commons import enums as common_enums
-
+import octobot_commons.enums as common_enums
 import octobot_trading.enums as enums
-from octobot_trading.exchanges.config import (
-    ccxt_exchange_settings,
-    ccxt_exchange_ui_settings,
-)
+import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
+import octobot_trading.exchanges.config.ccxt_exchange_ui_settings as ccxt_exchange_ui_settings
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.connectors as exchange_connectors
 
@@ -88,6 +85,139 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
     def get_default_type(self):
         # keep default value
         return self.connector.client.options['defaultType']
+
+    async def parse_order(self, raw_order: dict, order_type: str = None,
+                          quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                          status: str = None, symbol: str = None,
+                          side: str = None, timestamp: int or float = None,
+                          check_completeness: bool = True) -> dict:
+        """
+        use this method to parse a single order
+
+        :param raw_order:
+
+        optional:
+        :param status: to use if it's missing in the order
+        :param order_type: to use if it's missing in the order
+        :param price: to use if it's missing in the order
+        :param quantity: to use if it's missing in the order
+        :param symbol: to use if it's missing in the order
+        :param side: to use if it's missing in the order
+        :param timestamp: to use if it's missing in the order
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted order dict (100% complete or we raise NotImplemented)
+        """
+        _parser = self.CONNECTOR_CONFIG.ORDERS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_order(raw_order, order_type=order_type, quantity=quantity,
+                                         price=price, status=status, symbol=symbol, side=side,
+                                         timestamp=timestamp, check_completeness=check_completeness)
+
+    async def parse_orders(self, raw_orders: list, order_type: str = None,
+                           quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                           status: str = None, symbol: str = None,
+                           side: str = None, timestamp: int or float = None,
+                           check_completeness: bool = True) -> list:
+        """
+        use this method to format a list of order dicts
+
+        :param raw_orders: raw orders with eventually missing data
+
+        optional:
+        :param status: to use if it's missing in the order
+        :param order_type: to use if it's missing in the order
+        :param price: to use if it's missing in the order
+        :param quantity: to use if it's missing in the order
+        :param symbol: to use if it's missing in the order
+        :param side: to use if it's missing in the order
+        :param timestamp: to use if it's missing in the order
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted orders list (100% complete or we raise NotImplemented report)
+            
+        """
+        _parser = self.CONNECTOR_CONFIG.ORDERS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_orders(raw_orders, order_type=order_type, quantity=quantity,
+                                          price=price, status=status, symbol=symbol, side=side,
+                                          timestamp=timestamp, check_completeness=check_completeness)
+
+    async def parse_trade(self, raw_trade: dict, check_completeness: bool = True) -> dict:
+        """
+        use this method to parse a single trade
+
+        :param raw_trade:
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted trade dict (100% complete or we raise NotImplemented)
+        """
+        _parser = self.CONNECTOR_CONFIG.TRADES_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_trade(raw_trade, check_completeness=check_completeness)
+
+    async def parse_trades(self, raw_trades, check_completeness: bool = True) -> list:
+        """
+        use this method to format a list of trade dicts
+
+        :param raw_trades: raw trades with eventually missing data
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted trades list (100% complete or we raise NotImplemented report)
+            
+        """
+        _parser = self.CONNECTOR_CONFIG.TRADES_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_trades(raw_trades, check_completeness=check_completeness)
+
+    async def parse_position(self, raw_position: dict) -> dict:
+        """
+        use this method to parse a single position
+
+        :param raw_position:
+
+        :return: formatted position dict (100% complete or we raise NotImplemented)
+        """
+        _parser = self.CONNECTOR_CONFIG.POSITIONS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_position(raw_position)
+
+    async def parse_positions(self, raw_positions: list) -> list:
+        """
+        use this method to format a list of position dicts
+
+        :param raw_positions: raw positions with eventually missing data
+
+        :return: formatted positions list (100% complete or we raise NotImplemented report)
+            
+        """
+        _parser = self.CONNECTOR_CONFIG.POSITIONS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_positions(raw_positions)
+
+    async def parse_ticker(self, raw_funding_rate: dict, symbol: str, also_get_mini_ticker: bool = False) -> dict:
+        _parser = self.CONNECTOR_CONFIG.TICKER_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_ticker(
+            raw_ticker=raw_funding_rate, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
+
+    async def parse_tickers(self, raw_tickers: list) -> list:
+        _parser = self.CONNECTOR_CONFIG.TICKER_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_ticker_list(raw_tickers=raw_tickers)
+
+    def parse_funding_rates(self, raw_funding_rates: list) -> list:
+        _parser = self.CONNECTOR_CONFIG.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
+        return _parser.parse_funding_rate_list(raw_funding_rates=raw_funding_rates)
+
+    def parse_funding_rate(self, raw_funding_rate: dict, from_ticker: bool = False) -> dict:
+        _parser = self.CONNECTOR_CONFIG.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
+        return _parser.parse_funding_rate(raw_funding_rate=raw_funding_rate, from_ticker=from_ticker)
+
+    def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
+        return self.CONNECTOR_CONFIG.MARKET_STATUS_PARSER(
+            market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example
+        ).market_status
 
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
