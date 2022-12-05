@@ -180,10 +180,10 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     def clean_order(self, order):
         return self.connector.clean_order(order)
 
-    async def get_positions(self, **kwargs: dict) -> list:
-        return await self.connector.get_positions(**kwargs)
+    async def get_positions(self, symbols=None, **kwargs: dict) -> list:
+        return await self.connector.get_positions(symbols=symbols, **kwargs)
 
-    async def get_position(self, symbol: str, **kwargs: dict) -> list:
+    async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         return await self.connector.get_position(symbol=symbol, **kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:

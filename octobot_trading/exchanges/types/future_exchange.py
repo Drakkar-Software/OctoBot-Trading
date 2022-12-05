@@ -113,15 +113,15 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     Positions
     """
 
-    async def get_symbol_positions(self, symbol: str) -> list:
+    async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         """
         Get the current user symbol position list
         :param symbol: the position symbol
         :return: the user symbol position list
         """
-        raise NotImplementedError("get_symbol_positions is not implemented")
+        raise NotImplementedError("get_position is not implemented")
 
-    async def get_positions(self, **kwargs: dict) -> list:
+    async def get_positions(self, symbols=None, **kwargs: dict) -> list:
         """
         Get the current user position list
         :return: the user position list
