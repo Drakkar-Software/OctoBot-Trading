@@ -135,7 +135,7 @@ class PositionsParser(parser_util.Parser):
         )
 
     def _parse_status(self):
-        self._try_to_find_and_set_decimal(
+        self._try_to_find_and_set(
             PositionCols.STATUS.value,
             PositionStatusSynonyms.keys,
             use_info_sub_dict=True,
