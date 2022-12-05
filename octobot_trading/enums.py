@@ -199,6 +199,34 @@ class ExchangeFundingCCXTColumns(enum.Enum):
     PREDICTED_FUNDING_RATE = "predictedFundingRate"
 
 
+class ExchangeOrderCCXTColumns(enum.Enum):
+    INFO = "info"
+    ID = "id"
+    TIMESTAMP = "timestamp"
+    DATETIME = 'datetime'
+    LAST_TRADE_TIMESTAMP = "lastTradeTimestamp"
+    SYMBOL = "symbol"
+    QUANTITY_CURRENCY = "quantityCurrency"
+    TYPE = "type"
+    SIDE = "side"
+    PRICE = "price"
+    AMOUNT = "amount"
+    COST = "cost"
+    AVERAGE = "average"
+    FILLED = "filled"
+    REMAINING = "remaining"
+    STATUS = "status"
+    FEE = "fee"
+    TRADES = "trades"
+    MAKER = "maker"
+    TAKER = "taker"
+    ORDER = "order"
+    TAKER_OR_MAKER = "takerOrMaker"
+    REDUCE_ONLY = "reduceOnly"
+    STOP_PRICE = "stopPrice"
+    TRIGGER_ABOVE = "triggerAbove"
+    TAG = "tag"
+
 class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"
     LAST_FUNDING_TIME = "last_funding_time"
