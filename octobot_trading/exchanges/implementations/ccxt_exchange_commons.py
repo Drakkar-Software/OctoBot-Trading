@@ -27,9 +27,10 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 
 class CCXTExchangeCommons(exchanges_types.SpotExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    CONNECTOR_CONFIG: ccxt_exchange_settings.CCXTExchangeConfig = (
+    CONNECTOR_CONFIG_CLASS: ccxt_exchange_settings.CCXTExchangeConfig = (
         ccxt_exchange_settings.CCXTExchangeConfig
     )
+    CONNECTOR_CONFIG: ccxt_exchange_settings.CCXTExchangeConfig = None
 
     def __init__(self, config, exchange_manager):
         self.initialize_connector_config()
@@ -45,10 +46,7 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
 
     @classmethod
     def initialize_connector_config(cls):
-        try:
-            cls.CONNECTOR_CONFIG = cls.CONNECTOR_CONFIG(cls.CONNECTOR_CLASS)
-        except TypeError:
-            pass  # already initialized
+        cls.CONNECTOR_CONFIG = cls.CONNECTOR_CONFIG_CLASS(cls.CONNECTOR_CLASS)
 
     async def initialize_impl(self):
         await self.connector.initialize()
