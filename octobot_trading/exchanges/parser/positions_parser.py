@@ -20,6 +20,7 @@ class PositionsParser(parser_util.Parser):
                     position = parser.parse_position(raw_position)
 
     """
+
     MODE_KEY_NAMES: list = ["hedged"]
     ONEWAY_VALUES: tuple = (False,)
     HEDGE_VALUES: tuple = (True,)
@@ -134,14 +135,29 @@ class PositionsParser(parser_util.Parser):
         )
 
     def _parse_status(self):
-        # todo improve - add LIQUIDATING, LIQUIDATED and ADL
+        self._try_to_find_and_set_decimal(
+            PositionCols.STATUS.value,
+            PositionStatusSynonyms.keys,
+            use_info_sub_dict=True,
+            parse_method=self._status_found,
+            not_found_method=self._missing_status,
+        )
+        
+    def _status_found(self, raw_status):
+        if raw_status in ("Normal", PositionStatus.OPEN.value):
+            return PositionStatus.OPEN
+        if raw_status in ("Liq", PositionStatus.LIQUIDATING.value):
+            return PositionStatus.LIQUIDATING
+        if raw_status in ("Adl", PositionStatus.ADL.value):
+            return PositionStatus.ADL
+        return self._missing_status(None)
+        
+    def _missing_status(self, _):
         if size := self.formatted_record.get(PositionCols.SIZE.value):
             if size > 0 or size < 0:
-                self.formatted_record[PositionCols.STATUS.value] = PositionStatus.OPEN
-                return
+                return PositionStatus.OPEN
         if size == constants.ZERO:
-            self.formatted_record[PositionCols.STATUS.value] = PositionStatus.CLOSED
-            return
+            return PositionStatus.CLOSED
         self._log_missing(
             PositionCols.STATUS.value,
             f"a valid size ({size or 'no size'}) is required to parse status",
@@ -214,14 +230,14 @@ class PositionsParser(parser_util.Parser):
 
     def _parse_side(self):
         if (
-                mode := self.formatted_record.get(PositionCols.POSITION_MODE.value)
+            mode := self.formatted_record.get(PositionCols.POSITION_MODE.value)
         ) is PositionMode.ONE_WAY:
             self.formatted_record[PositionCols.SIDE.value] = PositionSide.BOTH
         elif mode is PositionMode.HEDGE:
             if (
-                    original_side := self.formatted_record.get(
-                        PositionCols.ORIGINAL_SIDE.value
-                    )
+                original_side := self.formatted_record.get(
+                    PositionCols.ORIGINAL_SIDE.value
+                )
             ) == PositionSide.LONG.value:
                 self.formatted_record[PositionCols.SIDE.value] = PositionSide.LONG
             elif original_side == PositionSide.SHORT.value:
@@ -349,6 +365,10 @@ class RealizedPnlSynonyms:
 
 class UnrealizedPnlSynonyms:
     keys = ["unrealizedPnl"]
+
+
+class PositionStatusSynonyms:
+    keys = ["position_status"]
 
 
 class ClosingFeeSynonyms:

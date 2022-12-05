@@ -18,7 +18,8 @@ class CCXTExchangeConfig:
         self.set_default_settings(exchange_connector)
         self.set_connector_settings(exchange_connector)
 
-    def set_connector_settings(self, exchange_connector) -> None:
+    @classmethod
+    def set_connector_settings(cls, exchange_connector) -> None:
         """
         override this method to change default settings
         for example:
@@ -48,6 +49,7 @@ class CCXTExchangeConfig:
     CANCEL_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
     GET_MY_RECENT_TRADES_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
     GET_POSITION_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
+    GET_SYMBOL_POSITIONS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED = False
 
     @classmethod
     def is_fully_tested_and_supported(cls):
@@ -67,6 +69,7 @@ class CCXTExchangeConfig:
                 and cls.CANCEL_ORDERS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
                 and cls.GET_MY_RECENT_TRADES_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
                 and cls.GET_POSITION_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
+                and cls.GET_SYMBOL_POSITIONS_METHODS_IS_FULLY_TESTED_AND_SUPPORTED
         )
 
     def set_default_settings(self, exchange_connector):
@@ -129,20 +132,20 @@ class CCXTExchangeConfig:
         self.ALL_GET_ORDER_METHODS = [
             exchange_connector.get_order_default.__name__,
             exchange_connector.get_order_from_open_and_closed_orders.__name__,
-            exchange_connector.get_order_from_open_and_closed_orders.__name__,
+            exchange_connector.get_order_using_stop_params.__name__,
             exchange_connector.get_trade.__name__,
         ]
         self.ALL_GET_ALL_ORDERS_METHODS = [
             exchange_connector.get_all_orders_default.__name__,
-            exchange_connector.get_all_stop_orders_using_stop_loss_endpoint.__name__,
+            exchange_connector.get_all_stop_orders_using_stop_loss_params.__name__,
         ]
         self.ALL_GET_OPEN_ORDERS_METHODS = [
             exchange_connector.get_open_orders_default.__name__,
-            exchange_connector.get_open_stop_orders_using_stop_loss_endpoint.__name__,
+            exchange_connector.get_open_stop_orders_using_stop_loss_params.__name__,
         ]
         self.ALL_GET_CLOSED_ORDERS_METHODS = [
             exchange_connector.get_closed_orders_default.__name__,
-            exchange_connector.get_closed_stop_orders_using_stop_loss_endpoint.__name__,
+            exchange_connector.get_closed_stop_orders_using_stop_loss_params.__name__,
         ]
         self.ALL_CANCEL_ORDERS_METHODS = [
             exchange_connector.cancel_order_default.__name__,

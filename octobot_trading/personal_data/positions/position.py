@@ -22,7 +22,6 @@ import octobot_commons.logging as logging
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order_util as order_util
-import octobot_trading.personal_data.positions.position_util as position_util
 import octobot_trading.personal_data.positions.states as positions_states
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
@@ -724,7 +723,7 @@ class Position(util.Initializable):
                                             constants.ZERO),
             realized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALIZED_PNL.value, constants.ZERO),
             fee_to_close=raw_position.get(enums.ExchangeConstantsPositionColumns.CLOSING_FEE.value, constants.ZERO),
-            status=position_util.parse_position_status(raw_position)
+            status=raw_position.get(enums.ExchangeConstantsPositionColumns.STATUS.value, None)
         )
 
     def to_dict(self):

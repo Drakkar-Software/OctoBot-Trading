@@ -191,7 +191,7 @@ class ExchangeMarketStatusParser:
     LIMIT_AMOUNT_MIN_ATTENUATION = 3  # when log(price, 10) < 0
     LIMIT_AMOUNT_MIN_SUP_ATTENUATION = 1  # when log(price, 10) >= 0
     
-    FIX_PRECISION = True
+    FIX_PRECISION = False
     REMOVE_INVALID_PRICE_LIMITS = False
 
     """

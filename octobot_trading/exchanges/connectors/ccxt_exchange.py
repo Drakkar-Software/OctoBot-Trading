@@ -35,7 +35,6 @@ import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus
-from octobot_trading.exchanges.config import CCXTExchangeConfig
 
 
 class CCXTExchange(abstract_exchange.AbstractExchange):
@@ -395,7 +394,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.logger.warning("Failed to get symbol prices without a pagination limit. "
                                 f"But succeeded with a limit of {self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED}. "
                                 "This can lead to rate limits getting triggered. "
-                                "Send this log to the OctoBot team, so we able to fix this issue.")
+                                "Send this log to the OctoBot team, so we are able to fix this issue.")
             return prices
         raise octobot_trading.errors.FailedRequest("Failed to get symbol prices. OctoBot didn't receive any prices")
 
@@ -478,7 +477,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                                            check_completeness=check_completeness,
                                                                            **kwargs)):
             return order
-        if self.get_order_from_open_and_closed_orders.__name__ in defined_methods and \
+        if self.get_order_using_stop_params.__name__ in defined_methods and \
                 (order := await self.get_order_using_stop_params(order_id, symbol,
                                                                  check_completeness=check_completeness)):
             return order
@@ -519,7 +518,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             except Exception as e:
                 self.logger.exception(e, True, "Failed to get order using get_order_using_stop_params")
         return None
-    
+
     async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None,
                                                     check_completeness: bool = True, **kwargs: dict
                                                     ) -> typing.Optional[dict]:
@@ -539,10 +538,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.get_all_orders_default.__name__ in defined_methods:
             orders += await self.get_all_orders_default(symbol=symbol, since=since, limit=limit,
                                                         check_completeness=check_completeness, kwargs=kwargs)
-        if self.get_all_stop_orders_using_stop_loss_endpoint.__name__ in defined_methods:
-            orders += await self.get_all_stop_orders_using_stop_loss_endpoint(symbol=symbol, since=since, limit=limit,
-                                                                              check_completeness=check_completeness,
-                                                                              kwargs=kwargs)
+        if self.get_all_stop_orders_using_stop_loss_params.__name__ in defined_methods:
+            orders += await self.get_all_stop_orders_using_stop_loss_params(symbol=symbol, since=since, limit=limit,
+                                                                            check_completeness=check_completeness,
+                                                                            kwargs=kwargs)
         return orders
 
     async def get_all_orders_default(self, symbol: str = None, since: int = None, limit: int = None,
@@ -556,13 +555,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrders")
 
-    async def get_all_stop_orders_using_stop_loss_endpoint(self, symbol: str = None, since: int = None,
-                                                           limit: int = None, check_completeness: bool = True,
-                                                           **kwargs: dict) -> list:
+    async def get_all_stop_orders_using_stop_loss_params(self, symbol: str = None, since: int = None,
+                                                         limit: int = None, check_completeness: bool = True,
+                                                         **kwargs: dict) -> list:
         try:
             if kwargs := self.exchange_manager.exchange.custom_get_all_orders_stop_params(kwargs):
                 orders = await self.get_all_orders_default(symbol=symbol, since=since, limit=limit,
-                                                         check_completeness=check_completeness, **kwargs)
+                                                           check_completeness=check_completeness, **kwargs)
                 return orders
             return []
         except Exception as e:
@@ -581,8 +580,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.get_open_orders_default.__name__ in defined_methods:
             orders += await self.get_open_orders_default(
                 symbol, since, limit, check_completeness=check_completeness, **kwargs)
-        if self.get_open_stop_orders_using_stop_loss_endpoint.__name__ in defined_methods:
-            orders += await self.get_open_stop_orders_using_stop_loss_endpoint(
+        if self.get_open_stop_orders_using_stop_loss_params.__name__ in defined_methods:
+            orders += await self.get_open_stop_orders_using_stop_loss_params(
                 symbol, since, limit, check_completeness=check_completeness, **kwargs)
         return orders
 
@@ -596,13 +595,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
-    async def get_open_stop_orders_using_stop_loss_endpoint(self, symbol: str = None, since: int = None,
-                                                            limit: int = None, check_completeness: bool = True,
-                                                            **kwargs: dict) -> list:
+    async def get_open_stop_orders_using_stop_loss_params(self, symbol: str = None, since: int = None,
+                                                          limit: int = None, check_completeness: bool = True,
+                                                          **kwargs: dict) -> list:
         try:
             if kwargs := self.exchange_manager.exchange.custom_get_open_orders_stop_params(kwargs):
                 open_orders = await self.get_open_orders_default(symbol=symbol, since=since, limit=limit,
-                                                          check_completeness=check_completeness, **kwargs)
+                                                                 check_completeness=check_completeness, **kwargs)
                 return open_orders
             return []
         except Exception as e:
@@ -621,8 +620,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.get_closed_orders_default.__name__ in defined_methods:
             orders += await self.get_closed_orders_default(symbol, since, limit, check_completeness=check_completeness,
                                                            **kwargs)
-        if self.get_closed_stop_orders_using_stop_loss_endpoint.__name__ in defined_methods:
-            orders += await self.get_closed_stop_orders_using_stop_loss_endpoint(symbol, since, limit,
+        if self.get_closed_stop_orders_using_stop_loss_params.__name__ in defined_methods:
+            orders += await self.get_closed_stop_orders_using_stop_loss_params(symbol, since, limit,
                                                                                  check_completeness=check_completeness,
                                                                                  **kwargs)
         return orders
@@ -637,18 +636,18 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
-    async def get_closed_stop_orders_using_stop_loss_endpoint(self, symbol, since, limit,
+    async def get_closed_stop_orders_using_stop_loss_params(self, symbol, since, limit,
                                                               check_completeness: bool = True, **kwargs) -> list:
         try:
             if kwargs := self.exchange_manager.exchange.custom_get_closed_orders_stop_params(kwargs):
                 orders = await self.get_closed_orders_default(symbol=symbol, since=since, limit=limit,
-                                                            check_completeness=check_completeness, **kwargs)
+                                                              check_completeness=check_completeness, **kwargs)
                 return orders
         except ccxt.AuthenticationError as e:
             self.logger.debug(f"(known issue) Fail to fetching closed stop orders : {e}")
         except Exception as e:
             self.logger.exception(e, True, "Failed to fetch closed stop orders using"
-                                            " get_open_stop_order_using_stop_loss_endpoint")
+                                           " get_open_stop_order_using_stop_loss_endpoint")
         return []
 
     def cut_order_pagination_limit(self, limit: int) -> typing.Optional[int]:
@@ -785,6 +784,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if ccxt_order_type == enums.TradeOrderType.MARKET.value:
             # can't set price in market orders
             price_to_use = None
+        if order_type in (
+            enums.TraderOrderType.STOP_LOSS,
+            enums.TraderOrderType.STOP_LOSS_LIMIT,
+        ):
+            params = self.exchange_manager.exchange.custom_edit_stop_orders_params(order_id, stop_price, params)
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
         return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
                                                       quantity, price_to_use, params)
