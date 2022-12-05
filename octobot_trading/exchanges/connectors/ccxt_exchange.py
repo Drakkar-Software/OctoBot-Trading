@@ -32,7 +32,6 @@ import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeOrderCCXTColumns
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
@@ -324,7 +323,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             # When fetch_order is not supported, uses get_open_orders and extract order id
             open_orders = await self.get_open_orders(symbol=symbol)
             for order in open_orders:
-                if order.get(ExchangeOrderCCXTColumns.ID.value, None) == order_id:
+                if order.get(ecoc.ID.value, None) == order_id:
                     return order
         return None  # OrderNotFound
 
@@ -570,10 +569,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return self.client.safe_currency_code(currency)
 
     def parse_order_id(self, order):
-        return order.get(ExchangeOrderCCXTColumns.ID.value, None)
+        return order.get(ecoc.ID.value, None)
 
     def parse_order_symbol(self, order):
-        return order.get(ExchangeOrderCCXTColumns.SYMBOL.value, None)
+        return order.get(ecoc.SYMBOL.value, None)
 
     def parse_status(self, status):
         return enums.OrderStatus(self.client.parse_order_status(status))
@@ -590,32 +589,32 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     def clean_recent_trade(self, recent_trade):
         try:
-            recent_trade.pop(ExchangeOrderCCXTColumns.INFO.value)
-            recent_trade.pop(ExchangeOrderCCXTColumns.DATETIME.value)
-            recent_trade.pop(ExchangeOrderCCXTColumns.ID.value)
-            recent_trade.pop(ExchangeOrderCCXTColumns.ORDER.value)
-            recent_trade.pop(ExchangeOrderCCXTColumns.FEE.value)
-            recent_trade.pop(ExchangeOrderCCXTColumns.TYPE.value)
-            recent_trade.pop(ExchangeOrderCCXTColumns.TAKER_OR_MAKER.value)
+            recent_trade.pop(ecoc.INFO.value)
+            recent_trade.pop(ecoc.DATETIME.value)
+            recent_trade.pop(ecoc.ID.value)
+            recent_trade.pop(ecoc.ORDER.value)
+            recent_trade.pop(ecoc.FEE.value)
+            recent_trade.pop(ecoc.TYPE.value)
+            recent_trade.pop(ecoc.TAKER_OR_MAKER.value)
             recent_trade[ecoc.TIMESTAMP.value] = \
-                self.get_uniformized_timestamp(recent_trade[ExchangeOrderCCXTColumns.TIMESTAMP.value])
+                self.get_uniformized_timestamp(recent_trade[ecoc.TIMESTAMP.value])
         except KeyError as e:
             self.logger.error(f"Fail to clean recent_trade dict ({e})")
         return recent_trade
 
     def clean_trade(self, trade):
         try:
-            trade.pop(ExchangeOrderCCXTColumns.INFO.value)
+            trade.pop(ecoc.INFO.value)
             trade[ecoc.TIMESTAMP.value] = \
-                self.get_uniformized_timestamp(trade[ExchangeOrderCCXTColumns.TIMESTAMP.value])
+                self.get_uniformized_timestamp(trade[ecoc.TIMESTAMP.value])
         except KeyError as e:
             self.logger.error(f"Fail to clean trade dict ({e})")
         return trade
 
     def clean_order(self, order):
         try:
-            order.pop(ExchangeOrderCCXTColumns.INFO.value)
-            exchange_timestamp = order[ExchangeOrderCCXTColumns.TIMESTAMP.value]
+            order.pop(ecoc.INFO.value)
+            exchange_timestamp = order[ecoc.TIMESTAMP.value]
             order[ecoc.TIMESTAMP.value] = \
                 self.get_uniformized_timestamp(exchange_timestamp)
         except KeyError as e:

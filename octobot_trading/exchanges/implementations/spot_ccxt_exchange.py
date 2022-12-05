@@ -30,15 +30,14 @@ import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.util as exchanges_util
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeOrderCCXTColumns as ecc
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
 #TODO remove
 class SpotCCXTExchange(exchanges_types.SpotExchange):
-    ORDER_NON_EMPTY_FIELDS = [ecc.ID.value, ecc.TIMESTAMP.value, ecc.SYMBOL.value, ecc.TYPE.value,
-                              ecc.SIDE.value, ecc.PRICE.value, ecc.AMOUNT.value, ecc.STATUS.value]
-    ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecc.REMAINING.value]
+    ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
+                              ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
+    ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 
     def __init__(self, config, exchange_manager):
@@ -130,14 +129,14 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def _verify_order(self, created_order, order_type, symbol, price, params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
-            if ecc.ID.value in created_order:
+            if ecoc.ID.value in created_order:
                 params = params or {}
                 created_order = await self.exchange_manager.exchange.get_order(
-                    created_order[ecc.ID.value], symbol=symbol, params=params
+                    created_order[ecoc.ID.value], symbol=symbol, params=params
                 )
 
         # on some exchange, market order are not including price, add it manually to ensure uniformity
-        if created_order[ecc.PRICE.value] is None and price is not None:
+        if created_order[ecoc.PRICE.value] is None and price is not None:
             created_order[ecoc.PRICE.value] = float(price)
 
         return self.clean_order(created_order)
@@ -332,23 +331,23 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         trades = await self.get_my_recent_trades(symbol)
         # usually the right trade is within the last ones
         for trade in trades[::-1]:
-            if trade[ecc.ORDER.value] == order_id:
-                order_to_update[ecoc.INFO.value] = trade[ecc.INFO.value]
+            if trade[ecoc.ORDER.value] == order_id:
+                order_to_update[ecoc.INFO.value] = trade[ecoc.INFO.value]
                 order_to_update[ecoc.ID.value] = order_id
                 order_to_update[ecoc.SYMBOL.value] = symbol
-                order_to_update[ecoc.TYPE.value] = trade[ecc.TYPE.value]
-                order_to_update[ecoc.AMOUNT.value] = trade[ecc.AMOUNT.value]
-                order_to_update[ecoc.DATETIME.value] = trade[ecc.DATETIME.value]
-                order_to_update[ecoc.SIDE.value] = trade[ecc.SIDE.value]
-                order_to_update[ecoc.TAKER_OR_MAKER.value] = trade[ecc.TAKER_OR_MAKER.value]
-                order_to_update[ecoc.PRICE.value] = trade[ecc.PRICE.value]
-                order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecc.TIMESTAMP.value,
-                                                                            trade[ecc.TIMESTAMP.value])
+                order_to_update[ecoc.TYPE.value] = trade[ecoc.TYPE.value]
+                order_to_update[ecoc.AMOUNT.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.DATETIME.value] = trade[ecoc.DATETIME.value]
+                order_to_update[ecoc.SIDE.value] = trade[ecoc.SIDE.value]
+                order_to_update[ecoc.TAKER_OR_MAKER.value] = trade[ecoc.TAKER_OR_MAKER.value]
+                order_to_update[ecoc.PRICE.value] = trade[ecoc.PRICE.value]
+                order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
+                                                                            trade[ecoc.TIMESTAMP.value])
                 order_to_update[ecoc.STATUS.value] = enums.OrderStatus.FILLED.value
-                order_to_update[ecoc.FILLED.value] = trade[ecc.AMOUNT.value]
-                order_to_update[ecoc.COST.value] = trade[ecc.COST.value]
+                order_to_update[ecoc.FILLED.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.COST.value] = trade[ecoc.COST.value]
                 order_to_update[ecoc.REMAINING.value] = 0
-                order_to_update[ecoc.FEE.value] = trade[ecc.FEE.value]
+                order_to_update[ecoc.FEE.value] = trade[ecoc.FEE.value]
                 return order_to_update
         return None  #OrderNotFound
 
