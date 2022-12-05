@@ -388,7 +388,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
         return await self.client.fetch_positions(symbols=symbols, params=kwargs)
 
-    async def get_position(self, symbol: str, **kwargs: dict) -> list:
+    async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         return await self.client.fetch_position(symbol=symbol, params=kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
