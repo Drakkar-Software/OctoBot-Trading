@@ -18,5 +18,5 @@ import octobot_trading.personal_data.orders.types.market.market_order as market_
 
 
 class BuyMarketOrder(market_order.MarketOrder):
-    def __init__(self, trader):
+    def __init__(self, trader, side=None):
         super().__init__(trader, side=enums.TradeOrderSide.BUY)
