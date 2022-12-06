@@ -175,8 +175,16 @@ class PositionsParser(parser_util.Parser):
     def _parse_liquidation_price(self):
         self._try_to_find_and_set_decimal(
             PositionCols.LIQUIDATION_PRICE.value,
-            [ExchangeCols.LIQUIDATION_PRICE.value] + LiquidationSynonyms.keys,
+            [ExchangeCols.LIQUIDATION_PRICE.value],
             use_info_sub_dict=True,
+        )
+
+    def _parse_bankruptcy_price(self):
+        self._try_to_find_and_set_decimal(
+            PositionCols.BANKRUPTCY_PRICE.value,
+            BankruptcyPriceSynonyms.keys,
+            use_info_sub_dict=True,
+            enable_log=False,
         )
 
     def _parse_value(self):
@@ -359,7 +367,8 @@ class PositionsParser(parser_util.Parser):
 
 
 # only keep keys here from exchanges that are 100% safe with any exchange
-class LiquidationSynonyms:
+
+class BankruptcyPriceSynonyms:
     keys = ["bust_price"]
 
 

@@ -169,26 +169,26 @@ def test_update_from_raw(trader_simulator):
     order_inst = personal_data.Order(trader_inst)
     # binance example market order
     raw_order = {
-        enums.ExchangeConstantsOrderColumns.ID: '362550114',
-        enums.ExchangeConstantsOrderColumns.TIMESTAMP: 1637579281.377,
-        enums.ExchangeConstantsOrderColumns.DATETIME: '2021-11-22T11:08:01.377Z',
-        enums.ExchangeConstantsOrderColumns.SYMBOL: 'UNI/USDT',
-        enums.ExchangeConstantsOrderColumns.TYPE: 'market',
+        enums.ExchangeConstantsOrderColumns.ID.value: '362550114',
+        enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: 1637579281,
+        enums.ExchangeConstantsOrderColumns.DATETIME.value: '2021-11-22T11:08:01.377Z',
+        enums.ExchangeConstantsOrderColumns.SYMBOL.value: 'UNI/USDT',
+        enums.ExchangeConstantsOrderColumns.TYPE.value: 'market',
         enums.ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: 
             enums.TraderOrderType.SELL_MARKET.value,
         enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "taker",
-        enums.ExchangeConstantsOrderColumns.POST_ONLY: False,
-        enums.ExchangeConstantsOrderColumns.SIDE: 'sell',
-        enums.ExchangeConstantsOrderColumns.PRICE: None,
-        enums.ExchangeConstantsOrderColumns.AMOUNT: decimal.Decimal("44964.0"),
-        enums.ExchangeConstantsOrderColumns.COST: None,
-        enums.ExchangeConstantsOrderColumns.AVERAGE: None,
-        enums.ExchangeConstantsOrderColumns.FILLED: decimal.Decimal("44964.0"),
-        enums.ExchangeConstantsOrderColumns.REMAINING: decimal.Decimal("0.0"),
-        enums.ExchangeConstantsOrderColumns.STATUS: 'closed',
-        enums.ExchangeConstantsOrderColumns.FEE: {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
-        enums.ExchangeConstantsOrderColumns.TRADES: [],
-        enums.ExchangeConstantsOrderColumns.FEES: []
+        enums.ExchangeConstantsOrderColumns.POST_ONLY.value: False,
+        enums.ExchangeConstantsOrderColumns.SIDE.value: 'sell',
+        enums.ExchangeConstantsOrderColumns.PRICE.value: None,
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.COST.value: None,
+        enums.ExchangeConstantsOrderColumns.AVERAGE.value: None,
+        enums.ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0.0"),
+        enums.ExchangeConstantsOrderColumns.STATUS.value: 'closed',
+        enums.ExchangeConstantsOrderColumns.FEE.value: {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
+        enums.ExchangeConstantsOrderColumns.TRADES.value: [],
+        enums.ExchangeConstantsOrderColumns.FEES.value: []
     }
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.SELL_MARKET
@@ -214,25 +214,23 @@ def test_update_from_raw(trader_simulator):
     order_inst = personal_data.Order(trader_inst)
     # binance example limit order
     raw_order = {
-        'id': '362550114',
-        'timestamp': 1637579281,
-        'lastTradeTimestamp': None,
-        'symbol': 'UNI/USDT',
-        'type': 'limit',
+        enums.ExchangeConstantsOrderColumns.ID.value: '362550114',
+        enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: 1637579281,
+        enums.ExchangeConstantsOrderColumns.SYMBOL.value: 'WIN/USDT',
+        enums.ExchangeConstantsOrderColumns.TYPE.value: 'limit',
         enums.ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: 
             enums.TraderOrderType.BUY_LIMIT.value,
         enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "maker",
-        'postOnly': False,
-        'side': 'buy',
-        'price': decimal.Decimal("12.664"),
-        'stopPrice': None,
-        'amount': decimal.Decimal("44964.0"),
-        'cost': decimal.Decimal("123.6667"),
-        'average': decimal.Decimal("13"),
-        'filled': decimal.Decimal("44964.0"),
-        'remaining': decimal.Decimal("0.0"),
-        'status': 'closed',
-        'fee': {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
+        enums.ExchangeConstantsOrderColumns.POST_ONLY.value: False,
+        enums.ExchangeConstantsOrderColumns.SIDE.value: 'buy',
+        enums.ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("12.664"),
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("123.6667"),
+        enums.ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("13"),
+        enums.ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0.0"),
+        enums.ExchangeConstantsOrderColumns.STATUS.value: 'closed',
+        enums.ExchangeConstantsOrderColumns.FEE.value: {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
     }
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.BUY_LIMIT

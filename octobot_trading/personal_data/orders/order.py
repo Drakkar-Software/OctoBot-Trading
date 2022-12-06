@@ -490,15 +490,19 @@ class Order(util.Initializable):
 
     def update_from_raw(self, raw_order):
         try:
-            if self.side is None or self.order_type is None:
-                self._update_type_from_raw(raw_order)
+            if not self.exchange_order_type:
+                self.exchange_order_type = enums.TradeOrderType(raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value])
+            if not self.order_type:
+                self.order_type = enums.TraderOrderType(raw_order[enums.ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value])
+            if not self.side:
+                self.side = enums.TradeOrderSide(raw_order[enums.ExchangeConstantsOrderColumns.SIDE.value])
             if self.taker_or_maker is None:
                 self.taker_or_maker = raw_order[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
             price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
             return self.update(
                 order_id=raw_order[enums.ExchangeConstantsOrderColumns.ID.value],
                 timestamp=raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
-                status=order_util.parse_order_status(raw_order),
+                status=enums.OrderStatus(raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value]),
                 symbol=raw_order[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
                 current_price=price,
                 price=price,

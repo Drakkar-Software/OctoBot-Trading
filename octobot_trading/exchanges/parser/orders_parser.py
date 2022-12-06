@@ -524,7 +524,6 @@ class OrdersParser(parser_util.Parser):
                 self, exchange_order_type
             ):
                 return order_type
-
         return self.missing_type(missing_type_value, raw_order_type)
 
     def missing_type(self, missing_type_value, raw_order_type=None):
@@ -772,6 +771,9 @@ class OrdersParser(parser_util.Parser):
         except ValueError:
             if order_status := try_cryptofeed_order_status(raw_status):
                 return order_status
+            if raw_status == "cancelled":
+                # few exchanges use "cancelled" which is not in OrderStatus
+                return OrderStatus.CANCELED.value
             self._log_missing(OrderCols.STATUS.value, OrderCols.STATUS.value)
 
 

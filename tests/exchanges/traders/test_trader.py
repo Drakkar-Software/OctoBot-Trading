@@ -813,21 +813,21 @@ class TestTrader:
         timestamp = time.time()
         order_to_test = Order(trader_inst)
         exchange_order = {
-            ExchangeConstantsOrderColumns.ID: '75454401472',
-            ExchangeConstantsOrderColumns.TIMESTAMP: timestamp,
-            ExchangeConstantsOrderColumns.SIDE: TradeOrderSide.BUY.value,
-            ExchangeConstantsOrderColumns.STATUS: OrderStatus.PARTIALLY_FILLED.value,
-            ExchangeConstantsOrderColumns.SYMBOL: self.DEFAULT_SYMBOL,
-            ExchangeConstantsOrderColumns.TYPE: 'market', 
-            ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE: 'buy_market', 
-            ExchangeConstantsOrderColumns.TAKER_OR_MAKER: 'taker', 
+            ExchangeConstantsOrderColumns.ID.value: '75454401472',
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
+            ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
+            ExchangeConstantsOrderColumns.STATUS.value: OrderStatus.PARTIALLY_FILLED.value,
+            ExchangeConstantsOrderColumns.SYMBOL.value: self.DEFAULT_SYMBOL,
+            ExchangeConstantsOrderColumns.TYPE.value: 'market', 
+            ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: 'buy_market', 
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: 'taker', 
             # "fee": 0.001,
-            ExchangeConstantsOrderColumns.COST: decimal.Decimal("100.1444215411"),
-            ExchangeConstantsOrderColumns.FILLED: decimal.Decimal("1.5684151456877415"),
-            ExchangeConstantsOrderColumns.AMOUNT: decimal.Decimal("0.128"), 
-            ExchangeConstantsOrderColumns.PRICE: decimal.Decimal("10.1444215411"),
-            ExchangeConstantsOrderColumns.FILLED_PRICE: decimal.Decimal("10.1444215411"),
-            ExchangeConstantsOrderColumns.AVERAGE: decimal.Decimal("10.1444215411"), 
+            ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("100.1444215411"),
+            ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("1.5684151456877415"),
+            ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("0.128"), 
+            ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("10.1444215411"),
+            ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("10.1444215411"),
+            ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("10.1444215411"), 
         }
 
         order_to_test.update_from_raw(exchange_order)
@@ -849,18 +849,18 @@ class TestTrader:
         timestamp = time.time()
 
         exchange_order = {
-            ExchangeConstantsOrderColumns.ID: "1546541123",
-            ExchangeConstantsOrderColumns.TIMESTAMP: timestamp,
-            ExchangeConstantsOrderColumns.SIDE: TradeOrderSide.SELL.value,
-            ExchangeConstantsOrderColumns.TYPE: TradeOrderType.LIMIT.value,
-            ExchangeConstantsOrderColumns.STATUS: OrderStatus.OPEN.value,
+            ExchangeConstantsOrderColumns.ID.value: "1546541123",
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
+            ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.SELL.value,
+            ExchangeConstantsOrderColumns.TYPE.value: TradeOrderType.LIMIT.value,
+            ExchangeConstantsOrderColumns.STATUS.value: OrderStatus.OPEN.value,
             ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_LIMIT.value,
-            ExchangeConstantsOrderColumns.TAKER_OR_MAKER: 'maker', 
-            ExchangeConstantsOrderColumns.SYMBOL: self.DEFAULT_SYMBOL,
-            ExchangeConstantsOrderColumns.AMOUNT: decimal.Decimal("1564.7216721637"),
-            ExchangeConstantsOrderColumns.FILLED: decimal.Decimal("15.15467"),
-            ExchangeConstantsOrderColumns.PRICE: decimal.Decimal("10254.4515"),
-            ExchangeConstantsOrderColumns.FILLED_PRICE: decimal.Decimal('16801.0'),
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: 'maker', 
+            ExchangeConstantsOrderColumns.SYMBOL.value: self.DEFAULT_SYMBOL,
+            ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("1564.7216721637"),
+            ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("15.15467"),
+            ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("10254.4515"),
+            ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal('16801.0'),
         }
 
         order_to_test = create_order_instance_from_raw(trader_inst, exchange_order)
