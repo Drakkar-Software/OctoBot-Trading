@@ -2,7 +2,7 @@ import octobot_trading.exchanges.config.exchange_test_status as exchange_test_st
 import octobot_trading.exchanges.parser as parser
 
 
-class GenericExchangeConfig:
+class ExchangeConfig:
     """
     override this class if you implement a new exchange connector
     see CCXTExchangeConfig as an example

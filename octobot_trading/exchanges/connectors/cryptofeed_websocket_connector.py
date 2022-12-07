@@ -800,8 +800,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param order the order object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        order_parser = OrdersParser(self.exchange)
-        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, [await order_parser.parse_order(order, timestamp=receipt_timestamp)])
+        order_parser = self.exchange.CONNECTOR_CONFIG.CRYPTO_FEED_ORDERS_PARSER(self.exchange)
+        await self.push_to_channel(
+            trading_constants.ORDERS_CHANNEL, 
+            [await order_parser.parse_order(order, timestamp=receipt_timestamp)])
 
     async def trade(self, trade, receipt_timestamp: float):
         """

@@ -87,7 +87,7 @@ def get_parsed_trades():
            ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17171.5"),
            ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("0.055"),
            ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0"),
-           ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("0.055"),
+           ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("0.055"),
            ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("944.4325"),
            ExchangeConstantsOrderColumns.REDUCE_ONLY.value: None,
            ExchangeConstantsOrderColumns.FEE.value: {

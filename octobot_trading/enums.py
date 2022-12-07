@@ -61,10 +61,6 @@ class OrderStatus(enum.Enum):
     EXPIRED = "expired"
     REJECTED = "rejected"
     UNKNOWN = "unknown"
-    ORDER_CANCELED = "ORDER_CANCELED"
-    ORDER_FILLED = "ORDER_FILLED"
-    PARTIALLY_FILLED_CANCELED = "PARTIALLY_FILLED_CANCELED"
-    ORDER_NEW = "ORDER_NEW"
 
 
 class States(enum.Enum):
@@ -214,6 +210,7 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     REMAINING = "remaining"
     STATUS = "status"
     FEE = "fee"
+    FEES = "fees"
     TRADES = "trades"
     MAKER = "maker"
     TAKER = "taker"
@@ -378,12 +375,11 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     AMOUNT = "amount"
     COST = "cost"
     AVERAGE = "average"
-    FILLED = "filled"
+    FILLED_AMOUNT = "filled_amount"
     FILLED_PRICE = "filled_price"
     REMAINING = "remaining"
     STATUS = "status"
     FEE = "fee"
-    FEES = "fees"
     TRADES = "trades"
     MAKER = "maker"
     TAKER = "taker"

@@ -74,7 +74,7 @@ class TestTradeFactory:
             ExchangeConstantsOrderColumns.COST: decimal.Decimal("0.10376526"),
             ExchangeConstantsOrderColumns.AVERAGE: decimal.Decimal("0.06917684"),
             ExchangeConstantsOrderColumns.REMAINING: decimal.Decimal("0"),
-            ExchangeConstantsOrderColumns.FILLED: decimal.Decimal("1.5"),
+            ExchangeConstantsOrderColumns.FILLED_AMOUNT: decimal.Decimal("1.5"),
             ExchangeConstantsOrderColumns.REDUCE_ONLY: None,
             ExchangeConstantsOrderColumns.FEE: {
                 "cost": 0.0015,
@@ -122,7 +122,7 @@ class TestTradeFactory:
                 ExchangeConstantsOrderColumns.PRICE:       decimal.Decimal("7684"),
                 ExchangeConstantsOrderColumns.FILLED_PRICE:       decimal.Decimal("7684"),
                 ExchangeConstantsOrderColumns.AMOUNT:      decimal.Decimal("1.5"),
-                ExchangeConstantsOrderColumns.FILLED:      decimal.Decimal("1.1"),
+                ExchangeConstantsOrderColumns.FILLED_AMOUNT:      decimal.Decimal("1.1"),
                 ExchangeConstantsOrderColumns.REMAINING:   decimal.Decimal("0.4"),
                 ExchangeConstantsOrderColumns.COST:        decimal.Decimal("0.076094524"),
                 ExchangeConstantsOrderColumns.FEE: {
@@ -210,7 +210,7 @@ class TestTradeFactory:
                 ExchangeConstantsOrderColumns.PRICE:       decimal.Decimal("7684"),
                 ExchangeConstantsOrderColumns.FILLED_PRICE:       decimal.Decimal("7684"),
                 ExchangeConstantsOrderColumns.AMOUNT:      decimal.Decimal("1.5"),
-                ExchangeConstantsOrderColumns.FILLED:      decimal.Decimal("1.1"),
+                ExchangeConstantsOrderColumns.FILLED_AMOUNT:      decimal.Decimal("1.1"),
                 ExchangeConstantsOrderColumns.REMAINING:   decimal.Decimal("0.4"),
                 ExchangeConstantsOrderColumns.COST:        decimal.Decimal("0.076094524"),
                 ExchangeConstantsOrderColumns.FEE: {

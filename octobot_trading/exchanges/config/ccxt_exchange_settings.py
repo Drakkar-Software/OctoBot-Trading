@@ -1,23 +1,26 @@
-import octobot_trading.exchanges.config.exchange_test_status as exchange_test_status
-import octobot_trading.exchanges.config.generic_exchange_settings as generic_exchange_settings
+import octobot_trading.exchanges.config.exchange_settings as exchange_settings
 import octobot_trading.exchanges.parser as parser
+import octobot_trading.exchanges.parser.util as parser_util
 
 
-class CCXTExchangeConfig(generic_exchange_settings.GenericExchangeConfig):
+class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     """
-    override this class in the exchange tentacle if you need custom settings
+    override this class in the exchange tentacle if you add official support
     see bybit tentacle as an example
     """
 
-    # override classes if you need a different parser
+    # override parsers with non Generic versions as a base
+    # if you add support for a new exchange
+    
     MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = (
         parser.ExchangeMarketStatusParser
     )
-    ORDERS_PARSER: parser.OrdersParser = parser.OrdersParser
-    TRADES_PARSER: parser.TradesParser = parser.TradesParser
-    POSITIONS_PARSER: parser.PositionsParser = parser.PositionsParser
-    TICKER_PARSER: parser.TickerParser = parser.TickerParser
-    FUNDING_RATE_PARSER: parser.FundingRateParser = parser.FundingRateParser
+    ORDERS_PARSER: parser_util.Parser = parser.GenericCCXTOrdersParser
+    CRYPTO_FEED_ORDERS_PARSER: parser_util.Parser = parser.CryptoFeedOrdersParser
+    TRADES_PARSER: parser_util.Parser = parser.TradesParser
+    POSITIONS_PARSER: parser_util.Parser = parser.PositionsParser
+    TICKER_PARSER: parser_util.Parser = parser.TickerParser
+    FUNDING_RATE_PARSER: parser_util.Parser = parser.FundingRateParser
     
     def __init__(self, exchange_connector):
         self.set_all_get_methods(exchange_connector)
@@ -28,6 +31,7 @@ class CCXTExchangeConfig(generic_exchange_settings.GenericExchangeConfig):
     def set_connector_settings(cls, exchange_connector) -> None:
         """
         override this method in the exchange tentacle to change default settings
+        also override default settings even if correct as they might change
 
         for example:
             self.MARKET_STATUS_PARSER.FIX_PRECISION = True
@@ -37,6 +41,9 @@ class CCXTExchangeConfig(generic_exchange_settings.GenericExchangeConfig):
     
     @classmethod
     def set_default_settings(cls, exchange_connector):
+        """
+        dont override this method, use set_connector_settings instead
+        """
         # pagination limits
         cls.CANDLE_LOADING_LIMIT = 0
         cls.MAX_RECENT_TRADES_PAGINATION_LIMIT = 0
@@ -45,7 +52,6 @@ class CCXTExchangeConfig(generic_exchange_settings.GenericExchangeConfig):
         # define available get methods
         cls.GET_ORDER_METHODS = [
             exchange_connector.get_order_default.__name__,
-            exchange_connector.get_order_from_open_and_closed_orders.__name__,
             exchange_connector.get_order_using_stop_params.__name__,
         ]
         cls.GET_ALL_ORDERS_METHODS = cls.ALL_GET_ALL_ORDERS_METHODS

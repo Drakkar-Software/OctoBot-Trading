@@ -67,7 +67,7 @@ class TestOrderFactory:
             ExchangeConstantsOrderColumns.AVERAGE.value: decimal.Decimal("17964.5"),
             ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("0.006"),
             ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0.006"),
-            ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("0"),
+            ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("0"),
             ExchangeConstantsOrderColumns.REDUCE_ONLY.value: False,
             ExchangeConstantsOrderColumns.FEE.value: None,

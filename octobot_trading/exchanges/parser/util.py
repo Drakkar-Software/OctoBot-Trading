@@ -112,6 +112,8 @@ class Parser:
             if parse_method:
                 try:
                     self.formatted_record[key_to_set] = parse_method(value)
+                except ParserKeyNotFoundError:
+                    pass # continue to _handle_not_found
                 except Exception as e:
                     self._log_missing_with_method(
                         key_to_set=key_to_set,
@@ -416,3 +418,7 @@ def convert_any_time_to_seconds(raw_time):
         if timestamp_util.is_valid_timestamp(_time):
             return _time
     raise ValueError(f"Invalid timestamp ({raw_time or 'no time provided'})")
+
+
+class ParserKeyNotFoundError(Exception):
+    pass

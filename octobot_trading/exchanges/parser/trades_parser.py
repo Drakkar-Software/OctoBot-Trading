@@ -2,7 +2,7 @@ from octobot_trading.enums import OrderStatus, TradeOrderType
 import octobot_trading.exchanges.parser as parser
 
 
-class TradesParser(parser.OrdersParser):
+class TradesParser(parser.GenericCCXTOrdersParser):
     """
     overwrite TradesParser class methods if necessary
     always/only include bulletproof custom code into the parser to improve generic support

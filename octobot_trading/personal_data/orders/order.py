@@ -509,7 +509,7 @@ class Order(util.Initializable):
                 average_price=raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value),
                 filled_price=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED_PRICE.value),
                 quantity=raw_order[enums.ExchangeConstantsOrderColumns.AMOUNT.value],
-                quantity_filled=raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value],
+                quantity_filled=raw_order[enums.ExchangeConstantsOrderColumns.FILLED_AMOUNT.value],
                 total_cost=raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value),
                 fee=raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value),
                 reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value),
@@ -574,7 +574,7 @@ class Order(util.Initializable):
         self.status = order_util.parse_order_status(raw_order)
         self.total_cost = raw_order[enums.ExchangeConstantsOrderColumns.COST.value]
         self.filled_quantity = raw_order[
-            enums.ExchangeConstantsOrderColumns.FILLED.value
+            enums.ExchangeConstantsOrderColumns.FILLED_AMOUNT.value
         ]
         self.filled_price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
         if not self.filled_price and self.filled_quantity:
@@ -626,7 +626,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value: self.quantity_currency,
-            enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
+            enums.ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag

@@ -953,12 +953,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             for coin in settle_coins:
                 params["settleCoin"] = coin
                 if symbol:
-                    positions += await self._get_symbol_positions(symbol, **params)
+                    positions += await self._get_position(symbol, **params)
                 else:
                     positions += await self._get_positions(**params)
             return positions
         if symbol:
-            return await self._get_symbol_positions(symbol, **params)
+            return await self._get_position(symbol, **params)
         return await self._get_positions(**params)
 
     async def _get_positions(self, **kwargs: dict) -> list:
@@ -970,7 +970,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                            f"{f'with params: {kwargs}' if kwargs else ''}")
             return []
 
-    async def get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
+    async def get_position(self, symbol: str, **kwargs: dict) -> list:
         defined_methods = self.connector_config.GET_SYMBOL_POSITION_METHODS
         positions = []
         if self.get_positions_linear.__name__ in defined_methods:
@@ -983,8 +983,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             positions += await self.get_positions_option(symbol, **kwargs)
         return positions
 
-    async def _get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
-        return await self.client.fetch_positions(symbols=[symbol], params=kwargs)
+    async def _get_position(self, symbol: str, **kwargs: dict) -> list:
+        raw_posotions = await self.client.fetch_positions(symbols=[symbol], params=kwargs)
+        return await self.exchange_manager.exchange.parse_positions(raw_posotions)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         if self.client.has.get("fetchFundingRate"):

@@ -823,7 +823,7 @@ class TestTrader:
             ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: 'taker', 
             # "fee": 0.001,
             ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("100.1444215411"),
-            ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("1.5684151456877415"),
+            ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("1.5684151456877415"),
             ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("0.128"), 
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("10.1444215411"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("10.1444215411"),
@@ -858,7 +858,7 @@ class TestTrader:
             ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: 'maker', 
             ExchangeConstantsOrderColumns.SYMBOL.value: self.DEFAULT_SYMBOL,
             ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("1564.7216721637"),
-            ExchangeConstantsOrderColumns.FILLED.value: decimal.Decimal("15.15467"),
+            ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("15.15467"),
             ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("10254.4515"),
             ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal('16801.0'),
         }
