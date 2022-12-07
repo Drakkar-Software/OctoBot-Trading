@@ -5,7 +5,8 @@ import octobot_trading.exchanges.parser.util as parser_util
 
 class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     """
-    override this class in the exchange tentacle if you add official support
+    override this class in the exchange tentacle 
+    if you add official support for a exchange
     see bybit tentacle as an example
     """
 
@@ -15,18 +16,18 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = (
         parser.ExchangeMarketStatusParser
     )
-    ORDERS_PARSER: parser_util.Parser = parser.GenericCCXTOrdersParser
+    ORDERS_PARSER: parser_util.Parser = parser.CCXTOrdersParser
     CRYPTO_FEED_ORDERS_PARSER: parser_util.Parser = parser.CryptoFeedOrdersParser
-    TRADES_PARSER: parser_util.Parser = parser.TradesParser
+    TRADES_PARSER: parser_util.Parser = parser.CCXTTradesParser
     POSITIONS_PARSER: parser_util.Parser = parser.PositionsParser
     TICKER_PARSER: parser_util.Parser = parser.TickerParser
     FUNDING_RATE_PARSER: parser_util.Parser = parser.FundingRateParser
-    
+
     def __init__(self, exchange_connector):
         self.set_all_get_methods(exchange_connector)
         self.set_default_settings(exchange_connector)
         self.set_connector_settings(exchange_connector)
-    
+        
     @classmethod
     def set_connector_settings(cls, exchange_connector) -> None:
         """
@@ -84,14 +85,6 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
         )
         cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_SUP_ATTENUATION = (
             cls.MARKET_STATUS_PARSER.LIMIT_AMOUNT_MIN_SUP_ATTENUATION
-        )
-
-        # orders parser
-        cls.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES = (
-            cls.ORDERS_PARSER.TEST_AND_FIX_SPOT_QUANTITIES
-        )
-        cls.ORDERS_PARSER.TEST_AND_FIX_FUTURES_QUANTITIES = (
-            cls.ORDERS_PARSER.TEST_AND_FIX_FUTURES_QUANTITIES
         )
 
         # positions parser

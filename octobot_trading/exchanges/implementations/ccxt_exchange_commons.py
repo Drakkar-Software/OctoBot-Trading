@@ -19,7 +19,8 @@ import typing
 
 import octobot_commons.enums as common_enums
 import octobot_trading.enums as enums
-import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
+import octobot_trading.exchanges.config.exchange_settings_ccxt_generic as exchange_settings_ccxt_generic
+import octobot_trading.exchanges.config.exchange_settings as exchange_settings
 import octobot_trading.exchanges.config.ccxt_exchange_ui_settings as ccxt_exchange_ui_settings
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.connectors as exchange_connectors
@@ -27,10 +28,10 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 
 class CCXTExchangeCommons(exchanges_types.SpotExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    CONNECTOR_CONFIG_CLASS: ccxt_exchange_settings.CCXTExchangeConfig = (
-        ccxt_exchange_settings.CCXTExchangeConfig
+    CONNECTOR_CONFIG_CLASS: exchange_settings.ExchangeConfig = (
+        exchange_settings_ccxt_generic.GenericCCXTExchangeConfig
     )
-    CONNECTOR_CONFIG: ccxt_exchange_settings.CCXTExchangeConfig = None
+    CONNECTOR_CONFIG: exchange_settings.ExchangeConfig = None
 
     def __init__(self, config, exchange_manager):
         self.initialize_connector_config()

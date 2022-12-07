@@ -20,8 +20,8 @@ from octobot_trading.exchanges.config.exchange_config_data import (
     ExchangeConfig,
 )
 
-from octobot_trading.exchanges.config import ccxt_exchange_settings
-from octobot_trading.exchanges.config.ccxt_exchange_settings import (
+from octobot_trading.exchanges.config import exchange_settings_ccxt
+from octobot_trading.exchanges.config.exchange_settings_ccxt import (
     CCXTExchangeConfig
 )
 from octobot_trading.exchanges.config import exchange_test_status

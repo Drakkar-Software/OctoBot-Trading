@@ -32,7 +32,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
-import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
+import octobot_trading.exchanges.config.exchange_settings_ccxt as exchange_settings_ccxt
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus
 
@@ -45,11 +45,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     CCXT_CROSSED = "CROSSED"
 
     def __init__(self, config, exchange_manager,
-                 connector_config: ccxt_exchange_settings.CCXTExchangeConfig,
+                 connector_config: exchange_settings_ccxt.CCXTExchangeConfig,
                  additional_ccxt_config=None,
                  ):
         super().__init__(config, exchange_manager)
-        self.connector_config: ccxt_exchange_settings.CCXTExchangeConfig = connector_config
+        self.connector_config: exchange_settings_ccxt.CCXTExchangeConfig = connector_config
         self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED = 100
 
         self.client = None

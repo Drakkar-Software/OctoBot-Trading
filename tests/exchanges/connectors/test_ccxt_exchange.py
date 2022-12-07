@@ -18,7 +18,7 @@ import decimal
 
 import ccxt.async_support
 from mock import patch, Mock
-from octobot_trading.exchanges.config import ccxt_exchange_settings
+from octobot_trading.exchanges.config import exchange_settings_ccxt
 
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
@@ -35,7 +35,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_initialize_impl_with_none_symbols_and_timeframes(exchange_manager):
     ccxt_exchange = exchange_connectors.CCXTExchange(
-        exchange_manager.config, exchange_manager, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        exchange_manager.config, exchange_manager, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
 
     class MockCCXT:
         def __init__(self):
@@ -56,7 +56,7 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(exchange_manager
 
 async def test_initialize_impl_with_empty_symbols_and_timeframes(exchange_manager):
     ccxt_exchange = exchange_connectors.CCXTExchange(
-        exchange_manager.config, exchange_manager, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        exchange_manager.config, exchange_manager, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
 
     class MockCCXT:
         def __init__(self):
@@ -77,7 +77,7 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(exchange_manage
 
 async def test_initialize_impl(exchange_manager):
     ccxt_exchange = exchange_connectors.CCXTExchange(
-        exchange_manager.config, exchange_manager, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        exchange_manager.config, exchange_manager, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
 
     class MockCCXT:
         def __init__(self):
@@ -116,7 +116,7 @@ async def test_initialize_impl(exchange_manager):
 
 async def test_set_symbol_partial_take_profit_stop_loss(exchange_manager):
     ccxt_exchange = exchange_connectors.CCXTExchange(
-        exchange_manager.config, exchange_manager, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        exchange_manager.config, exchange_manager, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
     with pytest.raises(NotImplementedError):
         await ccxt_exchange.set_symbol_partial_take_profit_stop_loss("BTC/USDT", False,
                                                                      enums.TakeProfitStopLossMode.PARTIAL)
@@ -124,7 +124,7 @@ async def test_set_symbol_partial_take_profit_stop_loss(exchange_manager):
 
 async def test_get_ccxt_order_type(exchange_manager):
     ccxt_exchange = exchange_connectors.CCXTExchange(
-        exchange_manager.config, exchange_manager, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        exchange_manager.config, exchange_manager, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
     with pytest.raises(RuntimeError):
         ccxt_exchange.get_ccxt_order_type(None)
     with pytest.raises(RuntimeError):
@@ -143,9 +143,9 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     config, fut_exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     fut_exchange_manager_inst.is_future = True
     fut_ccxt_exchange = exchange_connectors.CCXTExchange(
-        config, fut_exchange_manager_inst, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        config, fut_exchange_manager_inst, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
     spot_ccxt_exchange = exchange_connectors.CCXTExchange(
-        exchange_manager.config, exchange_manager, connector_config=ccxt_exchange_settings.CCXTExchangeConfig)
+        exchange_manager.config, exchange_manager, connector_config=exchange_settings_ccxt.CCXTExchangeConfig)
     # spot trading
     spot_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.SPOT.value
     await spot_ccxt_exchange.client.load_markets()

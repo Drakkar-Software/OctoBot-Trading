@@ -39,60 +39,28 @@ class ExchangeConfig:
     # set test status for each exchange
 
     IS_FULLY_TESTED_AND_SUPPORTED = False  # not recommended
+    is_untested: exchange_test_status.ExchangeTestStatus = (
+        exchange_test_status.ExchangeTestStatus()
+    )
+    CANDLE_LOADING_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
 
-    CANDLE_LOADING_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
+    MARKET_STATUS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    ORDERS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    TRADES_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    POSITIONS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    TICKER_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    FUNDING_RATE_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
 
-    MARKET_STATUS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    ORDERS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    TRADES_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    POSITIONS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    TICKER_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    FUNDING_RATE_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-
-    GET_ORDER_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    GET_ALL_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    GET_OPEN_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    GET_CLOSED_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    CANCEL_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    GET_MY_RECENT_TRADES_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    GET_POSITION_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
-    GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = (
-        exchange_test_status.ExchangeTestStatus()
-    )
+    GET_ORDER_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_ALL_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_OPEN_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_CLOSED_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    CANCEL_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_MY_RECENT_TRADES_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_POSITION_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
 
     @classmethod
     def is_fully_tested_and_supported(cls):
@@ -122,5 +90,7 @@ class ExchangeConfig:
         override to define default settings
         for example:
             cls.FUNDING_IN_TICKER = True
+        
+        see CCXTExchangeConfig as an example
         """
         pass

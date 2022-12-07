@@ -10,6 +10,8 @@ from octobot_trading.exchanges.parser.orders_parser_cryptofeed import (
     CryptoFeedOrdersParser,
 )
 from octobot_trading.exchanges.parser.trades_parser import TradesParser
+from octobot_trading.exchanges.parser.trades_parser_ccxt import CCXTTradesParser
+from octobot_trading.exchanges.parser.trades_parser_ccxt_generic import GenericCCXTTradesParser
 from octobot_trading.exchanges.parser.ticker_parser import TickerParser
 from octobot_trading.exchanges.parser.market_status_parser import (
     ExchangeMarketStatusParser,
@@ -23,6 +25,8 @@ __all__ = [
     "PositionsParser",
     "OrdersParser",
     "TradesParser",
+    "CCXTTradesParser",
+    "GenericCCXTTradesParser",
     "TickerParser",
     "FundingRateParser",
     "CCXTOrdersParser",

@@ -1,10 +1,10 @@
 from octobot_commons import enums as common_enums
 from octobot_trading import enums as enums
-import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
+import octobot_trading.exchanges.config.exchange_settings_ccxt as exchange_settings_ccxt
 
 
 def initialize_experimental_exchange_settings(exchange, inputs):
-    settings: ccxt_exchange_settings.CCXTExchangeConfig = exchange.CONNECTOR_CONFIG
+    settings: exchange_settings_ccxt.CCXTExchangeConfig = exchange.CONNECTOR_CONFIG
     experimental_enabled = exchange.UI.user_input(
         "experimental_mode",
         common_enums.UserInputTypes.BOOLEAN,
