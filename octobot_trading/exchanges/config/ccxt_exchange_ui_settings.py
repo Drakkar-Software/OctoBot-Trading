@@ -247,8 +247,8 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             settings.GET_CLOSED_ORDERS_METHODS = exchange.UI.user_input(
                 "get_symbol_position_methods",
                 common_enums.UserInputTypes.MULTIPLE_OPTIONS,
-                def_val=settings.GET_SYMBOL_POSITION_METHODS,
-                options=settings.ALL_GET_SYMBOL_POSITION_METHODS,
+                def_val=settings.GET_POSITION_METHODS,
+                options=settings.ALL_GET_POSITION_METHODS,
                 registered_inputs=inputs,
                 title="Get symbol positions methods: All methods will be used and duplicates will be ignored",
                 parent_input_name=get_methods_settings_name,

@@ -5,29 +5,26 @@ import octobot_trading.exchanges.parser.util as parser_util
 
 class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     """
-    override this class in the exchange tentacle 
+    override this class in the exchange tentacle
     if you add official support for a exchange
     see bybit tentacle as an example
     """
 
-    # override parsers with non Generic versions as a base
-    # if you add support for a new exchange
-    
     MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = (
         parser.ExchangeMarketStatusParser
     )
     ORDERS_PARSER: parser_util.Parser = parser.CCXTOrdersParser
     CRYPTO_FEED_ORDERS_PARSER: parser_util.Parser = parser.CryptoFeedOrdersParser
     TRADES_PARSER: parser_util.Parser = parser.CCXTTradesParser
-    POSITIONS_PARSER: parser_util.Parser = parser.PositionsParser
-    TICKER_PARSER: parser_util.Parser = parser.TickerParser
+    POSITIONS_PARSER: parser_util.Parser = parser.CCXTPositionsParser
+    TICKER_PARSER: parser_util.Parser = parser.CCXTTickerParser
     FUNDING_RATE_PARSER: parser_util.Parser = parser.FundingRateParser
 
     def __init__(self, exchange_connector):
         self.set_all_get_methods(exchange_connector)
         self.set_default_settings(exchange_connector)
         self.set_connector_settings(exchange_connector)
-        
+
     @classmethod
     def set_connector_settings(cls, exchange_connector) -> None:
         """
@@ -39,7 +36,7 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
             self.MARK_PRICE_IN_POSITION = True
         """
         pass
-    
+
     @classmethod
     def set_default_settings(cls, exchange_connector):
         """
@@ -53,15 +50,24 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
         # define available get methods
         cls.GET_ORDER_METHODS = [
             exchange_connector.get_order_default.__name__,
-            exchange_connector.get_order_using_stop_params.__name__,
         ]
-        cls.GET_ALL_ORDERS_METHODS = cls.ALL_GET_ALL_ORDERS_METHODS
-        cls.GET_OPEN_ORDERS_METHODS = cls.ALL_GET_OPEN_ORDERS_METHODS
-        cls.GET_CLOSED_ORDERS_METHODS = cls.ALL_GET_CLOSED_ORDERS_METHODS
-        cls.CANCEL_ORDERS_METHODS = cls.ALL_CANCEL_ORDERS_METHODS
-        cls.GET_MY_RECENT_TRADES_METHODS = cls.ALL_GET_MY_RECENT_TRADES_METHODS
-        cls.GET_POSITION_METHODS = cls.ALL_GET_POSITION_METHODS
-        cls.GET_SYMBOL_POSITION_METHODS = cls.ALL_GET_SYMBOL_POSITION_METHODS
+        cls.GET_ALL_ORDERS_METHODS = [
+            exchange_connector.get_all_orders_default.__name__,
+        ]
+        cls.GET_OPEN_ORDERS_METHODS = [
+            exchange_connector.get_open_orders_default.__name__,
+        ]
+        cls.GET_CLOSED_ORDERS_METHODS = cls.ALL_GET_CLOSED_ORDERS_METHODS = [
+            exchange_connector.get_closed_orders_default.__name__,
+        ]
+        cls.CANCEL_ORDERS_METHODS = [
+            exchange_connector.cancel_order_default.__name__,
+        ]
+        cls.GET_MY_RECENT_TRADES_METHODS = [
+            exchange_connector.get_my_recent_trades_default.__name__,
+        ]
+        cls.GET_POSITION_METHODS = cls.GET_POSITION_METHODS
+        cls.GET_POSITION_METHODS = cls.GET_POSITION_METHODS
 
         # market status parser
         cls.MARKET_STATUS_PARSER.FIX_PRECISION = cls.MARKET_STATUS_PARSER.FIX_PRECISION
@@ -129,7 +135,7 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
         ]
         cls.ALL_CANCEL_ORDERS_METHODS = [
             exchange_connector.cancel_order_default.__name__,
-            exchange_connector.cancel_stop_order_using_stop_loss_endpoint.__name__,
+            exchange_connector.cancel_stop_order_using_stop_loss_params.__name__,
         ]
         cls.ALL_GET_MY_RECENT_TRADES_METHODS = [
             exchange_connector.get_my_recent_trades_default.__name__,
@@ -141,9 +147,8 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
             exchange_connector.get_positions_inverse.__name__,
             exchange_connector.get_positions_swap.__name__,
             exchange_connector.get_positions_option.__name__,
-            exchange_connector.get_positions_with_private_get_position_risk.__name__,
         ]
-        cls.ALL_GET_SYMBOL_POSITION_METHODS = [
+        cls.ALL_GET_POSITION_METHODS = [
             exchange_connector.get_positions_linear.__name__,
             exchange_connector.get_positions_inverse.__name__,
             exchange_connector.get_positions_swap.__name__,
@@ -157,7 +162,7 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     CANCEL_ORDERS_METHODS: list = None
     GET_MY_RECENT_TRADES_METHODS: list = None
     GET_POSITION_METHODS: list = None
-    GET_SYMBOL_POSITION_METHODS: list = None
+    GET_POSITION_METHODS: list = None
     CANDLE_LOADING_LIMIT: int = None
     MAX_RECENT_TRADES_PAGINATION_LIMIT: int = None
     MAX_ORDER_PAGINATION_LIMIT: int = None
@@ -170,4 +175,4 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     ALL_CANCEL_ORDERS_METHODS: list = None
     ALL_GET_MY_RECENT_TRADES_METHODS: list = None
     ALL_GET_POSITION_METHODS: list = None
-    ALL_GET_SYMBOL_POSITION_METHODS: list = None
+    ALL_GET_POSITION_METHODS: list = None

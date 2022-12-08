@@ -34,7 +34,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.config.exchange_settings_ccxt as exchange_settings_ccxt
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus, PositionSubType
 
 
 class CCXTExchange(abstract_exchange.AbstractExchange):
@@ -829,9 +829,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 return True
             else:
                 messages = error_message or messages
-        if self.cancel_stop_order_using_stop_loss_endpoint.__name__ in defined_methods:
-            success, error_message = await self.cancel_stop_order_using_stop_loss_endpoint(order_id, symbol=symbol,
-                                                                                           **kwargs)
+        if self.cancel_stop_order_using_stop_loss_params.__name__ in defined_methods:
+            success, error_message = await self.cancel_stop_order_using_stop_loss_params(
+                order_id, symbol=symbol, **kwargs)
             if success:
                 return True
             else:
@@ -888,15 +888,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             success = True
             return success, None
 
-    async def cancel_stop_order_using_stop_loss_endpoint(self, order_id: str, symbol: str = None,
-                                                         **kwargs: dict) -> typing.Tuple[bool, str or None]:
-        # some exchange have an extra stop/take profit endpoint
-        # from bybit docs: You may cancel all untriggered conditional orders or take profit/stop loss order.
-        # Essentially, after a conditional order is triggered, it will become an active order. So, when a conditional
-        # order is triggered, cancellation has to be done through the active order endpoint for any unfilled or
-        # partially filled active order
-        kwargs["stop_order_id"] = order_id
-        return await self.cancel_order_default(order_id, symbol=symbol, kwargs=kwargs)
+    async def cancel_stop_order_using_stop_loss_params(self, order_id: str, symbol: str = None,
+                                                       **kwargs: dict) -> typing.Tuple[bool, str or None]:
+        if kwargs := self.exchange_manager.exchange.custom_cancel_stop_orders_params(kwargs):
+            return await self.cancel_order_default(order_id, symbol=symbol, kwargs=kwargs)
 
     async def get_positions(self, **kwargs: dict) -> list:
         """
@@ -913,18 +908,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             positions += await self.get_positions_swap(**kwargs)
         if self.get_positions_option.__name__ in defined_methods:
             positions += await self.get_positions_option(**kwargs)
-        if self.get_positions_with_private_get_position_risk.__name__ in defined_methods:
-            positions += await self.get_positions_with_private_get_position_risk()
         return positions
-
-    async def get_positions_with_private_get_position_risk(self) -> list:
-        try:
-            if self.client.has.get("fapiPrivate_get_positionrisk"):
-                return await self.exchange_manager.exchange.parse_positions(
-                    await self.client.fapiPrivate_get_positionrisk())
-        except Exception as e:
-            self.logger.exception(e, True, f"Failed to load positions using private_get_position_risk")
-        return []
 
     async def get_positions_linear(self, symbol=None, **kwargs: dict) -> list:
         return await self.get_position_by_sub_type(
@@ -934,24 +918,24 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def get_positions_inverse(self, symbol=None, **kwargs: dict) -> list:
         return await self.get_position_by_sub_type(
-            "inverse", symbol,
+            PositionSubType.INVERSE.value, symbol,
             await self.exchange_manager.exchange.get_positions_inverse_settle_coins()
             , **kwargs)
 
     async def get_positions_swap(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type("swap", symbol, **kwargs)
+        return await self.get_position_by_sub_type(PositionSubType.SWAP.value, symbol, **kwargs)
 
     async def get_positions_option(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type("option", symbol, **kwargs)
+        return await self.get_position_by_sub_type(PositionSubType.OPTION.value, symbol, **kwargs)
 
     async def get_position_by_sub_type(
             self, sub_type, symbol, settle_coins: list = None, **kwargs: dict
     ) -> list:
-        params = {**kwargs, "subType": sub_type}
+        params = {**kwargs, PositionSubType.SUB_TYPE.value: sub_type}
         if settle_coins:
             positions = []
             for coin in settle_coins:
-                params["settleCoin"] = coin
+                params[PositionSubType.SETTLE_COIN.value] = coin
                 if symbol:
                     positions += await self._get_position(symbol, **params)
                 else:
@@ -971,7 +955,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             return []
 
     async def get_position(self, symbol: str, **kwargs: dict) -> list:
-        defined_methods = self.connector_config.GET_SYMBOL_POSITION_METHODS
+        defined_methods = self.connector_config.GET_POSITION_METHODS
         positions = []
         if self.get_positions_linear.__name__ in defined_methods:
             positions += await self.get_positions_linear(symbol, **kwargs)
@@ -984,8 +968,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return positions
 
     async def _get_position(self, symbol: str, **kwargs: dict) -> list:
-        raw_posotions = await self.client.fetch_positions(symbols=[symbol], params=kwargs)
-        return await self.exchange_manager.exchange.parse_positions(raw_posotions)
+        raw_positions = await self.client.fetch_positions(symbols=[symbol], params=kwargs)
+        return await self.exchange_manager.exchange.parse_positions(raw_positions)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         if self.client.has.get("fetchFundingRate"):

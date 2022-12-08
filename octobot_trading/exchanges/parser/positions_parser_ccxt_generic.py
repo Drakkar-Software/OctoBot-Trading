@@ -2,6 +2,7 @@ from octobot_trading.enums import (
     ExchangeConstantsPositionColumns as PositionCols,
     ExchangePositionCCXTColumns as ExchangeCols,
     PositionStatus,
+    ExchangeConstantsMarkPriceColumns as MarkPriceCols,
 )
 import octobot_trading.exchanges.parser.positions_parser_ccxt as positions_parser_ccxt
 
@@ -42,6 +43,10 @@ class GenericCCXTPositionsParser(positions_parser_ccxt.CCXTPositionsParser):
     ]
     SIDE_KEYS: list = [ExchangeCols.SIDE.value, "positionSide"]
     SIZE_KEYS: list = [ExchangeCols.CONTRACTS.value, "positionAmt"]
+    MARK_PRICE_KEYS: list = [
+        ExchangeCols.MARK_PRICE.value,
+        MarkPriceCols.MARK_PRICE.value,
+    ]
 
     USE_INFO_SUB_DICT_FOR_REALIZED_PNL: bool = True
     USE_INFO_SUB_DICT_FOR_UNREALIZED_PNL: bool = True
@@ -53,7 +58,7 @@ class GenericCCXTPositionsParser(positions_parser_ccxt.CCXTPositionsParser):
     USE_INFO_SUB_DICT_FOR_SIDE: bool = True
     USE_INFO_SUB_DICT_FOR_SIZE: bool = True
     USE_INFO_SUB_DICT_FOR_MODE: bool = True
-    
+    USE_INFO_SUB_DICT_FOR_MARK_PRICE: bool = True
 
     STATUS_STATIC_MAP: dict = {
         PositionStatus.OPEN.value: PositionStatus.OPEN.value,

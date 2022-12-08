@@ -156,6 +156,14 @@ class TraderPositionType(enum.Enum):
     ISOLATED = "isolated"
 
 
+class PositionSubType(enum.Enum):
+    LINEAR = "linear"
+    INVERSE = "inverse"
+    SWAP = "swap"
+    OPTION = "option"
+    SUB_TYPE = "subType"
+    SETTLE_COIN = "settleCoin"
+
 class PositionMode(enum.Enum):
     HEDGE = "hedge_mode"
     ONE_WAY = "one_way_mode"

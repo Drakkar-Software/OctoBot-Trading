@@ -53,7 +53,6 @@ cdef class AbstractExchange(util.Initializable):
 
     # parsers
     cpdef dict parse_balance(self, dict balance)
-    cpdef dict parse_ticker(self, dict ticker)
     cpdef dict parse_ohlcv(self, dict ohlcv)
     cpdef dict parse_order_book(self, dict order_book)
     cpdef dict parse_order_book_ticker(self, dict order_book_ticker)

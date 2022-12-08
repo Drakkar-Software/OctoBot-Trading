@@ -9,17 +9,17 @@ class ExchangeConfig:
     """
 
     # override classes if you need a different parser
-    MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = None
-    ORDERS_PARSER: parser.OrdersParser = None
-    TRADES_PARSER: parser.TradesParser = None
-    POSITIONS_PARSER: parser.PositionsParser = None
-    TICKER_PARSER: parser.TickerParser = None
-    FUNDING_RATE_PARSER: parser.FundingRateParser = None
+    MARKET_STATUS_PARSER: parser.ExchangeMarketStatusParser = parser.ExchangeMarketStatusParser
+    ORDERS_PARSER: parser.OrdersParser = parser.OrdersParser
+    TRADES_PARSER: parser.TradesParser = parser.TradesParser
+    POSITIONS_PARSER: parser.PositionsParser = parser.PositionsParser
+    TICKER_PARSER: parser.TickerParser = parser.TickerParser
+    FUNDING_RATE_PARSER: parser.FundingRateParser = parser.FundingRateParser
     
-    FUNDING_IN_TICKER: bool = None
-    MARK_PRICE_IN_TICKER: bool = None
-    FUNDING_WITH_MARK_PRICE: bool = None
-    MARK_PRICE_IN_POSITION: bool = None
+    FUNDING_IN_TICKER: bool = False
+    MARK_PRICE_IN_TICKER: bool = False
+    FUNDING_WITH_MARK_PRICE: bool = False
+    MARK_PRICE_IN_POSITION: bool = False
 
     def __init__(self, exchange_connector):
         self.set_default_settings(exchange_connector)

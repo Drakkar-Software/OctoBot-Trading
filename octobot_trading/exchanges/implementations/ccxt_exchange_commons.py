@@ -336,6 +336,12 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
         override if certain parameters are required to edit stop orders
         """
         return params
+    
+    def custom_cancel_stop_orders_params(self, order_id, stop_price, params) -> dict:
+        """
+        override if certain parameters are required to edit stop orders
+        """
+        return params
 
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None,
                              check_completeness: bool = None, **kwargs: dict) -> list:

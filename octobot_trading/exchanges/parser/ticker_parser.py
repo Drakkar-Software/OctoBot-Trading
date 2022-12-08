@@ -10,14 +10,53 @@ import octobot_trading.exchanges.parser.util as parser_util
 
 class TickerParser(parser_util.Parser):
     """
-    overwrite TickerParser class methods if necessary
-    always/only include bulletproof custom code into the parser to improve generic support
+    overwrite TickerParser class if you implement a non ccxt exchange
 
         parser usage:   parser = TickerParser(exchange)
                         ticker = await parser.parse_trades(raw_ticker)
     """
 
     fetched_symbol_prices: list = None
+
+    SYMBOL_KEYS: list = []
+    TIMESTAMP_KEYS: list = []
+    AVERAGE_KEYS: list = []
+    BID_KEYS: list = []
+    BID_VOLUME_KEYS: list = []
+    ASK_KEYS: list = []
+    ASK_VOLUME_KEYS: list = []
+    LAST_PRICE_KEYS: list = []
+    PREVIOUS_CLOSE_PRICE_KEYS: list = []
+    CHANGE_KEYS: list = []
+    PERCENTAGE_KEYS: list = []
+    OPEN_PRICE_KEYS: list = []
+    HIGH_PRICE_KEYS: list = []
+    LOW_PRICE_KEYS: list = []
+    CLOSE_PRICE_KEYS: list = []
+    QUOTE_VOLUME_KEYS: list = []
+    BASE_VOLUME_KEYS: list = []
+    MARK_PRICE_KEYS: list = []
+    
+    USE_INFO_SUB_DICT_FOR_SYMBOL: bool = False
+    USE_INFO_SUB_DICT_FOR_TIMESTAMP: bool = False
+    USE_INFO_SUB_DICT_FOR_AVERAGE: bool = False
+    USE_INFO_SUB_DICT_FOR_BID: bool = False
+    USE_INFO_SUB_DICT_FOR_BID_VOLUME: bool = False
+    USE_INFO_SUB_DICT_FOR_ASK: bool = False
+    USE_INFO_SUB_DICT_FOR_ASK_VOLUME: bool = False
+    USE_INFO_SUB_DICT_FOR_LAST_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_PREVIOUS_CLOSE_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_CHANGE: bool = False
+    USE_INFO_SUB_DICT_FOR_PERCENTAGE: bool = False
+    USE_INFO_SUB_DICT_FOR_OPEN_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_HIGH_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_LOW_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_CLOSE_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_QUOTE_VOLUME: bool = False
+    USE_INFO_SUB_DICT_FOR_BASE_VOLUME: bool = False
+    USE_INFO_SUB_DICT_FOR_MARK_PRICE: bool = False
+    
+    FETCH_PRICES_WITH_GET_SYMBOL_IF_MISSING: bool = False
 
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
@@ -81,14 +120,12 @@ class TickerParser(parser_util.Parser):
                 if self.exchange.CONNECTOR_CONFIG.FUNDING_IN_TICKER:
                     self.formatted_record = {
                         **self.formatted_record,
-                        **self.exchange.connector.parse_funding_rate(
+                        **self.exchange.parse_funding_rate(
                             raw_ticker, from_ticker=True
                         ),
                     }
 
             self._create_debugging_report_for_record()
-            if also_get_mini_ticker:
-                return self.formatted_record, self._parse_mini_ticker()
         except Exception as e:
             # just in case something bad happens
             # this should never happen, check the parser code
@@ -97,6 +134,8 @@ class TickerParser(parser_util.Parser):
                 "not able to complete ticker parser",
                 error=e,
             )
+        if also_get_mini_ticker:
+            return self.formatted_record, self._parse_mini_ticker()
         return self.formatted_record
 
     def _parse_mini_ticker(self) -> dict:
@@ -134,32 +173,32 @@ class TickerParser(parser_util.Parser):
     def _parse_symbol(self, missing_symbol_value):
         self._try_to_find_and_set(
             TickerCols.SYMBOL.value,
-            [TickerCols.SYMBOL.value],
+            self.SYMBOL_KEYS,
             not_found_val=missing_symbol_value,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_SYMBOL,
         )
 
     def _parse_timestamp(self):
         self._try_to_find_and_set(
             TickerCols.TIMESTAMP.value,
-            [TickerCols.TIMESTAMP.value],
+            self.TIMESTAMP_KEYS,
             parse_method=parser_util.convert_any_time_to_seconds,
-            not_found_method=self.missing_timestamp,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_TIMESTAMP,
         )
-
-    def missing_timestamp(self, _):
-        return self.exchange.connector.client.milliseconds
 
     def _parse_quote_volume(self):
         self._try_to_find_and_set_decimal(
             TickerCols.QUOTE_VOLUME.value,
-            [TickerCols.QUOTE_VOLUME.value],
+            self.QUOTE_VOLUME_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_QUOTE_VOLUME,
         )
 
     def _parse_base_volume(self):
         self._try_to_find_and_set_decimal(
             TickerCols.BASE_VOLUME.value,
-            [TickerCols.BASE_VOLUME.value],
+            self.BASE_VOLUME_KEYS,
             not_found_method=self._missing_base_volume,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_BASE_VOLUME,
         )
 
     def _missing_base_volume(self, _):
@@ -179,111 +218,132 @@ class TickerParser(parser_util.Parser):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.AVERAGE.value,
-            [TickerCols.AVERAGE.value],
+            self.AVERAGE_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_AVERAGE,
         )
 
     def _parse_bid(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.BID.value,
-            [TickerCols.BID.value],
+            self.BID_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_BID,
         )
 
     def _parse_bid_volume(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.BID_VOLUME.value,
-            [TickerCols.BID_VOLUME.value],
+            self.BID_VOLUME_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_BID_VOLUME,
         )
 
     def _parse_ask(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.ASK.value,
-            [TickerCols.ASK.value],
+            self.ASK_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_ASK,
         )
 
     def _parse_ask_volume(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.ASK_VOLUME.value,
-            [TickerCols.ASK_VOLUME.value],
+            self.ASK_VOLUME_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_ASK_VOLUME,
         )
 
     def _parse_last_price(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.LAST.value,
-            [TickerCols.LAST.value],
+            self.LAST_PRICE_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_LAST_PRICE,
         )
 
     def _parse_previous_close_price(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.PREVIOUS_CLOSE.value,
-            [TickerCols.PREVIOUS_CLOSE.value],
+            self.PREVIOUS_CLOSE_PRICE_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_CLOSE_PRICE,
         )
 
     def _parse_change(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.CHANGE.value,
-            [TickerCols.CHANGE.value],
+            self.CHANGE_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_CHANGE,
         )
 
     def _parse_percentage(self):
         # optional
         self._try_to_find_and_set_decimal(
             TickerCols.PERCENTAGE.value,
-            [TickerCols.PERCENTAGE.value],
+            self.PERCENTAGE_KEYS,
             enable_log=False,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_PERCENTAGE,
         )
 
     async def _parse_open_price(self):
         await self._try_to_find_and_set_decimal_async(
             TickerCols.OPEN.value,
-            [TickerCols.OPEN.value],
-            not_found_method=self.missing_open_price,
+            self.OPEN_PRICE_KEYS,
+            not_found_method=self.missing_open_price
+            if self.FETCH_PRICES_WITH_GET_SYMBOL_IF_MISSING
+            else None,
             not_found_method_is_async=True,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_OPEN_PRICE,
         )
 
     async def _parse_high_price(self):
         await self._try_to_find_and_set_decimal_async(
             TickerCols.HIGH.value,
-            [TickerCols.HIGH.value],
-            not_found_method=self.missing_high_price,
+            self.HIGH_PRICE_KEYS,
+            not_found_method=self.missing_high_price
+            if self.FETCH_PRICES_WITH_GET_SYMBOL_IF_MISSING
+            else None,
             not_found_method_is_async=True,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_HIGH_PRICE,
         )
 
     async def _parse_low_price(self):
         await self._try_to_find_and_set_decimal_async(
             TickerCols.LOW.value,
-            [TickerCols.LOW.value],
-            not_found_method=self.missing_low_price,
+            self.LOW_PRICE_KEYS,
+            not_found_method=self.missing_low_price
+            if self.FETCH_PRICES_WITH_GET_SYMBOL_IF_MISSING
+            else None,
             not_found_method_is_async=True,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_LOW_PRICE,
         )
 
     async def _parse_close_price(self):
         await self._try_to_find_and_set_decimal_async(
             TickerCols.CLOSE.value,
-            [TickerCols.CLOSE.value],
-            not_found_method=self.missing_close_price,
+            self.CLOSE_PRICE_KEYS,
+            not_found_method=self.missing_close_price
+            if self.FETCH_PRICES_WITH_GET_SYMBOL_IF_MISSING
+            else None,
             not_found_method_is_async=True,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_CLOSE_PRICE,
         )
 
     def _parse_mark_price(self):
         self._try_to_find_and_set_decimal(
             MarkPriceCols.MARK_PRICE.value,
-            [MarkPriceCols.MARK_PRICE.value],
-            use_info_sub_dict=True,
+            self.MARK_PRICE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_MARK_PRICE,
         )
 
     async def missing_open_price(self, _):
