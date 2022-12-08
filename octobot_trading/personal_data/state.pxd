@@ -22,7 +22,7 @@ cdef class State(util.Initializable):
 
     cdef public bint is_from_exchange_data
     cdef public object terminated   # asyncio.Event
-    cdef public float pending_refresh_interval
+    cdef public bint has_already_been_synchronized_once
 
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)

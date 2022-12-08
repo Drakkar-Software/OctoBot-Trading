@@ -51,6 +51,9 @@ class OrdersManager(util.Initializable):
     def get_open_orders(self, symbol=None, since=-1, limit=-1, tag=None):
         return self._select_orders(enums.OrderStatus.OPEN, symbol, since, limit, tag=tag)
 
+    def get_pending_cancel_orders(self, symbol=None, since=-1, limit=-1, tag=None):
+        return self._select_orders(enums.OrderStatus.PENDING_CANCEL, symbol, since, limit, tag=tag)
+
     def get_closed_orders(self, symbol=None, since=-1, limit=-1, tag=None):
         return self._select_orders(enums.OrderStatus.CLOSED, symbol, since, limit, tag=tag)
 

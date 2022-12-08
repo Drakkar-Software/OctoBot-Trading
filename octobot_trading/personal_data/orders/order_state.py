@@ -111,7 +111,6 @@ class OrderState(state_class.State):
                 order=self.order,
                 wait_for_refresh=True,
                 force_job_execution=force_synchronization,
-                force_on_refresh_successful=True,
             )
         except octobot_trading.errors.InvalidOrderState:
             self.get_logger().debug(f"Skipping exchange synchronisation as order has already been closed.")
