@@ -207,7 +207,7 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
 
     def parse_funding_rates(self, raw_funding_rates: list) -> list:
         _parser = self.CONNECTOR_CONFIG.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
-        return _parser.parse_funding_rate_list(raw_funding_rates=raw_funding_rates)
+        return _parser.parse_funding_rates(raw_funding_rates=raw_funding_rates)
 
     def parse_funding_rate(self, raw_funding_rate: dict, from_ticker: bool = False) -> dict:
         _parser = self.CONNECTOR_CONFIG.FUNDING_RATE_PARSER(self.exchange_manager.exchange)

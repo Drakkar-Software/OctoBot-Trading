@@ -12,7 +12,7 @@ class FundingRateParser(Parser):
 
         parser usage:   parser = FundingRateParser(exchange)
                         funding_rate = parser.parse_funding_rate(raw_funding_rate)
-                        funding_rates = parser.parse_funding_rate_list(raw_funding_rates)
+                        funding_rates = parser.parse_funding_rates(raw_funding_rates)
     """
 
     FUNDING_TIME_UPDATE_PERIOD: int = None  # in seconds
@@ -35,7 +35,7 @@ class FundingRateParser(Parser):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "funding rate"
 
-    def parse_funding_rate_list(self, raw_funding_rates: list) -> list:
+    def parse_funding_rates(self, raw_funding_rates: list) -> list:
         """
         use this method to format a list of funding rates
         :param raw_funding_rates: raw funding rate list

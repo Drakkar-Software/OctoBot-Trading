@@ -13,7 +13,7 @@ class GenericCCXTFundingRateParser(Parser):
 
         parser usage:   parser = GenericCCXTFundingRateParser(exchange)
                         funding_rate = parser.parse_funding_rate(raw_funding_rate)
-                        funding_rates = parser.parse_funding_rate_list(raw_funding_rates)
+                        funding_rates = parser.parse_funding_rates(raw_funding_rates)
     """
 
     def __init__(self, exchange):
