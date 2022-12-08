@@ -1,4 +1,4 @@
-import octobot_trading.exchanges.config.exchange_settings as exchange_settings
+import octobot_trading.exchanges.connectors.exchange_settings as exchange_settings
 import octobot_trading.exchanges.parser as parser
 import octobot_trading.exchanges.parser.util as parser_util
 

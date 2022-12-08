@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_trading.exchanges.connectors.ccxt_websocket_connector as ccxt_websocket_connector
+import octobot_trading.exchanges.connectors.ccxt.ccxt_websocket_connector as ccxt_websocket_connector
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_tentacles_manager.api as api
 

@@ -1,4 +1,4 @@
-import octobot_trading.exchanges.config.exchange_settings_ccxt as exchange_settings_ccxt
+import octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt as exchange_settings_ccxt
 import octobot_trading.exchanges.parser as parser
 import octobot_trading.exchanges.parser.util as parser_util
 
@@ -64,7 +64,7 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
         )
 
         # positions parser
-        cls.POSITIONS_PARSER.MODE_KEY_NAMES = cls.POSITIONS_PARSER.MODE_KEY_NAMES
+        cls.POSITIONS_PARSER.MODE_KEYS = cls.POSITIONS_PARSER.MODE_KEYS
         cls.POSITIONS_PARSER.ONEWAY_VALUES = cls.POSITIONS_PARSER.ONEWAY_VALUES
         cls.POSITIONS_PARSER.HEDGE_VALUES = cls.POSITIONS_PARSER.HEDGE_VALUES
 

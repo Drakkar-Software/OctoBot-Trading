@@ -1,6 +1,6 @@
 from octobot_commons import enums as common_enums
 from octobot_trading import enums as enums
-import octobot_trading.exchanges.config.exchange_settings_ccxt as exchange_settings_ccxt
+import octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt as exchange_settings_ccxt
 
 
 def initialize_experimental_exchange_settings(exchange, inputs):

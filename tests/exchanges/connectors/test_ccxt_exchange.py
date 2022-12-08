@@ -18,7 +18,7 @@ import decimal
 
 import ccxt.async_support
 from mock import patch, Mock
-from octobot_trading.exchanges.config import exchange_settings_ccxt
+from octobot_trading.exchanges.connectors.ccxt import exchange_settings_ccxt
 
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums

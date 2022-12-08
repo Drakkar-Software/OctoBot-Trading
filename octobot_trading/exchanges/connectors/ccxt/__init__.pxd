@@ -14,31 +14,31 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.connectors cimport exchange_simulator
-from octobot_trading.exchanges.connectors.exchange_simulator cimport (
-    ExchangeSimulator,
-)
 from octobot_trading.exchanges.connectors.ccxt cimport ccxt_exchange
 from octobot_trading.exchanges.connectors.ccxt.ccxt_exchange cimport (
     CCXTExchange,
-)
-from octobot_trading.exchanges.connectors cimport abstract_websocket_connector
-from octobot_trading.exchanges.connectors.abstract_websocket_connector cimport (
-    AbstractWebsocketConnector,
 )
 from octobot_trading.exchanges.connectors.ccxt cimport ccxt_websocket_connector
 from octobot_trading.exchanges.connectors.ccxt.ccxt_websocket_connector cimport (
     CCXTWebsocketConnector,
 )
-from octobot_trading.exchanges.connectors cimport cryptofeed_websocket_connector
-from octobot_trading.exchanges.connectors.cryptofeed_websocket_connector cimport (
-    CryptofeedWebsocketConnector,
+from octobot_trading.exchanges.connectors.ccxt cimport ccxt_exchange_ui_settings
+from octobot_trading.exchanges.connectors.ccxt.ccxt_exchange_ui_settings cimport (
+    initialize_experimental_exchange_settings,
+)
+from octobot_trading.exchanges.connectors.ccxt cimport exchange_settings_ccxt
+from octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt cimport (
+    CCXTExchangeConfig,
+)
+from octobot_trading.exchanges.connectors.ccxt cimport exchange_settings_ccxt_generic
+from octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt_generic cimport (
+    GenericCCXTExchangeConfig,
 )
 
 __all__ = [
-    "ExchangeSimulator",
     "CCXTExchange",
-    "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
-    "CryptofeedWebsocketConnector",
+    "initialize_experimental_exchange_settings",
+    "CCXTExchangeConfig",
+    "GenericCCXTExchangeConfig",
 ]
