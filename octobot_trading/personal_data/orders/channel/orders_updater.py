@@ -151,8 +151,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                                          should_notify=False,
                                          wait_for_refresh=False,
                                          force_job_execution=False,
-                                         create_order_producer_if_missing=True,
-                                         force_on_refresh_successful=False):
+                                         create_order_producer_if_missing=True):
         """
         Trigger order job refresh from exchange
         :param order: the order to update
@@ -160,16 +159,13 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :param should_notify: if Orders channel consumers should be notified
         :param force_job_execution: When True, order_update_job will bypass its dependencies check
         :param create_order_producer_if_missing: Should be set to False when called by self to prevent spamming
-        :param force_on_refresh_successful: When True, the order's state's on_refresh_successful will be called after
-        the update even when the order did not change
         :return: True if the order was updated
         """
         await self.order_update_job.run(force=True, wait_for_task_execution=wait_for_refresh,
                                         ignore_dependencies_check=force_job_execution,
-                                        order=order, should_notify=should_notify,
-                                        force_on_refresh_successful=force_on_refresh_successful)
+                                        order=order, should_notify=should_notify)
 
-    async def _order_fetch_and_push(self, order, should_notify=False, force_on_refresh_successful=False):
+    async def _order_fetch_and_push(self, order, should_notify=False):
         """
         Update Order from exchange
         :param order: the order to update
@@ -185,8 +181,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             self.logger.debug(f"Received update for {order} on {exchange_name}: {raw_order}")
 
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order.order_id, raw_order, should_notify=should_notify,
-                force_on_refresh_successful=force_on_refresh_successful
+                order.order_id, raw_order, should_notify=should_notify
             )
 
     async def stop(self) -> None:

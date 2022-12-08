@@ -57,14 +57,25 @@ class CancelOrderState(order_state.OrderState):
         """
         return status in constants.CANCEL_ORDER_STATUS_SCOPE or status in constants.FILL_ORDER_STATUS_SCOPE
 
+    async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
+        """
+        Ask OrdersChannel Internal producer to refresh the order from the exchange
+        :param force_synchronization: When True, for the update of the order from the exchange
+        :return: the result of OrdersProducer.update_order_from_exchange()
+        """
+        if not self.has_already_been_synchronized_once:
+            # If we want to sync this state, it means the order is being canceled by the exchange but is not
+            # fully canceled yet. Giving some time to the exchange before re-requesting it.
+            self.get_logger().debug(f"{self.__class__.__name__} still pending, "
+                                    f"synchronizing in {self.PENDING_REFRESH_INTERVAL}s")
+            await asyncio.sleep(self.PENDING_REFRESH_INTERVAL)
+        await super()._synchronize_with_exchange(force_synchronization=force_synchronization)
+
     async def on_refresh_successful(self):
         """
         Verify the order is properly canceled
         """
         if self.is_status_pending():
-            self.get_logger().debug(f"{self.__class__.__name__} still pending, "
-                                    f"refreshing in {self.pending_refresh_interval}s")
-            await asyncio.sleep(self.pending_refresh_interval)
             await self.update()
         elif self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE:
             self.state = enums.OrderStates.CANCELED

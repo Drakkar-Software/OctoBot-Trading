@@ -106,8 +106,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                                          should_notify=False,
                                          wait_for_refresh=False,
                                          force_job_execution=False,
-                                         create_order_producer_if_missing=True,
-                                         force_on_refresh_successful=False,):
+                                         create_order_producer_if_missing=True):
         """
         Update order from exchange
         :param order: the order to update
@@ -115,8 +114,6 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         :param should_notify: if Orders channel consumers should be notified
         :param force_job_execution: When True, order_update_job will bypass its dependencies check
         :param create_order_producer_if_missing: Should be set to False when called by self to prevent spamming
-        :param force_on_refresh_successful: When True, the order's state's on_refresh_successful will be called after
-        the update even when the order did not change
         :return: True if the order was updated
         """
         try:
@@ -124,8 +121,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                    update_order_from_exchange(order=order,
                                               should_notify=should_notify,
                                               force_job_execution=force_job_execution,
-                                              wait_for_refresh=wait_for_refresh,
-                                              force_on_refresh_successful=force_on_refresh_successful))
+                                              wait_for_refresh=wait_for_refresh))
         except IndexError:
             if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
                 self.logger.debug("Missing orders producer, starting one...")
@@ -147,7 +143,11 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         missing_order_ids = list(
             set(
                 order.order_id for order in
-                self.channel.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)
+                self.channel.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+                    symbol
+                ) + self.channel.exchange_manager.exchange_personal_data.orders_manager.get_pending_cancel_orders(
+                    symbol
+                )
                 if not order.is_self_managed()) -
             set(
                 self.channel.exchange_manager.exchange.parse_order_id(order)

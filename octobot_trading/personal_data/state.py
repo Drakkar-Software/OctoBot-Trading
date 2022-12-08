@@ -23,7 +23,7 @@ import octobot_trading.util as util
 
 
 class State(util.Initializable):
-    DEFAULT_PENDING_REFRESH_INTERVAL = 0.3
+    PENDING_REFRESH_INTERVAL = 2
 
     def __init__(self, is_from_exchange_data):
         super().__init__()
@@ -39,8 +39,9 @@ class State(util.Initializable):
 
         # set after self.terminate has been executed (with or without raised exception)
         self.terminated = asyncio.Event()
-        # seconds between each refresh attempt while in a pending state
-        self.pending_refresh_interval = self.DEFAULT_PENDING_REFRESH_INTERVAL
+
+        # set at True after synchronize has been called
+        self.has_already_been_synchronized_once = False
 
     def is_pending(self) -> bool:
         """
@@ -127,6 +128,8 @@ class State(util.Initializable):
                 self.log_event_message(enums.StatesMessages.SYNCHRONIZING_ERROR, error=e)
             else:
                 raise
+        finally:
+            self.has_already_been_synchronized_once = True
 
     async def synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
         """
@@ -175,6 +178,13 @@ class State(util.Initializable):
         """
         self.get_logger().debug(f"{self.__class__.__name__} terminated")
         self.terminated.set()
+
+    def __del__(self):
+        if not self.terminated.is_set() and self.terminated._waiters:
+            self.get_logger().error(f"{self.__class__.__name__} deleted before the terminated "
+                                    f"event has been set while tasks are waiting for it. "
+                                    f"Force setting event.")
+            self.terminated.set()
 
     async def wait_for_terminate(self, timeout) -> None:
         await asyncio.wait_for(self.terminated.wait(), timeout=timeout)
