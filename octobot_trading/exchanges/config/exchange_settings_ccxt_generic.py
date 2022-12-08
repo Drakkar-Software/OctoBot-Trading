@@ -10,7 +10,10 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
 
     ORDERS_PARSER: parser_util.Parser = parser.GenericCCXTOrdersParser
     TRADES_PARSER: parser_util.Parser = parser.GenericCCXTTradesParser
-    
+    POSITIONS_PARSER: parser_util.Parser = parser.GenericCCXTPositionsParser
+    TICKER_PARSER: parser_util.Parser = parser.GenericCCXTTickerParser
+    FUNDING_RATE_PARSER: parser_util.Parser = parser.GenericCCXTFundingRateParser
+
     @classmethod
     def set_default_settings(cls, exchange_connector):
         # pagination limits
@@ -26,7 +29,7 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
         cls.CANCEL_ORDERS_METHODS = cls.ALL_CANCEL_ORDERS_METHODS
         cls.GET_MY_RECENT_TRADES_METHODS = cls.ALL_GET_MY_RECENT_TRADES_METHODS
         cls.GET_POSITION_METHODS = cls.ALL_GET_POSITION_METHODS
-        cls.GET_SYMBOL_POSITION_METHODS = cls.ALL_GET_SYMBOL_POSITION_METHODS
+        cls.GET_POSITION_METHODS = cls.ALL_GET_POSITION_METHODS
 
         # market status parser
         cls.MARKET_STATUS_PARSER.FIX_PRECISION = cls.MARKET_STATUS_PARSER.FIX_PRECISION
@@ -69,6 +72,19 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
         cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD = (
             cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD
         )
+
+        # get_positions
+        cls.GET_POSITION_LINEAR_SETTLE_COINS: list = ["USDT", "USDC"]
+        cls.GET_POSITION_INVERSE_SETTLE_COINS: list = [
+            "BTC",
+            "ETH",
+            "MANA",
+            "XRP",
+            "ADA",
+            "DOT",
+            "EOS",
+            "LTC",
+        ]
 
         # other
         cls.FUNDING_IN_TICKER = True

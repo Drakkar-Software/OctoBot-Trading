@@ -33,23 +33,19 @@ class FutureCCXTExchange(exchanges_types.FutureExchange,
     
     async def get_positions_linear_settle_coins(self) -> None or list:
         """
-        override if exchange has different settle coins for linear positions
-
         Returns:
             None or list: list of currencies
         """
         # todo find a way to automate
-        return ["USDT", "USDC"]
+        return self.CONNECTOR_CONFIG.GET_POSITION_LINEAR_SETTLE_COINS
     
     async def get_positions_inverse_settle_coins(self) -> None or list:
         """
-        override if exchange has different settle coins for inverse positions
-
         Returns:
             None or list: list of currencies
         """
         # todo find a way to automate
-        return ["BTC", "ETH", "MANA", "XRP", "ADA", "DOT", "EOS", "LTC"]
+        return self.CONNECTOR_CONFIG.GET_POSITION_INVERSE_SETTLE_COINS
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         return await self.connector.get_funding_rate(symbol=symbol, **kwargs)

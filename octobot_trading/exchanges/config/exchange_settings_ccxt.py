@@ -18,8 +18,8 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     TRADES_PARSER: parser_util.Parser = parser.CCXTTradesParser
     POSITIONS_PARSER: parser_util.Parser = parser.CCXTPositionsParser
     TICKER_PARSER: parser_util.Parser = parser.CCXTTickerParser
-    FUNDING_RATE_PARSER: parser_util.Parser = parser.FundingRateParser
-
+    FUNDING_RATE_PARSER: parser_util.Parser = parser.CCXTFundingRateParser
+    
     def __init__(self, exchange_connector):
         self.set_all_get_methods(exchange_connector)
         self.set_default_settings(exchange_connector)
@@ -102,7 +102,11 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
         cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD = (
             cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD
         )
-
+        
+        # get_positions
+        cls.GET_POSITION_LINEAR_SETTLE_COINS: list =  []
+        cls.GET_POSITION_INVERSE_SETTLE_COINS: list =  []
+        
         # other
         cls.FUNDING_IN_TICKER = True
         cls.MARK_PRICE_IN_TICKER = True
@@ -176,3 +180,4 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     ALL_GET_MY_RECENT_TRADES_METHODS: list = None
     ALL_GET_POSITION_METHODS: list = None
     ALL_GET_POSITION_METHODS: list = None
+    GET_POSITION_LINEAR_SETTLE_COINS: list = None
