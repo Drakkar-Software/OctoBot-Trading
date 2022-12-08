@@ -24,7 +24,13 @@ from octobot_trading.exchange_data.contracts.future_contract import (
     FutureContract,
 )
 
+from octobot_trading.exchange_data.contracts import contract_factory
+from octobot_trading.exchange_data.contracts.contract_factory import (
+    update_contracts_from_positions,
+)
+
 __all__ = [
     "MarginContract",
     "FutureContract",
+    "update_contracts_from_positions",
 ]

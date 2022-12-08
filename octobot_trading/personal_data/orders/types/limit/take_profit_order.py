@@ -20,12 +20,21 @@ import octobot_trading.personal_data.orders.types.limit.limit_order as limit_ord
 class TakeProfitOrder(limit_order.LimitOrder):
     def __init__(self, trader, side=enums.TradeOrderSide.SELL):
         super().__init__(trader, side)
+        self.trigger_above = self.side is enums.TradeOrderSide.SELL
+
+    def is_counted_in_available_funds(self):
+        return False
+
+    def _filled_maker_or_taker(self):
+        # Creates a market order when filled, which is taker
+        return enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
 
     async def on_filled(self):
         await limit_order.LimitOrder.on_filled(self)
-        # TODO replace with chained order ?
-        await self.trader.create_artificial_order(enums.TraderOrderType.SELL_LIMIT
-                                                  if self.side is enums.TradeOrderSide.SELL
-                                                  else enums.TraderOrderType.BUY_LIMIT,
-                                                  self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity, self.origin_stop_price)
+        if not self.trader.simulate and self.is_self_managed():
+            # TODO replace with chained order ?
+            await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
+                                                      if self.side is enums.TradeOrderSide.SELL
+                                                      else enums.TraderOrderType.BUY_MARKET,
+                                                      self.symbol, self.origin_stop_price,
+                                                      self.origin_quantity, self.origin_stop_price)

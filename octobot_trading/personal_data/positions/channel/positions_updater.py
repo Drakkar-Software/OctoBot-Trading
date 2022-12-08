@@ -23,6 +23,7 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.channel.positions as positions_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.exchange_data as exchange_data
 
 
 class PositionsUpdater(positions_channel.PositionsProducer):
@@ -136,7 +137,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 positions += fetched_positions
 
         if positions:
-            self._initialize_contract_if_necessary(positions)
+            exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions)
             await self._push_positions(positions)
 
     def _is_relevant_position(self, position_dict):
@@ -156,8 +157,10 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 if self._is_relevant_position(position)
             ]
             # initialize relevant contracts first as they might be waited for
-            self._initialize_contract_if_necessary(relevant_positions)
-            self._initialize_contract_if_necessary(positions)
+            exchange_data.update_contracts_from_positions(self.channel.exchange_manager,
+                                                          relevant_positions)
+            exchange_data.update_contracts_from_positions(self.channel.exchange_manager,
+                                                          positions)
             # only consider positions that are relevant to the current setup
             await self._push_positions(relevant_positions)
 
@@ -167,29 +170,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         if self._should_push_mark_price():
             for position in positions:
                 await self.extract_mark_price(position)
-
-    def _initialize_contract_if_necessary(self, positions):
-        for position in positions:
-            pair = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
-            if pair and pair not in self.channel.exchange_manager.exchange.pair_contracts:
-                contract = self.channel.exchange_manager.exchange.create_pair_contract(
-                    pair=pair,
-                    current_leverage=position.get(
-                        enums.ExchangeConstantsPositionColumns.LEVERAGE.value, constants.ZERO),
-                    margin_type=position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None),
-                    contract_type=position.get(enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value, None),
-                    position_mode=position.get(enums.ExchangeConstantsPositionColumns.POSITION_MODE.value, None),
-                    maintenance_margin_rate=position.get(
-                        enums.ExchangeConstantsPositionColumns.MAINTENANCE_MARGIN_RATE.value,
-                        constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE))
-                if not contract.is_handled_contract():
-                    message = f"Unhandled contract {contract}. This contract can't be traded"
-                    if pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                        # inform user that the contract can't be used
-                        self.logger.error(message)
-                    else:
-                        # no need to inform as the contract is not requested
-                        self.logger.debug(message)
 
     async def extract_mark_price(self, position_dict: dict):
         try:

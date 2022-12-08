@@ -45,6 +45,12 @@ class OrderEditError(Exception):
     """
 
 
+class OrderCancelError(Exception):
+    """
+    Raised upon a failed order cancel
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the required element

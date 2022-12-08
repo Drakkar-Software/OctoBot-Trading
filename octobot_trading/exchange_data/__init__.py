@@ -89,6 +89,7 @@ from octobot_trading.exchange_data import contracts
 from octobot_trading.exchange_data.contracts import (
     MarginContract,
     FutureContract,
+    update_contracts_from_positions,
 )
 from octobot_trading.exchange_data import exchange_symbol_data
 from octobot_trading.exchange_data.exchange_symbol_data import (
@@ -189,6 +190,7 @@ __all__ = [
     "TickerUpdaterSimulator",
     "MarginContract",
     "FutureContract",
+    "update_contracts_from_positions",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",
     "UNAUTHENTICATED_UPDATER_PRODUCERS",
