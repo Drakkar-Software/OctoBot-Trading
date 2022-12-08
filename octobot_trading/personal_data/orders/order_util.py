@@ -246,6 +246,10 @@ def parse_is_cancelled(raw_order):
     return parse_order_status(raw_order) in {enums.OrderStatus.CANCELED, enums.OrderStatus.CLOSED}
 
 
+def parse_is_open(raw_order):
+    return parse_order_status(raw_order) is enums.OrderStatus.OPEN
+
+
 def get_pnl_transaction_source_from_order(order):
     if order.order_type in [enums.TraderOrderType.SELL_MARKET, enums.TraderOrderType.BUY_MARKET,
                             enums.TraderOrderType.TAKE_PROFIT]:

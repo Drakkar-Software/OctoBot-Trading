@@ -46,14 +46,21 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         Load and create a new FutureContract for the pair
         :param pair: the contract pair
         """
-        return self.create_pair_contract(
-            pair=pair,
-            current_leverage=await self.get_symbol_leverage(pair),
-            margin_type=await self.get_margin_type(pair),
-            contract_type=self.get_contract_type(pair),
-            position_mode=await self.get_position_mode(pair),
-            maintenance_margin_rate=await self.get_maintenance_margin_rate(pair),
-        )
+        try:
+            return self.create_pair_contract(
+                pair=pair,
+                current_leverage=await self.get_symbol_leverage(pair),
+                margin_type=await self.get_margin_type(pair),
+                contract_type=self.get_contract_type(pair),
+                position_mode=await self.get_position_mode(pair),
+                maintenance_margin_rate=await self.get_maintenance_margin_rate(pair),
+            )
+        except NotImplementedError:
+            try:
+                position = await self.get_position(pair)
+            except NotImplementedError:
+                position = await self.get_positions(symbols=[pair])
+            contracts.update_contracts_from_positions(self.exchange_manager, [position])
 
     def create_pair_contract(self, pair, current_leverage, margin_type,
                              contract_type, position_mode, maintenance_margin_rate, maximum_leverage=None):

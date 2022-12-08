@@ -98,6 +98,7 @@ class OrderState(state_class.State):
         """
         try:
             self.ensure_not_cleared(self.order)
+            # todo loop ?
             return (await exchange_channel.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
                                                     self.order.exchange_manager.id).get_internal_producer().
                     update_order_from_exchange(order=self.order,

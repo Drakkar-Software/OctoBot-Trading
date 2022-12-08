@@ -267,8 +267,9 @@ class Trader(util.Initializable):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     stop_loss_price=chained_order.origin_price
                 ))
-            if chained_order.order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
-                                            enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):
+            elif chained_order.order_type in (enums.TraderOrderType.TAKE_PROFIT,
+                                              enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
+                                              enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     take_profit_price=chained_order.origin_price
                 ))
@@ -300,21 +301,30 @@ class Trader(util.Initializable):
                 return success
             # if real order: cancel on exchange
             if not self.simulate and not order.is_self_managed():
-                success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
-                if not success:
-                    # retry to cancel order
-                    success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
-                if not success:
-                    self.logger.warning(f"Failed to cancel order {order}")
+                try:
+                    try:
+                        order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+                    except errors.NotSupported:
+                        raise
+                    except (errors.OrderCancelError, Exception) as err:
+                        # retry to cancel order
+                        self.logger.debug(f"Failed to cancel order ({err}), retrying")
+                        order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+                except Exception as e:
+                    self.logger.exception(e, True, f"Failed to cancel order {order}")
                     return False
-                else:
+                if order_status is enums.OrderStatus.CANCELED:
                     order.status = octobot_trading.enums.OrderStatus.CLOSED
                     self.logger.debug(f"Successfully cancelled order {order}")
+                elif order_status is enums.OrderStatus.PENDING_CANCEL:
+                    order.status = octobot_trading.enums.OrderStatus.PENDING_CANCEL
+                    self.logger.debug(f"Order cancel in progress for {order}")
             else:
                 order.status = octobot_trading.enums.OrderStatus.CANCELED
 
+        # todo wait for cancel when PENDING_CANCEL
         # call CancelState termination
-        await order.on_cancel(force_cancel=success,
+        await order.on_cancel(force_cancel=order.status is octobot_trading.enums.OrderStatus.CANCELED,
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
         return True

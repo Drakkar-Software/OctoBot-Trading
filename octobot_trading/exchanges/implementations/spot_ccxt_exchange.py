@@ -363,7 +363,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
 
-    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
+    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
         return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):

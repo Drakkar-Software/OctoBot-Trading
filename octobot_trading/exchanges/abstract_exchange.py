@@ -272,7 +272,7 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("get_my_recent_trades is not implemented")
 
-    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
+    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
         """
         Cancel a order on the exchange
         :param order_id: the order id

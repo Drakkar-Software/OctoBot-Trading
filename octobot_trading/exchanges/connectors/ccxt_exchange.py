@@ -362,27 +362,38 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
-    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
-        cancel_resp = None
+    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
         try:
             with self.error_describer():
-                cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
+                await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
+                # no exception, cancel worked
             try:
+                # make sure order is canceled
                 cancelled_order = await self.exchange_manager.exchange.get_order(
                     order_id, symbol=symbol
                 )
-                return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
+                if cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order):
+                    return enums.OrderStatus.CANCELED
+                elif personal_data.parse_is_open(cancelled_order):
+                    return enums.OrderStatus.PENDING_CANCEL
+                # cancel command worked but order is still existing and is not open or canceled. unhandled case
+                # log error and consider it canceling. order states will manage the
+                self.logger.error(f"Unexpected order status after cancel for order: {cancelled_order}. "
+                                  f"Considered as {enums.OrderStatus.PENDING_CANCEL.value}")
+                return enums.OrderStatus.PENDING_CANCEL
             except ccxt.OrderNotFound:
                 # Order is not found: it has successfully been cancelled (some exchanges don't allow to
                 # get a cancelled order).
-                return True
-        except ccxt.OrderNotFound:
+                return enums.OrderStatus.CANCELED
+        except ccxt.OrderNotFound as e:
             self.logger.error(f"Trying to cancel order with id {order_id} but order was not found")
+            raise octobot_trading.errors.OrderCancelError from e
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
             raise octobot_trading.errors.NotSupported from e
         except Exception as e:
-            self.logger.exception(e, True, f"Order {order_id} failed to cancel | {e} ({e.__class__.__name__})")
-        return cancel_resp is not None
+            self.logger.exception(e, True, f"Unexpected error when cancelling order with id: "
+                                           f"{order_id} failed to cancel | {e} ({e.__class__.__name__})")
+            raise e
 
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
         return await self.client.fetch_positions(symbols=symbols, params=kwargs)
