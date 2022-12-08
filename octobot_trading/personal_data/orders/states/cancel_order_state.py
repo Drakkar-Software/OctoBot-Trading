@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order_state as order_state
@@ -48,12 +50,21 @@ class CancelOrderState(order_state.OrderState):
     def is_status_cancelled(self) -> bool:
         return not self.is_status_pending() and self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE
 
+    def allows_new_status(self, status) -> bool:
+        """
+        Don't allow going from canceling to open
+        :return: True if the given status is compatible with the current state
+        """
+        return status in constants.CANCEL_ORDER_STATUS_SCOPE or status in constants.FILL_ORDER_STATUS_SCOPE
+
     async def on_refresh_successful(self):
         """
         Verify the order is properly canceled
         """
         if self.is_status_pending():
-            # TODO manage pending cancel
+            self.get_logger().debug(f"{self.__class__.__name__} still pending, "
+                                    f"refreshing in {self.pending_refresh_interval}s")
+            await asyncio.sleep(self.pending_refresh_interval)
             await self.update()
         elif self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE:
             self.state = enums.OrderStates.CANCELED

@@ -48,6 +48,13 @@ class FillOrderState(order_state.OrderState):
     def is_status_filled(self) -> bool:
         return not self.is_status_pending() and self.order.status in constants.FILL_ORDER_STATUS_SCOPE
 
+    def allows_new_status(self, status) -> bool:
+        """
+        Don't allow going from filling to open
+        :return: True if the given status is compatible with the current state
+        """
+        return status in constants.FILL_ORDER_STATUS_SCOPE or status in constants.CANCEL_ORDER_STATUS_SCOPE
+
     async def on_refresh_successful(self):
         """
         Synchronize the filling status with the exchange

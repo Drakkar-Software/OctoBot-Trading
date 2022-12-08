@@ -106,7 +106,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                                          should_notify=False,
                                          wait_for_refresh=False,
                                          force_job_execution=False,
-                                         create_order_producer_if_missing=True):
+                                         create_order_producer_if_missing=True,
+                                         force_on_refresh_successful=False,):
         """
         Update order from exchange
         :param order: the order to update
@@ -114,6 +115,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         :param should_notify: if Orders channel consumers should be notified
         :param force_job_execution: When True, order_update_job will bypass its dependencies check
         :param create_order_producer_if_missing: Should be set to False when called by self to prevent spamming
+        :param force_on_refresh_successful: When True, the order's state's on_refresh_successful will be called after
+        the update even when the order did not change
         :return: True if the order was updated
         """
         try:
@@ -121,7 +124,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                    update_order_from_exchange(order=order,
                                               should_notify=should_notify,
                                               force_job_execution=force_job_execution,
-                                              wait_for_refresh=wait_for_refresh))
+                                              wait_for_refresh=wait_for_refresh,
+                                              force_on_refresh_successful=force_on_refresh_successful))
         except IndexError:
             if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
                 self.logger.debug("Missing orders producer, starting one...")

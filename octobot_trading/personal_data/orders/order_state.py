@@ -84,6 +84,12 @@ class OrderState(state_class.State):
         """
         return self.order.is_self_managed()
 
+    def allows_new_status(self, status) -> bool:
+        """
+        :return: True if the given status is compatible with the current state
+        """
+        return True
+
     async def replace_order(self, new_order):
         async with self.refresh_operation():
             self.order.state = None
@@ -98,12 +104,15 @@ class OrderState(state_class.State):
         """
         try:
             self.ensure_not_cleared(self.order)
-            # todo loop ?
-            return (await exchange_channel.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
-                                                    self.order.exchange_manager.id).get_internal_producer().
-                    update_order_from_exchange(order=self.order,
-                                               wait_for_refresh=True,
-                                               force_job_execution=force_synchronization))
+            await exchange_channel.get_chan(
+                octobot_trading.constants.ORDERS_CHANNEL,
+                self.order.exchange_manager.id
+            ).get_internal_producer().update_order_from_exchange(
+                order=self.order,
+                wait_for_refresh=True,
+                force_job_execution=force_synchronization,
+                force_on_refresh_successful=True,
+            )
         except octobot_trading.errors.InvalidOrderState:
             self.get_logger().debug(f"Skipping exchange synchronisation as order has already been closed.")
 

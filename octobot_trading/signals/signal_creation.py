@@ -18,6 +18,7 @@ import contextlib
 
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.personal_data.orders as orders
+import octobot_trading.constants as constants
 import octobot_trading.signals.trading_signal_bundle_builder as trading_signal_bundle_builder
 
 import octobot_commons.logging as logging
@@ -80,8 +81,13 @@ async def create_order(exchange_manager, should_emit_signal, order,
     return created_order
 
 
-async def cancel_order(exchange_manager, should_emit_signal, order, ignored_order: object = None) -> bool:
-    cancelled = await exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
+async def cancel_order(exchange_manager, should_emit_signal, order, ignored_order: object = None,
+                       wait_for_cancelling=True, cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
+    cancelled = await exchange_manager.trader.cancel_order(
+        order, ignored_order=ignored_order,
+        wait_for_cancelling=wait_for_cancelling,
+        cancelling_timeout=cancelling_timeout
+    )
     if should_emit_signal and cancelled:
         signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
             order, exchange_manager

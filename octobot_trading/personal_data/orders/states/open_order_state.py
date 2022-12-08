@@ -22,9 +22,9 @@ class OpenOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.States.OPEN if is_from_exchange_data \
-                                               or self.order.simulated \
-                                               or self.order.is_self_managed() \
-                                               or self.order.status is enums.OrderStatus.OPEN \
+                                          or self.order.simulated \
+                                          or self.order.is_self_managed() \
+                                          or self.order.status is enums.OrderStatus.OPEN \
             else enums.States.OPENING
 
         self.has_terminated = False

@@ -23,6 +23,8 @@ import octobot_trading.util as util
 
 
 class State(util.Initializable):
+    DEFAULT_PENDING_REFRESH_INTERVAL = 0.3
+
     def __init__(self, is_from_exchange_data):
         super().__init__()
 
@@ -34,6 +36,11 @@ class State(util.Initializable):
 
         # state lock
         self.lock = asyncio.Lock()
+
+        # set after self.terminate has been executed (with or without raised exception)
+        self.terminated = asyncio.Event()
+        # seconds between each refresh attempt while in a pending state
+        self.pending_refresh_interval = self.DEFAULT_PENDING_REFRESH_INTERVAL
 
     def is_pending(self) -> bool:
         """
@@ -95,8 +102,11 @@ class State(util.Initializable):
                 self.log_event_message(enums.StatesMessages.SYNCHRONIZING)
                 await self.synchronize()
             else:
-                async with self.lock:
-                    await self.terminate()
+                try:
+                    async with self.lock:
+                        await self.terminate()
+                finally:
+                    self.on_terminate()
         else:
             self.log_event_message(enums.StatesMessages.ALREADY_SYNCHRONIZING)
 
@@ -158,6 +168,16 @@ class State(util.Initializable):
         Can be portfolio updates, fees request, orders group updates, Trade creation etc...
         """
         raise NotImplementedError("terminate not implemented")
+
+    def on_terminate(self) -> None:
+        """
+        Called after terminate is complete
+        """
+        self.get_logger().debug(f"{self.__class__.__name__} terminated")
+        self.terminated.set()
+
+    async def wait_for_terminate(self, timeout) -> None:
+        await asyncio.wait_for(self.terminated.wait(), timeout=timeout)
 
     async def on_refresh_successful(self):
         """

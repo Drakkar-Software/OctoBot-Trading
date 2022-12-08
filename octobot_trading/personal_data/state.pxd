@@ -21,6 +21,8 @@ cdef class State(util.Initializable):
     cdef public object lock  # item of asyncio.Lock
 
     cdef public bint is_from_exchange_data
+    cdef public object terminated   # asyncio.Event
+    cdef public float pending_refresh_interval
 
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)
@@ -29,3 +31,4 @@ cdef class State(util.Initializable):
     cpdef void clear(self)
     cpdef object get_logger(self)
     cpdef void log_event_message(self, object state_message, object error=*)
+    cpdef void on_terminate(self)

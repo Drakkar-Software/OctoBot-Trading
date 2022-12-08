@@ -21,6 +21,7 @@ import pytest
 import octobot_trading.personal_data as personal_data
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_commons.asyncio_tools as asyncio_tools
 from tests.personal_data import DEFAULT_ORDER_SYMBOL
 from tests.personal_data.orders.groups import order_mock
@@ -58,7 +59,10 @@ async def test_on_fill(oco_group):
          as get_order_from_group_mock:
         await oco_group.on_fill(order)
         order.trader.cancel_order.assert_not_called()
-        other_order.trader.cancel_order.assert_called_once_with(other_order, ignored_order=order)
+        other_order.trader.cancel_order.assert_called_once_with(
+            other_order, ignored_order=order, wait_for_cancelling=True,
+            cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        )
         get_order_from_group_mock.assert_called_once_with(oco_group.name)
 
 
@@ -129,5 +133,8 @@ async def test_on_cancel(oco_group):
          as get_order_from_group_mock:
         await oco_group.on_cancel(order, ignored_orders=["hi"])
         order.trader.cancel_order.assert_not_called()
-        other_order.trader.cancel_order.assert_called_once_with(other_order, ignored_order="hi")
+        other_order.trader.cancel_order.assert_called_once_with(
+            other_order, ignored_order="hi", wait_for_cancelling=True,
+            cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        )
         get_order_from_group_mock.assert_called_once_with(oco_group.name)

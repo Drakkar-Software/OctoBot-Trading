@@ -155,8 +155,12 @@ class Order(util.Initializable):
             self.quantity_currency = quantity_currency
 
         if status and self.status != status:
-            self.status = status
-            changed = True
+            # ensure the order status is compatible with the state to avoid exchange sync issues
+            if self.state is None or self.state.allows_new_status(status):
+                self.status = status
+                changed = True
+            else:
+                logging.get_logger(self.get_logger_name()).debug(f"Ignored unexpected new status: {status}")
         if not self.status:
             self.status = enums.OrderStatus.OPEN
 

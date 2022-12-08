@@ -23,3 +23,4 @@ cdef class OrderState(state_class.State):
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
     cpdef bint is_canceled(self)
+    cpdef bint allows_new_status(self, object status)
