@@ -396,8 +396,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     params = kwargs.pop("params", {})
                     if params := self.exchange_manager.exchange.custom_get_order_stop_params(order_id, params):
                         if order := await self.client.fetch_order(order_id, symbol, params=params):
-                            await self.exchange_manager.exchange.parse_order(order,
-                                                                             check_completeness=check_completeness)
+                            return await self.exchange_manager.exchange.parse_order(
+                                order, check_completeness=check_completeness)
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled
                 pass
@@ -836,7 +836,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 return True
             else:
                 messages = error_message + messages if error_message else messages
-        if messages != "":
+        if messages:
             raise octobot_trading.errors.NotSupported(messages)
         self.logger.warning(f"Failed to cancel order {symbol} {order_id} - order was not found")
         return False  # order not found
