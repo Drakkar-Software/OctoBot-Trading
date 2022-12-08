@@ -72,7 +72,7 @@ def get_raw_closed_positions():
                 "trailing_stop": "0",
                 "position_idx": "0",
                 "mode": "MergedSingle",
-                active_parser_class().MODE_KEY_NAMES[0]: False,
+                active_parser_class().MODE_KEYS[0]: False,
                 ExchangePositionCCXTColumns.MARK_PRICE.value: 4500.55,
             },
             "id": None,
@@ -129,7 +129,7 @@ def get_raw_open_positions():
                 "trailing_stop": "0",
                 "position_idx": "0",
                 "mode": "MergedSingle",
-                active_parser_class().MODE_KEY_NAMES[0]: False,
+                active_parser_class().MODE_KEYS[0]: False,
                 ExchangePositionCCXTColumns.MARK_PRICE.value: 4500.55,
             },
             "id": None,
@@ -225,7 +225,7 @@ async def test_parse_one_way_mode(
         value=PositionMode.ONE_WAY,
         parsed_open_records=parsed_open_positions,
         parsed_closed_records=parsed_closed_positions,
-        raw_key=active_parser_class().MODE_KEY_NAMES[0],
+        raw_key=active_parser_class().MODE_KEYS[0],
         raw_value=active_parser_class().ONEWAY_VALUES[0],
         raw_open_records=raw_open_positions,
         raw_closed_records=raw_closed_positions,
@@ -294,7 +294,7 @@ async def hedge_mode_test(
         value=PositionMode.HEDGE,
         parsed_open_records=parsed_open_positions,
         parsed_closed_records=parsed_closed_positions,
-        raw_key=active_parser_class().MODE_KEY_NAMES[0],
+        raw_key=active_parser_class().MODE_KEYS[0],
         raw_value=active_parser_class().HEDGE_VALUES[0],
         raw_open_records=raw_open_positions,
         raw_closed_records=raw_closed_positions,
@@ -310,7 +310,7 @@ async def test_parse_position_missing_mode(
     _raw_open_positions = raw_open_positions.copy()
     try:
         _raw_closed_positions[0][ExchangePositionCCXTColumns.INFO.value].pop(
-            active_parser_class().MODE_KEY_NAMES[0]
+            active_parser_class().MODE_KEYS[0]
         )
         await active_parser(_raw_closed_positions)
         assert False
@@ -318,7 +318,7 @@ async def test_parse_position_missing_mode(
         pass
     try:
         _raw_open_positions[0][ExchangePositionCCXTColumns.INFO.value].pop(
-            active_parser_class().MODE_KEY_NAMES[0]
+            active_parser_class().MODE_KEYS[0]
         )
         await active_parser(_raw_open_positions)
     except NotImplementedError:

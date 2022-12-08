@@ -1,7 +1,6 @@
 import octobot_trading.constants as constants
 from octobot_trading.enums import (
     ExchangeConstantsPositionColumns as PositionCols,
-    ExchangePositionCCXTColumns as ExchangeCols,
     TraderPositionType,
     PositionSide,
     PositionMode,
@@ -12,8 +11,7 @@ import octobot_trading.exchanges.parser.util as parser_util
 
 class PositionsParser(parser_util.Parser):
     """
-    overwrite PositionsParser class methods if necessary
-    always/only include bulletproof custom code into the parser to improve generic support
+    override PositionsParser if you add a parser for a non ccxt exchange
 
     parser usage:   parser = PositionParser(exchange)
                     positions = parser.parse_positions(raw_positions)
@@ -21,9 +19,61 @@ class PositionsParser(parser_util.Parser):
 
     """
 
-    MODE_KEY_NAMES: list = ["hedged"]
-    ONEWAY_VALUES: tuple = (False,)
-    HEDGE_VALUES: tuple = (True,)
+    MODE_KEYS: list = []
+    ONEWAY_VALUES: list = []
+    HEDGE_VALUES: list = []
+
+    SYMBOL_KEYS: list = []
+    NOTIONAL_KEYS: list = []
+    LEVERAGE_KEYS: list = []
+    REALIZED_PNL_KEYS: list = []
+    UNREALIZED_PNL_KEYS: list = []
+    STATUS_KEYS: list = []
+    LIQUIDATION_PRICE_KEYS: list = []
+    BANKRUPTCY_PRICE_KEYS: list = []
+    VALUE_KEYS: list = []
+    ENTRY_PRICE_KEYS: list = []
+    CLOSING_FEE_KEYS: list = []
+    INITIAL_MARGIN_KEYS: list = []
+    MARK_PRICE_KEYS: list = []
+    COLLATERAL_KEYS: list = []
+    MARGIN_TYPE_KEYS: list = []
+    SIDE_KEYS: list = []
+    QUANTITY_KEYS: list = []
+    SIZE_KEYS: list = []
+    TIMESTAMP_KEYS: list = []
+
+    USE_INFO_SUB_DICT_FOR_SYMBOL: bool = False
+    USE_INFO_SUB_DICT_FOR_NOTIONAL: bool = False
+    USE_INFO_SUB_DICT_FOR_LEVERAGE: bool = False
+    USE_INFO_SUB_DICT_FOR_REALIZED_PNL: bool = False
+    USE_INFO_SUB_DICT_FOR_UNREALIZED_PNL: bool = False
+    USE_INFO_SUB_DICT_FOR_STATUS: bool = False
+    USE_INFO_SUB_DICT_FOR_LIQUIDATION_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_BANKRUPTCY_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_VALUE: bool = False
+    USE_INFO_SUB_DICT_FOR_ENTRY_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_CLOSING_FEE: bool = False
+    USE_INFO_SUB_DICT_FOR_INITIAL_MARGIN: bool = False
+    USE_INFO_SUB_DICT_FOR_MARK_PRICE: bool = False
+    USE_INFO_SUB_DICT_FOR_COLLATERAL: bool = False
+    USE_INFO_SUB_DICT_FOR_MARGIN_TYPE: bool = False
+    USE_INFO_SUB_DICT_FOR_SIDE: bool = False
+    USE_INFO_SUB_DICT_FOR_QUANTITY: bool = False
+    USE_INFO_SUB_DICT_FOR_MODE: bool = False
+    USE_INFO_SUB_DICT_FOR_SIZE: bool = False
+    USE_INFO_SUB_DICT_FOR_TIMESTAMP: bool = False
+
+    STATUS_STATIC_MAP: dict = {
+        PositionStatus.OPEN.value: PositionStatus.OPEN.value,
+        PositionStatus.ADL.value: PositionStatus.ADL.value,
+        PositionStatus.LIQUIDATING.value: PositionStatus.LIQUIDATING.value,
+        PositionStatus.CLOSED.value: PositionStatus.CLOSED.value,
+        PositionStatus.LIQUIDATING.value: PositionStatus.LIQUIDATING.value,
+    }
+
+    STATUS_OPEN_MAP: dict = {}
+    STATUS_CLOSED_MAP: dict = {}
 
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
@@ -64,7 +114,10 @@ class PositionsParser(parser_util.Parser):
             self._parse_status()
             if self.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION:
                 await self._parse_mark_price()
-            if self.formatted_record[PositionCols.STATUS.value] == PositionStatus.CLOSED:
+            if (
+                self.formatted_record[PositionCols.STATUS.value]
+                == PositionStatus.CLOSED
+            ):
                 # todo check what is required for empty
                 # partially parse empty position as we might need it to create contracts
                 self._create_debugging_report_for_record()
@@ -92,15 +145,15 @@ class PositionsParser(parser_util.Parser):
 
     def _parse_position_mode(self):
         """
-        define self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEY_NAMES
+        define self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEYS
         to adapt to a new exchange
         """
-        if self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEY_NAMES:
+        if self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEYS:
             self._try_to_find_and_set(
                 PositionCols.POSITION_MODE.value,
-                self.MODE_KEY_NAMES,
+                self.MODE_KEYS,
                 parse_method=self.mode_found,
-                use_info_sub_dict=True,
+                use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_MODE,
                 allowed_falsely_values=(False,),
             )
         else:
@@ -108,59 +161,79 @@ class PositionsParser(parser_util.Parser):
                 PositionCols.POSITION_MODE.value, "not implemented for this exchange"
             )
 
+    def mode_found(self, raw_mode):
+        if raw_mode in self.ONEWAY_VALUES:
+            return PositionMode.ONE_WAY
+        if raw_mode in self.HEDGE_VALUES:
+            return PositionMode.HEDGE
+        self._log_missing(
+            PositionCols.POSITION_MODE.value,
+            f"key: {self.MODE_KEYS}, "
+            f"got raw_mode: {raw_mode or 'no raw mode'}, "
+            f"allowed oneway values: {self.ONEWAY_VALUES}, "
+            f"allowed hedge values: {self.HEDGE_VALUES}",
+        )
+
     def _parse_symbol(self):
         # check is get_pair_from_exchange required? isn't ccxt already doing this?
         self._try_to_find_and_set(
             PositionCols.SYMBOL.value,
-            [ExchangeCols.SYMBOL.value],
+            self.SYMBOL_KEYS,
             parse_method=self.exchange.get_pair_from_exchange,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_SYMBOL,
         )
 
     def _parse_notional(self):
         self._try_to_find_and_set_decimal(
-            PositionCols.NOTIONAL.value, [ExchangeCols.NOTIONAL.value]
+            PositionCols.NOTIONAL.value,
+            self.NOTIONAL_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_NOTIONAL,
         )
 
     def _parse_leverage(self):
         self._try_to_find_and_set_decimal(
-            PositionCols.LEVERAGE.value, [ExchangeCols.LEVERAGE.value]
+            PositionCols.LEVERAGE.value,
+            self.LEVERAGE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_LEVERAGE,
         )
 
     def _parse_realized_pnl(self):
         self._try_to_find_and_set_decimal(
             PositionCols.REALIZED_PNL.value,
-            [ExchangeCols.REALIZED_PNL.value] + RealizedPnlSynonyms.keys,
-            use_info_sub_dict=True,
+            self.REALIZED_PNL_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_REALIZED_PNL,
             allow_zero=True,
         )
 
     def _parse_unrealized_pnl(self):
         self._try_to_find_and_set_decimal(
             PositionCols.UNREALIZED_PNL.value,
-            [ExchangeCols.UNREALIZED_PNL.value] + UnrealizedPnlSynonyms.keys,
+            self.UNREALIZED_PNL_KEYS,
             allow_zero=True,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_UNREALIZED_PNL,
         )
 
     def _parse_status(self):
         self._try_to_find_and_set(
             PositionCols.STATUS.value,
-            PositionStatusSynonyms.keys,
-            use_info_sub_dict=True,
+            self.STATUS_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_STATUS,
             parse_method=self._status_found,
             not_found_method=self._missing_status,
         )
-        
+
     def _status_found(self, raw_status):
-        if raw_status in ("Normal", PositionStatus.OPEN.value):
-            if self.formatted_record.get(PositionCols.SIZE.value) == constants.ZERO:
-                return PositionStatus.CLOSED
-            return PositionStatus.OPEN
-        if raw_status in ("Liq", PositionStatus.LIQUIDATING.value):
-            return PositionStatus.LIQUIDATING
-        if raw_status in ("Adl", PositionStatus.ADL.value):
-            return PositionStatus.ADL
-        return self._missing_status(None)
-        
+        try:
+            return PositionStatus(self.STATUS_STATIC_MAP[raw_status])
+        except (KeyError, ValueError):
+            try:
+                if self.formatted_record.get(PositionCols.QUANTITY.value):
+                    return PositionStatus(self.STATUS_OPEN_MAP[raw_status])
+                else:
+                    return PositionStatus(self.STATUS_CLOSED_MAP[raw_status])
+            except (KeyError, ValueError):
+                return self._missing_status(None)
+
     def _missing_status(self, _):
         if size := self.formatted_record.get(PositionCols.SIZE.value):
             if size > 0 or size < 0:
@@ -169,80 +242,95 @@ class PositionsParser(parser_util.Parser):
             return PositionStatus.CLOSED
         self._log_missing(
             PositionCols.STATUS.value,
-            f"a valid size ({size or 'no size'}) is required to parse status",
+            f"not found and also not able to set based on a valid size ({size or 'no size'}) is required to parse status",
         )
 
     def _parse_liquidation_price(self):
         self._try_to_find_and_set_decimal(
             PositionCols.LIQUIDATION_PRICE.value,
-            [ExchangeCols.LIQUIDATION_PRICE.value],
-            use_info_sub_dict=True,
+            self.LIQUIDATION_PRICE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_LIQUIDATION_PRICE,
         )
 
     def _parse_bankruptcy_price(self):
         self._try_to_find_and_set_decimal(
             PositionCols.BANKRUPTCY_PRICE.value,
-            BankruptcyPriceSynonyms.keys,
-            use_info_sub_dict=True,
+            self.BANKRUPTCY_PRICE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_BANKRUPTCY_PRICE,
             enable_log=False,
         )
 
     def _parse_value(self):
-        keys_to_find = [PositionCols.VALUE.value] + ValueSynonyms.keys
-
-        def missing_value(_):
-            self.handle_missing_value(keys_to_find)
-
         self._try_to_find_and_set_decimal(
             PositionCols.VALUE.value,
-            keys_to_find,
-            not_found_method=missing_value,
-            use_info_sub_dict=True,
+            self.VALUE_KEYS,
+            not_found_method=self._missing_value,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_VALUE,
+        )
+
+    def _missing_value(self, _):
+        size = mark_price = None
+        if size := self.formatted_record.get(PositionCols.SIZE.value):
+            if not (
+                mark_price := self.formatted_record.get(PositionCols.MARK_PRICE.value)
+            ):
+                mark_price = None  # add get and wait for mark price from channel
+            if mark_price:
+                return size / mark_price
+        self._log_missing(
+            PositionCols.VALUE.value,
+            f"keys: {self.VALUE_KEYS} and using quantity ({size or 'no size'}) "
+            f"/ mark price ({mark_price or 'no mark price'})",
         )
 
     def _parse_entry_price(self):
         self._try_to_find_and_set_decimal(
-            PositionCols.ENTRY_PRICE.value, [ExchangeCols.ENTRY_PRICE.value]
+            PositionCols.ENTRY_PRICE.value, self.ENTRY_PRICE_KEYS
         )
 
     def _parse_closing_fee(self):
         # optional
         self._try_to_find_and_set_decimal(
             PositionCols.CLOSING_FEE.value,
-            ClosingFeeSynonyms.keys,
+            self.CLOSING_FEE_KEYS,
             enable_log=False,
-            use_info_sub_dict=True,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_CLOSING_FEE,
         )
 
     def _parse_initial_margin(self):
         self._try_to_find_and_set_decimal(
-            PositionCols.INITIAL_MARGIN.value, [ExchangeCols.COLLATERAL.value]
+            PositionCols.INITIAL_MARGIN.value,
+            self.COLLATERAL_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_INITIAL_MARGIN,
         )
 
     async def _parse_mark_price(self):
         self._try_to_find_and_set_decimal(
             PositionCols.MARK_PRICE.value,
-            [ExchangeCols.MARK_PRICE.value],
-            use_info_sub_dict=True,
+            self.MARK_PRICE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_MARK_PRICE,
         )
 
     def _parse_collateral(self):
         self._try_to_find_and_set_decimal(
-            PositionCols.COLLATERAL.value, [ExchangeCols.COLLATERAL.value]
+            PositionCols.COLLATERAL.value,
+            self.COLLATERAL_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_COLLATERAL,
         )
 
     def _parse_margin_type(self):
         self._try_to_find_and_set(
             PositionCols.MARGIN_TYPE.value,
-            [ExchangeCols.MARGIN_TYPE.value, ExchangeCols.MARGIN_MODE.value],
+            self.MARGIN_TYPE_KEYS,
             parse_method=TraderPositionType,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_MARGIN_TYPE,
         )
 
     def _parse_original_side(self):
         self._try_to_find_and_set(
             PositionCols.ORIGINAL_SIDE.value,
-            [ExchangeCols.SIDE.value, SideSynonyms.keys],
-            use_info_sub_dict=True,
+            self.SIDE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_SIDE,
         )
 
     def _parse_side(self):
@@ -272,9 +360,24 @@ class PositionsParser(parser_util.Parser):
     def _parse_size(self):
         self._try_to_find_and_set_decimal(
             PositionCols.SIZE.value,
-            SizeSynonyms.keys,
-            use_info_sub_dict=True,
+            self.SIZE_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_SIZE,
+            parse_method=self.size_found,
             allow_zero=True,
+        )
+
+    def size_found(self, quantity):
+        if quantity == constants.ZERO:
+            return quantity
+        if side := self.formatted_record.get(PositionCols.ORIGINAL_SIDE.value):
+            if side == PositionSide.LONG.value:
+                return quantity
+            elif side == PositionSide.SHORT.value:
+                # short - so we set it to negative if it isn't already
+                return -quantity if quantity > 0 else quantity
+        self._log_missing(
+            PositionCols.QUANTITY.value,
+            f"requires valid side ({side or 'no side'}) to parse",
         )
 
     def _parse_quantity(self):
@@ -283,9 +386,8 @@ class PositionsParser(parser_util.Parser):
         """
         self._try_to_find_and_set_decimal(
             PositionCols.QUANTITY.value,
-            QuantitySynonyms.keys,
-            parse_method=self.quantity_found,
-            use_info_sub_dict=True,
+            self.QUANTITY_KEYS,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_QUANTITY,
         )
 
     def _parse_contract_type(self):
@@ -309,49 +411,10 @@ class PositionsParser(parser_util.Parser):
     def _parse_timestamp(self):
         self._try_to_find_and_set(
             PositionCols.TIMESTAMP.value,
-            [ExchangeCols.TIMESTAMP.value],
+            self.TIMESTAMP_KEYS,
             parse_method=parser_util.convert_any_time_to_seconds,
             not_found_method=self.timestamp_not_found,
-        )
-
-    def mode_found(self, raw_mode):
-        if raw_mode in self.ONEWAY_VALUES:
-            return PositionMode.ONE_WAY
-        if raw_mode in self.HEDGE_VALUES:
-            return PositionMode.HEDGE
-        self._log_missing(
-            PositionCols.POSITION_MODE.value,
-            f"key: {self.MODE_KEY_NAMES}, "
-            f"got raw_mode: {raw_mode or 'no raw mode'}, "
-            f"allowed oneway values: {self.ONEWAY_VALUES}, "
-            f"allowed hedge values: {self.HEDGE_VALUES}",
-        )
-
-    def handle_missing_value(self, keys_to_find):
-        size = mark_price = None
-        if size := self.formatted_record.get(PositionCols.SIZE.value):
-            if not (mark_price := self.formatted_record.get(PositionCols.MARK_PRICE.value)):
-                mark_price = None  # add get and wait for mark price from channel
-            if mark_price:
-                return size / mark_price
-        self._log_missing(
-            PositionCols.VALUE.value,
-            f"keys: {keys_to_find} and using quantity ({size or 'no size'}) "
-            f"/ mark price ({mark_price or 'no mark price'})",
-        )
-
-    def quantity_found(self, quantity):
-        if quantity == constants.ZERO:
-            return quantity
-        if side := self.formatted_record.get(PositionCols.ORIGINAL_SIDE.value):
-            if side == PositionSide.LONG.value:
-                return quantity
-            elif side == PositionSide.SHORT.value:
-                # short - so we set it to negative if it isn't already
-                return -quantity if quantity > 0 else quantity
-        self._log_missing(
-            PositionCols.QUANTITY.value,
-            f"requires valid side ({side or 'no side'}) to parse",
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_TIMESTAMP,
         )
 
     def timestamp_not_found(self, _):
@@ -364,47 +427,3 @@ class PositionsParser(parser_util.Parser):
                 f"{self.formatted_record[PositionCols.SYMBOL.value]}",
                 error=e,
             )
-
-
-# only keep keys here from exchanges that are 100% safe with any exchange
-
-class BankruptcyPriceSynonyms:
-    keys = ["bust_price"]
-
-
-class RealizedPnlSynonyms:
-    keys = [
-        "cum_realized_pnl",
-        "realized_pnl",
-        "cum_realised_pnl",
-        "realised_pnl",
-        "realisedPnl",
-    ]
-
-
-class UnrealizedPnlSynonyms:
-    keys = ["unrealizedPnl"]
-
-
-class PositionStatusSynonyms:
-    keys = ["position_status"]
-
-
-class ClosingFeeSynonyms:
-    keys = ["occ_closing_fee"]
-
-
-class ValueSynonyms:
-    keys = ["position_value"]
-
-
-class SizeSynonyms:
-    keys = [ExchangeCols.CONTRACTS.value, "positionAmt"]
-
-
-class QuantitySynonyms:
-    keys = [ExchangeCols.CONTRACT_SIZE.value]
-
-
-class SideSynonyms:
-    keys = ["positionSide"]

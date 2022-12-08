@@ -52,13 +52,6 @@ from octobot_trading.exchanges.util.exchange_util cimport (
     get_spot_exchange_class,
     get_order_side,
 )
-from octobot_trading.exchanges cimport parser
-from octobot_trading.parser cimport (
-    ExchangeMarketStatusParser,
-    is_ms_valid,
-    OrdersParser, PositionsParser,
-    TradesParser, TickerParser, FundingRateParser
-)
 from octobot_trading.exchanges.types cimport (
     FutureExchange,
     WebSocketExchange,
@@ -134,8 +127,6 @@ __all__ = [
     "MarginExchange",
     "SpotExchange",
     "WebSocketExchange",
-    "ExchangeMarketStatusParser",
-    "is_ms_valid",
     "AbstractWebsocketExchange",
     "force_disable_web_socket",
     "check_web_socket_config",
@@ -153,9 +144,4 @@ __all__ = [
     "CCXTWebSocketExchange",
     "CryptofeedWebSocketExchange",
     "CryptofeedWebsocketConnector",
-    "PositionsParser",
-    "FundingRateParser",
-    "OrdersParser",
-    "TradesParser",
-    "TickerParser",
 ]

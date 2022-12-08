@@ -1,5 +1,9 @@
 from octobot_trading.enums import (
     ExchangeOrderCCXTColumns as CCXTOrderCols,
+    ExchangeConstantsOrderColumns as OrderCols,
+    OrderStatus,
+    TraderOrderType,
+    TradeOrderType,
 )
 import octobot_trading.exchanges.parser.orders_parser as orders_parser
 
@@ -24,7 +28,7 @@ class CCXTOrdersParser(orders_parser.OrdersParser):
     PRICE_KEYS: list = [
         CCXTOrderCols.AVERAGE.value,  # first try average as its more accurate
         CCXTOrderCols.PRICE.value,
-        CCXTOrderCols.STOP_PRICE.value,
+        CCXTOrderCols.STOP_PRICE.value,  # use only if others are missing
     ]
     FILLED_PRICE_KEYS: list = []  # todo
     AVERAGE_PRICE_KEYS: list = [
@@ -45,3 +49,18 @@ class CCXTOrdersParser(orders_parser.OrdersParser):
     def __init__(self, exchange):
         super().__init__(exchange=exchange)
         self.PARSER_TITLE = "ccxt orders"
+
+    def _parse_octobot_order_type(self, missing_type_value=None):
+        super()._parse_octobot_order_type(missing_type_value)
+        # market orders with no price but with stop price are stop orders
+        if self.raw_record.get(OrderCols.STOP_PRICE.value) and not self.raw_record.get(
+            OrderCols.PRICE.value
+        ):
+            if (
+                (_type := self.formatted_record[OrderCols.OCTOBOT_ORDER_TYPE.value])
+                == TraderOrderType.SELL_MARKET.value
+                or _type == TraderOrderType.BUY_MARKET.value
+            ):
+                self.formatted_record[
+                    OrderCols.OCTOBOT_ORDER_TYPE.value
+                ] = TraderOrderType.STOP_LOSS.value

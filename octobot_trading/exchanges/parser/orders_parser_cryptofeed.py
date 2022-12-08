@@ -62,8 +62,6 @@ class CryptoFeedOrdersParser(orders_parser.OrdersParser):
         # for example:
         # "weirdStopOrder": TraderOrderType.STOP_LOSS.value,
         # "weirdSecondStop": TraderOrderType.STOP_LOSS.value,
-        cryptofeed_constants.LIMIT: TraderOrderType.SELL_LIMIT.value,
-        cryptofeed_constants.MARKET: TraderOrderType.SELL_MARKET.value,
         cryptofeed_constants.STOP_LIMIT: TraderOrderType.STOP_LOSS_LIMIT.value,
         cryptofeed_constants.STOP_MARKET: TraderOrderType.STOP_LOSS.value,
         cryptofeed_constants.MAKER_OR_CANCEL: TraderOrderType.SELL_LIMIT.value,

@@ -16,6 +16,8 @@
 
 from octobot_trading.exchanges.parser.util cimport Parser
 from octobot_trading.exchanges.parser.positions_parser cimport PositionsParser
+from octobot_trading.exchanges.parser.positions_parser_ccxt cimport CCXTPositionsParser
+from octobot_trading.exchanges.parser.positions_parser_ccxt_generic cimport GenericCCXTPositionsParser
 from octobot_trading.exchanges.parser.funding_rate_parser cimport FundingRateParser
 from octobot_trading.exchanges.parser.orders_parser cimport OrdersParser
 from octobot_trading.exchanges.parser.orders_parser_ccxt cimport CCXTOrdersParser
@@ -32,6 +34,8 @@ __all__ = [
     "ExchangeMarketStatusParser",
     "is_ms_valid",
     "PositionsParser",
+    "CCXTPositionsParser",
+    "GenericCCXTPositionsParser",
     "OrdersParser",
     "TradesParser",
     "TickerParser",

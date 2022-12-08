@@ -15,7 +15,7 @@ import octobot_trading.exchanges.parser.util as parser_util
 
 class OrdersParser(parser_util.Parser):
     """
-    use OrdersParser as a base class if you implement 
+    use OrdersParser as a base class if you implement
     a new parser for a non ccxt or crypto feed exchange
 
     parser usage:   parser = OrdersParser(exchange)
@@ -332,11 +332,11 @@ class OrdersParser(parser_util.Parser):
                 if side == TradeOrderSide.BUY.value:
                     return TraderOrderType(
                         self.TRADER_ORDER_TYPE_BUY_MAP[raw_order_type]
-                    )
+                    ).value
                 if side == TradeOrderSide.SELL.value:
                     return TraderOrderType(
                         self.TRADER_ORDER_TYPE_SELL_MAP[raw_order_type]
-                    )
+                    ).value
             except (KeyError, ValueError):
                 pass
             raise parser_util.ParserKeyNotFoundError
