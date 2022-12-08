@@ -13,6 +13,9 @@ from octobot_trading.exchanges.parser.orders_parser_generic_ccxt import (
 from octobot_trading.exchanges.parser.orders_parser_cryptofeed import (
     CryptoFeedOrdersParser,
 )
+from octobot_trading.exchanges.parser.trades_parser_cryptofeed import (
+    CryptoFeedTradesParser,
+)
 from octobot_trading.exchanges.parser.trades_parser import TradesParser
 from octobot_trading.exchanges.parser.trades_parser_ccxt import CCXTTradesParser
 from octobot_trading.exchanges.parser.trades_parser_ccxt_generic import GenericCCXTTradesParser
@@ -44,4 +47,5 @@ __all__ = [
     "CCXTOrdersParser",
     "GenericCCXTOrdersParser",
     "CryptoFeedOrdersParser",
+    "CryptoFeedTradesParser",
 ]

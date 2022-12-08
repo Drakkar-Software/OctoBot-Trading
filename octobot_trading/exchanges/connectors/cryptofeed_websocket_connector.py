@@ -800,11 +800,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param order the order object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        order_parser = self.exchange.CONNECTOR_CONFIG.CRYPTO_FEED_ORDERS_PARSER(self.exchange)
         await self.push_to_channel(
             trading_constants.ORDERS_CHANNEL, 
-            [await order_parser.parse_order(order, timestamp=receipt_timestamp)])
-
+            [await self.parse_order(order, timestamp=receipt_timestamp)])
+        
+    async def parse_order(self, raw_order, receipt_timestamp)-> dict:
+        order_parser = self.exchange.CONNECTOR_CONFIG.CRYPTO_FEED_ORDERS_PARSER(self.exchange)
+        return await order_parser.parse_order(raw_order, timestamp=receipt_timestamp)
+    
     async def trade(self, trade, receipt_timestamp: float):
         """
         Cryptofeed filled order callback
@@ -812,7 +815,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param receipt_timestamp: received timestamp
         """
         await self.push_to_channel(trading_constants.TRADES_CHANNEL,
-                                   [await self.exchange.connector.parse_trade(trade, timestamp=receipt_timestamp)])
+                                   [await self.parse_trade(trade, timestamp=receipt_timestamp)])
+        
+    async def parse_trade(self, raw_trade, receipt_timestamp)-> dict:
+        trade_parser = self.exchange.CONNECTOR_CONFIG.CRYPTO_FEED_TRADES_PARSER(self.exchange)
+        return await trade_parser.parse_trade(raw_trade, timestamp=receipt_timestamp)
 
     async def balance(self, balance: cryptofeed_types.Balance, receipt_timestamp: float):
         """

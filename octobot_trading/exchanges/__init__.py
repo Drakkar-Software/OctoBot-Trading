@@ -47,17 +47,6 @@ from octobot_trading.exchanges.exchange_manager import (
     ExchangeManager,
 )
 
-from octobot_trading.exchanges import parser
-from octobot_trading.exchanges.parser import (
-    PositionsParser,
-    OrdersParser,
-    TradesParser,
-    ExchangeMarketStatusParser,
-    is_ms_valid,
-    TickerParser,
-    FundingRateParser,
-)
-
 from octobot_trading.exchanges import exchange_factory
 from octobot_trading.exchanges.exchange_factory import (
     create_exchanges,
@@ -185,8 +174,6 @@ __all__ = [
     "MarginExchange",
     "SpotExchange",
     "WebSocketExchange",
-    "ExchangeMarketStatusParser",
-    "is_ms_valid",
     "AbstractWebsocketExchange",
     "BasicExchangeWrapper",
     "temporary_exchange_wrapper",
@@ -195,9 +182,4 @@ __all__ = [
     "check_web_socket_config",
     "search_websocket_class",
     "supports_websocket",
-    "PositionsParser",
-    "OrdersParser",
-    "TradesParser",
-    "TickerParser",
-    "FundingRateParser",
 ]

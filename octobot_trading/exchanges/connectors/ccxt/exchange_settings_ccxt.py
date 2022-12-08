@@ -15,6 +15,7 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     )
     ORDERS_PARSER: parser_util.Parser = parser.CCXTOrdersParser
     CRYPTO_FEED_ORDERS_PARSER: parser_util.Parser = parser.CryptoFeedOrdersParser
+    CRYPTO_FEED_TRADES_PARSER: parser_util.Parser = parser.CryptoFeedTradesParser
     TRADES_PARSER: parser_util.Parser = parser.CCXTTradesParser
     POSITIONS_PARSER: parser_util.Parser = parser.CCXTPositionsParser
     TICKER_PARSER: parser_util.Parser = parser.CCXTTickerParser
