@@ -312,7 +312,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_order_book {e}")
 
-    async def get_recent_trades(self, symbol: str, limit: int = 100,
+    async def get_recent_trades(self, symbol: str, limit: int = 50,
                                 check_completeness: bool = True, **kwargs: dict) -> typing.Optional[list]:
         try:
             with self.error_describer():
