@@ -277,22 +277,30 @@ class Trader(util.Initializable):
         order.add_chained_order(chained_order)
         return params
 
-    async def cancel_order(self, order: object, ignored_order: object = None) -> bool:
+    async def cancel_order(self, order: object, ignored_order: object = None,
+                           wait_for_cancelling=True,
+                           cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
         """
         Cancels the given order and updates the portfolio, publish in order channel
         if order is from a real exchange.
         :param order: Order to cancel
         :param ignored_order: Order not to cancel if found in groupped orders recursive cancels (ex: avoid cancelling
         a filled order)
+        :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
+        On exchanges async api, a cancel request will return before the order is actually cancelled, in this case
+        the associated order state will make sure that the order is cancelled by polling the order from the exchange.
+        :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: None
         """
         if order and order.is_open():
             self.logger.info(f"Cancelling order: {order}")
             # always cancel this order first to avoid infinite loop followed by deadlock
-            return await self._handle_order_cancellation(order, ignored_order)
+            return await self._handle_order_cancellation(order, ignored_order,
+                                                         wait_for_cancelling, cancelling_timeout)
         return False
 
-    async def _handle_order_cancellation(self, order: object, ignored_order: object) -> bool:
+    async def _handle_order_cancellation(self, order: object, ignored_order: object,
+                                         wait_for_cancelling: bool, cancelling_timeout: float) -> bool:
         success = True
         async with order.lock:
             if order.is_waiting_for_chained_trigger:
@@ -322,18 +330,22 @@ class Trader(util.Initializable):
             else:
                 order.status = octobot_trading.enums.OrderStatus.CANCELED
 
-        # todo wait for cancel when PENDING_CANCEL
-        # call CancelState termination
         await order.on_cancel(force_cancel=order.status is octobot_trading.enums.OrderStatus.CANCELED,
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
+        if wait_for_cancelling and order.state is not None and order.state.is_pending():
+            await order.state.wait_for_terminate(timeout=cancelling_timeout)
         return True
 
-    async def cancel_order_with_id(self, order_id, emit_trading_signals=False):
+    async def cancel_order_with_id(self, order_id, emit_trading_signals=False,
+                                   wait_for_cancelling=True,
+                                   cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
         """
         Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
         :param order_id: Id of the order to cancel
         :param emit_trading_signals: when true, trading signals will be emitted
+        :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
+        :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: True if cancel is successful, False if order is not found or cancellation failed
         """
         try:
@@ -342,18 +354,26 @@ class Trader(util.Initializable):
                 return await signals.cancel_order(
                     self.exchange_manager,
                     emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
-                    order)
+                    order,
+                    wait_for_cancelling=wait_for_cancelling,
+                    cancelling_timeout=cancelling_timeout,
+                )
         except KeyError:
             return False
 
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None,
-                                 emit_trading_signals=False) -> (bool, list):
+                                 emit_trading_signals=False,
+                                 wait_for_cancelling=True,
+                                 cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+                                 ) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
         :param side: When set, only cancels orders from this side
         :param emit_trading_signals: when true, trading signals will be emitted
+        :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
+        :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: (True, orders): True if all orders got cancelled, False if an error occurred and the list of
         cancelled orders
         """
@@ -368,32 +388,48 @@ class Trader(util.Initializable):
                     cancelled = await signals.cancel_order(
                         self.exchange_manager,
                         emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
-                        order)
+                        order,
+                        wait_for_cancelling=wait_for_cancelling,
+                        cancelling_timeout=cancelling_timeout,)
                 if cancelled:
                     cancelled_orders.append(order)
                 all_cancelled = cancelled and all_cancelled
         return all_cancelled, cancelled_orders
 
-    async def cancel_all_open_orders_with_currency(self, currency, emit_trading_signals=False) -> bool:
+    async def cancel_all_open_orders_with_currency(
+        self, currency, emit_trading_signals=False,
+        wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for each traded symbol containing the
         given currency.
         :param currency: Currency to find trading pairs to cancel orders on.
         :param emit_trading_signals: when true, trading signals will be emitted
+        :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
+        :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         symbols = util.get_pairs(self.config, currency, enabled_only=True)
         if symbols:
             for symbol in symbols:
-                all_cancelled = (await self.cancel_open_orders(symbol, emit_trading_signals=emit_trading_signals))[0] \
+                all_cancelled = (await self.cancel_open_orders(symbol, emit_trading_signals=emit_trading_signals,
+                                                               wait_for_cancelling=wait_for_cancelling,
+                                                               cancelling_timeout=cancelling_timeout))[0] \
                                 and all_cancelled
         return all_cancelled
 
-    async def cancel_all_open_orders(self, emit_trading_signals=False) -> bool:
+    async def cancel_all_open_orders(
+        self, emit_trading_signals=False,
+        wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ) -> bool:
         """
         Cancel all open orders registered on this bot.
         :param emit_trading_signals: when true, trading signals will be emitted
+        :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
+        :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
@@ -403,7 +439,9 @@ class Trader(util.Initializable):
                     all_cancelled = await signals.cancel_order(
                         self.exchange_manager,
                         emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
-                        order) and all_cancelled
+                        order,
+                        wait_for_cancelling=wait_for_cancelling,
+                        cancelling_timeout=cancelling_timeout,) and all_cancelled
         return all_cancelled
 
     async def _sell_everything(self, symbol, inverted, timeout=None):

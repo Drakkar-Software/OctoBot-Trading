@@ -48,8 +48,9 @@ async def cancel_all_open_orders_with_currency(exchange_manager, currency, emit_
     return await exchange_manager.trader.cancel_all_open_orders_with_currency(currency, emit_trading_signals=emit_trading_signals)
 
 
-async def cancel_order_with_id(exchange_manager, order_id, emit_trading_signals=True) -> bool:
-    return await exchange_manager.trader.cancel_order_with_id(order_id, emit_trading_signals=emit_trading_signals)
+async def cancel_order_with_id(exchange_manager, order_id, emit_trading_signals=True, wait_for_cancelling=True) -> bool:
+    return await exchange_manager.trader.cancel_order_with_id(order_id, emit_trading_signals=emit_trading_signals,
+                                                              wait_for_cancelling=wait_for_cancelling)
 
 
 def get_order_exchange_name(order) -> str:

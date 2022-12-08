@@ -138,14 +138,20 @@ async def test_cancel_order(trading_mode, buy_limit_order):
         with pytest.raises(common_errors.MissingSignalBuilder):
             await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored")
         should_emit_trading_signal_mock.assert_called_once()
-        cancel_order_mock.assert_called_once_with(buy_limit_order, ignored_order="ignored")
+        cancel_order_mock.assert_called_once_with(
+            buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,
+            cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        )
         should_emit_trading_signal_mock.reset_mock()
         cancel_order_mock.reset_mock()
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=False)) \
             as should_emit_trading_signal_mock:
         assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") is True
         should_emit_trading_signal_mock.assert_called_once()
-        cancel_order_mock.assert_called_once_with(buy_limit_order, ignored_order="ignored")
+        cancel_order_mock.assert_called_once_with(
+            buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,
+            cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        )
         should_emit_trading_signal_mock.reset_mock()
         cancel_order_mock.reset_mock()
     # with context manager
@@ -155,7 +161,10 @@ async def test_cancel_order(trading_mode, buy_limit_order):
             async with trading_mode.remote_signal_publisher("BTC/USDT"):
                 assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") is True
                 assert should_emit_trading_signal_mock.call_count == 2
-                cancel_order_mock.assert_called_once_with(buy_limit_order, ignored_order="ignored")
+                cancel_order_mock.assert_called_once_with(
+                    buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,
+                    cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+                )
                 should_emit_trading_signal_mock.reset_mock()
                 cancel_order_mock.reset_mock()
         emit_signal_bundle_mock.assert_called_once()
@@ -165,7 +174,10 @@ async def test_cancel_order(trading_mode, buy_limit_order):
             async with trading_mode.remote_signal_publisher("BTC/USDT"):
                 assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") is True
                 assert should_emit_trading_signal_mock.call_count == 2
-                cancel_order_mock.assert_called_once_with(buy_limit_order, ignored_order="ignored")
+                cancel_order_mock.assert_called_once_with(
+                    buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,
+                    cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+                )
                 should_emit_trading_signal_mock.reset_mock()
                 cancel_order_mock.reset_mock()
         emit_signal_bundle_mock.assert_not_called()
