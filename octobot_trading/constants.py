@@ -70,7 +70,9 @@ FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm
 TESTED_EXCHANGES = ["binance", "okx", "gateio", "huobi", "bitget",
                     "ascendex", "kucoin", "coinbasepro", "bybit", "phemex", "hollaex"]
 DEFAULT_FUTURE_EXCHANGES = ["bybit"]
-SIMULATOR_TESTED_EXCHANGES = []
+SIMULATOR_TESTED_EXCHANGES = ["bitfinex", "bithumb", "bitstamp", "bittrex", "coinex",
+                              "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
+                              "wavesexchange"]
 
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
