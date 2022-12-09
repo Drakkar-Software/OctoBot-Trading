@@ -73,7 +73,7 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
         cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD = (
             cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD
         )
-        
+
         cls.GET_POSITIONS_CONFIG: typing.List[dict] = [
             # each line is a separate api call
             # if the list is empty, it will called once without parameters
@@ -87,7 +87,12 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
         cls.GET_POSITION_CONFIG: typing.List[dict] = [
             # see above
         ]
-        
+
+        # cancel order
+        # try to recheck after a delay, if a order is canceled,
+        # but the exchange takes some time to change the state from open to closed
+        cls.RECHECK_IF_ORDER_UNCANCELED_DELAY: int = 20  # seconds
+
         # other
         cls.FUNDING_IN_TICKER = True
         cls.MARK_PRICE_IN_TICKER = True

@@ -843,27 +843,43 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def cancel_order_default(self, order_id: str, symbol: str = None, **kwargs: dict
                                    ) -> typing.Tuple[bool, str or None]:
-        success = False
+        is_canceled = False
         cancel_resp_message = None
         try:
             with self.error_describer():
                 cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
             cancel_resp_message = f" - Cancel response: {cancel_resp or 'no response'}"
-            is_canceled, _ = await self.check_if_canceled(order_id, symbol)
+            is_canceled, message = await self.check_if_canceled(
+                order_id, symbol, cancel_resp_message
+            )
             if is_canceled:
-                success = True
-                return success, None
-            await asyncio.sleep(20)  # try again - some exchanges need a while to update the order (bybit for example)
-            is_canceled, _ = await self.check_if_canceled(order_id, symbol, cancel_resp_message)
-            return is_canceled, None
+                return is_canceled, None
+            if delay := self.connector_config.RECHECK_IF_ORDER_UNCANCELED_DELAY:
+                # check again - some exchanges need a while to update the order (bybit for example)
+                await asyncio.sleep(delay)
+                is_canceled, message = await self.check_if_canceled(
+                    order_id, symbol, cancel_resp_message
+                )
+                if is_canceled:
+                    return is_canceled, message
+            return is_canceled, message
         except ccxt.OrderNotFound:
-            return success, f"Trying to cancel order (id {order_id}) with cancel_order_default " \
-                            f"but order was not found{cancel_resp_message or ''}\n"
+            return (
+                is_canceled,
+                f"Trying to cancel order (id {order_id}) with cancel_order_default "
+                f"but order was not found{cancel_resp_message or ''}\n",
+            )
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
-            return success, f"cancel_order_default is not supported. Error: {e}{cancel_resp_message or ''}\n"
+            return (
+                is_canceled,
+                f"cancel_order_default is not supported. Error: {e}{cancel_resp_message or ''}\n",
+            )
         except Exception as e:
-            return success, f"Order {order_id} failed to cancel using " \
-                            f"| {e} ({e.__class__.__name__}){cancel_resp_message or ''}\n"
+            return (
+                is_canceled,
+                f"Order {order_id} failed to cancel using "
+                f"| {e} ({e.__class__.__name__}){cancel_resp_message or ''}\n",
+            )
 
     async def check_if_canceled(self, order_id, symbol, cancel_resp_message="") -> typing.Tuple[bool, str or None]:
         success = False

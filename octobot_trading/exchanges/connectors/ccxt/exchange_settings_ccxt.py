@@ -118,6 +118,11 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
             # see above
         ]
 
+        # cancel order
+        # try to recheck after a delay, if a order is canceled,
+        # but the exchange takes some time to change the state from open to closed
+        cls.RECHECK_IF_ORDER_UNCANCELED_DELAY: int = None  # seconds
+
         # other
         cls.FUNDING_IN_TICKER = True
         cls.MARK_PRICE_IN_TICKER = True
