@@ -18,6 +18,7 @@ import mock
 import decimal
 
 import octobot_trading.errors as errors
+import octobot_trading.constants as constants
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
@@ -47,7 +48,7 @@ async def test_get_amount_from_input_amount(null_context):
                 as parse_quantity_mock:
             assert await script_keywords.get_amount_from_input_amount(null_context, "1", "buy") == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
-                                                                  False, True, False)
+                                                                  False, True, False, target_price=None)
             parse_quantity_mock.assert_called_once_with("1")
             adapt_amount_to_holdings_mock.reset_mock()
 
@@ -59,9 +60,10 @@ async def test_get_amount_from_input_amount(null_context):
                 as total_account_balance_mock:
             assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy", use_total_holding=True,
                                                                       reduce_only=False,
-                                                                      is_stop_order=True) == decimal.Decimal(1)
+                                                                      is_stop_order=True,
+                                                                      target_price=constants.ZERO) == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
-                                                                  True, False, True)
+                                                                  True, False, True, target_price=constants.ZERO)
             parse_quantity_mock.assert_called_once_with("50")
             total_account_balance_mock.assert_called_once_with(null_context)
             adapt_amount_to_holdings_mock.reset_mock()
@@ -75,7 +77,7 @@ async def test_get_amount_from_input_amount(null_context):
                 as available_account_balance_mock:
             assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
-                                                                  False, True, False)
+                                                                  False, True, False, target_price=None)
             parse_quantity_mock.assert_called_once_with("50")
             available_account_balance_mock.assert_called_once_with(null_context, "buy", reduce_only=True)
             adapt_amount_to_holdings_mock.reset_mock()

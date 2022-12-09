@@ -27,6 +27,7 @@ async def get_amount_from_input_amount(
     reduce_only=True,
     is_stop_order=False,
     use_total_holding=False,
+    target_price=None,
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
 
@@ -46,4 +47,5 @@ async def get_amount_from_input_amount(
     else:
         raise trading_errors.InvalidArgumentError("make sure to use a supported syntax for amount")
     return await account_balance.adapt_amount_to_holdings(context, amount_value, side,
-                                                          use_total_holding, reduce_only, is_stop_order)
+                                                          use_total_holding, reduce_only, is_stop_order,
+                                                          target_price=target_price)

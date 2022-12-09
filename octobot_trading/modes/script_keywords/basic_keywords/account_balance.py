@@ -59,19 +59,20 @@ def _get_locked_amount_in_stop_orders(context, side):
 
 
 async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False,
-                                    is_stop_order=False, reduce_only=True):
+                                    is_stop_order=False, reduce_only=True, target_price=None):
     portfolio_type = commons_constants.PORTFOLIO_TOTAL if use_total_holding else commons_constants.PORTFOLIO_AVAILABLE
-    current_symbol_holding, _, market_quantity, current_price, _ = \
+    current_symbol_holding, _, market_quantity, price, _ = \
         await trading_personal_data.get_pre_order_data(context.exchange_manager,
                                                        symbol=context.symbol,
                                                        timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                       portfolio_type=portfolio_type)
+                                                       portfolio_type=portfolio_type,
+                                                       target_price=target_price)
     already_locked_amount = trading_constants.ZERO
     if use_total_holding and is_stop_order:
         already_locked_amount = _get_locked_amount_in_stop_orders(context, side)
     if context.exchange_manager.is_future:
         max_order_size, _ = trading_personal_data.get_futures_max_order_size(
-            context.exchange_manager, context.symbol, trading_enums.TradeOrderSide(side), current_price, reduce_only,
+            context.exchange_manager, context.symbol, trading_enums.TradeOrderSide(side), price, reduce_only,
             current_symbol_holding, market_quantity
         )
         return max_order_size
@@ -79,9 +80,11 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
         - already_locked_amount
 
 
-async def adapt_amount_to_holdings(context, amount, side, use_total_holding, reduce_only, is_stop_order):
+async def adapt_amount_to_holdings(context, amount, side, use_total_holding, reduce_only,
+                                   is_stop_order, target_price=None):
     available_acc_bal = await available_account_balance(context, side, use_total_holding=use_total_holding,
-                                                        is_stop_order=is_stop_order, reduce_only=reduce_only)
+                                                        is_stop_order=is_stop_order, reduce_only=reduce_only,
+                                                        target_price=target_price)
     if available_acc_bal > amount:
         return amount
     else:

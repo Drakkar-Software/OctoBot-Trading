@@ -53,24 +53,29 @@ async def test_available_account_balance(mock_context):
             mock.patch.object(account_balance, "_get_locked_amount_in_stop_orders",
                               mock.Mock(return_value=trading_constants.ONE)) as _get_locked_amount_in_stop_orders_mock:
         assert market_quantity == await script_keywords.available_account_balance(
-            mock_context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False, is_stop_order=False)
+            mock_context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False, is_stop_order=False,
+            target_price=trading_constants.ZERO
+        )
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol=mock_context.symbol,
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                        portfolio_type=commons_constants.PORTFOLIO_AVAILABLE)
+                                                        portfolio_type=commons_constants.PORTFOLIO_AVAILABLE,
+                                                        target_price=trading_constants.ZERO)
         get_pre_order_data_mock.reset_mock()
         _get_locked_amount_in_stop_orders_mock.assert_not_called()
         assert current_symbol_holding == await script_keywords.available_account_balance(
             mock_context, side=trading_enums.TradeOrderSide.SELL.value, use_total_holding=True)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol=mock_context.symbol,
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL)
+                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL,
+                                                        target_price=None)
         get_pre_order_data_mock.reset_mock()
         _get_locked_amount_in_stop_orders_mock.assert_not_called()
         assert current_symbol_holding - trading_constants.ONE == await script_keywords.available_account_balance(
             mock_context, side=trading_enums.TradeOrderSide.SELL.value, use_total_holding=True, is_stop_order=True)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol=mock_context.symbol,
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL)
+                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL,
+                                                        target_price=None)
         _get_locked_amount_in_stop_orders_mock.assert_called_once_with(mock_context,
                                                                        trading_enums.TradeOrderSide.SELL.value)
         get_pre_order_data_mock.reset_mock()
@@ -79,7 +84,8 @@ async def test_available_account_balance(mock_context):
             mock_context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=True, is_stop_order=True)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol=mock_context.symbol,
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL)
+                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL,
+                                                        target_price=None)
         _get_locked_amount_in_stop_orders_mock.assert_called_once_with(mock_context,
                                                                        trading_enums.TradeOrderSide.BUY.value)
         get_pre_order_data_mock.reset_mock()
@@ -94,10 +100,13 @@ async def test_adapt_amount_to_holdings(null_context):
                                                               trading_enums.TradeOrderSide.SELL,
                                                               False,
                                                               "reduce_only",
-                                                              "is_stop_order") == decimal.Decimal(0)
+                                                              "is_stop_order",
+                                                              target_price=trading_constants.ONE_HUNDRED
+                                                              ) == decimal.Decimal(0)
         available_account_balance_mock.assert_called_once_with(null_context, trading_enums.TradeOrderSide.SELL,
                                                                use_total_holding=False, is_stop_order="is_stop_order",
-                                                               reduce_only="reduce_only")
+                                                               reduce_only="reduce_only",
+                                                               target_price=trading_constants.ONE_HUNDRED)
         available_account_balance_mock.reset_mock()
         assert await script_keywords.adapt_amount_to_holdings(null_context,
                                                               decimal.Decimal(1),
@@ -107,7 +116,8 @@ async def test_adapt_amount_to_holdings(null_context):
                                                               "is_stop_order") == decimal.Decimal(1)
         available_account_balance_mock.assert_called_once_with(null_context, trading_enums.TradeOrderSide.SELL,
                                                                use_total_holding=True, is_stop_order="is_stop_order",
-                                                               reduce_only="reduce_only")
+                                                               reduce_only="reduce_only",
+                                                               target_price=None)
         assert await script_keywords.adapt_amount_to_holdings(null_context,
                                                               decimal.Decimal(2),
                                                               trading_enums.TradeOrderSide.SELL,
