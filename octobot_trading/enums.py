@@ -415,10 +415,9 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     UNREALIZED_PNL = "unrealized_pnl"  # unrealized_pnl on Bybit api and unrealized_pnl on exchange UI
     REALIZED_PNL = "realized_pnl"
     CLOSING_FEE = "closing_fee"
-    QUANTITY = "quantity"
-    SIZE = "size"
-    VALUE = "value"
-    NOTIONAL = "notional"
+    CONTRACT_SIZE = "contract_size"
+    POSITION_SIZE = "position_size"
+    POSITION_VALUE = "position_value"
     INITIAL_MARGIN = "initial_margin"
     COLLATERAL = "collateral"
     LEVERAGE = "leverage"

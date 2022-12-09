@@ -34,7 +34,7 @@ class GenericCCXTPositionsParser(positions_parser_ccxt.CCXTPositionsParser):
     UNREALIZED_PNL_KEYS: list = [ExchangeCols.UNREALIZED_PNL.value, "unrealizedPnl"]
     STATUS_KEYS: list = ["position_status"]
     BANKRUPTCY_PRICE_KEYS: list = ["bust_price"]
-    VALUE_KEYS: list = ["position_value"]
+    VALUE_KEYS: list = [ExchangeCols.NOTIONAL.value, "position_value"]
     CLOSING_FEE_KEYS: list = ["occ_closing_fee"]
     MARGIN_TYPE_KEYS: list = [
         ExchangeCols.MARGIN_MODE.value,
@@ -56,7 +56,7 @@ class GenericCCXTPositionsParser(positions_parser_ccxt.CCXTPositionsParser):
     USE_INFO_SUB_DICT_FOR_CLOSING_FEE: bool = True
     USE_INFO_SUB_DICT_FOR_MARGIN_TYPE: bool = True
     USE_INFO_SUB_DICT_FOR_SIDE: bool = True
-    USE_INFO_SUB_DICT_FOR_SIZE: bool = True
+    USE_INFO_SUB_DICT_FOR_POSITION_SIZE: bool = True
     USE_INFO_SUB_DICT_FOR_MODE: bool = True
     USE_INFO_SUB_DICT_FOR_MARK_PRICE: bool = True
 

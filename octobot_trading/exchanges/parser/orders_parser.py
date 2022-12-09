@@ -63,7 +63,7 @@ class OrdersParser(parser_util.Parser):
     USE_INFO_SUB_DICT_FOR_REDUCE_ONLY: bool = False
     USE_INFO_SUB_DICT_FOR_TAG: bool = False
     USE_INFO_SUB_DICT_FOR_FEES: bool = False
-    USE_INFO_SUB_DICT_FOR_QUANTITY_CURRENCY: bool = False
+    USE_INFO_SUB_DICT_FOR_CONTRACT_SIZE_CURRENCY: bool = False
 
     STATUS_MAP: dict = {
         # for example:
@@ -486,7 +486,7 @@ class OrdersParser(parser_util.Parser):
         self._try_to_find_and_set(
             OrderCols.QUANTITY_CURRENCY.value,
             self.QUANTITY_CURRENCY_KEYS,
-            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_QUANTITY_CURRENCY,
+            use_info_sub_dict=self.USE_INFO_SUB_DICT_FOR_CONTRACT_SIZE_CURRENCY,
             enable_log=False,  # todo is this important?
         )
 

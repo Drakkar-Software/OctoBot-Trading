@@ -41,7 +41,7 @@ async def test_create_position_instance_from_raw(future_trader_simulator_with_de
                                                             get_default_future_inverse_contract())
     inverse_position_open = personal_data.create_position_instance_from_raw(trader_inst, {
         enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL,
-        enums.ExchangeConstantsPositionColumns.QUANTITY.value: position_quantity
+        enums.ExchangeConstantsPositionColumns.CONTRACT_SIZE.value: position_quantity
     })
     assert position.symbol == DEFAULT_FUTURE_SYMBOL
     assert position.market == "USDT"

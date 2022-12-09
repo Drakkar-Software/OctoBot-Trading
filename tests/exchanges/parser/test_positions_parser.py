@@ -164,7 +164,7 @@ def get_parsed_closed_positions():
             PositionCols.ORIGINAL_SIDE.value: "short",
             PositionCols.POSITION_MODE.value: PositionMode.ONE_WAY,
             PositionCols.SIDE.value: PositionSide.BOTH,
-            PositionCols.SIZE.value: decimal.Decimal("0"),
+            PositionCols.POSITION_SIZE.value: decimal.Decimal("0"),
             PositionCols.CONTRACT_TYPE.value: FutureContractType.LINEAR_PERPETUAL,
             PositionCols.MARGIN_TYPE.value: TraderPositionType.CROSS,
             PositionCols.LEVERAGE.value: decimal.Decimal("5.0"),
@@ -183,15 +183,15 @@ def get_parsed_open_positions():
             PositionCols.POSITION_MODE.value: PositionMode.ONE_WAY,
             PositionCols.STATUS.value: PositionStatus.OPEN,
             PositionCols.SIDE.value: PositionSide.BOTH,
-            PositionCols.SIZE.value: decimal.Decimal("0.01"),
+            PositionCols.POSITION_SIZE.value: decimal.Decimal("0.01"),
             PositionCols.CONTRACT_TYPE.value: FutureContractType.LINEAR_PERPETUAL,
             PositionCols.MARGIN_TYPE.value: TraderPositionType.ISOLATED,
             PositionCols.LEVERAGE.value: decimal.Decimal("5.0"),
             PositionCols.REALIZED_PNL.value: decimal.Decimal("-12.12747167"),
-            PositionCols.QUANTITY.value: decimal.Decimal("1.0"),
+            PositionCols.CONTRACT_SIZE.value: decimal.Decimal("1.0"),
             PositionCols.TIMESTAMP.value: 1668494270,
             PositionCols.COLLATERAL.value: decimal.Decimal("33.5939353"),
-            PositionCols.NOTIONAL.value: decimal.Decimal("167.96968928"),
+            PositionCols.POSITION_VALUE.value: decimal.Decimal("167.96968928"),
             PositionCols.UNREALIZED_PNL.value: decimal.Decimal("2.50941072"),
             PositionCols.LIQUIDATION_PRICE.value: decimal.Decimal("13522.0"),
             PositionCols.CLOSING_FEE.value: decimal.Decimal("0.080628"),
@@ -269,8 +269,8 @@ async def test_parse_hedge_mode_short(
     parsed_closed_positions[0][
         PositionCols.ORIGINAL_SIDE.value
     ] = PositionSide.SHORT.value
-    parsed_open_positions[0][PositionCols.QUANTITY.value] *= (
-        1 if parsed_open_positions[0][PositionCols.QUANTITY.value] < 0 else -1
+    parsed_open_positions[0][PositionCols.CONTRACT_SIZE.value] *= (
+        1 if parsed_open_positions[0][PositionCols.CONTRACT_SIZE.value] < 0 else -1
     )
     parsed_open_positions[0][PositionCols.SIDE.value] = PositionSide.SHORT
     parsed_closed_positions[0][PositionCols.SIDE.value] = PositionSide.SHORT
@@ -341,7 +341,7 @@ async def test_parse_position_side_short(
     parsed_closed_positions[0][
         PositionCols.ORIGINAL_SIDE.value
     ] = PositionSide.SHORT.value
-    parsed_open_positions[0][PositionCols.QUANTITY.value] *= -1
+    parsed_open_positions[0][PositionCols.CONTRACT_SIZE.value] *= -1
     await test_parse_one_way_mode(
         parsed_open_positions,
         parsed_closed_positions,
