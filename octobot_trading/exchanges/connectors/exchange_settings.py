@@ -1,4 +1,4 @@
-import octobot_trading.exchanges.config.exchange_test_status as exchange_test_status
+import octobot_trading.exchanges.connectors.exchange_test_status as exchange_test_status
 import octobot_trading.exchanges.parser as parser
 
 
@@ -46,7 +46,7 @@ class ExchangeConfig:
     MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
 
-    MARKET_STATUS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    MARKET_STATUS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     ORDERS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     TRADES_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     POSITIONS_PARSER_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
@@ -59,8 +59,8 @@ class ExchangeConfig:
     GET_CLOSED_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     CANCEL_ORDERS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     GET_MY_RECENT_TRADES_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
+    GET_POSITIONS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     GET_POSITION_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
-    GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
 
     @classmethod
     def is_fully_tested_and_supported(cls):
@@ -68,7 +68,7 @@ class ExchangeConfig:
             cls.CANDLE_LOADING_LIMIT_TEST_STATUS.is_fully_tested
             and cls.MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
             and cls.MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS.is_fully_tested
-            and cls.MARKET_STATUS_TEST_STATUS.is_fully_tested
+            and cls.MARKET_STATUS_PARSER_TEST_STATUS.is_fully_tested
             and cls.ORDERS_PARSER_TEST_STATUS.is_fully_tested
             and cls.TRADES_PARSER_TEST_STATUS.is_fully_tested
             and cls.POSITIONS_PARSER_TEST_STATUS.is_fully_tested
@@ -80,8 +80,8 @@ class ExchangeConfig:
             and cls.GET_CLOSED_ORDERS_METHODS_TEST_STATUS.is_fully_tested
             and cls.CANCEL_ORDERS_METHODS_TEST_STATUS.is_fully_tested
             and cls.GET_MY_RECENT_TRADES_METHODS_TEST_STATUS.is_fully_tested
+            and cls.GET_POSITIONS_METHODS_TEST_STATUS.is_fully_tested
             and cls.GET_POSITION_METHODS_TEST_STATUS.is_fully_tested
-            and cls.GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS.is_fully_tested
         )
 
     @classmethod

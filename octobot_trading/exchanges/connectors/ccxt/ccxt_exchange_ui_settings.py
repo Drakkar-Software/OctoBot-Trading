@@ -73,7 +73,7 @@ def initialize_experimental_exchange_settings(exchange, inputs):
             title="Market Status Parser Settings",
             parent_input_name=experimental_settings_name,
         )
-        if not settings.MARKET_STATUS_TEST_STATUS.is_fully_tested:
+        if not settings.MARKET_STATUS_PARSER_TEST_STATUS.is_fully_tested:
             settings.MARKET_STATUS_PARSER.FIX_PRECISION = exchange.UI.user_input(
                 "fix_precision",
                 common_enums.UserInputTypes.BOOLEAN,
@@ -231,26 +231,6 @@ def initialize_experimental_exchange_settings(exchange, inputs):
                 options=settings.ALL_GET_CLOSED_ORDERS_METHODS,
                 registered_inputs=inputs,
                 title="Get closed orders methods: All methods will be used and orders will be merged and duplicates removed",
-                parent_input_name=get_methods_settings_name,
-            )
-        if not settings.GET_POSITION_METHODS_TEST_STATUS.is_fully_tested:
-            settings.GET_POSITION_METHODS = exchange.UI.user_input(
-                "get_position_methods",
-                common_enums.UserInputTypes.MULTIPLE_OPTIONS,
-                def_val=settings.GET_POSITION_METHODS,
-                options=settings.ALL_GET_POSITION_METHODS,
-                registered_inputs=inputs,
-                title="Get positions methods: All methods will be used and duplicates will be ignored",
-                parent_input_name=get_methods_settings_name,
-            )
-        if not settings.GET_SYMBOL_POSITIONS_METHODS_TEST_STATUS.is_fully_tested:
-            settings.GET_CLOSED_ORDERS_METHODS = exchange.UI.user_input(
-                "get_symbol_position_methods",
-                common_enums.UserInputTypes.MULTIPLE_OPTIONS,
-                def_val=settings.GET_POSITION_METHODS,
-                options=settings.ALL_GET_POSITION_METHODS,
-                registered_inputs=inputs,
-                title="Get symbol positions methods: All methods will be used and duplicates will be ignored",
                 parent_input_name=get_methods_settings_name,
             )
         if not settings.GET_MY_RECENT_TRADES_METHODS_TEST_STATUS.is_fully_tested:

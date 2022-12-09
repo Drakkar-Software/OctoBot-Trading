@@ -1,3 +1,4 @@
+import typing
 import octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt as exchange_settings_ccxt
 import octobot_trading.exchanges.parser as parser
 import octobot_trading.exchanges.parser.util as parser_util
@@ -72,20 +73,21 @@ class GenericCCXTExchangeConfig(exchange_settings_ccxt.CCXTExchangeConfig):
         cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD = (
             cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD
         )
-
-        # get_positions
-        cls.GET_POSITION_LINEAR_SETTLE_COINS: list = ["USDT", "USDC"]
-        cls.GET_POSITION_INVERSE_SETTLE_COINS: list = [
-            "BTC",
-            "ETH",
-            "MANA",
-            "XRP",
-            "ADA",
-            "DOT",
-            "EOS",
-            "LTC",
+        
+        cls.GET_POSITIONS_CONFIG: typing.List[dict] = [
+            # each line is a separate api call
+            # if the list is empty, it will called once without parameters
+            # for example
+            # {"subType": "linear", "settleCoin": "USDT", "dataFilter": "full"},
+            # {"subType": "linear", "settleCoin": "USDC", "dataFilter": "full"},
+            # {"subType": "inverse", "dataFilter": "full" },
+            # {"subType": "option", "dataFilter": "full"},
+            # {"subType": "swap", "dataFilter": "full"},
         ]
-
+        cls.GET_POSITION_CONFIG: typing.List[dict] = [
+            # see above
+        ]
+        
         # other
         cls.FUNDING_IN_TICKER = True
         cls.MARK_PRICE_IN_TICKER = True

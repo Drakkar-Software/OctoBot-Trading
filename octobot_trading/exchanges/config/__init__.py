@@ -20,11 +20,6 @@ from octobot_trading.exchanges.config.exchange_config_data import (
     ExchangeConfig,
 )
 
-from octobot_trading.exchanges.config import exchange_test_status
-from octobot_trading.exchanges.config.exchange_test_status import (
-    ExchangeTestStatus
-)
-
 from octobot_trading.exchanges.config import backtesting_exchange_config
 from octobot_trading.exchanges.config.backtesting_exchange_config import (
     BacktestingExchangeConfig,
@@ -33,5 +28,4 @@ from octobot_trading.exchanges.config.backtesting_exchange_config import (
 __all__ = [
     "ExchangeConfig",
     "BacktestingExchangeConfig",
-    "ExchangeTestStatus",
 ]

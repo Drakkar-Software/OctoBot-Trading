@@ -23,13 +23,8 @@ from octobot_trading.exchanges.config cimport backtesting_exchange_config
 from octobot_trading.exchanges.config.backtesting_exchange_config cimport (
     BacktestingExchangeConfig,
 )
-from octobot_trading.exchanges.config cimport exchange_test_status
-from octobot_trading.exchanges.config.exchange_test_status cimport (
-    ExchangeTestStatus
-)
 
 __all__ = [
     "ExchangeConfig",
     "BacktestingExchangeConfig",
-    "ExchangeTestStatus",
 ]

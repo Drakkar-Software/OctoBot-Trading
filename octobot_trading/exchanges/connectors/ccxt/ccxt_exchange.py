@@ -34,7 +34,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt as exchange_settings_ccxt
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus, PositionSubType
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, ExchangeOrderCCXTParameter, OrderStatus, PositionSubType
 
 
 class CCXTExchange(abstract_exchange.AbstractExchange):
@@ -817,7 +817,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 self.connector_config.ADD_COST_TO_CREATE_SPOT_MARKET_ORDER
                 or self.connector_config.ADD_COST_TO_CREATE_FUTURE_MARKET_ORDER
         ):
-            return {**params, "cost": quantity * price}
+            return {**params, ExchangeOrderCCXTParameter.COST.value: quantity * price}
         return params
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
@@ -895,55 +895,15 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def get_positions(self, **kwargs: dict) -> list:
         """
-            all known get_positions methods should be added here
-            so untested exchanges have higher chance of success
+            set GET_POSITIONS_CONFIG if the exchange if it requires parameters
         """
-        defined_methods = self.connector_config.GET_POSITION_METHODS
-        positions = []
-        if self.get_positions_linear.__name__ in defined_methods:
-            positions += await self.get_positions_linear(**kwargs)
-        if self.get_positions_inverse.__name__ in defined_methods:
-            positions += await self.get_positions_inverse(**kwargs)
-        if self.get_positions_swap.__name__ in defined_methods:
-            positions += await self.get_positions_swap(**kwargs)
-        if self.get_positions_option.__name__ in defined_methods:
-            positions += await self.get_positions_option(**kwargs)
-        return positions
-
-    async def get_positions_linear(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type(
-            "linear", symbol,
-            await self.exchange_manager.exchange.get_positions_linear_settle_coins()
-            , **kwargs)
-
-    async def get_positions_inverse(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type(
-            PositionSubType.INVERSE.value, symbol,
-            await self.exchange_manager.exchange.get_positions_inverse_settle_coins()
-            , **kwargs)
-
-    async def get_positions_swap(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type(PositionSubType.SWAP.value, symbol, **kwargs)
-
-    async def get_positions_option(self, symbol=None, **kwargs: dict) -> list:
-        return await self.get_position_by_sub_type(PositionSubType.OPTION.value, symbol, **kwargs)
-
-    async def get_position_by_sub_type(
-            self, sub_type, symbol, settle_coins: list = None, **kwargs: dict
-    ) -> list:
-        params = {**kwargs, PositionSubType.SUB_TYPE.value: sub_type}
-        if settle_coins:
+        if get_positions_config := self.connector_config.GET_POSITIONS_CONFIG:
             positions = []
-            for coin in settle_coins:
-                params[PositionSubType.SETTLE_COIN.value] = coin
-                if symbol:
-                    positions += await self._get_position(symbol, **params)
-                else:
-                    positions += await self._get_positions(**params)
+            for positions_parameters in get_positions_config:
+                positions += await self._get_positions(**kwargs, **positions_parameters)
             return positions
-        if symbol:
-            return await self._get_position(symbol, **params)
-        return await self._get_positions(**params)
+        else:
+            return await self._get_positions(**kwargs)
 
     async def _get_positions(self, **kwargs: dict) -> list:
         try:
@@ -955,17 +915,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             return []
 
     async def get_position(self, symbol: str, **kwargs: dict) -> list:
-        defined_methods = self.connector_config.GET_POSITION_METHODS
-        positions = []
-        if self.get_positions_linear.__name__ in defined_methods:
-            positions += await self.get_positions_linear(symbol, **kwargs)
-        if self.get_positions_inverse.__name__ in defined_methods:
-            positions += await self.get_positions_inverse(symbol, **kwargs)
-        if self.get_positions_swap.__name__ in defined_methods:
-            positions += await self.get_positions_swap(symbol, **kwargs)
-        if self.get_positions_option.__name__ in defined_methods:
-            positions += await self.get_positions_option(symbol, **kwargs)
-        return positions
+        if get_positions_config := self.connector_config.GET_POSITION_CONFIG:
+            positions = []
+            for positions_parameters in get_positions_config:
+                positions += await self._get_position(
+                    symbol=symbol, **kwargs, **positions_parameters)
+            return positions
+        else:
+            return await self._get_position(symbol=symbol, **kwargs)
 
     async def _get_position(self, symbol: str, **kwargs: dict) -> list:
         raw_positions = await self.client.fetch_positions(symbols=[symbol], params=kwargs)

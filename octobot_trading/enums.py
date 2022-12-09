@@ -200,6 +200,10 @@ class ExchangePositionCCXTColumns(enum.Enum):
     INFO = "info"
 
 
+class ExchangeOrderCCXTParameter(enum.Enum):
+    COST = "cost"
+    
+    
 class ExchangeOrderCCXTColumns(enum.Enum):
     INFO = "info"
     ID = "id"

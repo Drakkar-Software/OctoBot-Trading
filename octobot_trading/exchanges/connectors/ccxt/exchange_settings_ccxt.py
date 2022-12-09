@@ -1,3 +1,4 @@
+import typing
 import octobot_trading.exchanges.connectors.exchange_settings as exchange_settings
 import octobot_trading.exchanges.parser as parser
 import octobot_trading.exchanges.parser.util as parser_util
@@ -20,7 +21,7 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     POSITIONS_PARSER: parser_util.Parser = parser.CCXTPositionsParser
     TICKER_PARSER: parser_util.Parser = parser.CCXTTickerParser
     FUNDING_RATE_PARSER: parser_util.Parser = parser.CCXTFundingRateParser
-    
+
     def __init__(self, exchange_connector):
         self.set_all_get_methods(exchange_connector)
         self.set_default_settings(exchange_connector)
@@ -67,8 +68,6 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
         cls.GET_MY_RECENT_TRADES_METHODS = [
             exchange_connector.get_my_recent_trades_default.__name__,
         ]
-        cls.GET_POSITION_METHODS = cls.GET_POSITION_METHODS
-        cls.GET_POSITION_METHODS = cls.GET_POSITION_METHODS
 
         # market status parser
         cls.MARKET_STATUS_PARSER.FIX_PRECISION = cls.MARKET_STATUS_PARSER.FIX_PRECISION
@@ -103,11 +102,22 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
         cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD = (
             cls.FUNDING_RATE_PARSER.FUNDING_TIME_UPDATE_PERIOD
         )
-        
+
         # get_positions
-        cls.GET_POSITION_LINEAR_SETTLE_COINS: list =  []
-        cls.GET_POSITION_INVERSE_SETTLE_COINS: list =  []
-        
+        cls.GET_POSITIONS_CONFIG: typing.List[dict] = [
+            # each line is a separate api call
+            # if the list is empty, it will called once without parameters
+            # for example
+            # {"subType": "linear", "settleCoin": "USDT", "dataFilter": "full"},
+            # {"subType": "linear", "settleCoin": "USDC", "dataFilter": "full"},
+            # {"subType": "inverse", "dataFilter": "full" },
+            # {"subType": "option", "dataFilter": "full"},
+            # {"subType": "swap", "dataFilter": "full"},
+        ]
+        cls.GET_POSITION_CONFIG: typing.List[dict] = [
+            # see above
+        ]
+
         # other
         cls.FUNDING_IN_TICKER = True
         cls.MARK_PRICE_IN_TICKER = True
@@ -146,18 +156,6 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
             exchange_connector.get_my_recent_trades_default.__name__,
             exchange_connector.get_my_recent_trades_using_recent_trades.__name__,
             exchange_connector.get_my_recent_trades_using_closed_orders.__name__,
-        ]
-        cls.ALL_GET_POSITION_METHODS = [
-            exchange_connector.get_positions_linear.__name__,
-            exchange_connector.get_positions_inverse.__name__,
-            exchange_connector.get_positions_swap.__name__,
-            exchange_connector.get_positions_option.__name__,
-        ]
-        cls.ALL_GET_POSITION_METHODS = [
-            exchange_connector.get_positions_linear.__name__,
-            exchange_connector.get_positions_inverse.__name__,
-            exchange_connector.get_positions_swap.__name__,
-            exchange_connector.get_positions_option.__name__,
         ]
 
     GET_ORDER_METHODS: list = None
