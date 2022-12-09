@@ -38,8 +38,8 @@ class CCXTPositionsParser(positions_parser.PositionsParser):
         ExchangeCols.MARGIN_TYPE.value,
     ]
     SIDE_KEYS: list = [ExchangeCols.SIDE.value]
-    QUANTITY_KEYS: list = [ExchangeCols.CONTRACT_SIZE.value]
-    SIZE_KEYS: list = [ExchangeCols.CONTRACTS.value]
+    CONTRACT_SIZE_KEYS: list = [ExchangeCols.CONTRACT_SIZE.value]
+    POSITION_SIZE_KEYS: list = [ExchangeCols.CONTRACTS.value]
     TIMESTAMP_KEYS: list = [ExchangeCols.TIMESTAMP.value]
 
     def __init__(self, exchange):

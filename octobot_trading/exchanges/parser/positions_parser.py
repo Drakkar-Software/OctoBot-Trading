@@ -218,7 +218,7 @@ class PositionsParser(parser_util.Parser):
             return PositionStatus(self.STATUS_STATIC_MAP[raw_status])
         except (KeyError, ValueError):
             try:
-                if self.formatted_record.get(PositionCols.CONTRACT_SIZE.value):
+                if self.formatted_record.get(PositionCols.POSITION_SIZE.value):
                     return PositionStatus(self.STATUS_OPEN_MAP[raw_status])
                 else:
                     return PositionStatus(self.STATUS_CLOSED_MAP[raw_status])
@@ -370,7 +370,7 @@ class PositionsParser(parser_util.Parser):
                 # short - so we set it to negative if it isn't already
                 return -quantity if quantity > 0 else quantity
         self._log_missing(
-            PositionCols.CONTRACT_SIZE.value,
+            PositionCols.POSITION_SIZE.value,
             f"requires valid side ({side or 'no side'}) to parse",
         )
 

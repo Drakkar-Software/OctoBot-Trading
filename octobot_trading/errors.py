@@ -45,6 +45,30 @@ class OrderEditError(Exception):
     """
 
 
+class OrderStillUncanceledError(Exception):
+    """
+    Raised when a order is still open after cancellation
+    """
+
+
+class OrderCancelNotSupportedError(Exception):
+    """
+    Raised when a canceling a order is not supported
+    """
+
+
+class OrderCancelUnknownError(Exception):
+    """
+    Raised when a unknown order edit error happens
+    """
+
+
+class OrderToEditNotFoundError(Exception):
+    """
+    Raised when a order is not when when sending the edit request
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the required element

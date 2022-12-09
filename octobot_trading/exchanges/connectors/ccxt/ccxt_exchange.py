@@ -824,87 +824,74 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         defined_methods = self.connector_config.CANCEL_ORDERS_METHODS
-        messages = ""
-        if self.cancel_order_default.__name__ in defined_methods:
-            success, error_message = await self.cancel_order_default(order_id, symbol=symbol, **kwargs)
-            if success:
-                return True
-            else:
-                messages = error_message or messages
+        try:
+            if self.cancel_order_default.__name__ in defined_methods:
+                if await self.cancel_order_default(order_id, symbol=symbol, **kwargs):
+                    return True
+        except octobot_trading.errors.OrderToEditNotFoundError:
+            pass
+        
         if self.cancel_stop_order_using_stop_loss_params.__name__ in defined_methods:
-            success, error_message = await self.cancel_stop_order_using_stop_loss_params(
-                order_id, symbol=symbol, **kwargs)
-            if success:
+            if await self.cancel_stop_order_using_stop_loss_params(
+                order_id, symbol=symbol, **kwargs):
                 return True
-            else:
-                messages = error_message + messages if error_message else messages
-        if messages:
-            raise octobot_trading.errors.NotSupported(messages)
-        self.logger.warning(f"Failed to cancel order {symbol} {order_id} - order was not found")
-        return False  # order not found
+        raise octobot_trading.errors.OrderToEditNotFoundError (
+                f"Trying to cancel order {symbol} (id {order_id}) with cancel_order "
+                f"but order was not found",
+            )
 
-    async def cancel_order_default(self, order_id: str, symbol: str = None, **kwargs: dict
-                                   ) -> typing.Tuple[bool, str or None]:
-        is_canceled = False
+    async def cancel_order_default(
+        self, order_id: str, symbol: str = None, **kwargs: dict
+        ) -> bool:
         cancel_resp_message = None
         try:
             with self.error_describer():
                 cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
             cancel_resp_message = f" - Cancel response: {cancel_resp or 'no response'}"
-            is_canceled, message = await self.check_if_canceled(
-                order_id, symbol, cancel_resp_message
-            )
-            if is_canceled:
-                return is_canceled, None
-            if delay := self.connector_config.RECHECK_IF_ORDER_UNCANCELED_DELAY:
-                # check again - some exchanges need a while to update the order (bybit for example)
-                await asyncio.sleep(delay)
-                is_canceled, message = await self.check_if_canceled(
-                    order_id, symbol, cancel_resp_message
-                )
-                if is_canceled:
-                    return is_canceled, message
-            return is_canceled, message
         except ccxt.OrderNotFound:
-            return (
-                is_canceled,
+            raise octobot_trading.errors.OrderToEditNotFoundError (
                 f"Trying to cancel order (id {order_id}) with cancel_order_default "
                 f"but order was not found{cancel_resp_message or ''}\n",
             )
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
-            return (
-                is_canceled,
+            raise octobot_trading.errors.OrderCancelNotSupportedError(
                 f"cancel_order_default is not supported. Error: {e}{cancel_resp_message or ''}\n",
             )
         except Exception as e:
-            return (
-                is_canceled,
+            raise octobot_trading.errors.OrderCancelUnknownError(
                 f"Order {order_id} failed to cancel using "
                 f"| {e} ({e.__class__.__name__}){cancel_resp_message or ''}\n",
             )
-
-    async def check_if_canceled(self, order_id, symbol, cancel_resp_message="") -> typing.Tuple[bool, str or None]:
-        success = False
+        if await self.check_if_canceled(order_id, symbol):
+            return True
+        return await self.handle_order_still_uncanceled(symbol, order_id, cancel_resp_message)
+            
+    async def handle_order_still_uncanceled(self, symbol, order_id, cancel_resp_message) -> bool:
+        if delay := self.connector_config.RECHECK_IF_ORDER_UNCANCELED_DELAY:
+            # check again - some exchanges need a while to update the order (bybit for example)
+            await asyncio.sleep(delay)
+            if await self.check_if_canceled(order_id, symbol):
+                return True
+        raise octobot_trading.errors.OrderStillUncanceledError(
+            f"Failed to cancel order: the order is still open - {symbol} "
+            f"- order_id: {order_id}{cancel_resp_message}")
+            
+    async def check_if_canceled(self, order_id, symbol) -> bool:
         try:
             # check if canceled
-            cancelled_order = await self.get_order(order_id, symbol=symbol)
-            if cancelled_order:
+            if cancelled_order := await self.get_order(order_id, symbol=symbol):
                 if personal_data.parse_is_cancelled(cancelled_order):
-                    success = True
-                    return success, None
+                    return True
                 else:
-                    return success, \
-                           f"Error canceling order (id {order_id}), the order is still uncanceled{cancel_resp_message}"
+                    return False
             else:
                 # Order is not found: it has successfully been cancelled 
                 # (some exchanges don't allow to get a cancelled order).
-                success = True
-                return success, None
+                return True
         except ccxt.OrderNotFound:
             # Order is not found: it has successfully been cancelled 
             # (some exchanges don't allow to get a cancelled order).
-            success = True
-            return success, None
+            return True
 
     async def cancel_stop_order_using_stop_loss_params(self, order_id: str, symbol: str = None,
                                                        **kwargs: dict) -> typing.Tuple[bool, str or None]:

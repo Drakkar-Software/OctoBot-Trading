@@ -39,9 +39,11 @@ class ExchangeConfig:
     # set test status for each exchange
 
     IS_FULLY_TESTED_AND_SUPPORTED = False  # not recommended
+    
     is_untested: exchange_test_status.ExchangeTestStatus = (
         exchange_test_status.ExchangeTestStatus()
     )
+    
     CANDLE_LOADING_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     MAX_RECENT_TRADES_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested
     MAX_ORDER_PAGINATION_LIMIT_TEST_STATUS: exchange_test_status.ExchangeTestStatus = is_untested

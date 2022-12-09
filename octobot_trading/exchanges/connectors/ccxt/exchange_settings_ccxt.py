@@ -169,8 +169,6 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     GET_CLOSED_ORDERS_METHODS: list = None
     CANCEL_ORDERS_METHODS: list = None
     GET_MY_RECENT_TRADES_METHODS: list = None
-    GET_POSITION_METHODS: list = None
-    GET_POSITION_METHODS: list = None
     CANDLE_LOADING_LIMIT: int = None
     MAX_RECENT_TRADES_PAGINATION_LIMIT: int = None
     MAX_ORDER_PAGINATION_LIMIT: int = None
@@ -182,6 +180,4 @@ class CCXTExchangeConfig(exchange_settings.ExchangeConfig):
     ALL_GET_CLOSED_ORDERS_METHODS: list = None
     ALL_CANCEL_ORDERS_METHODS: list = None
     ALL_GET_MY_RECENT_TRADES_METHODS: list = None
-    ALL_GET_POSITION_METHODS: list = None
-    ALL_GET_POSITION_METHODS: list = None
     GET_POSITION_LINEAR_SETTLE_COINS: list = None

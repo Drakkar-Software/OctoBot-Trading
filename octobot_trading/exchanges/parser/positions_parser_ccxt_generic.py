@@ -42,7 +42,7 @@ class GenericCCXTPositionsParser(positions_parser_ccxt.CCXTPositionsParser):
         PositionCols.MARGIN_TYPE.value,
     ]
     SIDE_KEYS: list = [ExchangeCols.SIDE.value, "positionSide"]
-    SIZE_KEYS: list = [ExchangeCols.CONTRACTS.value, "positionAmt"]
+    POSITION_SIZE_KEYS: list = [ExchangeCols.CONTRACTS.value, "positionAmt"]
     MARK_PRICE_KEYS: list = [
         ExchangeCols.MARK_PRICE.value,
         MarkPriceCols.MARK_PRICE.value,
