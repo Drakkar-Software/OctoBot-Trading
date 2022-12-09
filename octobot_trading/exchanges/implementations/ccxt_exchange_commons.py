@@ -196,10 +196,10 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
         _parser = self.CONNECTOR_CONFIG.POSITIONS_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_positions(raw_positions)
 
-    async def parse_ticker(self, raw_funding_rate: dict, symbol: str, also_get_mini_ticker: bool = False) -> dict:
+    async def parse_ticker(self, raw_funding_rate: dict, symbol: str) -> dict:
         _parser = self.CONNECTOR_CONFIG.TICKER_PARSER(self.exchange_manager.exchange)
         return await _parser.parse_ticker(
-            raw_ticker=raw_funding_rate, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
+            raw_ticker=raw_funding_rate, symbol=symbol)
 
     async def parse_tickers(self, raw_tickers: list) -> list:
         _parser = self.CONNECTOR_CONFIG.TICKER_PARSER(self.exchange_manager.exchange)

@@ -26,7 +26,10 @@ from octobot_trading.exchanges.parser.orders_parser_ccxt cimport CCXTOrdersParse
 from octobot_trading.exchanges.parser.orders_parser_generic_ccxt cimport GenericCCXTOrdersParser
 from octobot_trading.exchanges.parser.orders_parser_cryptofeed cimport CryptoFeedOrdersParser
 from octobot_trading.exchanges.parser.trades_parser cimport TradesParser
-from octobot_trading.exchanges.parser.ticker_parser cimport TickerParser
+from octobot_trading.exchanges.parser.trades_parser_ccxt cimport CCXTTradesParser
+from octobot_trading.exchanges.parser.trades_parser_ccxt_generic cimport GenericCCXTTradesParser
+from octobot_trading.exchanges.parser.trades_parser_cryptofeed cimport CryptoFeedTradesParser
+from octobot_trading.exchanges.parser.ticker_parser cimport TickerParser, convert_ticker_to_mini_ticker
 from octobot_trading.exchanges.parser.ticker_parser_ccxt cimport CCXTTickerParser
 from octobot_trading.exchanges.parser.ticker_parser_ccxt_generic cimport GenericCCXTTickerParser
 from octobot_trading.exchanges.parser.exchange_market_status_parser cimport (
@@ -40,14 +43,18 @@ __all__ = [
     "PositionsParser",
     "CCXTPositionsParser",
     "GenericCCXTPositionsParser",
-    "OrdersParser",
     "TradesParser",
+    "CCXTTradesParser",
+    "GenericCCXTTradesParser",
+    "CryptoFeedTradesParser",
+    "convert_ticker_to_mini_ticker",
     "TickerParser",
     "CCXTTickerParser",
     "GenericCCXTTickerParser",
     "FundingRateParser",
     "CCXTFundingRateParser",
     "GenericCCXTFundingRateParser",
+    "OrdersParser",
     "CCXTOrdersParser",
     "GenericCCXTOrdersParser",
     "CryptoFeedOrdersParser",

@@ -36,7 +36,7 @@ class TickerParser(parser_util.Parser):
     QUOTE_VOLUME_KEYS: list = []
     BASE_VOLUME_KEYS: list = []
     MARK_PRICE_KEYS: list = []
-    
+
     USE_INFO_SUB_DICT_FOR_SYMBOL: bool = False
     USE_INFO_SUB_DICT_FOR_TIMESTAMP: bool = False
     USE_INFO_SUB_DICT_FOR_AVERAGE: bool = False
@@ -55,7 +55,7 @@ class TickerParser(parser_util.Parser):
     USE_INFO_SUB_DICT_FOR_QUOTE_VOLUME: bool = False
     USE_INFO_SUB_DICT_FOR_BASE_VOLUME: bool = False
     USE_INFO_SUB_DICT_FOR_MARK_PRICE: bool = False
-    
+
     FETCH_PRICES_WITH_GET_SYMBOL_IF_MISSING: bool = False
 
     def __init__(self, exchange):
@@ -81,7 +81,6 @@ class TickerParser(parser_util.Parser):
         self,
         raw_ticker: dict,
         symbol: str = None,
-        also_get_mini_ticker: bool = False,
     ) -> typing.Tuple[dict, dict] or dict:
         """
 
@@ -134,41 +133,7 @@ class TickerParser(parser_util.Parser):
                 "not able to complete ticker parser",
                 error=e,
             )
-        if also_get_mini_ticker:
-            return self.formatted_record, self._parse_mini_ticker()
         return self.formatted_record
-
-    def _parse_mini_ticker(self) -> dict:
-        """
-        Mini ticker
-        """
-        try:
-            return {
-                mTickerCols.HIGH_PRICE.value: self.formatted_record[
-                    TickerCols.HIGH.value
-                ],
-                mTickerCols.LOW_PRICE.value: self.formatted_record[
-                    TickerCols.LOW.value
-                ],
-                mTickerCols.OPEN_PRICE.value: self.formatted_record[
-                    TickerCols.OPEN.value
-                ],
-                mTickerCols.CLOSE_PRICE.value: self.formatted_record[
-                    TickerCols.CLOSE.value
-                ],
-                mTickerCols.VOLUME.value: self.formatted_record[
-                    TickerCols.BASE_VOLUME.value
-                ],
-                mTickerCols.TIMESTAMP.value: self.formatted_record[
-                    TickerCols.TIMESTAMP.value
-                ],
-            }
-        except KeyError:
-            # this error should never happen as we already raise if missing before
-            self.exchange.logger.error(
-                f"Failed to parse mini ticker, raw ticker: {self.formatted_record}"
-            )
-            return {}
 
     def _parse_symbol(self, missing_symbol_value):
         self._try_to_find_and_set(
@@ -385,3 +350,24 @@ class TickerParser(parser_util.Parser):
                 "Failed to fetch symbol prices - got an empty response",
             )
             return False
+
+
+def convert_ticker_to_mini_ticker(self, formatted_ticker: dict) -> dict:
+    """
+    Mini ticker
+    """
+    try:
+        return {
+            mTickerCols.HIGH_PRICE.value: formatted_ticker[TickerCols.HIGH.value],
+            mTickerCols.LOW_PRICE.value: formatted_ticker[TickerCols.LOW.value],
+            mTickerCols.OPEN_PRICE.value: formatted_ticker[TickerCols.OPEN.value],
+            mTickerCols.CLOSE_PRICE.value: formatted_ticker[TickerCols.CLOSE.value],
+            mTickerCols.VOLUME.value: formatted_ticker[TickerCols.BASE_VOLUME.value],
+            mTickerCols.TIMESTAMP.value: formatted_ticker[TickerCols.TIMESTAMP.value],
+        }
+    except KeyError:
+        # this error should never happen as we
+        # already raise if missing in the ticker parser
+        raise RuntimeError(
+            f"Failed to parse mini ticker, raw ticker: {self.formatted_record}"
+        )

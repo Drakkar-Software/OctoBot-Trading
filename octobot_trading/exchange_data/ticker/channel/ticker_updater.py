@@ -23,6 +23,7 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ticker.channel.ticker as ticker_channel
 import octobot_trading.enums as enums
+from octobot_trading.exchanges.parser import ticker_parser
 
 
 class TickerUpdater(ticker_channel.TickerProducer):
@@ -68,15 +69,12 @@ class TickerUpdater(ticker_channel.TickerProducer):
 
     async def _fetch_ticker(self, pair):
         try:
-            (
-                ticker,
-                mini_ticker,
-            ) = await self.channel.exchange_manager.exchange.get_price_ticker(pair, also_get_mini_ticker=True)
-            if ticker:
+            
+            if ticker := await self.channel.exchange_manager.exchange.get_price_ticker(pair):
                 await self.push(pair, ticker)
                 if self.channel.exchange_manager.is_future:
                     await self.update_future_data(pair, ticker)
-            if mini_ticker:
+                mini_ticker = ticker_parser.convert_ticker_to_mini_ticker(ticker)
                 await exchanges_channel.get_chan(
                     constants.MINI_TICKER_CHANNEL, self.channel.exchange_manager.id
                 ).get_internal_producer().push(pair, mini_ticker)
@@ -134,9 +132,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value],
             )
         except Exception as e:
-            self.logger.exception(
-                e, True, f"Fail to update funding rate from ticker : {e}"
-            )
+            self.logger.exception(e, True, f"Fail to update funding rate from ticker : {e}")
 
     async def modify(self, added_pairs=None, removed_pairs=None):
         if added_pairs:

@@ -325,14 +325,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_recent_trades {e}")
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
-    async def get_price_ticker(self, symbol: str, also_get_mini_ticker: bool = False, **kwargs: dict
+    async def get_price_ticker(self, symbol: str, **kwargs: dict
                                ) -> dict or typing.Tuple[dict, dict]:
         try:
             with self.error_describer():
                 raw_ticker = await self.client.fetch_ticker(symbol, params=kwargs)
             return await self.exchange_manager.exchange.parse_ticker(
                 raw_ticker=raw_ticker,
-                symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
+                symbol=symbol)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
