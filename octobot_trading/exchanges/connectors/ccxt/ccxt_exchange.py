@@ -492,7 +492,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             return []
         except Exception as e:
             self.logger.exception(e, True, "Failed to fetch open stop orders using"
-                                           " get_open_stop_order_using_stop_loss_endpoint")
+                                           " get_open_stop_orders_using_stop_loss_params")
             return []
 
     async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None,
@@ -530,11 +530,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 orders = await self.get_closed_orders_default(symbol=symbol, since=since, limit=limit,
                                                               check_completeness=check_completeness, **kwargs)
                 return orders
-        except ccxt.AuthenticationError as e:
-            self.logger.debug(f"(known issue) Fail to fetching closed stop orders : {e}")
         except Exception as e:
             self.logger.exception(e, True, "Failed to fetch closed stop orders using"
-                                           " get_open_stop_order_using_stop_loss_endpoint")
+                                           " get_closed_stop_orders_using_stop_loss_params")
         return []
 
     def cut_order_pagination_limit(self, limit: int) -> typing.Optional[int]:
