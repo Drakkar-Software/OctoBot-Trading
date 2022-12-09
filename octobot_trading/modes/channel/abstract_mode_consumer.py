@@ -88,8 +88,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                             self.logger.error(f"Failed to create order on second attempt : {e})")
                     except Exception as e:
                         self.logger.exception(e, True, f"Error when creating order: {e}")
-            self.logger.debug(f"Skipping order creation for {symbol} on {self.exchange_manager.exchange_name}: "
-                              f"not enough available funds")
+            self.logger.info(f"Skipping order creation for {symbol} on {self.exchange_manager.exchange_name}: "
+                             f"not enough available funds")
             return []
         finally:
             self.logger.debug(f"Exiting create_order_if_possible for {symbol}")
