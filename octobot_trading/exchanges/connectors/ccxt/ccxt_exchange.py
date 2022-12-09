@@ -671,15 +671,19 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if ccxt_order_type == enums.TradeOrderType.MARKET.value:
             # can't set price in market orders
             price_to_use = None
-        if order_type in (
-                enums.TraderOrderType.STOP_LOSS,
-                enums.TraderOrderType.STOP_LOSS_LIMIT,
-        ):
+        if self.is_stop_order(ccxt_order_type):
             params = self.exchange_manager.exchange.custom_edit_stop_orders_params(order_id, stop_price, params)
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
         return await self.client.edit_order(order_id, symbol, ccxt_order_type, side,
                                             quantity, price_to_use, params)
 
+    @staticmethod
+    def is_stop_order(order_type: enums.TradeOrderType) -> bool:
+        return order_type in (
+                enums.TradeOrderType.STOP_LOSS,
+                enums.TradeOrderType.STOP_LOSS_LIMIT,
+        )
+        
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
         try:
