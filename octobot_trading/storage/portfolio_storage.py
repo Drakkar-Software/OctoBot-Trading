@@ -22,22 +22,23 @@ import octobot_trading.storage.abstract_storage as abstract_storage
 
 class PortfolioStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
-    IS_HISTORICAL = False
+    IS_HISTORICAL = True
 
-    async def save_historical_portfolio_value(self, metadata, historical_portfolio_value):
+    async def store_history(self):
         if not self.enabled:
             return
         portfolio_db = self.get_db()
+        hist_portfolio_values_manager = self.exchange_manager.exchange_personal_data.\
+            portfolio_manager.historical_portfolio_value_manager
+        metadata = hist_portfolio_values_manager.get_metadata()
         # replace the whole table to ensure consistency
         await portfolio_db.upsert(commons_enums.RunDatabases.METADATA.value, metadata, None, uuid=1)
         await portfolio_db.replace_all(
             commons_enums.RunDatabases.HISTORICAL_PORTFOLIO_VALUE.value,
-            historical_portfolio_value,
+            hist_portfolio_values_manager.get_dict_historical_values(),
             cache=False
         )
-        if not self.exchange_manager.is_backtesting:
-            # in live move, flush database as soon as an update is provided
-            await portfolio_db.flush()
+        await portfolio_db.flush()
 
     def get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_historical_portfolio_value_db(

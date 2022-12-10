@@ -186,10 +186,9 @@ class HistoricalPortfolioValueManager(util.Initializable):
         if update_data:
             self.last_update_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
             self._update_portfolios()
-        await self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.save_historical_portfolio_value(
-            self._get_metadata(),
-            [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()]
-        )
+        if not self.portfolio_manager.exchange_manager.is_backtesting:
+            # in backtesting, history is stored at the end
+            await self.portfolio_manager.exchange_manager.storage_manager.store_history()
 
     async def _reload_historical_portfolio_value(self):
         db = self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.get_db()
@@ -276,7 +275,10 @@ class HistoricalPortfolioValueManager(util.Initializable):
                     )
         raise errors.MissingPriceDataError(f"no price data to evaluate {historical_value} on {target_currency}")
 
-    def _get_metadata(self):
+    def get_dict_historical_values(self):
+        return [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()]
+
+    def get_metadata(self):
         return {
             self.DATA_SOURCE_KEY: self.data_source,
             self.DATA_VERSION_KEY: self.version,
