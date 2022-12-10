@@ -37,6 +37,9 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
 
     cpdef object get_historical_values(self, str currency, object time_frame, object from_timestamp=*, object to_timestamp=*)
     cpdef object get_historical_value(self, object timestamp)
+    cpdef dict get_metadata(self)
+    cpdef list get_dict_historical_values(self)
+
 
     cdef void _add_historical_portfolio_value(self, double timestamp, dict value_by_currency)
     cdef void _load_metadata(self, list metadata)
@@ -45,5 +48,4 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
     cdef bint _should_update_timestamp(self, object currencies, object time_frame_allowed_window_start, bint force_update)
     cdef object _get_value_in_currency(self, object historical_value, str currency)
     cdef object _convert_historical_value(self, object historical_value, str target_currency)
-    cdef object _get_metadata(self)
     cdef object _update_portfolios(self)
