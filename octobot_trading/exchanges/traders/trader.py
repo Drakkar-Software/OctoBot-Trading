@@ -334,7 +334,7 @@ class Trader(util.Initializable):
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
         if wait_for_cancelling and order.state is not None and order.state.is_pending():
-            await order.state.wait_for_terminate(timeout=cancelling_timeout)
+            await order.state.wait_for_terminate(cancelling_timeout)
         return True
 
     async def cancel_order_with_id(self, order_id, emit_trading_signals=False,
