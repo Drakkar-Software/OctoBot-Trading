@@ -86,7 +86,7 @@ async def _handle_creation(bot_id, action, data):
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
                 e,
                 True,
-                f"Error when connecting to {exchange_name} exchange, please check your internet connection.")
+                f"Error when connecting to {exchange_name} exchange, please check your internet connection ({e}).")
         except Exception as e:
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
                 e,
