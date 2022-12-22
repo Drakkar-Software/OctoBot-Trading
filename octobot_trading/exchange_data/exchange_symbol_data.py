@@ -17,6 +17,7 @@
 import octobot_commons.logging as logging
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
+import octobot_backtesting.api as backtesting_api
 
 import octobot_trading.exchange_data.ohlcv.candles_manager as candles_manager
 import octobot_trading.exchange_data.ticker.ticker_manager as ticker_manager
@@ -54,28 +55,39 @@ class ExchangeSymbolData:
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
-            # If set, use exchange required_historical_candles_count as it is asked in configuration
-            symbol_candles = candles_manager.CandlesManager(
-                max_candles_count=self.exchange_manager.exchange_config.required_historical_candles_count
-            )
-            await symbol_candles.initialize()
-
-            if replace_all:
-                symbol_candles.replace_all_candles(new_symbol_candles_data)
-
-            self.symbol_candles[time_frame] = symbol_candles
+            self.symbol_candles[time_frame] = await self._create_candles_manager(time_frame, new_symbol_candles_data,
+                                                                                 replace_all)
             self._set_initialized_event(
                 commons_enums.InitializationEventExchangeTopics.CANDLES.value,
                 time_frame.value
             )
             return
-
         if partial:
             symbol_candles.add_old_and_new_candles(new_symbol_candles_data)
         elif replace_all:
             symbol_candles.replace_all_candles(new_symbol_candles_data)
         else:
             symbol_candles.add_new_candle(new_symbol_candles_data)
+
+    async def _create_candles_manager(self, time_frame, new_symbol_candles_data, replace_all):
+        if self.exchange_manager.is_backtesting:
+            # try getting a preloaded candles manager
+            symbol_candles = await backtesting_api.get_preloaded_candles_manager(
+                self.exchange_manager.exchange.backtesting,
+                self.exchange_manager.exchange_name, self.symbol, time_frame
+            )
+            if symbol_candles is not None:
+                return symbol_candles
+        # If set, use exchange required_historical_candles_count as it is asked in configuration
+        symbol_candles = candles_manager.CandlesManager(
+            max_candles_count=self.exchange_manager.exchange_config.required_historical_candles_count
+        )
+        await symbol_candles.initialize()
+
+        if replace_all:
+            symbol_candles.replace_all_candles(new_symbol_candles_data)
+
+        return symbol_candles
 
     def handle_recent_trade_update(self, recent_trades, replace_all=False):
         if replace_all:

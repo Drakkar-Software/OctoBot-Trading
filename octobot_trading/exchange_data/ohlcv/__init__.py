@@ -21,6 +21,9 @@ from octobot_trading.exchange_data.ohlcv import channel
 from octobot_trading.exchange_data.ohlcv.candles_manager import (
     CandlesManager,
 )
+from octobot_trading.exchange_data.ohlcv.preloaded_candles_manager import (
+    PreloadedCandlesManager,
+)
 from octobot_trading.exchange_data.ohlcv.candles_adapter import (
     get_symbol_close_candles,
     get_symbol_open_candles,
@@ -41,6 +44,7 @@ from octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater import (
 
 __all__ = [
     "CandlesManager",
+    "PreloadedCandlesManager",
     "get_symbol_close_candles",
     "get_symbol_open_candles",
     "get_symbol_high_candles",
