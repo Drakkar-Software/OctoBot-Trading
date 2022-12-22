@@ -218,14 +218,18 @@ class ExchangePersonalData(util.Initializable):
         :param is_new_order: True if the order was created during update
         """
         try:
-            await exchange_channel.get_chan(constants.ORDERS_CHANNEL,
-                                            self.exchange_manager.id).get_internal_producer() \
-                .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
-                      symbol=order.symbol,
-                      order=order.to_dict(),
-                      is_from_bot=order.is_from_this_octobot,
-                      is_new=is_new_order,
-                      is_closed=order.is_closed())
+            orders_chan = exchange_channel.get_chan(constants.ORDERS_CHANNEL, self.exchange_manager.id)
+            if not orders_chan.get_consumers():
+                # avoid other computations if no consumer
+                return
+            await orders_chan.get_internal_producer().send(
+                cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                symbol=order.symbol,
+                order=order.to_dict(),
+                is_from_bot=order.is_from_this_octobot,
+                is_new=is_new_order,
+                is_closed=order.is_closed()
+            )
         except ValueError as e:
             self.logger.error(f"Failed to send order update notification : {e}")
 

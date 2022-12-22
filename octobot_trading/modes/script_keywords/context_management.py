@@ -99,7 +99,12 @@ class Context(databases.CacheClient):
         self.cryptocurrency = cryptocurrency
         self.signal_symbol = signal_symbol
         self.logger = logger
-        bot_id = exchange_manager.bot_id if exchange_manager else None
+        bot_id = exchange_manager.bot_id if \
+            (exchange_manager is not None) \
+            and (exchange_manager.bot_id is not None) \
+            and databases.RunDatabasesProvider.instance().is_storage_enabled(
+                exchange_manager.bot_id
+            ) else None
         self.run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(bot_id) \
             if bot_id else None
         self.orders_writer = databases.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
