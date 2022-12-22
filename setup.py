@@ -77,6 +77,7 @@ packages_list = [
     "octobot_trading.exchange_data.prices.channel.prices_updater_simulator",
     "octobot_trading.exchange_data.prices.channel.prices_updater",
     "octobot_trading.exchange_data.ohlcv.candles_manager",
+    "octobot_trading.exchange_data.ohlcv.preloaded_candles_manager",
     "octobot_trading.exchange_data.ohlcv.candles_adapter",
     "octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater",
     "octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater_simulator",

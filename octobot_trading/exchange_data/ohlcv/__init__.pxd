@@ -15,11 +15,15 @@
 #  License along with this library.
 
 from octobot_trading.exchange_data.ohlcv cimport candles_manager
+from octobot_trading.exchange_data.ohlcv cimport preloaded_candles_manager
 from octobot_trading.exchange_data.ohlcv cimport candles_adapter
 from octobot_trading.exchange_data.ohlcv cimport channel
 
 from octobot_trading.exchange_data.ohlcv.candles_manager cimport (
     CandlesManager,
+)
+from octobot_trading.exchange_data.ohlcv.preloaded_candles_manager cimport (
+    PreloadedCandlesManager,
 )
 from octobot_trading.exchange_data.ohlcv.candles_adapter cimport (
     get_symbol_close_candles,
@@ -40,6 +44,7 @@ from octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater cimport (
 
 __all__ = [
     "CandlesManager",
+    "PreloadedCandlesManager",
     "get_symbol_close_candles",
     "get_symbol_open_candles",
     "get_symbol_high_candles",

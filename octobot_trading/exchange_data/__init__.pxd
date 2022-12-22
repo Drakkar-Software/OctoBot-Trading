@@ -35,6 +35,7 @@ from octobot_trading.exchange_data.kline cimport (
 from octobot_trading.exchange_data cimport ohlcv
 from octobot_trading.exchange_data.ohlcv cimport (
     CandlesManager,
+    PreloadedCandlesManager,
     get_symbol_close_candles,
     get_symbol_open_candles,
     get_symbol_high_candles,
@@ -117,6 +118,7 @@ __all__ = [
     "KlineManager",
     "KlineUpdater",
     "CandlesManager",
+    "PreloadedCandlesManager",
     "get_symbol_close_candles",
     "get_symbol_open_candles",
     "get_symbol_high_candles",

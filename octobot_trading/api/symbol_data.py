@@ -32,6 +32,13 @@ def get_symbol_historical_candles(symbol_data, time_frame, limit=-1) -> object:
     return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit)
 
 
+async def create_preloaded_candles_manager(preloaded_candles):
+    candles_manager = exchange_data.PreloadedCandlesManager()
+    await candles_manager.initialize()
+    candles_manager.replace_all_candles(preloaded_candles)
+    return candles_manager
+
+
 def are_symbol_candles_initialized(exchange_manager, symbol, time_frame) -> bool:
     try:
         return get_symbol_candles_manager(
