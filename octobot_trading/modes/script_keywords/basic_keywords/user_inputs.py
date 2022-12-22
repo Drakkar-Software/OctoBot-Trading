@@ -74,7 +74,7 @@ async def user_input(
         return_value_only=False,
         update_parent_value=should_save_user_input,
     )
-    if should_save_user_input:
+    if should_save_user_input and ctx.run_data_writer is not None:
         await configuration.save_user_input(
             created_input,
             ctx.run_data_writer,
