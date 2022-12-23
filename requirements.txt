@@ -1,12 +1,12 @@
 # Setup requirements
-cython==0.29.26
-numpy==1.22.0
+cython==0.29.32
+numpy==1.24.0
 
 # Drakkar-Software requirements
-OctoBot-Backtesting>=1.7.1, <1.8
-Async-Channel>=2.0.13, <2.1
-OctoBot-Commons>=1.7.10, <1.8
-OctoBot-Tentacles-Manager>=2.7.0, <2.8
+OctoBot-Backtesting>=1.8, <1.9
+Async-Channel>=2.1, <2.2
+OctoBot-Commons>=1.8, <1.9
+OctoBot-Tentacles-Manager>=2.8, <2.9
 trading-backend>=1.0.12
 
 # Exchange connection requirements
