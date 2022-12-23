@@ -35,6 +35,7 @@ import octobot_trading.modes.modes_factory as modes_factory
 import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.modes.mode_config as mode_config
+import octobot_trading.modes.modes_util as modes_util
 import octobot_trading.signals as signals
 
 
@@ -249,6 +250,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         if action == common_enums.UserCommands.RELOAD_CONFIG.value:
             await self.reload_config(bot_id)
             self.logger.debug("Reloaded configuration")
+        elif action == common_enums.UserCommands.CLEAR_PLOTTING_CACHE.value:
+            await modes_util.clear_plotting_cache(self)
+        elif action == common_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
+            await modes_util.clear_simulated_orders_cache(self)
 
 
     async def _create_mode_consumer(self, mode_consumer_class):
