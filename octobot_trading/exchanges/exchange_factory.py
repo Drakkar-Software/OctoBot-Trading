@@ -160,7 +160,7 @@ async def _create_rest_exchange(exchange_manager) -> None:
         await _search_and_create_spot_exchange(exchange_manager)
 
     if not exchange_manager.exchange:
-        raise Exception("Can't create an exchange instance that match the exchange configuration")
+        raise Exception(f"Can't create an exchange instance that match the exchange configuration ({exchange_manager})")
 
 
 async def create_simulated_exchange(exchange_manager):

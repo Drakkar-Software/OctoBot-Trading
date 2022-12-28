@@ -16,7 +16,6 @@
 #  License along with this library.
 cimport octobot_trading.exchange_data.ohlcv.candles_manager as candles_manager
 cimport numpy as np
-np.import_array()
 
 
 cdef class PreloadedCandlesManager(candles_manager.CandlesManager):
@@ -30,4 +29,4 @@ cdef class PreloadedCandlesManager(candles_manager.CandlesManager):
 
     # private
     cdef int _get_candle_index(self, list candle)
-    cdef np.ndarray _get_candle_values_array(self, list candles, str key)
+    cdef np.ndarray _get_candle_values_array(self, list candles, int key)

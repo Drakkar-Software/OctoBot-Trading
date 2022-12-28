@@ -110,9 +110,9 @@ class PreloadedCandlesManager(candles_manager.CandlesManager):
         self.time_candles_index = 0
         self.volume_candles_index = 0
 
-        self.close_candles = None
-        self.open_candles = None
-        self.high_candles = None
-        self.low_candles = None
-        self.time_candles = None
-        self.volume_candles = None
+        self.close_candles = np.ndarray((0,))
+        self.open_candles = np.ndarray((0,))
+        self.high_candles = np.ndarray((0,))
+        self.low_candles = np.ndarray((0,))
+        self.time_candles = np.ndarray((0,))
+        self.volume_candles = np.ndarray((0,))
