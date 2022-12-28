@@ -24,12 +24,12 @@ cdef class CandlesManager(util.Initializable):
     cdef public bint candles_initialized
     cdef public int max_candles_count
 
-    cdef public np.float64_t[::1] close_candles
-    cdef public np.float64_t[::1] open_candles
-    cdef public np.float64_t[::1] high_candles
-    cdef public np.float64_t[::1] low_candles
-    cdef public np.float64_t[::1] time_candles
-    cdef public np.float64_t[::1] volume_candles
+    cdef public object close_candles
+    cdef public object open_candles
+    cdef public object high_candles
+    cdef public object low_candles
+    cdef public object time_candles
+    cdef public object volume_candles
 
     cdef public int close_candles_index
     cdef public int open_candles_index
