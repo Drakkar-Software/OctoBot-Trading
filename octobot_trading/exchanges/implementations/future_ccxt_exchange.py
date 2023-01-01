@@ -240,13 +240,16 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
                                           trading_enums.PositionSide.UNKNOWN.value), None),
                 trading_enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
                     position_dict.get(trading_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
-                trading_enums.ExchangeConstantsPositionColumns.QUANTITY.value:
+                trading_enums.ExchangeConstantsPositionColumns.SIZE.value:
+                    decimal.Decimal(
+                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 1)}"),
+                trading_enums.ExchangeConstantsPositionColumns.SINGLE_CONTRACT_VALUE.value:
                     decimal.Decimal(
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)}"),
                 trading_enums.ExchangeConstantsPositionColumns.COLLATERAL.value:
                     decimal.Decimal(
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.NOTIONAL.value:
+                trading_enums.ExchangeConstantsPositionColumns.VALUE.value:
                     decimal.Decimal(
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
                 trading_enums.ExchangeConstantsPositionColumns.LEVERAGE.value:

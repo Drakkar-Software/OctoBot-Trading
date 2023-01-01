@@ -25,7 +25,7 @@ class LinearPosition(position_class.Position):
         """
         Notional value = CONTRACT_QUANTITY * MARK_PRICE
         """
-        self.value = self.size * self.mark_price
+        self.value = self.size * self.single_contract_value * self.mark_price
 
     def get_unrealized_pnl(self, price):
         """

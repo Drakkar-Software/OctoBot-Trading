@@ -26,7 +26,7 @@ class InversePosition(position_class.Position):
         Notional value = CONTRACT_QUANTITY / MARK_PRICE
         """
         try:
-            self.value = self.size / self.mark_price
+            self.value = self.size * self.single_contract_value / self.mark_price
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.value = constants.ZERO
 
