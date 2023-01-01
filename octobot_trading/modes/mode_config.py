@@ -58,7 +58,7 @@ def get_activated_trading_mode(tentacles_setup_config):
 def should_emit_trading_signals_user_input(trading_mode, inputs: dict):
     if trading_mode.UI.user_input(
         common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
-        title="Emit trading signals on Astrolab for people to follow.",
+        title="Emit trading signals on OctoBot cloud for people to follow.",
         order=commons_configuration.UserInput.MAX_ORDER - 2
     ):
         trading_mode.UI.user_input(

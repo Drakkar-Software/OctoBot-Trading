@@ -199,6 +199,14 @@ def get_trading_pairs(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbol_pairs
 
 
+def get_all_exchange_symbols(exchange_manager) -> list:
+    return exchange_manager.client_symbols
+
+
+def get_all_exchange_time_frames(exchange_manager) -> list:
+    return exchange_manager.client_time_frames
+
+
 def get_trading_symbols(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbols
 
