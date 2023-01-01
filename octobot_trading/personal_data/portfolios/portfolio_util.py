@@ -87,7 +87,7 @@ def get_draw_down(exchange_manager):
     return draw_down
 
 
-async def get_coefficient_of_determination_data(transactions, start_balance,
+async def get_coefficient_of_determination_data(transactions, longest_candles, start_balance,
                                                 use_high_instead_of_end_balance=True,
                                                 x_as_trade_count=True):
     if transactions:
@@ -125,7 +125,9 @@ async def get_coefficient_of_determination_data(transactions, start_balance,
                 data_length = len(pnl_history)
 
             else:  # calculate pnl history for every candle
-                raise NotImplementedError("x_as_trade_count=False is not implemented")
+                start_time = longest_candles[0][0]
+                end_time = longest_candles[-1][0]
+                data_length = len(longest_candles)
             # calculate best case data (exponential growth)
             end_balance = pnl_history[-1]
 
@@ -174,8 +176,10 @@ async def get_coefficient_of_determination(exchange_manager, use_high_instead_of
     best_case, pnl_data, start_balance, _, _ \
         = await get_coefficient_of_determination_data(transactions=exchange_manager.exchange_personal_data.
                                                       transactions_manager.transactions.values(),
+                                                      longest_candles=None,
                                                       start_balance=start_balance,
-                                                      use_high_instead_of_end_balance=use_high_instead_of_end_balance)
+                                                      use_high_instead_of_end_balance=use_high_instead_of_end_balance,
+                                                      x_as_trade_count=True)
 
     if pnl_data:
         # calculate r²

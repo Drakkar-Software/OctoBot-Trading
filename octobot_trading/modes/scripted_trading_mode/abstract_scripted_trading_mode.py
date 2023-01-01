@@ -77,6 +77,20 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(ctx)
 
     @classmethod
+    async def get_run_analysis_plots(
+        cls, exchange, symbol, analysis_settings, backtesting_id=None, 
+        optimizer_id=None, live_id=None, optimization_campaign=None
+        ):
+        ctx = context_management.Context.minimal(cls, logging.get_logger(cls.get_name()), exchange, symbol,
+                                                 backtesting_id, optimizer_id,
+                                                 optimization_campaign, analysis_settings, live_id=live_id)
+        async with ctx.backtesting_results() as (run_database, run_display):
+            import tentacles.Meta.Keywords.scripting_library.run_analysis.run_analysis_data as run_analysis_data
+            run_data = run_analysis_data.RunAnalysisData(ctx, run_database, run_display, analysis_settings)
+            await run_data.load_base_data()
+            return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(run_data)
+        
+    @classmethod
     def get_is_symbol_wildcard(cls) -> bool:
         return False
 

@@ -36,6 +36,7 @@ import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_pro
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.modes.mode_config as mode_config
 import octobot_trading.modes.modes_util as modes_util
+from octobot_trading.modes.script_keywords import context_management
 import octobot_trading.signals as signals
 
 
@@ -377,6 +378,25 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         Override if necessary
         """
         return {}
+    
+    @classmethod
+    async def get_run_analysis_plots(
+        cls, exchange, symbol, analysis_settings, backtesting_id=None, 
+        optimizer_id=None, live_id=None, optimization_campaign=None
+        ):
+        ctx = context_management.Context.minimal(
+            cls, logging.get_logger(cls.get_name()), exchange, symbol,
+            backtesting_id, optimizer_id, optimization_campaign, 
+            analysis_settings, live_id=live_id)
+        async with ctx.backtesting_results() as (run_database, run_display):
+            import tentacles.Meta.Keywords.scripting_library.run_analysis. \
+                run_analysis_data as run_analysis_data
+            run_data = run_analysis_data.RunAnalysisData(
+                ctx, run_database, run_display, analysis_settings)
+            await run_data.load_base_data()
+            import tentacles.Meta.Keywords.scripting_library.run_analysis. \
+                run_analysis_mode as run_analysis_mode
+            return await run_analysis_mode.run_analysis_script(run_data)
 
     def flush_trading_mode_consumers(self):
         for consumer in self.get_trading_mode_consumers():
