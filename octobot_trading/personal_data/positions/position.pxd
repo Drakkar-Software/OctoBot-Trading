@@ -48,7 +48,7 @@ cdef class Position(util.Initializable):
     cdef public object margin
     cdef public object initial_margin
     cdef public object unrealized_pnl
-    cdef public object realised_pnl
+    cdef public object realized_pnl
     cdef public object fee_to_close
 
     cdef public double timestamp
@@ -70,7 +70,7 @@ cdef class Position(util.Initializable):
                       object value,
                       object initial_margin,
                       object unrealized_pnl,
-                      object realised_pnl,
+                      object realized_pnl,
                       object fee_to_close,
                       object status=*)
     cdef bint _should_change(self, object original_value, object new_value)
@@ -87,7 +87,7 @@ cdef class Position(util.Initializable):
     cdef bint _is_update_increasing_size(self, object size_update)
     cdef bint _is_update_decreasing_size(self, object size_update)
     cdef bint _is_update_closing(self, object size_update)
-    cdef object _update_size(self, object update_size, object realised_pnl_update=*, object trigger_source=*)  # needs object to forward exceptions
+    cdef object _update_size(self, object update_size, object realized_pnl_update=*, object trigger_source=*)  # needs object to forward exceptions
     cdef void _check_and_update_size(self, object size_update)
     cdef void _update_margin(self)
     cdef void _reset_entry_price(self)
@@ -96,7 +96,7 @@ cdef class Position(util.Initializable):
     cdef void _on_side_update(self, bint reset_entry_price)
     cdef object _on_size_update(self,
                                 object size_update,
-                                object realised_pnl_update,
+                                object realized_pnl_update,
                                 object margin_update,
                                 bint is_update_increasing_position_size)  # needs object to forward exceptions
 

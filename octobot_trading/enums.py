@@ -118,8 +118,8 @@ class TransactionType(enum.Enum):
     BLOCKCHAIN_WITHDRAWAL = "blockchain_withdrawal"
     FUNDING_FEE = "funding_fee"
     TRADING_FEE = "trading_fee"
-    REALISED_PNL = "realised_pnl"
-    CLOSE_REALISED_PNL = "close_realised_pnl"
+    REALIZED_PNL = "realized_pnl"
+    CLOSE_REALIZED_PNL = "close_realized_pnl"
     TRANSFER = "transfer"
 
 
@@ -166,8 +166,9 @@ class ExchangeConstantsCCXTColumns(enum.Enum):
 
 
 class ExchangePositionCCXTColumns(enum.Enum):
-    CONTRACTS = "contracts"
-    CONTRACT_SIZE = "contractSize"
+    ID = "id"
+    CONTRACTS = "contracts"  # == ExchangeConstantsPositionColumn.SIZE
+    CONTRACT_SIZE = "contractSize"  # == ExchangeConstantsPositionColumns.SINGLE_CONTRACT_VALUE
     MARGIN_TYPE = "marginType"
     MARGIN_MODE = "marginMode"
     LEVERAGE = "leverage"
@@ -177,10 +178,10 @@ class ExchangePositionCCXTColumns(enum.Enum):
     INITIAL_MARGIN_PERCENTAGE = "initialMarginPercentage"
     MAINTENANCE_MARGIN = "maintenanceMargin"
     MAINTENANCE_MARGIN_PERCENTAGE = "maintenanceMarginPercentage"
-    NOTIONAL = "notional"
+    NOTIONAL = "notional"  # == ExchangeConstantsPositionColumn.VALUE
     MARGIN_RATIO = "marginRatio"
-    UNREALISED_PNL = "unrealizedPnl"
-    REALISED_PNL = "realizedPnl"
+    UNREALIZED_PNL = "unrealizedPnl"
+    REALIZED_PNL = "realizedPnl"
     LIQUIDATION_PRICE = "liquidationPrice"
     MARK_PRICE = "markPrice"
     ENTRY_PRICE = "entryPrice"
@@ -207,6 +208,7 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     LAST_TRADE_TIMESTAMP = "lastTradeTimestamp"
     SYMBOL = "symbol"
     QUANTITY_CURRENCY = "quantityCurrency"
+    TIME_IN_FORCE = "timeInForce"
     TYPE = "type"
     SIDE = "side"
     PRICE = "price"
@@ -225,10 +227,12 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     REDUCE_ONLY = "reduceOnly"
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
-    TAG = "tag"
+    TAG = "clientOrderId"
+
 
 class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"
+    TIMESTAMP = "timestamp"
     LAST_FUNDING_TIME = "last_funding_time"
     FUNDING_RATE = "funding_rate"
     NEXT_FUNDING_TIME = "next_funding_time"
@@ -368,8 +372,8 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     PRICE = "price"
     AMOUNT = "amount"
     COST = "cost"
-    AVERAGE = "average"
-    FILLED = "filled"
+    FILLED_AMOUNT = "filled_amount"
+    FILLED_PRICE = "filled_price"
     REMAINING = "remaining"
     STATUS = "status"
     FEE = "fee"
@@ -381,9 +385,10 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     REDUCE_ONLY = "reduceOnly"
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
+    TIME_IN_FORCE = "timeInForce"
     TAG = "tag"
-
-
+    
+    
 class ExchangeConstantsPositionColumns(enum.Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
@@ -392,12 +397,12 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MARK_PRICE = "mark_price"
     LIQUIDATION_PRICE = "liquidation_price"
     BANKRUPTCY_PRICE = "bankruptcy_price"
-    UNREALIZED_PNL = "unrealised_pnl"   # unrealised_pnl on Bybit api and unrealized_pnl on exchange UI
-    REALISED_PNL = "realised_pnl"
+    UNREALIZED_PNL = "unrealized_pnl"  # unrealized_pnl on Bybit api and unrealized_pnl on exchange UI
+    REALIZED_PNL = "realized_pnl"
     CLOSING_FEE = "closing_fee"
-    QUANTITY = "quantity"
+    SINGLE_CONTRACT_VALUE = "single_contract_value"
     SIZE = "size"
-    NOTIONAL = "notional"
+    VALUE = "position_value"
     INITIAL_MARGIN = "initial_margin"
     COLLATERAL = "collateral"
     LEVERAGE = "leverage"

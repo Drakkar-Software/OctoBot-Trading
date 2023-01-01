@@ -257,10 +257,10 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),
                 trading_enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value:
                     decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.REALISED_PNL.value:
+                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.UNREALIZED_PNL.value, 0)}"),
+                trading_enums.ExchangeConstantsPositionColumns.REALIZED_PNL.value:
                     decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.REALISED_PNL.value, 0)}"),
+                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.REALIZED_PNL.value, 0)}"),
                 trading_enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value:
                     decimal.Decimal(
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)}"),

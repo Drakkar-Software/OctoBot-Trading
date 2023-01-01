@@ -146,7 +146,7 @@ class FutureAsset(asset_class.Asset):
         self.unrealized_pnl = unrealized_pnl
         self._update_total()
 
-    def update_realised_pnl(self, realized_pnl_update):
+    def update_realized_pnl(self, realized_pnl_update):
         """
         Updates the realized pnl value
         :param realized_pnl_update: the realized pnl update

@@ -41,8 +41,8 @@ def create_blockchain_transaction(exchange_manager, currency,
     return blockchain_transaction
 
 
-def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
-                                    realised_pnl=constants.ZERO,
+def create_realized_pnl_transaction(exchange_manager, currency, symbol, side,
+                                    realized_pnl=constants.ZERO,
                                     is_closed_pnl=False,
                                     closed_quantity=constants.ZERO,
                                     cumulated_closed_quantity=constants.ZERO,
@@ -52,14 +52,14 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
                                     order_exit_price=constants.ZERO,
                                     leverage=constants.ZERO,
                                     trigger_source=enums.PNLTransactionSource.UNKNOWN):
-    realised_pnl_transaction = transaction_types.RealisedPnlTransaction(
+    realized_pnl_transaction = transaction_types.RealizedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.CLOSE_REALISED_PNL
-        if is_closed_pnl else enums.TransactionType.REALISED_PNL,
+        transaction_type=enums.TransactionType.CLOSE_REALIZED_PNL
+        if is_closed_pnl else enums.TransactionType.REALIZED_PNL,
         currency=currency,
         symbol=symbol,
-        realised_pnl=realised_pnl,
+        realized_pnl=realized_pnl,
         closed_quantity=closed_quantity,
         cumulated_closed_quantity=cumulated_closed_quantity,
         first_entry_time=first_entry_time,
@@ -68,9 +68,10 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
         order_exit_price=order_exit_price,
         leverage=leverage,
         trigger_source=trigger_source,
-        side=side)
-    _insert_transaction_instance(exchange_manager, realised_pnl_transaction)
-    return realised_pnl_transaction
+        side=side,
+    )
+    _insert_transaction_instance(exchange_manager, realized_pnl_transaction)
+    return realized_pnl_transaction
 
 
 def create_fee_transaction(exchange_manager, currency, symbol,

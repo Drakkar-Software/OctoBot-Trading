@@ -633,7 +633,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value: self.quantity_currency,
-            enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
+            enums.ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag

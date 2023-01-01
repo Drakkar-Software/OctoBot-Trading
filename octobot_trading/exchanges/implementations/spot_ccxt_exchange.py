@@ -344,7 +344,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                 order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
                                                                             trade[ecoc.TIMESTAMP.value])
                 order_to_update[ecoc.STATUS.value] = enums.OrderStatus.FILLED.value
-                order_to_update[ecoc.FILLED.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.FILLED_AMOUNT.value] = trade[ecoc.AMOUNT.value]
                 order_to_update[ecoc.COST.value] = trade[ecoc.COST.value]
                 order_to_update[ecoc.REMAINING.value] = 0
                 order_to_update[ecoc.FEE.value] = trade[ecoc.FEE.value]
