@@ -219,6 +219,7 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     REMAINING = "remaining"
     STATUS = "status"
     FEE = "fee"
+    FEES = "fees"
     TRADES = "trades"
     MAKER = "maker"
     TAKER = "taker"
