@@ -43,7 +43,7 @@ class LimitOrder(order_class.Order):
         if self.wait_for_hit_event_task is None and self.limit_price_hit_event is not None:
             if self.limit_price_hit_event.is_set():
                 # order should be filled instantly
-                await self.on_fill(force_fill=True)
+                await self.on_fill()
             else:
                 # order will be filled when conditions are met
                 self._create_hit_task()
