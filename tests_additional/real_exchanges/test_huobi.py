@@ -62,6 +62,7 @@ class TestHuobiRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_COST.value))
             # invalid values => remove price limit in tentacle
             self.check_market_status_limits(market_status,
+                                            normal_price_max=100000,    # way too high (BTC/USDT)
                                             expect_invalid_price_limit_values=True,
                                             enable_price_and_cost_comparison=False)
 
