@@ -120,7 +120,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
     async def test_get_recent_trades(self):
         await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         recent_trades = await self.get_recent_trades()
-        assert len(recent_trades) == 50
+        assert len(recent_trades) == 50  # broken after ccxt 2.4.60 (trade symbol parsing issue), still the case in 2.5.5
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 

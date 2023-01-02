@@ -27,7 +27,9 @@ pytestmark = pytest.mark.asyncio
 
 class TestOkcoinRealExchangeTester(TestOkxRealExchangeTester):
     EXCHANGE_NAME = "okcoin"
-    SYMBOL_3 = "DOGE/USD"
+    SYMBOL = "BTC/USD"
+    SYMBOL_2 = "ETH/USD"
+    SYMBOL_3 = "NYC/USD"
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
