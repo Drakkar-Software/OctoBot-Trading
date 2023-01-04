@@ -14,26 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.types import spot_exchange
-from octobot_trading.exchanges.types.spot_exchange import (
-    SpotExchange,
-)
-from octobot_trading.exchanges.types import margin_exchange
-from octobot_trading.exchanges.types.margin_exchange import (
-    MarginExchange,
-)
-from octobot_trading.exchanges.types import future_exchange
-from octobot_trading.exchanges.types.future_exchange import (
-    FutureExchange,
-)
 from octobot_trading.exchanges.types import websocket_exchange
 from octobot_trading.exchanges.types.websocket_exchange import (
     WebSocketExchange,
 )
+from octobot_trading.exchanges.types import rest_exchange
+from octobot_trading.exchanges.types.rest_exchange import (
+    RestExchange,
+)
 
 __all__ = [
-    "FutureExchange",
     "WebSocketExchange",
-    "MarginExchange",
-    "SpotExchange",
+    "RestExchange",
 ]

@@ -31,7 +31,7 @@ import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchanges.util as util
 
 
-class ExchangeSimulator(abstract_exchange.AbstractExchange):
+class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
         self.backtesting = backtesting

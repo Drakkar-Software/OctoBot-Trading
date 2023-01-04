@@ -23,7 +23,13 @@ from octobot_trading.exchanges.connectors.ccxt.connector import (
     CCXTConnector,
 )
 
+from octobot_trading.exchanges.connectors.ccxt import ccxt_websocket_connector
+from octobot_trading.exchanges.connectors.ccxt.ccxt_websocket_connector import (
+    CCXTWebsocketConnector,
+)
+
 __all__ = [
     "CCXTAdapter",
     "CCXTConnector",
+    "CCXTWebsocketConnector",
 ]

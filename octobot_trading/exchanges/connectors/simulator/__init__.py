@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -10,11 +9,16 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 
-cdef class MarginExchange(abstract_exchange.AbstractExchange):
-    pass
+from octobot_trading.exchanges.connectors.simulator import exchange_simulator_connector
+from octobot_trading.exchanges.connectors.simulator.exchange_simulator_connector import (
+    ExchangeSimulatorConnector,
+)
+
+__all__ = [
+    "ExchangeSimulatorConnector",
+]

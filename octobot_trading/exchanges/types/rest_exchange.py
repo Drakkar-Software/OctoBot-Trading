@@ -81,7 +81,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
-        return isinstance(exchange_candidate_name, str)
+        return cls.get_name() == exchange_candidate_name
 
     @classmethod
     def get_supported_exchange_types(cls) -> list:

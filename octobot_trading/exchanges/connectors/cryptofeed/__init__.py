@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -10,12 +9,16 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.types as exchanges_types
 
-cdef class FutureCCXTExchange(exchanges_types.FutureExchange):
-    # cpdef str get_default_type(self)   generating a segfault on exchange that both extend spot and future exchanges
-    cpdef str get_pair_market_type(self, str pair, str property_name, bint def_value=*)
+from octobot_trading.exchanges.connectors.cryptofeed import cryptofeed_websocket_connector
+from octobot_trading.exchanges.connectors.cryptofeed.cryptofeed_websocket_connector import (
+    CryptofeedWebsocketConnector,
+)
+
+__all__ = [
+    "CryptofeedWebsocketConnector",
+]

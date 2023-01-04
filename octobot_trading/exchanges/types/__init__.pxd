@@ -14,22 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.types.future_exchange cimport (
-    FutureExchange,
-)
-from octobot_trading.exchanges.types.margin_exchange cimport (
-    MarginExchange,
-)
-from octobot_trading.exchanges.types.spot_exchange cimport (
-    SpotExchange,
+from octobot_trading.exchanges.types.rest_exchange cimport (
+    RestExchange,
 )
 from octobot_trading.exchanges.types.websocket_exchange cimport (
     WebSocketExchange,
 )
 
 __all__ = [
-    "FutureExchange",
+    "RestExchange",
     "WebSocketExchange",
-    "MarginExchange",
-    "SpotExchange",
 ]
