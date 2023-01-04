@@ -46,13 +46,17 @@ from octobot_trading.exchanges.implementations import ccxt_websocket_exchange
 from octobot_trading.exchanges.implementations.ccxt_websocket_exchange import (
     CCXTWebSocketExchange,
 )
-from octobot_trading.exchanges.implementations import default_spot_ccxt_exchange
-from octobot_trading.exchanges.implementations.default_spot_ccxt_exchange import (
-    DefaultCCXTSpotExchange,
+from octobot_trading.exchanges.implementations import default_rest_ccxt_exchange
+from octobot_trading.exchanges.implementations.default_rest_ccxt_exchange import (
+    DefaultRestCCXTExchange,
 )
 from octobot_trading.exchanges.implementations import cryptofeed_websocket_exchange
 from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
     CryptofeedWebSocketExchange,
+)
+from octobot_trading.exchanges.implementations import rest_exchange
+from octobot_trading.exchanges.implementations.rest_exchange import (
+    RestExchange,
 )
 
 __all__ = [
@@ -63,6 +67,7 @@ __all__ = [
     "MarginCCXTExchange",
     "SpotCCXTExchange",
     "CCXTWebSocketExchange",
-    "DefaultCCXTSpotExchange",
+    "DefaultRestCCXTExchange",
     "CryptofeedWebSocketExchange",
+    "RestExchange",
 ]

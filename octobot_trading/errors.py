@@ -186,3 +186,15 @@ class OrderDescriptionNotFoundError(Exception):
     """
     Raised when an order description is not found
     """
+
+
+class AdapterError(Exception):
+    """
+    Raised when an error occurs in an adapter
+    """
+
+
+class UnexpectedAdapterError(Exception):
+    """
+    Raised when an unexpected error occurs in an adapter
+    """

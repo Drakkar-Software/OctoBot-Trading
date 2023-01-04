@@ -78,6 +78,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 self.logger.debug(f"Can't to load {pair} contract info from exchange: {e}. "
                                   f"This contract will be created from fetched positions.")
             except Exception as e:
+                self.logger.exception(e, False)
                 self.logger.warning(f"Failed to load {pair} contract info : {e}")
 
     async def initialize_positions(self) -> None:

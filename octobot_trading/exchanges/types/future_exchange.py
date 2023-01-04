@@ -303,15 +303,15 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("parse_liquidation is not implemented")
 
-    def parse_position_status(self, status):
-        """
-        :param status: the position raw status
-        :return: the uniformized position status
-        """
-        try:
-            return octobot_trading.enums.PositionStatus(status)
-        except ValueError:
-            return ValueError("Could not parse position status")
+    # def parse_position_status(self, status):
+    #     """
+    #     :param status: the position raw status
+    #     :return: the uniformized position status
+    #     """
+    #     try:
+    #         return octobot_trading.enums.PositionStatus(status)
+    #     except ValueError:
+    #         return ValueError("Could not parse position status")
 
     def parse_position_side(self, side, mode):
         """

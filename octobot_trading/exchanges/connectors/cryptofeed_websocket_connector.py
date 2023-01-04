@@ -818,7 +818,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param trade: the trade object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.TRADES_CHANNEL, [self.exchange.parse_trade(trade)])
+        await self.push_to_channel(trading_constants.TRADES_CHANNEL, [self.exchange.parse_trade(trade)])    #todo parser
 
     async def balance(self, balance: cryptofeed_types.Balance, receipt_timestamp: float):
         """

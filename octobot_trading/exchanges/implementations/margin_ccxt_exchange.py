@@ -28,6 +28,7 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 
     def __init__(self, config, exchange_manager):
+        raise NotImplementedError()
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,

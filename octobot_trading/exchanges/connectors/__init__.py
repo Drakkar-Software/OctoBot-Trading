@@ -35,10 +35,18 @@ from octobot_trading.exchanges.connectors.cryptofeed_websocket_connector import 
     CryptofeedWebsocketConnector,
 )
 
+from octobot_trading.exchanges.connectors import ccxt
+from octobot_trading.exchanges.connectors.ccxt import (
+    CCXTAdapter,
+    CCXTConnector,
+)
+
 __all__ = [
     "ExchangeSimulator",
     "CCXTExchange",
     "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
     "CryptofeedWebsocketConnector",
+    "CCXTAdapter",
+    "CCXTConnector",
 ]

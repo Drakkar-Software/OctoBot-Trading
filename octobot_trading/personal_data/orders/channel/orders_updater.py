@@ -116,8 +116,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol, limit=limit)
             if open_orders:
-                await self.push(list(map(self.channel.exchange_manager.exchange.clean_order, open_orders)),
-                                is_from_bot=is_from_bot)
+                await self.push(open_orders, is_from_bot=is_from_bot)
             else:
                 await self.handle_post_open_order_update(symbol, open_orders, False)
             if not self._is_initialized_event_set:
@@ -144,8 +143,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                 symbol=symbol, limit=limit)
 
             if close_orders:
-                await self.push(list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
-                                are_closed=True)
+                await self.push(close_orders, are_closed=True)
 
     async def update_order_from_exchange(self, order,
                                          should_notify=False,
@@ -177,7 +175,6 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         raw_order = await self.channel.exchange_manager.exchange.get_order(order.order_id, order.symbol)
 
         if raw_order is not None:
-            raw_order = self.channel.exchange_manager.exchange.clean_order(raw_order)
             self.logger.debug(f"Received update for {order} on {exchange_name}: {raw_order}")
 
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(

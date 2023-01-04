@@ -122,6 +122,7 @@ def fix_market_status_limits_from_current_data(market_limit):
 
 
 class ExchangeMarketStatusFixer:
+    # todo move to connector/ccxt
     LIMIT_PRICE_MULTIPLIER = 1000
     LIMIT_COST_MULTIPLIER = 1
 

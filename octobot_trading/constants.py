@@ -119,7 +119,7 @@ MINIMUM_VAL_TRADE_TIME = 946688400
 MODE_CHANNEL = "Mode"
 
 # CCXT library constants
-CCXT_INFO = "info"
+CCXT_INFO = "info"  # todo del
 
 WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
     TICKER_CHANNEL: [enums.WebsocketFeeds.TICKER],

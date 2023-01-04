@@ -160,12 +160,12 @@ class PositionMode(enum.Enum):
     ONE_WAY = "one_way_mode"
 
 
-class ExchangeConstantsCCXTColumns(enum.Enum):
+class ExchangeConstantsCCXTColumns(enum.Enum):  # todo del
     TIMESTAMP = "timestamp"
     DATETIME = "datetime"
 
 
-class ExchangePositionCCXTColumns(enum.Enum):
+class ExchangePositionCCXTColumns(enum.Enum):  # todo del
     CONTRACTS = "contracts"
     CONTRACT_SIZE = "contractSize"
     MARGIN_TYPE = "marginType"
@@ -191,7 +191,7 @@ class ExchangePositionCCXTColumns(enum.Enum):
     INFO = "info"
 
 
-class ExchangeFundingCCXTColumns(enum.Enum):
+class ExchangeFundingCCXTColumns(enum.Enum):  # todo del
     SYMBOL = "symbol"
     LAST_FUNDING_TIME = "lastFundingTime"
     FUNDING_RATE = "fundingRate"
@@ -199,7 +199,7 @@ class ExchangeFundingCCXTColumns(enum.Enum):
     PREDICTED_FUNDING_RATE = "predictedFundingRate"
 
 
-class ExchangeOrderCCXTColumns(enum.Enum):
+class ExchangeOrderCCXTColumns(enum.Enum):  # todo del
     INFO = "info"
     ID = "id"
     TIMESTAMP = "timestamp"
@@ -512,7 +512,7 @@ class SubAccountColumns(enum.Enum):
     NAME = "name"
 
 
-class ExchangeWrapperLibs(enum.Enum):
+class ExchangeWrapperLibs(enum.Enum):  # todo del
     ASYNC_CCXT = "async_ccxt"
     CCXT = "ccxt"
 
