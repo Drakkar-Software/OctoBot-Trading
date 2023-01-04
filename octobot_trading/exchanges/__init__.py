@@ -61,6 +61,7 @@ from octobot_trading.exchanges.util import (
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
+    get_rest_exchange_class,
     get_order_side,
     log_time_sync_error,
     get_partners_explanation_message,
@@ -101,7 +102,7 @@ from octobot_trading.exchanges.types import (
 from octobot_trading.exchanges import implementations
 from octobot_trading.exchanges.implementations import (
     CCXTWebSocketExchange,
-    DefaultCCXTSpotExchange,
+    DefaultRestCCXTExchange,
     SpotExchangeSimulator,
     SpotCCXTExchange,
     FutureExchangeSimulator,
@@ -109,6 +110,7 @@ from octobot_trading.exchanges.implementations import (
     MarginExchangeSimulator,
     MarginCCXTExchange,
     CryptofeedWebSocketExchange,
+    RestExchange,
 )
 from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.exchange_builder import (
@@ -122,6 +124,8 @@ from octobot_trading.exchanges.connectors import (
     CCXTWebsocketConnector,
     AbstractWebsocketConnector,
     CryptofeedWebsocketConnector,
+    CCXTConnector,
+    CCXTAdapter,
 )
 
 __all__ = [
@@ -140,6 +144,7 @@ __all__ = [
     "get_margin_exchange_class",
     "get_future_exchange_class",
     "get_spot_exchange_class",
+    "get_rest_exchange_class",
     "get_order_side",
     "log_time_sync_error",
     "get_partners_explanation_message",
@@ -160,8 +165,9 @@ __all__ = [
     "TraderSimulator",
     "Trader",
     "CCXTWebSocketExchange",
-    "DefaultCCXTSpotExchange",
+    "DefaultRestCCXTExchange",
     "CryptofeedWebSocketExchange",
+    "RestExchange",
     "SpotExchangeSimulator",
     "SpotCCXTExchange",
     "FutureExchangeSimulator",
@@ -186,4 +192,6 @@ __all__ = [
     "check_web_socket_config",
     "search_websocket_class",
     "supports_websocket",
+    "CCXTConnector",
+    "CCXTAdapter",
 ]

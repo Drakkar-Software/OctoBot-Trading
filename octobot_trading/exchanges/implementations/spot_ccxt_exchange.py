@@ -41,6 +41,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 
     def __init__(self, config, exchange_manager):
+        raise NotImplementedError()
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,
@@ -139,7 +140,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         if created_order[ecoc.PRICE.value] is None and price is not None:
             created_order[ecoc.PRICE.value] = float(price)
 
-        return self.clean_order(created_order)
+        return created_order
 
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
                                        price: decimal.Decimal, side: enums.TradeOrderSide,

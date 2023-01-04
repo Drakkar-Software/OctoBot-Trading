@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Private-Tentacles
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,20 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums
-import octobot_trading.exchanges.implementations.spot_ccxt_exchange as spot_ccxt_exchange
 
 
-#TODO remove
-class DefaultCCXTSpotExchange(spot_ccxt_exchange.SpotCCXTExchange):
-    @classmethod
-    def get_name(cls) -> str:
-        return cls.__name__
+from octobot_trading.exchanges.adapters import abstract_adapter
+from octobot_trading.exchanges.adapters.abstract_adapter import (
+    AbstractAdapter,
+)
 
-    @classmethod
-    def is_default_exchange(cls) -> bool:
-        return True
-
-    async def switch_to_account(self, account_type: octobot_trading.enums.AccountTypes):
-        # Currently not supported
-        pass
+__all__ = [
+    "AbstractAdapter",
+]

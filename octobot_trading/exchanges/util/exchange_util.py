@@ -25,21 +25,27 @@ import octobot_tentacles_manager.api as api
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.implementations as exchanges_implementations
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
 
-def get_margin_exchange_class(exchange_name, tentacles_setup_config):
+def get_margin_exchange_class(exchange_name, tentacles_setup_config): #todo del
     return search_exchange_class_from_exchange_name(exchanges_types.MarginExchange, exchange_name,
                                                     tentacles_setup_config)
 
 
-def get_future_exchange_class(exchange_name, tentacles_setup_config):
+def get_future_exchange_class(exchange_name, tentacles_setup_config): #todo del
     return search_exchange_class_from_exchange_name(exchanges_types.FutureExchange, exchange_name,
                                                     tentacles_setup_config)
 
 
-def get_spot_exchange_class(exchange_name, tentacles_setup_config):
+def get_spot_exchange_class(exchange_name, tentacles_setup_config): #todo del
     return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
+                                                    tentacles_setup_config)
+
+
+def get_rest_exchange_class(exchange_name, tentacles_setup_config):
+    return search_exchange_class_from_exchange_name(exchanges_implementations.RestExchange, exchange_name,
                                                     tentacles_setup_config)
 
 
@@ -225,15 +231,8 @@ def get_default_exchange_type(exchange_name):
 
 
 def get_supported_exchange_types(exchange_name):
-    supported_exchanges = [enums.ExchangeTypes.SPOT]
-    # TODO remove this after rest exchange refactor
-    if exchange_name.lower() == "bybit":
-        supported_exchanges = []
-    # end TODO
-    if get_exchange_class_from_name(exchanges_types.FutureExchange, exchange_name, None, False,
-                                    strict_name_matching=True) is not None:
-        supported_exchanges.append(enums.ExchangeTypes.FUTURE)
-    if get_exchange_class_from_name(exchanges_types.MarginExchange, exchange_name, None, False,
-                                    strict_name_matching=True) is not None:
-        supported_exchanges.append(enums.ExchangeTypes.MARGIN)
-    return supported_exchanges
+    if exchange_class := get_exchange_class_from_name(exchanges_implementations.RestExchange, exchange_name, None, False,
+                                                      strict_name_matching=True):
+        return exchange_class.get_supported_exchange_types()
+    # default
+    return [enums.ExchangeTypes.SPOT]

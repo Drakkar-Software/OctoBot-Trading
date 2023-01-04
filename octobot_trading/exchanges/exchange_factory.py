@@ -152,12 +152,7 @@ async def _create_rest_exchange(exchange_manager) -> None:
     create REST based on ccxt exchange
     :param exchange_manager: the related exchange manager
     """
-    if exchange_manager.is_future and not exchange_manager.is_spot_only:
-        await _search_and_create_future_exchange(exchange_manager)
-    elif exchange_manager.is_margin and not exchange_manager.is_spot_only:
-        await _search_and_create_margin_exchange(exchange_manager)
-    else:
-        await _search_and_create_spot_exchange(exchange_manager)
+    await _search_and_create_rest_exchange(exchange_manager)
 
     if not exchange_manager.exchange:
         raise Exception(f"Can't create an exchange instance that match the exchange configuration ({exchange_manager})")
@@ -183,6 +178,18 @@ async def create_simulated_exchange(exchange_manager):
 
 async def init_simulated_exchange(exchange_manager):
     await exchange_manager.exchange.create_backtesting_exchange_producers()
+
+
+async def _search_and_create_rest_exchange(exchange_manager) -> None:
+    """
+    Create a rest exchange if a RestExchange matching class is found
+    :param exchange_manager: the related exchange manager
+    """
+    rest_exchange_class = exchanges.get_rest_exchange_class(exchange_manager.exchange_name,
+                                                            exchange_manager.tentacles_setup_config)
+    if rest_exchange_class:
+        exchange_manager.exchange = rest_exchange_class(config=exchange_manager.config,
+                                                        exchange_manager=exchange_manager)
 
 
 async def _search_and_create_spot_exchange(exchange_manager) -> None:

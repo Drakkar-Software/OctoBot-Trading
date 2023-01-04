@@ -37,9 +37,7 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                 recent_trades = await self.channel.exchange_manager.exchange.\
                     get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
                 if recent_trades:
-                    await self.push(pair,
-                                    list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
-                                             recent_trades)))
+                    await self.push(pair, recent_trades)
             await asyncio.sleep(self.refresh_time)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to initialize recent trades : {e}")
@@ -66,9 +64,7 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                         get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
                     if recent_trades:
                         try:
-                            await self.push(pair,
-                                            list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
-                                                     recent_trades)))
+                            await self.push(pair, recent_trades)
                         except TypeError:
                             pass
                 await asyncio.sleep(self.refresh_time)
