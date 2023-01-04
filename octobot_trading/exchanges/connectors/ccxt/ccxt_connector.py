@@ -31,7 +31,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
-import octobot_trading.exchanges.connectors.ccxt.adapter as ccxt_adapter
+import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
@@ -48,7 +48,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     CCXT_ISOLATED = "ISOLATED"
     CCXT_CROSSED = "CROSSED"
 
-    def __init__(self, config, exchange_manager, adapter_class=None, additional_ccxt_config=None):
+    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None):
         super().__init__(config, exchange_manager)
         self.client = None
         self.exchange_type = None
@@ -56,7 +56,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.is_authenticated = False
         self.adapter = self.get_adapter_class(adapter_class)(self)
 
-        self.additional_ccxt_config = additional_ccxt_config
+        self.additional_config = additional_config
         self.headers = {}
         self.options = {}
         # add default options
@@ -77,7 +77,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
             if self.exchange_manager.is_loading_markets:
                 with self.error_describer():
-                    await self.client.load_markets()
+                    await self.load_symbol_markets()
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
@@ -90,6 +90,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def get_adapter_class(self, adapter_class):
         return adapter_class or ccxt_adapter.CCXTAdapter
+
+    async def load_symbol_markets(self, reload=False):
+        await self.client.load_markets(reload=reload)
 
     def get_client_symbols(self):
         return set(self.client.symbols) \
@@ -207,8 +210,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             config['secret'] = secret
         if password is not None:
             config['password'] = password
-        # apply self.additional_ccxt_config
-        config.update(self.additional_ccxt_config or {})
+        # apply self.additional_config
+        config.update(self.additional_config or {})
         return config
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
@@ -385,6 +388,57 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return self.adapter.adapt_trades(await method(symbol=symbol, since=since, limit=limit, params=kwargs))
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
+
+    async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return self.adapter.adapt_order(
+            await self.client.create_market_buy_order(symbol, quantity, params=params)
+        )
+
+    async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return self.adapter.adapt_order(
+            await self.client.create_limit_buy_order(symbol, quantity, price, params=params)
+        )
+
+    async def create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return self.adapter.adapt_order(
+            await self.client.create_market_sell_order(symbol, quantity, params=params)
+        )
+
+    async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return self.adapter.adapt_order(
+            await self.client.create_limit_sell_order(symbol, quantity, price, params=params)
+        )
+
+    async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        raise NotImplementedError("create_market_stop_loss_order is not implemented")
+
+    async def create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_limit_stop_loss_order is not implemented")
+
+    async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_market_take_profit_order is not implemented")
+
+    async def create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_limit_take_profit_order is not implemented")
+
+    async def create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_market_trailing_stop_order is not implemented")
+
+    async def create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_limit_trailing_stop_order is not implemented")
+
+    async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                         quantity: float, price: float, stop_price: float = None, side: str = None,
+                         current_price: float = None, params: dict = None):
+        ccxt_order_type = self.get_ccxt_order_type(order_type)
+        price_to_use = price
+        if ccxt_order_type == enums.TradeOrderType.MARKET.value:
+            # can't set price in market orders
+            price_to_use = None
+        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
+        return self.adapter.adapt_order(
+            await self.client.edit_order(order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params)
+        )
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
         try:

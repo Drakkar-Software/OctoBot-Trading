@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import pytest
 
 import ccxt.async_support
 from mock import patch, Mock
@@ -32,8 +33,12 @@ from tests.exchanges.traders import future_trader, future_trader_simulator_with_
 pytestmark = pytest.mark.asyncio
 
 
-async def test_initialize_impl_with_none_symbols_and_timeframes(exchange_manager):
-    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+@pytest.fixture
+def ccxt_connector(exchange_manager):
+    yield exchange_connectors.CCXTConnector(exchange_manager.config, exchange_manager)
+
+
+async def test_initialize_impl_with_none_symbols_and_timeframes(ccxt_connector):
 
     class MockCCXT:
         def __init__(self):
@@ -46,14 +51,13 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(exchange_manager
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_exchange, 'client', new=MockCCXT()):
-        await ccxt_exchange.initialize_impl()
-        assert ccxt_exchange.symbols == set()
-        assert ccxt_exchange.time_frames == set()
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()):
+        await ccxt_connector.initialize_impl()
+        assert ccxt_connector.symbols == set()
+        assert ccxt_connector.time_frames == set()
 
 
-async def test_initialize_impl_with_empty_symbols_and_timeframes(exchange_manager):
-    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector):
 
     class MockCCXT:
         def __init__(self):
@@ -66,14 +70,13 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(exchange_manage
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_exchange, 'client', new=MockCCXT()):
-        await ccxt_exchange.initialize_impl()
-        assert ccxt_exchange.symbols == set()
-        assert ccxt_exchange.time_frames == set()
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()):
+        await ccxt_connector.initialize_impl()
+        assert ccxt_connector.symbols == set()
+        assert ccxt_connector.time_frames == set()
 
 
-async def test_initialize_impl(exchange_manager):
-    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+async def test_initialize_impl(ccxt_connector):
 
     class MockCCXT:
         def __init__(self):
@@ -96,37 +99,35 @@ async def test_initialize_impl(exchange_manager):
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_exchange, 'client', new=MockCCXT()):
-        await ccxt_exchange.initialize_impl()
-        assert ccxt_exchange.symbols == {
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()):
+        await ccxt_connector.initialize_impl()
+        assert ccxt_connector.symbols == {
             "BTC/USDT",
             "ETH/USDT",
             "ETH/BTC",
         }
-        assert ccxt_exchange.time_frames == {
+        assert ccxt_connector.time_frames == {
             "1h",
             "2h",
             "4h",
         }
 
 
-async def test_set_symbol_partial_take_profit_stop_loss(exchange_manager):
-    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+async def test_set_symbol_partial_take_profit_stop_loss(ccxt_connector):
     with pytest.raises(NotImplementedError):
-        await ccxt_exchange.set_symbol_partial_take_profit_stop_loss("BTC/USDT", False,
+        await ccxt_connector.set_symbol_partial_take_profit_stop_loss("BTC/USDT", False,
                                                                      enums.TakeProfitStopLossMode.PARTIAL)
 
 
-async def test_get_ccxt_order_type(exchange_manager):
-    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+async def test_get_ccxt_order_type(ccxt_connector):
     with pytest.raises(RuntimeError):
-        ccxt_exchange.get_ccxt_order_type(None)
+        ccxt_connector.get_ccxt_order_type(None)
     with pytest.raises(RuntimeError):
-        ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.UNKNOWN)
-    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.BUY_LIMIT) == enums.TradeOrderType.LIMIT.value
-    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.STOP_LOSS_LIMIT) == enums.TradeOrderType.LIMIT.value
-    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.TRAILING_STOP) == enums.TradeOrderType.MARKET.value
-    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.SELL_MARKET) == enums.TradeOrderType.MARKET.value
+        ccxt_connector.get_ccxt_order_type(enums.TraderOrderType.UNKNOWN)
+    assert ccxt_connector.get_ccxt_order_type(enums.TraderOrderType.BUY_LIMIT) == enums.TradeOrderType.LIMIT.value
+    assert ccxt_connector.get_ccxt_order_type(enums.TraderOrderType.STOP_LOSS_LIMIT) == enums.TradeOrderType.LIMIT.value
+    assert ccxt_connector.get_ccxt_order_type(enums.TraderOrderType.TRAILING_STOP) == enums.TradeOrderType.MARKET.value
+    assert ccxt_connector.get_ccxt_order_type(enums.TraderOrderType.SELL_MARKET) == enums.TradeOrderType.MARKET.value
 
 
 async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_default_linear):
@@ -136,8 +137,8 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     spot_symbol = "BTC/USDT"
     config, fut_exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     fut_exchange_manager_inst.is_future = True
-    fut_ccxt_exchange = exchange_connectors.CCXTExchange(config, fut_exchange_manager_inst)
-    spot_ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+    fut_ccxt_exchange = exchange_connectors.CCXTConnector(config, fut_exchange_manager_inst)
+    spot_ccxt_exchange = exchange_connectors.CCXTConnector(exchange_manager.config, exchange_manager)
 
     # spot trading
     spot_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.SPOT.value

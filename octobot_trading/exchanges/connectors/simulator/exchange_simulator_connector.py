@@ -27,15 +27,17 @@ import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
+import octobot_trading.exchanges.connectors.simulator.exchange_simulator_adapter as exchange_simulator_adapter
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchanges.util as util
 
 
 class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
-    def __init__(self, config, exchange_manager, backtesting):
+    def __init__(self, config, exchange_manager, backtesting, adapter_class=None):
         super().__init__(config, exchange_manager)
         self.backtesting = backtesting
         self.allowed_time_lag = constants.DEFAULT_BACKTESTING_TIME_LAG
+        self.adapter = self.get_adapter_class(adapter_class)(self)
 
         self.exchange_importers = []
 
@@ -58,6 +60,9 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = list(self.symbols)
+
+    def get_adapter_class(self, adapter_class):
+        return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:

@@ -43,9 +43,7 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
 
     logging.get_logger("ExchangeUtil").debug(f"No specific exchange implementation for {exchange_name} found, "
                                              f"using a default one.")
-    # TODO: handle default future exchange instead of creating a SpotExchange
-    return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
-                                                    tentacles_setup_config, enable_default=True)
+    return exchanges_types.RestExchange
 
 
 def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles_setup_config, enable_default,
