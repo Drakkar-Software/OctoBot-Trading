@@ -60,15 +60,18 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     DEFAULT_CONNECTOR_CLASS = exchange_connectors.CCXTConnector
 
-    def __init__(self, config, exchange_manager, connector_class=DEFAULT_CONNECTOR_CLASS):
+    def __init__(self, config, exchange_manager, connector_class=None):
         super().__init__(config, exchange_manager)
-        self.connector = connector_class(
+        self.connector = self._create_connector(config, exchange_manager, connector_class)
+        self.pair_contracts = {}
+
+    def _create_connector(self, config, exchange_manager, connector_class):
+        return (connector_class or self.DEFAULT_CONNECTOR_CLASS)(
             config,
             exchange_manager,
             adapter_class=self.get_adapter_class(),
-            additional_ccxt_config=self.get_additional_connector_config()  # move to connector
+            additional_config=self.get_additional_connector_config()
         )
-        self.pair_contracts = {}
 
     async def initialize_impl(self):
         await self.connector.initialize()
@@ -78,6 +81,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def stop(self) -> None:
         await self.connector.stop()
         self.exchange_manager = None
+
+    @classmethod
+    def get_name(cls):
+        return cls.__name__
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -130,14 +137,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                           quantity: float, price: float, stop_price: float = None, side: str = None,
                           current_price: float = None, params: dict = None):
-        ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
-        price_to_use = price
-        if ccxt_order_type == enums.TradeOrderType.MARKET.value:
-            # can't set price in market orders
-            price_to_use = None
-        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
-        return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
-                                                      quantity, price_to_use, params)
+        return await self.connector.edit_order(order_id, order_type, symbol,
+                                               quantity, price, stop_price, side,
+                                               current_price, params)
 
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
@@ -154,6 +156,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
 
     async def _verify_order(self, created_order, order_type, symbol, price, params=None):
+        # todo move to adapter
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
@@ -178,7 +181,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             # can be raised when exchange precision/limits rules change
             self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
-            await self.connector.client.load_markets(reload=True)
+            await self.connector.load_symbol_markets(reload=True)
             # retry order creation with updated markets (ccxt will use the updated market values)
             return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
                                                      current_price=current_price, params=params)
@@ -236,16 +239,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_buy_order(symbol, quantity, params=params)
+        return await self.connector.create_market_buy_order(symbol, quantity, params=params)
 
     async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
+        return await self.connector.create_limit_buy_order(symbol, quantity, price, params=params)
 
     async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_sell_order(symbol, quantity, params=params)
+        return await self.connector.create_market_sell_order(symbol, quantity, params=params)
 
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
+        return await self.connector.create_limit_sell_order(symbol, quantity, price, params=params)
 
     async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
         raise NotImplementedError("_create_market_stop_loss_order is not implemented")
@@ -639,20 +642,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def parse_status(self, status):
         return self.connector.parse_status(status)
 
-    def parse_positions(self, positions) -> list:
-        """
-        :param positions: a list of positions dict to parse
-        :return: uniformized positions
-        """
-        return [self.parse_position(position) for position in positions]
-
-    def parse_position(self, position_dict) -> dict:
-        """
-        :param position_dict: the position dict
-        :return: the uniformized position dict
-        """
-        raise NotImplementedError("parse_position is not implemented")
-
     def parse_funding(self, funding_dict, from_ticker=False) -> dict:
         """
         :param from_ticker: when True, the funding dict is extracted from ticker data
@@ -668,42 +657,3 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: the uniformized mark price status
         """
         return self.connector.parse_mark_price(mark_price_dict, from_ticker=from_ticker)
-
-    def parse_liquidation(self, liquidation_dict) -> dict:
-        """
-        :param liquidation_dict: the liquidation dict
-        :return: the uniformized liquidation dict
-        """
-        raise NotImplementedError("parse_liquidation is not implemented")
-
-    # def parse_position_status(self, status):
-    #     """
-    #     :param status: the position raw status
-    #     :return: the uniformized position status
-    #     """
-    #     try:
-    #         return enums.PositionStatus(status)
-    #     except ValueError:
-    #         return ValueError("Could not parse position status")
-
-    def parse_position_side(self, side, mode):
-        """
-        :param side: the raw side
-        :param mode: the parsed mode
-        :return: the uniformized PositionSide instance from the raw side
-        """
-        if mode is enums.PositionMode.ONE_WAY:
-            return enums.PositionSide.BOTH
-        return enums.PositionSide.LONG \
-            if side == enums.PositionSide.LONG.value else enums.PositionSide.SHORT
-
-    def calculate_position_value(self, quantity, mark_price):
-        """
-        Calculates the position value
-        :param quantity: the position quantity
-        :param mark_price: the position symbol mark price
-        :return: the position value
-        """
-        if mark_price:
-            return quantity / mark_price
-        return 0

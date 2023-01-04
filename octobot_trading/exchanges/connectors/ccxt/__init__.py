@@ -14,12 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.connectors.ccxt import adapter
-from octobot_trading.exchanges.connectors.ccxt.adapter import (
+from octobot_trading.exchanges.connectors.ccxt import ccxt_adapter
+from octobot_trading.exchanges.connectors.ccxt.ccxt_adapter import (
     CCXTAdapter,
 )
-from octobot_trading.exchanges.connectors.ccxt import connector
-from octobot_trading.exchanges.connectors.ccxt.connector import (
+from octobot_trading.exchanges.connectors.ccxt import ccxt_connector
+from octobot_trading.exchanges.connectors.ccxt.ccxt_connector import (
     CCXTConnector,
 )
 

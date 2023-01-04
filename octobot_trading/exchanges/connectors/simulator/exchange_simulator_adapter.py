@@ -14,16 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.connectors.simulator import exchange_simulator_adapter
-from octobot_trading.exchanges.connectors.simulator.exchange_simulator_adapter import (
-    ExchangeSimulatorAdapter,
-)
-from octobot_trading.exchanges.connectors.simulator import exchange_simulator_connector
-from octobot_trading.exchanges.connectors.simulator.exchange_simulator_connector import (
-    ExchangeSimulatorConnector,
-)
+import octobot_trading.exchanges.adapters as adapters
 
-__all__ = [
-    "ExchangeSimulatorConnector",
-    "ExchangeSimulatorAdapter",
-]
+
+class ExchangeSimulatorAdapter(adapters.AbstractAdapter):
+    pass

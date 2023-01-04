@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.constants as constants
+import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data.prices.channel.prices_updater as prices_updater
 import octobot_trading.exchange_channel as exchanges_channel
 
@@ -25,10 +26,13 @@ class MarkPriceUpdaterSimulator(prices_updater.MarkPriceUpdater):
 
     async def start(self):
         exchange = self.channel.exchange_manager.exchange
-        available_data = exchange.get_real_available_data(exchange.exchange_importers)
-        real_data_for_recent_trades = exchange.handles_real_data_for_updater(constants.RECENT_TRADES_CHANNEL,
-                                                                             available_data)
-        real_data_for_ticker = exchange.handles_real_data_for_updater(constants.TICKER_CHANNEL, available_data)
+        available_data = exchanges.ExchangeSimulatorConnector.get_real_available_data(exchange.exchange_importers)
+        real_data_for_recent_trades = exchanges.ExchangeSimulatorConnector.handles_real_data_for_updater(
+            constants.RECENT_TRADES_CHANNEL, available_data
+        )
+        real_data_for_ticker = exchanges.ExchangeSimulatorConnector.handles_real_data_for_updater(
+            constants.TICKER_CHANNEL, available_data
+        )
         # if recent trades and ticker channels are both generated from ohlcv, do not watch them both,
         # prefer ticker
         if real_data_for_ticker or not (real_data_for_recent_trades or real_data_for_ticker):

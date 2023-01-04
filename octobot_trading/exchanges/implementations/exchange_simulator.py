@@ -22,9 +22,17 @@ class ExchangeSimulator(exchanges_types.RestExchange):
     DEFAULT_CONNECTOR_CLASS = exchange_connectors.ExchangeSimulatorConnector
 
     def __init__(self, config, exchange_manager, backtesting):
-        super().__init__(config, exchange_manager)
-        self.exchange_importers = []
         self.backtesting = backtesting
+        self.exchange_importers = []
+        super().__init__(config, exchange_manager)
+
+    def _create_connector(self, config, exchange_manager, connector_class):
+        return (connector_class or self.DEFAULT_CONNECTOR_CLASS)(
+            config,
+            exchange_manager,
+            self.backtesting,
+            adapter_class=self.get_adapter_class(),
+        )
 
     async def initialize_impl(self):
         await super().initialize_impl()
@@ -45,6 +53,12 @@ class ExchangeSimulator(exchanges_types.RestExchange):
 
     async def create_backtesting_exchange_producers(self):
         return await self.connector.create_backtesting_exchange_producers()
+
+    def get_available_time_frames(self):
+        return self.connector.get_available_time_frames()
+
+    def get_time_frames(self, importer):
+        return self.connector.get_time_frames(importer)
 
     def get_current_future_candles(self):
         return self.connector.current_future_candles
