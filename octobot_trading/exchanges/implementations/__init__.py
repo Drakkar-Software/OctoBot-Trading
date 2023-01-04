@@ -14,60 +14,21 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
-    CryptofeedWebSocketExchange,
-)
-from octobot_trading.exchanges.implementations import spot_exchange_simulator
-from octobot_trading.exchanges.implementations.spot_exchange_simulator import (
-    SpotExchangeSimulator,
-)
-from octobot_trading.exchanges.implementations import future_exchange_simulator
-from octobot_trading.exchanges.implementations.future_exchange_simulator import (
-    FutureExchangeSimulator,
-)
-from octobot_trading.exchanges.implementations import future_ccxt_exchange
-from octobot_trading.exchanges.implementations.future_ccxt_exchange import (
-    FutureCCXTExchange,
-)
-from octobot_trading.exchanges.implementations import margin_exchange_simulator
-from octobot_trading.exchanges.implementations.margin_exchange_simulator import (
-    MarginExchangeSimulator,
-)
-from octobot_trading.exchanges.implementations import margin_ccxt_exchange
-from octobot_trading.exchanges.implementations.margin_ccxt_exchange import (
-    MarginCCXTExchange,
-)
-from octobot_trading.exchanges.implementations import spot_ccxt_exchange
-from octobot_trading.exchanges.implementations.spot_ccxt_exchange import (
-    SpotCCXTExchange,
-)
 from octobot_trading.exchanges.implementations import ccxt_websocket_exchange
 from octobot_trading.exchanges.implementations.ccxt_websocket_exchange import (
     CCXTWebSocketExchange,
-)
-from octobot_trading.exchanges.implementations import default_rest_ccxt_exchange
-from octobot_trading.exchanges.implementations.default_rest_ccxt_exchange import (
-    DefaultRestCCXTExchange,
 )
 from octobot_trading.exchanges.implementations import cryptofeed_websocket_exchange
 from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
     CryptofeedWebSocketExchange,
 )
-from octobot_trading.exchanges.implementations import rest_exchange
-from octobot_trading.exchanges.implementations.rest_exchange import (
-    RestExchange,
+from octobot_trading.exchanges.implementations import exchange_simulator
+from octobot_trading.exchanges.implementations.exchange_simulator import (
+    ExchangeSimulator,
 )
 
 __all__ = [
-    "SpotExchangeSimulator",
-    "FutureExchangeSimulator",
-    "MarginExchangeSimulator",
-    "FutureCCXTExchange",
-    "MarginCCXTExchange",
-    "SpotCCXTExchange",
     "CCXTWebSocketExchange",
-    "DefaultRestCCXTExchange",
     "CryptofeedWebSocketExchange",
-    "RestExchange",
+    "ExchangeSimulator",
 ]

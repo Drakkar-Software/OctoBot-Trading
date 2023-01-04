@@ -14,39 +14,33 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.connectors import exchange_simulator
-from octobot_trading.exchanges.connectors.exchange_simulator import (
-    ExchangeSimulator,
-)
-from octobot_trading.exchanges.connectors import ccxt_exchange
-from octobot_trading.exchanges.connectors.ccxt_exchange import (
-    CCXTExchange,
-)
 from octobot_trading.exchanges.connectors import abstract_websocket_connector
 from octobot_trading.exchanges.connectors.abstract_websocket_connector import (
     AbstractWebsocketConnector,
 )
-from octobot_trading.exchanges.connectors import ccxt_websocket_connector
-from octobot_trading.exchanges.connectors.ccxt_websocket_connector import (
-    CCXTWebsocketConnector,
-)
-from octobot_trading.exchanges.connectors import cryptofeed_websocket_connector
-from octobot_trading.exchanges.connectors.cryptofeed_websocket_connector import (
-    CryptofeedWebsocketConnector,
-)
-
 from octobot_trading.exchanges.connectors import ccxt
 from octobot_trading.exchanges.connectors.ccxt import (
     CCXTAdapter,
     CCXTConnector,
+    CCXTWebsocketConnector,
+)
+
+from octobot_trading.exchanges.connectors import cryptofeed
+from octobot_trading.exchanges.connectors.cryptofeed import (
+    CryptofeedWebsocketConnector,
+)
+
+from octobot_trading.exchanges.connectors import simulator
+from octobot_trading.exchanges.connectors.simulator import (
+    ExchangeSimulatorConnector,
 )
 
 __all__ = [
-    "ExchangeSimulator",
-    "CCXTExchange",
     "AbstractWebsocketConnector",
-    "CCXTWebsocketConnector",
     "CryptofeedWebsocketConnector",
     "CCXTAdapter",
     "CCXTConnector",
+    "CCXTWebsocketConnector",
+    "CryptofeedWebsocketConnector",
+    "ExchangeSimulatorConnector",
 ]

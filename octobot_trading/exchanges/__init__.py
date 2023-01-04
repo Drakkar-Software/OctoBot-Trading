@@ -58,9 +58,6 @@ from octobot_trading.exchanges.exchange_factory import (
 from octobot_trading.exchanges.util import (
     ExchangeMarketStatusFixer,
     is_ms_valid,
-    get_margin_exchange_class,
-    get_future_exchange_class,
-    get_spot_exchange_class,
     get_rest_exchange_class,
     get_order_side,
     log_time_sync_error,
@@ -94,23 +91,14 @@ from octobot_trading.exchanges.traders import (
 )
 from octobot_trading.exchanges import types
 from octobot_trading.exchanges.types import (
-    FutureExchange,
     WebSocketExchange,
-    MarginExchange,
-    SpotExchange,
+    RestExchange,
 )
 from octobot_trading.exchanges import implementations
 from octobot_trading.exchanges.implementations import (
     CCXTWebSocketExchange,
-    DefaultRestCCXTExchange,
-    SpotExchangeSimulator,
-    SpotCCXTExchange,
-    FutureExchangeSimulator,
-    FutureCCXTExchange,
-    MarginExchangeSimulator,
-    MarginCCXTExchange,
+    ExchangeSimulator,
     CryptofeedWebSocketExchange,
-    RestExchange,
 )
 from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.exchange_builder import (
@@ -119,8 +107,7 @@ from octobot_trading.exchanges.exchange_builder import (
 )
 from octobot_trading.exchanges import connectors
 from octobot_trading.exchanges.connectors import (
-    ExchangeSimulator,
-    CCXTExchange,
+    ExchangeSimulatorConnector,
     CCXTWebsocketConnector,
     AbstractWebsocketConnector,
     CryptofeedWebsocketConnector,
@@ -141,9 +128,6 @@ __all__ = [
     "init_simulated_exchange",
     "ExchangeConfiguration",
     "Exchanges",
-    "get_margin_exchange_class",
-    "get_future_exchange_class",
-    "get_spot_exchange_class",
     "get_rest_exchange_class",
     "get_order_side",
     "log_time_sync_error",
@@ -165,23 +149,12 @@ __all__ = [
     "TraderSimulator",
     "Trader",
     "CCXTWebSocketExchange",
-    "DefaultRestCCXTExchange",
     "CryptofeedWebSocketExchange",
-    "RestExchange",
-    "SpotExchangeSimulator",
-    "SpotCCXTExchange",
-    "FutureExchangeSimulator",
-    "FutureCCXTExchange",
-    "MarginExchangeSimulator",
-    "MarginCCXTExchange",
     "ExchangeSimulator",
-    "CCXTExchange",
     "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
-    "FutureExchange",
-    "MarginExchange",
-    "SpotExchange",
     "WebSocketExchange",
+    "RestExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
     "AbstractWebsocketExchange",
