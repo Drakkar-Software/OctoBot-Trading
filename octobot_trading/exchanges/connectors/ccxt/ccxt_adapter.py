@@ -143,7 +143,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                               self.connector.get_exchange_current_time()),
                 enums.ExchangeConstantsPositionColumns.SIDE.value: position_side,
                 enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
-                    fixed.get(enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
+                    fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
                 enums.ExchangeConstantsPositionColumns.QUANTITY.value:
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)}"),

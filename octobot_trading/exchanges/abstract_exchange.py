@@ -521,34 +521,6 @@ class AbstractExchange(util.Initializable):
         raise NotImplementedError("parse_account is not implemented")
 
     """
-    Cleaners
-    """
-
-    def clean_recent_trade(self, recent_trade):
-        """
-        Clean the specified recent trade list
-        :param recent_trade: the recent trade list
-        :return: the cleaned recent trade list
-        """
-        raise NotImplementedError("clean_recent_trade is not implemented")
-
-    def clean_trade(self, trade):
-        """
-        Clean the specified trade dict
-        :param trade: the trade dict
-        :return: the cleaned trade dict
-        """
-        raise NotImplementedError("clean_trade is not implemented")
-
-    def clean_order(self, order):
-        """
-        Clean the specified order dict
-        :param order: the order dict
-        :return: the cleaned order dict
-        """
-        raise NotImplementedError("clean_order is not implemented")
-
-    """
     Uniformization
     """
 

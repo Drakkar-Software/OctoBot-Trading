@@ -20,7 +20,7 @@ import ccxt.async_support
 
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.enums as enums
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -28,20 +28,20 @@ pytestmark = pytest.mark.asyncio
 
 @pytest_asyncio.fixture
 async def basic_exchange_wrapper():
-    async with exchanges.temporary_exchange_wrapper("binanceus", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
+    async with exchanges.temporary_exchange_wrapper("binanceus", ccxt_enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
         return wrapper
 
 
 async def test_constructor(basic_exchange_wrapper):
     assert isinstance(basic_exchange_wrapper.exchange, ccxt.async_support.binanceus)
-    async with exchanges.temporary_exchange_wrapper("okx", enums.ExchangeWrapperLibs.CCXT) as wrapper:
+    async with exchanges.temporary_exchange_wrapper("okx", ccxt_enums.ExchangeWrapperLibs.CCXT) as wrapper:
         assert isinstance(wrapper.exchange, ccxt.okx)
 
 
 async def test_temporary_exchange_wrapper():
     with mock.patch.object(ccxt.async_support.okx, "close", mock.AsyncMock()) as close_mock:
         with pytest.raises(ZeroDivisionError):
-            async with exchanges.temporary_exchange_wrapper("okx", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
+            async with exchanges.temporary_exchange_wrapper("okx", ccxt_enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
                 assert isinstance(wrapper.exchange, ccxt.async_support.okx)
                 close_mock.assert_not_called()
                 1/0
