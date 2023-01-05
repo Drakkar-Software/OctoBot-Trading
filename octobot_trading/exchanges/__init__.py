@@ -13,6 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges import adapters
+from octobot_trading.exchanges.adapters import (
+    AbstractAdapter,
+)
 from octobot_trading.exchanges import exchanges
 from octobot_trading.exchanges.exchanges import (
     ExchangeConfiguration,
@@ -107,15 +111,17 @@ from octobot_trading.exchanges.exchange_builder import (
 )
 from octobot_trading.exchanges import connectors
 from octobot_trading.exchanges.connectors import (
-    ExchangeSimulatorConnector,
-    CCXTWebsocketConnector,
     AbstractWebsocketConnector,
     CryptofeedWebsocketConnector,
+    CCXTWebsocketConnector,
     CCXTConnector,
     CCXTAdapter,
+    ExchangeSimulatorConnector,
+    ExchangeSimulatorAdapter,
 )
 
 __all__ = [
+    "AbstractAdapter",
     "ExchangeConfig",
     "BacktestingExchangeConfig",
     "ExchangeManager",
@@ -167,4 +173,6 @@ __all__ = [
     "supports_websocket",
     "CCXTConnector",
     "CCXTAdapter",
+    "ExchangeSimulatorConnector",
+    "ExchangeSimulatorAdapter",
 ]

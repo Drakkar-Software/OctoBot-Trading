@@ -14,30 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.implementations cimport spot_exchange_simulator
-from octobot_trading.exchanges.implementations.spot_exchange_simulator cimport (
-    SpotExchangeSimulator,
-)
-from octobot_trading.exchanges.implementations cimport future_exchange_simulator
-from octobot_trading.exchanges.implementations.future_exchange_simulator cimport (
-    FutureExchangeSimulator,
-)
-from octobot_trading.exchanges.implementations cimport future_ccxt_exchange
-from octobot_trading.exchanges.implementations.future_ccxt_exchange cimport (
-    FutureCCXTExchange,
-)
-from octobot_trading.exchanges.implementations cimport margin_exchange_simulator
-from octobot_trading.exchanges.implementations.margin_exchange_simulator cimport (
-    MarginExchangeSimulator,
-)
-from octobot_trading.exchanges.implementations cimport margin_ccxt_exchange
-from octobot_trading.exchanges.implementations.margin_ccxt_exchange cimport (
-    MarginCCXTExchange,
-)
-from octobot_trading.exchanges.implementations cimport spot_ccxt_exchange
-from octobot_trading.exchanges.implementations.spot_ccxt_exchange cimport (
-    SpotCCXTExchange,
-)
 from octobot_trading.exchanges.implementations cimport ccxt_websocket_exchange
 from octobot_trading.exchanges.implementations.ccxt_websocket_exchange cimport (
     CCXTWebSocketExchange,
@@ -46,14 +22,13 @@ from octobot_trading.exchanges.implementations cimport cryptofeed_websocket_exch
 from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange cimport (
     CryptofeedWebSocketExchange,
 )
+from octobot_trading.exchanges.implementations cimport exchange_simulator
+from octobot_trading.exchanges.implementations.exchange_simulator cimport (
+    ExchangeSimulator,
+)
 
 __all__ = [
-    "SpotExchangeSimulator",
-    "FutureExchangeSimulator",
-    "MarginExchangeSimulator",
-    "FutureCCXTExchange",
-    "MarginCCXTExchange",
-    "SpotCCXTExchange",
     "CCXTWebSocketExchange",
     "CryptofeedWebSocketExchange",
+    "ExchangeSimulator",
 ]

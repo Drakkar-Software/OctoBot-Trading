@@ -15,9 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cpdef object get_margin_exchange_class(str exchange_name, object tentacles_setup_config)
-cpdef object get_future_exchange_class(str exchange_name, object tentacles_setup_config)
-cpdef object get_spot_exchange_class(str exchange_name, object tentacles_setup_config)
+cpdef object get_rest_exchange_class(str exchange_name, object tentacles_setup_config)
 cpdef str get_order_side(object order_type)
 cpdef void log_time_sync_error(object logger, str exchange_name, object error, str details)
 cpdef str get_partners_explanation_message()

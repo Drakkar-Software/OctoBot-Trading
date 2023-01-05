@@ -607,7 +607,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return await self.connector.set_symbol_partial_take_profit_stop_loss(symbol=symbol, inverse=inverse,
                                                                              tp_sl_mode=tp_sl_mode)
 
-    def supports_trading_type(self, symbol, trading_type: enums.FutureContractType) -> bool:
+    def supports_trading_type(self, symbol, trading_type: enums.FutureContractType):
         return self.connector.supports_trading_type(symbol, trading_type)
 
     def is_linear_symbol(self, symbol):
