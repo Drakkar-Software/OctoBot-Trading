@@ -42,7 +42,7 @@ def get_exchange_manager_from_exchange_name_and_id(exchange_name: str, exchange_
     return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
 
 
-async def get_exchange_available_time_frames(
+async def get_ccxt_exchange_available_time_frames(
         exchange_name: str,
         exchange_lib: octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs =
         octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs.CCXT
