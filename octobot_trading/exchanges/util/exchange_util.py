@@ -213,8 +213,9 @@ def get_default_exchange_type(exchange_name):
 
 
 def get_supported_exchange_types(exchange_name):
-    if exchange_class := get_exchange_class_from_name(exchanges_types.RestExchange, exchange_name, None, False,
-                                                      strict_name_matching=True):
-        return exchange_class.get_supported_exchange_types()
-    # default
-    return [enums.ExchangeTypes.SPOT]
+    exchange_class = get_exchange_class_from_name(exchanges_types.RestExchange, exchange_name, None, False,
+                                                  strict_name_matching=True)
+    if exchange_class is None:
+        # default
+        return [enums.ExchangeTypes.SPOT]
+    return exchange_class.get_supported_exchange_types()

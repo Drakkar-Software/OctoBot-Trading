@@ -66,11 +66,6 @@ cdef class AbstractExchange(util.Initializable):
     cpdef object parse_side(self, str side)
     cpdef object parse_account(self, str account)
 
-    # cleaners
-    cpdef dict clean_recent_trade(self, dict recent_trade)
-    cpdef dict clean_trade(self, dict trade)
-    cpdef dict clean_order(self, dict order)
-
     # uniformization
     cpdef object get_exchange_current_time(self)
     cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)

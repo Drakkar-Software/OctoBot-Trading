@@ -21,7 +21,6 @@ import logging
 import ccxt.async_support as ccxt
 import typing
 
-import octobot_commons.constants
 import octobot_commons.enums
 import octobot_commons.symbols as commons_symbols
 
@@ -52,9 +51,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         super().__init__(config, exchange_manager)
         self.client = None
         self.exchange_type = None
+        self.adapter = self.get_adapter_class(adapter_class)(self)
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
-        self.adapter = self.get_adapter_class(adapter_class)(self)
 
         self.additional_config = additional_config
         self.headers = {}

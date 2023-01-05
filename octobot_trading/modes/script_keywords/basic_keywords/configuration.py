@@ -49,9 +49,6 @@ async def set_leverage(ctx, leverage):
             ctx.logger.debug(str(e))
         except NotImplementedError as e:
             ctx.logger.exception(e, True, str(e))
-        except AttributeError:
-            # TODO remove this except when bybit tentacle is up
-            ctx.logger.warning("TODO: rebase tentacles when bybit exchange is up")
         except Exception as e:
             ctx.logger.exception(e, True, str(e))
 

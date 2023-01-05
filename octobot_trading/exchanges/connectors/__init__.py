@@ -42,7 +42,6 @@ __all__ = [
     "CCXTAdapter",
     "CCXTConnector",
     "CCXTWebsocketConnector",
-    "CryptofeedWebsocketConnector",
     "ExchangeSimulatorAdapter",
     "ExchangeSimulatorConnector",
 ]

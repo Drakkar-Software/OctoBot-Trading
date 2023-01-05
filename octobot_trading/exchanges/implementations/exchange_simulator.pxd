@@ -15,28 +15,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_backtesting.backtesting as backtesting
-cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
+cimport octobot_trading.exchanges.types as exchanges_types
 
-cdef class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
+cdef class ExchangeSimulator(exchanges_types.RestExchange):
     cdef public backtesting.Backtesting backtesting
-    cdef public object adapter
 
     cdef public list exchange_importers
 
-    cdef public dict current_future_candles
-
-    cdef public bint is_authenticated
-
-    cpdef object get_adapter_class(self, object adapter_class)
-    cpdef str get_pair_cryptocurrency(self, str pair)
-    cpdef list get_available_time_frames(self)
     cpdef list get_backtesting_data_files(self)
-    cpdef list get_time_frames(self, object importer)
-
-    cdef void _read_fees_from_config(self, dict result_fees)
-
-# Should be cythonized with cython 3.0
-# cpdef set handles_real_data_for_updater(str channel_type, list available_data_types)
-
-# Should be cythonized with cython 3.0
-# cdef bint _are_required_data_available(str channel_type, list available_data_types)
