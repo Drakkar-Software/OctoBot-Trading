@@ -45,7 +45,7 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(ccxt_connector):
             self.symbols = None
             self.timeframes = None
 
-        async def load_markets(self):
+        async def load_markets(self, reload=False):
             pass
 
         def setSandboxMode(self, is_sandboxed):
@@ -64,7 +64,7 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector)
             self.symbols = []
             self.timeframes = []
 
-        async def load_markets(self):
+        async def load_markets(self, reload=False):
             pass
 
         def setSandboxMode(self, is_sandboxed):
@@ -93,7 +93,7 @@ async def test_initialize_impl(ccxt_connector):
                 "2h"
             ]
 
-        async def load_markets(self):
+        async def load_markets(self, reload=False):
             pass
 
         def setSandboxMode(self, is_sandboxed):
