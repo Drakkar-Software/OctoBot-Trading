@@ -27,10 +27,8 @@ from octobot_commons import number_util
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.util as exchanges_util
-import octobot_trading.exchanges.connectors as exchange_connectors
-import octobot_trading.personal_data as personal_data
+import octobot_trading.exchanges.connectors.ccxt.ccxt_connector as ccxt_connector
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data.contracts as contracts
@@ -58,7 +56,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     FUNDING_WITH_MARK_PRICE = False
     FUNDING_IN_TICKER = False
 
-    DEFAULT_CONNECTOR_CLASS = exchange_connectors.CCXTConnector
+    DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
     def __init__(self, config, exchange_manager, connector_class=None):
         super().__init__(config, exchange_manager)
@@ -577,7 +575,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_maintenance_margin_rate is not implemented")
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int):
+    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs):
         """
         Set the symbol leverage
         :param symbol: the symbol

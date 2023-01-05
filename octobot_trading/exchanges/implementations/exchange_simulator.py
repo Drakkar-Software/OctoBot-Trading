@@ -45,7 +45,7 @@ class ExchangeSimulator(exchanges_types.RestExchange):
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
-        return exchange_connectors.ExchangeSimulator.is_supporting_exchange(exchange_candidate_name)
+        return exchange_connectors.ExchangeSimulatorConnector.is_supporting_exchange(exchange_candidate_name)
 
     @classmethod
     def is_simulated_exchange(cls) -> bool:
@@ -96,7 +96,7 @@ class ExchangeSimulator(exchanges_types.RestExchange):
     async def get_position_mode(self, symbol: str, **kwargs: dict):
         return constants.DEFAULT_SYMBOL_POSITION_MODE
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int):
+    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs):
         pass  # let trader update the contract
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):

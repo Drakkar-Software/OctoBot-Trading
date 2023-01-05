@@ -160,73 +160,6 @@ class PositionMode(enum.Enum):
     ONE_WAY = "one_way_mode"
 
 
-class ExchangeConstantsCCXTColumns(enum.Enum):  # todo del
-    TIMESTAMP = "timestamp"
-    DATETIME = "datetime"
-
-
-class ExchangePositionCCXTColumns(enum.Enum):  # todo del
-    CONTRACTS = "contracts"
-    CONTRACT_SIZE = "contractSize"
-    MARGIN_TYPE = "marginType"
-    MARGIN_MODE = "marginMode"
-    LEVERAGE = "leverage"
-    SYMBOL = "symbol"
-    COLLATERAL = "collateral"
-    INITIAL_MARGIN = "initialMargin"
-    INITIAL_MARGIN_PERCENTAGE = "initialMarginPercentage"
-    MAINTENANCE_MARGIN = "maintenanceMargin"
-    MAINTENANCE_MARGIN_PERCENTAGE = "maintenanceMarginPercentage"
-    NOTIONAL = "notional"
-    MARGIN_RATIO = "marginRatio"
-    UNREALISED_PNL = "unrealizedPnl"
-    REALISED_PNL = "realizedPnl"
-    LIQUIDATION_PRICE = "liquidationPrice"
-    MARK_PRICE = "markPrice"
-    ENTRY_PRICE = "entryPrice"
-    TIMESTAMP = "timestamp"
-    DATETIME = "datetime"
-    PERCENTAGE = "percentage"
-    SIDE = "side"
-    INFO = "info"
-
-
-class ExchangeFundingCCXTColumns(enum.Enum):  # todo del
-    SYMBOL = "symbol"
-    LAST_FUNDING_TIME = "lastFundingTime"
-    FUNDING_RATE = "fundingRate"
-    NEXT_FUNDING_TIME = "nextFundingTime"
-    PREDICTED_FUNDING_RATE = "predictedFundingRate"
-
-
-class ExchangeOrderCCXTColumns(enum.Enum):  # todo del
-    INFO = "info"
-    ID = "id"
-    TIMESTAMP = "timestamp"
-    DATETIME = 'datetime'
-    LAST_TRADE_TIMESTAMP = "lastTradeTimestamp"
-    SYMBOL = "symbol"
-    QUANTITY_CURRENCY = "quantityCurrency"
-    TYPE = "type"
-    SIDE = "side"
-    PRICE = "price"
-    AMOUNT = "amount"
-    COST = "cost"
-    AVERAGE = "average"
-    FILLED = "filled"
-    REMAINING = "remaining"
-    STATUS = "status"
-    FEE = "fee"
-    TRADES = "trades"
-    MAKER = "maker"
-    TAKER = "taker"
-    ORDER = "order"
-    TAKER_OR_MAKER = "takerOrMaker"
-    REDUCE_ONLY = "reduceOnly"
-    STOP_PRICE = "stopPrice"
-    TRIGGER_ABOVE = "triggerAbove"
-    TAG = "tag"
-
 class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"
     LAST_FUNDING_TIME = "last_funding_time"
@@ -510,11 +443,6 @@ class FutureContractType(enum.Enum):
 class SubAccountColumns(enum.Enum):
     ID = "id"
     NAME = "name"
-
-
-class ExchangeWrapperLibs(enum.Enum):  # todo del
-    ASYNC_CCXT = "async_ccxt"
-    CCXT = "ccxt"
 
 
 class ExchangeTypes(enum.Enum):

@@ -19,6 +19,7 @@ import trading_backend
 
 import octobot_trading.constants
 import octobot_trading.enums
+import octobot_trading.exchanges.connectors.ccxt.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
 
@@ -43,12 +44,13 @@ def get_exchange_manager_from_exchange_name_and_id(exchange_name: str, exchange_
 
 async def get_exchange_available_time_frames(
         exchange_name: str,
-        exchange_lib: octobot_trading.enums.ExchangeWrapperLibs = octobot_trading.enums.ExchangeWrapperLibs.CCXT
+        exchange_lib: octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs =
+        octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs.CCXT
 ) -> list:
     """
     When using CCXT, prefer using the sync lib since no request is required to get time frames
     :param exchange_name: name of the exchange
-    :param exchange_lib: octobot_trading.enums.ExchangeWrapperLibs to use
+    :param exchange_lib: octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs to use
     :return: the list of time frames
     """
     try:

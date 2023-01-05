@@ -17,12 +17,12 @@ import contextlib
 import ccxt.async_support
 import ccxt
 
-import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 
 
 class BasicExchangeWrapper:
-    def __init__(self, exchange_class_string: str, exchange_lib: enums.ExchangeWrapperLibs):
+    def __init__(self, exchange_class_string: str, exchange_lib: ccxt_enums.ExchangeWrapperLibs):
         """
         Always call self.stop() when done with an async ccxt exchange wrapper
         :param exchange_class_string: name of the exchange to create
@@ -35,17 +35,17 @@ class BasicExchangeWrapper:
         self._exchange_factory()
 
     async def get_available_time_frames(self):
-        if self.exchange_lib in (enums.ExchangeWrapperLibs.CCXT, enums.ExchangeWrapperLibs.ASYNC_CCXT):
+        if self.exchange_lib in (ccxt_enums.ExchangeWrapperLibs.CCXT, ccxt_enums.ExchangeWrapperLibs.ASYNC_CCXT):
             return self.exchange.timeframes
 
     async def stop(self):
-        if self.exchange_lib is enums.ExchangeWrapperLibs.ASYNC_CCXT:
+        if self.exchange_lib is ccxt_enums.ExchangeWrapperLibs.ASYNC_CCXT:
             await self.exchange.close()
 
     def _exchange_factory(self):
-        if self.exchange_lib is enums.ExchangeWrapperLibs.ASYNC_CCXT:
+        if self.exchange_lib is ccxt_enums.ExchangeWrapperLibs.ASYNC_CCXT:
             self.exchange = getattr(ccxt.async_support, self.exchange_class_string)()
-        elif self.exchange_lib is enums.ExchangeWrapperLibs.CCXT:
+        elif self.exchange_lib is ccxt_enums.ExchangeWrapperLibs.CCXT:
             self.exchange = getattr(ccxt, self.exchange_class_string)()
         else:
             raise NotImplementedError(
@@ -54,7 +54,7 @@ class BasicExchangeWrapper:
 
 
 @contextlib.asynccontextmanager
-async def temporary_exchange_wrapper(exchange_class_string: str, exchange_lib: enums.ExchangeWrapperLibs):
+async def temporary_exchange_wrapper(exchange_class_string: str, exchange_lib: ccxt_enums.ExchangeWrapperLibs):
     """
     Automatically call to on exchange wrapper
     :param exchange_class_string: name of the exchange to create
