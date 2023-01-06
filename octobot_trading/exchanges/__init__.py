@@ -103,6 +103,7 @@ from octobot_trading.exchanges.implementations import (
     CCXTWebSocketExchange,
     ExchangeSimulator,
     CryptofeedWebSocketExchange,
+    DefaultRestExchange,
 )
 from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.exchange_builder import (
@@ -156,6 +157,7 @@ __all__ = [
     "Trader",
     "CCXTWebSocketExchange",
     "CryptofeedWebSocketExchange",
+    "DefaultRestExchange",
     "ExchangeSimulator",
     "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",

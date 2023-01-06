@@ -25,12 +25,12 @@ import octobot_tentacles_manager.api as api
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.implementations as exchanges_implementations
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
 
 def get_rest_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(exchanges_types.RestExchange, exchange_name,
-                                                    tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges_types.RestExchange, exchange_name, tentacles_setup_config)
 
 
 def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
@@ -43,7 +43,12 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
 
     logging.get_logger("ExchangeUtil").debug(f"No specific exchange implementation for {exchange_name} found, "
                                              f"using a default one.")
-    return exchanges_types.RestExchange
+    children_classes = tentacles_management.get_all_classes_from_parent(exchanges_implementations.DefaultRestExchange)
+    if children_classes:
+        # last one is the most advanced one
+        return children_classes[-1]
+    # fallback to DefaultRestExchange
+    return exchanges_implementations.DefaultRestExchange
 
 
 def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles_setup_config, enable_default,
