@@ -22,6 +22,10 @@ from octobot_trading.exchanges.implementations import cryptofeed_websocket_excha
 from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
     CryptofeedWebSocketExchange,
 )
+from octobot_trading.exchanges.implementations import default_rest_exchange
+from octobot_trading.exchanges.implementations.default_rest_exchange import (
+    DefaultRestExchange,
+)
 from octobot_trading.exchanges.implementations import exchange_simulator
 from octobot_trading.exchanges.implementations.exchange_simulator import (
     ExchangeSimulator,
@@ -30,5 +34,6 @@ from octobot_trading.exchanges.implementations.exchange_simulator import (
 __all__ = [
     "CCXTWebSocketExchange",
     "CryptofeedWebSocketExchange",
+    "DefaultRestExchange",
     "ExchangeSimulator",
 ]

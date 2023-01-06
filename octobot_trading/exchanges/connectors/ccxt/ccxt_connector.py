@@ -90,6 +90,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def get_adapter_class(self, adapter_class):
         return adapter_class or ccxt_adapter.CCXTAdapter
 
+    @classmethod
+    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+        # no user input in connector
+        pass
+
     async def load_symbol_markets(self, reload=False):
         await self.client.load_markets(reload=reload)
 

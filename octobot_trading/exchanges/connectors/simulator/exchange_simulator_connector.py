@@ -65,6 +65,11 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
 
     @classmethod
+    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+        # no user input in connector
+        pass
+
+    @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return True
 

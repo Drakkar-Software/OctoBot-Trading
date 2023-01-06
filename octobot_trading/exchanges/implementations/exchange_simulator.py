@@ -14,12 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.constants as constants
-import octobot_trading.exchanges.connectors as exchange_connectors
-import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.connectors.simulator.exchange_simulator_connector as exchange_simulator_connector
+import octobot_trading.exchanges.types.rest_exchange as rest_exchange
 
 
-class ExchangeSimulator(exchanges_types.RestExchange):
-    DEFAULT_CONNECTOR_CLASS = exchange_connectors.ExchangeSimulatorConnector
+class ExchangeSimulator(rest_exchange.RestExchange):
+    DEFAULT_CONNECTOR_CLASS = exchange_simulator_connector.ExchangeSimulatorConnector
 
     def __init__(self, config, exchange_manager, backtesting):
         self.backtesting = backtesting
@@ -45,11 +45,11 @@ class ExchangeSimulator(exchanges_types.RestExchange):
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
-        return exchange_connectors.ExchangeSimulatorConnector.is_supporting_exchange(exchange_candidate_name)
+        return exchange_simulator_connector.ExchangeSimulatorConnector.is_supporting_exchange(exchange_candidate_name)
 
     @classmethod
     def is_simulated_exchange(cls) -> bool:
-        return exchange_connectors.ExchangeSimulatorConnector.is_simulated_exchange()
+        return exchange_simulator_connector.ExchangeSimulatorConnector.is_simulated_exchange()
 
     async def create_backtesting_exchange_producers(self):
         return await self.connector.create_backtesting_exchange_producers()

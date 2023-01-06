@@ -21,7 +21,6 @@ from tests import event_loop
 import octobot_commons.constants as commons_constants
 import octobot_commons.configuration as commons_configuration
 import octobot_trading.exchanges as exchanges
-import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 
 pytestmark = pytest.mark.asyncio
 
@@ -30,8 +29,7 @@ pytestmark = pytest.mark.asyncio
 def tentacles_setup_config():
     setup_config = mock.Mock()
     setup_config.is_tentacle_activated = mock.Mock(return_value=True)
-    with mock.patch.object(octobot_tentacles_manager_api, "get_tentacle_config", mock.Mock(return_value={})):
-        yield setup_config
+    return setup_config
 
 
 @pytest.fixture()
