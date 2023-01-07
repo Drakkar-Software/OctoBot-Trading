@@ -14,10 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
-import async_channel.constants as constants
+import async_channel.constants as async_channel_constants
 
 import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 
 class TickerProducer(exchanges_channel.ExchangeChannelProducer):
@@ -26,7 +29,7 @@ class TickerProducer(exchanges_channel.ExchangeChannelProducer):
 
     async def perform(self, symbol, ticker):
         try:
-            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=async_channel_constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol):  #
                 if ticker:  # and price_ticker_is_initialized
                     self.channel.exchange_manager.get_symbol_data(symbol).handle_ticker_update(ticker)
@@ -49,6 +52,75 @@ class TickerProducer(exchanges_channel.ExchangeChannelProducer):
                 "ticker": ticker
             })
 
+    async def _on_ticker_push(self, symbol, ticker):
+        await self._push_mini_ticker(symbol, ticker)
+        if self.channel.exchange_manager.is_future:
+            await self._push_future_data(symbol, ticker)
+
+    async def _push_mini_ticker(self, pair, ticker):
+        """
+        Mini ticker
+        """
+        try:
+            await exchanges_channel.get_chan(
+                constants.MINI_TICKER_CHANNEL,
+                self.channel.exchange_manager.id
+            ).get_internal_producer().push(
+                pair,
+                {
+                    enums.ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value:
+                        ticker[enums.ExchangeConstantsTickersColumns.HIGH.value],
+                    enums.ExchangeConstantsMiniTickerColumns.LOW_PRICE.value:
+                        ticker[enums.ExchangeConstantsTickersColumns.LOW.value],
+                    enums.ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value:
+                        ticker[enums.ExchangeConstantsTickersColumns.OPEN.value],
+                    enums.ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value:
+                        ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value],
+                    enums.ExchangeConstantsMiniTickerColumns.VOLUME.value:
+                        ticker[enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value],
+                    enums.ExchangeConstantsMiniTickerColumns.TIMESTAMP.value:
+                        ticker[enums.ExchangeConstantsTickersColumns.TIMESTAMP.value]
+                }
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to parse mini ticker : {e}")
+
+    async def _push_future_data(self, symbol: str, ticker: dict):
+        if self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER:
+            await self._push_mark_price(symbol, ticker)
+
+        if self.channel.exchange_manager.exchange.FUNDING_IN_TICKER:
+            await self._push_funding_rate(symbol, ticker)
+
+    async def _push_mark_price(self, symbol: str, ticker: dict):
+        try:
+            ticker = self.channel.exchange_manager.exchange.parse_mark_price(ticker, from_ticker=True)
+            await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer().push(
+                symbol,
+                decimal.Decimal(str(ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])),
+                mark_price_source=enums.MarkPriceSources.TICKER_CLOSE_PRICE.value
+            )
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to update mark price from ticker : {e}")
+
+    async def _push_funding_rate(self, symbol: str, ticker: dict):
+        try:
+            ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
+            predicted_funding_rate = ticker.get(
+                enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN
+            )
+            await exchanges_channel.get_chan(constants.FUNDING_CHANNEL, self.channel.exchange_manager.id)\
+                .get_internal_producer().push(
+                    symbol,
+                    decimal.Decimal(str(ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
+                    decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
+                    ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
+                    ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value]
+            )
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to update funding rate from ticker : {e}")
+
 
 class TickerChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = TickerProducer
@@ -61,7 +133,7 @@ class MiniTickerProducer(exchanges_channel.ExchangeChannelProducer):
 
     async def perform(self, symbol, mini_ticker):
         try:
-            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=async_channel_constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol):
                 if mini_ticker:
                     self.channel.exchange_manager.get_symbol_data(symbol).handle_mini_ticker_update(mini_ticker)
