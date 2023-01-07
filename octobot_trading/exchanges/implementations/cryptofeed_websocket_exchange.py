@@ -29,7 +29,6 @@ class CryptofeedWebSocketExchange(exchanges_types.WebSocketExchange):
         return api.get_class_from_name_with_activated_required_tentacles(
             name=exchange_manager.exchange_name,
             tentacles_setup_config=exchange_manager.tentacles_setup_config,
-            with_class_method=cls.get_class_method_name_to_get_compatible_websocket(exchange_manager),
             parent_class=cryptofeed_websocket_connector.CryptofeedWebsocketConnector
         )
 

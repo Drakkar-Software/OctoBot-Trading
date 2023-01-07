@@ -35,6 +35,8 @@ class AbstractWebsocketExchange:
     # Used to ignore a feed when at least one of the corresponding feed is supported
     IGNORED_FEED_PAIRS = {}
 
+    SUPPORTS_LIVE_PAIR_ADDITION = False
+
     def __init__(self,
                  config: object,
                  exchange_manager: object):
@@ -113,8 +115,12 @@ class AbstractWebsocketExchange:
         raise NotImplementedError("subscribe is not implemented")
 
     @abc.abstractmethod
-    async def close_and_restart_sockets(self, debounce_duration=0):
-        raise NotImplementedError("close_and_restart_sockets not implemented")
+    def update_followed_pairs(self):
+        raise NotImplementedError("_updated_followed_pairs not implemented")
+
+    @abc.abstractmethod
+    async def _close_and_restart_sockets(self, debounce_duration=0):
+        raise NotImplementedError("_close_and_restart_sockets not implemented")
 
     @abc.abstractmethod
     async def stop_sockets(self):
@@ -127,18 +133,6 @@ class AbstractWebsocketExchange:
     @abc.abstractmethod
     async def do_auth(self):
         NotImplementedError("do_auth is not implemented")
-
-    @classmethod
-    def is_handling_spot(cls) -> bool:
-        return False
-
-    @classmethod
-    def is_handling_margin(cls) -> bool:
-        return False
-
-    @classmethod
-    def is_handling_future(cls) -> bool:
-        return False
 
     @classmethod
     def get_feeds(cls) -> dict:
@@ -166,9 +160,9 @@ class AbstractWebsocketExchange:
         ignored_feed_candidate_list = cls.IGNORED_FEED_PAIRS.get(feed, [])
         if not ignored_feed_candidate_list:
             return False
-        for feed_candidate in list(cls.EXCHANGE_FEEDS.keys()):
+        for feed_candidate, feed_value in cls.EXCHANGE_FEEDS.items():
             if feed_candidate in ignored_feed_candidate_list and \
-                    cls.is_feed_supported(cls.EXCHANGE_FEEDS[feed_candidate]):
+                    cls.is_feed_supported(feed_value):
                 return True
         return False
 
