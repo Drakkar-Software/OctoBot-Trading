@@ -21,6 +21,12 @@ class MissingFunds(Exception):
     """
 
 
+class MinimumOrderCostNotReachedError(Exception):
+    """
+    Raised upon placing an order with size less than minimum order size
+    """
+    
+    
 class MissingMinimalExchangeTradeVolume(Exception):
     """
     Raised when a new order is impossible to create due to exchange minimal funds restrictions

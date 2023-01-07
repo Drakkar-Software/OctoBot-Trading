@@ -704,7 +704,7 @@ def parse_order_type(raw_order):
                 parsed_order_type = _get_sell_and_buy_types(order_type)
         return side, parsed_order_type
     except (KeyError, ValueError):
-        return None, None
+        return side, enums.TraderOrderType.UNKNOWN
 
 
 def _infer_order_type_from_maker_or_taker(raw_order, side):
