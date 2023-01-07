@@ -81,7 +81,8 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Fail to initialize orders : {e}")
         finally:
-            self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
+            if self.channel is not None:
+                self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
 
     async def start(self) -> None:
         """
