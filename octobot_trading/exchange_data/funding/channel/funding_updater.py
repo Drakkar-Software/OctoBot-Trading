@@ -96,8 +96,8 @@ class FundingUpdater(funding_channel.FundingProducer):
                 predicted_funding_rate = \
                     funding.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN)
                 await self._push_funding(
-                    symbol=symbol,
-                    funding_rate=decimal.Decimal(funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value]),
+                    symbol,
+                    decimal.Decimal(funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value]),
                     predicted_funding_rate=decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
                     next_funding_time=next_funding_time,
                     last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
