@@ -16,7 +16,6 @@
 #  License along with this library.
 import contextlib
 import decimal
-import logging
 
 import ccxt.async_support as ccxt
 import typing
@@ -31,6 +30,7 @@ import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
+import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
@@ -60,7 +60,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.options = {}
         # add default options
         self.add_options(
-            self.get_ccxt_client_login_options()
+            ccxt_client_util.get_ccxt_client_login_options(self.exchange_manager)
         )
 
         self._create_exchange_type()
@@ -99,12 +99,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         await self.client.load_markets(reload=reload)
 
     def get_client_symbols(self):
-        return set(self.client.symbols) \
-            if hasattr(self.client, "symbols") and self.client.symbols is not None else set()
+        return ccxt_client_util.get_symbols(self.client)
 
     def get_client_time_frames(self):
-        return set(self.client.timeframes) \
-            if hasattr(self.client, "timeframes") and self.client.timeframes is not None else set()
+        return ccxt_client_util.get_time_frames(self.client)
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -116,35 +114,23 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         else:
             self.exchange_type = self.exchange_manager.exchange_class_string
 
-    def get_ccxt_client_login_options(self):
-        """
-        :return: ccxt client login option dict, can be overwritten to custom exchange login
-        """
-        if self.exchange_manager.is_future:
-            return {'defaultType': 'future'}
-        if self.exchange_manager.is_margin:
-            return {'defaultType': 'margin'}
-        return {'defaultType': 'spot'}
-
     def add_headers(self, headers_dict):
         """
         Add new headers to ccxt client
         :param headers_dict: the additional header keys and values as dict
         """
-        for header_key, header_value in headers_dict.items():
-            self.headers[header_key] = header_value
-            if self.client is not None:
-                self.client.headers[header_key] = header_value
+        self.headers.update(headers_dict)
+        if self.client is not None:
+            ccxt_client_util.add_headers(self.client, headers_dict)
 
     def add_options(self, options_dict):
         """
         Add new options to ccxt client
         :param options_dict: the additional option keys and values as dict
         """
-        for option_key, option_value in options_dict.items():
-            self.options[option_key] = option_value
-            if self.client is not None:
-                self.client.options[option_key] = option_value
+        self.options.update(options_dict)
+        if self.client is not None:
+            ccxt_client_util.add_options(self.client, options_dict)
 
     async def _ensure_auth(self):
         try:
@@ -157,66 +143,22 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.logger.debug(f"Error when checking exchange connection: {e}. This should not be an issue.")
 
     def _create_client(self):
-        """
-        Exchange instance creation
-        :return:
-        """
-        if not self.exchange_manager.exchange_only:
-            # avoid logging version on temporary exchange_only exchanges
-            self.logger.info(f"Creating {self.exchange_type.__name__} exchange with ccxt in version {ccxt.__version__}")
-        if self.exchange_manager.ignore_config or self.exchange_manager.check_config(self.name):
-            try:
-                key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.name)
-                if not(key and secret) and not self.exchange_manager.is_simulated:
-                    self.logger.warning(f"No exchange API key set for {self.exchange_manager.exchange_name}. "
-                                        f"Enter your account details to enable real trading on this exchange.")
-                if self._should_authenticate():
-                    self.client = self.exchange_type(self._get_client_config(key, secret, password))
-                    self.is_authenticated = True
-                    if self.exchange_manager.check_credentials:
-                        self.client.checkRequiredCredentials()
-                else:
-                    self.client = self.exchange_type(self._get_client_config())
-            except (ccxt.AuthenticationError, Exception) as e:
-                self._unauthenticated_exchange_fallback(e)
-        else:
-            self.client = self._get_unauthenticated_exchange()
-            self.logger.error("configuration issue: missing login information !")
-        self.client.logger.setLevel(logging.INFO)
-        self.use_http_proxy_if_necessary()
-
-    def use_http_proxy_if_necessary(self):
-        self.client.aiohttp_trust_env = constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
+        self.client, self.is_authenticated = ccxt_client_util.create_client(
+            self.exchange_type, self.name, self.exchange_manager, self.logger,
+            self.options, self.headers, self.additional_config,
+            self._should_authenticate(), self._unauthenticated_exchange_fallback
+        )
 
     def _should_authenticate(self):
         return not (self.exchange_manager.is_simulated or
                     self.exchange_manager.is_backtesting)
 
     def _unauthenticated_exchange_fallback(self, err):
-        self.is_authenticated = False
         self.handle_token_error(err)
-        self.client = self._get_unauthenticated_exchange()
-
-    def _get_unauthenticated_exchange(self):
-        return self.exchange_type(self._get_client_config())
-
-    def _get_client_config(self, api_key=None, secret=None, password=None):
-        config = {
-            'verbose': constants.ENABLE_CCXT_VERBOSE,
-            'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,
-            'timeout': constants.DEFAULT_REQUEST_TIMEOUT,
-            'options': self.options,
-            'headers': self.headers
-        }
-        if api_key is not None:
-            config['apiKey'] = api_key
-        if secret is not None:
-            config['secret'] = secret
-        if password is not None:
-            config['password'] = password
-        # apply self.additional_config
-        config.update(self.additional_config or {})
-        return config
+        self.client = ccxt_client_util.get_unauthenticated_exchange(
+            self.exchange_type,
+            self.options, self.headers, self.additional_config
+        )
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:
@@ -607,20 +549,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return None, None
 
     def get_exchange_pair(self, pair) -> str:
-        if pair in self.client.symbols:
-            try:
-                return self.client.market(pair)["id"]
-            except KeyError:
-                pass
-        raise ValueError(f'{pair} is not supported')
+        return ccxt_client_util.get_exchange_pair(self.client, pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
-        if pair in self.client.symbols:
-            try:
-                return self.client.market(pair)["base"]
-            except KeyError:
-                pass
-        raise ValueError(f'{pair} is not supported')
+        return ccxt_client_util.get_pair_cryptocurrency(self.client, pair)
 
     def get_default_balance(self):
         return self.client.account()
@@ -648,7 +580,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def set_sandbox_mode(self, is_sandboxed):
         try:
-            self.client.setSandboxMode(is_sandboxed)
+            ccxt_client_util.set_sandbox_mode(self.client, is_sandboxed)
         except ccxt.NotSupported as e:
             default_type = self.client.options.get('defaultType', None)
             additional_info = f" in type {default_type}" if default_type else ""

@@ -21,17 +21,14 @@ import octobot_tentacles_manager.api as api
 
 #TODO remove?
 class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
-    @staticmethod
-    def get_websocket_client(config, exchange_manager):
-        return CCXTWebSocketExchange(config, exchange_manager)
+    DEFAULT_CONNECTOR_CLASS = ccxt_websocket_connector.CCXTWebsocketConnector
 
     @classmethod
     def get_exchange_connector_class(cls, exchange_manager: object):
         return api.get_class_from_name_with_activated_required_tentacles(
             name=exchange_manager.exchange_name,
             tentacles_setup_config=exchange_manager.tentacles_setup_config,
-            with_class_method=cls.get_class_method_name_to_get_compatible_websocket(exchange_manager),
-            parent_class=ccxt_websocket_connector.CCXTWebsocketConnector
+            parent_class=cls.DEFAULT_CONNECTOR_CLASS
         )
 
     def create_feeds(self):

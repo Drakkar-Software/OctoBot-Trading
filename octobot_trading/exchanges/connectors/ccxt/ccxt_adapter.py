@@ -22,6 +22,7 @@ import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
+import octobot_commons.enums as common_enums
 
 
 class CCXTAdapter(adapters.AbstractAdapter):
@@ -42,7 +43,14 @@ class CCXTAdapter(adapters.AbstractAdapter):
 
     def fix_ohlcv(self, raw, **kwargs):
         fixed = super().fix_ohlcv(raw)
-        # CCXT standard ohlcv fixing logic
+        try:
+            for ohlcv in fixed:
+                ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] = \
+                    self.get_uniformized_timestamp(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value])
+                for index, value in enumerate(ohlcv):
+                    ohlcv[index] = float(value)
+        except KeyError as e:
+            self.logger.error(f"Fail to fix ohlcv ({e})")
         return fixed
 
     def parse_ohlcv(self, fixed, **kwargs):
