@@ -28,6 +28,7 @@ import octobot_trading.exchange_data as exchange_data
 class AbstractWebsocketExchange:
     __metaclass__ = abc.ABCMeta
 
+    REQUIRED_ACTIVATED_TENTACLES = []
     EXCHANGE_FEEDS = {}
 
     INIT_REQUIRING_EXCHANGE_FEEDS = set()
