@@ -1,3 +1,4 @@
+# pylint: disable=W0101
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -39,6 +40,7 @@ from octobot_trading.enums import WebsocketFeeds as Feeds
 class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
     SUPPORTS_LIVE_PAIR_ADDITION = True
+    FEED_INITIALIZATION_TIMEOUT = 15 * commons_constants.MINUTE_TO_SECONDS
 
     IGNORED_FEED_PAIRS = {
         # When ticker or future index is available : no need to calculate mark price from recent trades
@@ -79,6 +81,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     # Used as real time channels when self.throttled_ws_updates is 0
     # self.throttled_ws_updates is using trading_constants.THROTTLED_WS_UPDATES by default
     THROTTLED_CHANNELS = [
+        Feeds.TICKER,
         Feeds.TRADES,
         Feeds.L1_BOOK,
         Feeds.L2_BOOK,
@@ -178,7 +181,6 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         """
         Can't call self.client.close() because it uses loop operations
         """
-        pass
 
     def add_pairs(self, pairs, watching_only=False):
         """
@@ -463,7 +465,6 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         except KeyError:
             self.logger.error(f"Impossible to subscribe to {feed}: feed not supported")
             return
-        enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
         if feed in self.TIME_FRAME_PAIR_CHANNELS and time_frame is None:
             time_frame = self.min_timeframe.value
         kwargs = copy.copy(self._get_feed_default_kwargs())
@@ -485,20 +486,24 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             for symbol in symbols:
                 kwargs["symbol"] = symbol
                 # one task per symbol: ccxt_pro is not handling multi symbol generators
-                self._create_task_if_necessary(feed_callback, enable_throttling, feed_generator, **kwargs)
+                self._create_task_if_necessary(feed, feed_callback, feed_generator, **kwargs)
         else:
             # no symbol param
-            self._create_task_if_necessary(feed_callback, enable_throttling, feed_generator, **kwargs)
+            self._create_task_if_necessary(feed, feed_callback, feed_generator, **kwargs)
 
         symbols_str = f"for {', '.join(symbols)} " if symbols else ""
         time_frame_str = f"on {time_frame}" if time_frame else ""
         self.logger.debug(f"Subscribed to {feed.value} {symbols_str}{time_frame_str}")
 
-    async def _feed_task(self, callback, enable_throttling, generator_func, *g_args, **g_kwargs):
+    async def _feed_task(self, feed, callback, generator_func, *g_args, **g_kwargs):
+        if not await self._wait_for_initialization(feed, *g_args, **g_kwargs):
+            self.logger.error(f"Aborting {feed.value} feed connection with {g_kwargs}: "
+                              f"missing required initialization data")
+            return
+        enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
         while not self.should_stop:
             try:
                 update_data = await generator_func(*g_args, **g_kwargs)
-                self.logger.info(f"{len(update_data)} {callback.__name__} {g_kwargs} {update_data}")
                 if update_data:
                     await callback(update_data, **g_kwargs)
                 if enable_throttling:
@@ -517,13 +522,43 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
                 )
                 await asyncio.sleep(self.RECONNECT_DELAY)   # avoid spamming
 
-    def _create_task_if_necessary(self, feed_callback, enable_throttling, feed_generator, **kwargs):
+    def _create_task_if_necessary(self, feed, feed_callback, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
         if identifier not in self.feed_tasks:
-            self.logger.debug(f"Subscribing to {feed_generator.__name__} with {kwargs}")
+            self.logger.debug(f"Subscribing to {feed.value} with {kwargs}")
             self.feed_tasks[identifier] = asyncio.create_task(
-                self._feed_task(feed_callback, enable_throttling, feed_generator, **kwargs)
+                self._feed_task(feed, feed_callback, feed_generator, **kwargs)
             )
+
+    async def _wait_for_initialization(self, feed, *g_args, **g_kwargs):
+        if g_kwargs["symbol"] not in self.filtered_pairs:
+            # no need to wait for pairs not in self.filtered_pairs
+            return True
+        is_initialized_func = None
+        if feed is Feeds.CANDLE:
+            def candle_is_initialized_func():
+                try:
+                    return self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+                        g_kwargs["symbol"], allow_creation=False
+                    ).symbol_candles[commons_enums.TimeFrames(g_kwargs["timeframe"])].candles_initialized
+                except KeyError:
+                    return False
+
+            is_initialized_func = candle_is_initialized_func
+        if is_initialized_func is None:
+            return True
+        if is_initialized_func():
+            return True
+        self.logger.debug(f"Waiting for initialization before starting {feed.value} feed with {g_kwargs}")
+        t0 = time.time()
+        while not self.should_stop and time.time() - t0 < self.FEED_INITIALIZATION_TIMEOUT:
+            # add timeout
+            if is_initialized_func():
+                self.logger.debug(f"Starting {feed} feed with {g_kwargs}: initialization complete")
+                return True
+            # quickly update at first
+            await asyncio.sleep(0.1 if time.time() - t0 < self.FEED_INITIALIZATION_TIMEOUT / 10 else 1)
+        return is_initialized_func()
 
     def _get_feed_identifier(self, feed_generator, kwargs):
         return f"{feed_generator.__name__}{kwargs}"

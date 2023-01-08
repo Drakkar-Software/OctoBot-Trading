@@ -19,7 +19,6 @@ import concurrent.futures as futures
 import octobot_commons.thread_util as thread_util
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
-import octobot_trading.exchanges.connectors.abstract_websocket_connector as abstract_websocket_connector
 
 
 class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
