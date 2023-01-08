@@ -364,7 +364,8 @@ class Trader(util.Initializable):
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None,
                                  emit_trading_signals=False,
                                  wait_for_cancelling=True,
-                                 cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+                                 cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, 
+                                 since: int or float = -1, until: int or float = -1
                                  ) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
@@ -379,7 +380,7 @@ class Trader(util.Initializable):
         """
         all_cancelled = True
         cancelled_orders = []
-        for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
+        for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(since=since, until=until):
             if order.symbol == symbol and \
                     (side is None or order.side is side) and \
                     not order.is_cancelled() and \
