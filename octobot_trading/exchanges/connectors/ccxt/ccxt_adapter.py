@@ -27,7 +27,7 @@ import octobot_commons.enums as common_enums
 
 class CCXTAdapter(adapters.AbstractAdapter):
     def fix_order(self, raw, **kwargs):
-        fixed = super().fix_order(raw)
+        fixed = super().fix_order(raw, **kwargs)
         try:
             exchange_timestamp = fixed[ecoc.TIMESTAMP.value]
             fixed[ecoc.TIMESTAMP.value] = \
@@ -42,7 +42,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_ohlcv(self, raw, **kwargs):
-        fixed = super().fix_ohlcv(raw)
+        fixed = super().fix_ohlcv(raw, **kwargs)
         try:
             for ohlcv in fixed:
                 ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] = \
@@ -58,7 +58,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_ticker(self, raw, **kwargs):
-        fixed = super().fix_ticker(raw)
+        fixed = super().fix_ticker(raw, **kwargs)
         # CCXT standard ticker fixing logic
         return fixed
 
@@ -67,7 +67,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_balance(self, raw, **kwargs):
-        fixed = super().fix_balance(raw)
+        fixed = super().fix_balance(raw, **kwargs)
         # remove not currency specific keys
         return fixed
 
@@ -81,7 +81,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return personal_data.parse_decimal_portfolio(fixed)
 
     def fix_order_book(self, raw, **kwargs):
-        fixed = super().fix_order_book(raw)
+        fixed = super().fix_order_book(raw, **kwargs)
         # CCXT standard order_book fixing logic
         return fixed
 
@@ -90,7 +90,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_public_recent_trades(self, raw, **kwargs):
-        fixed = super().fix_public_recent_trades(raw)
+        fixed = super().fix_public_recent_trades(raw, **kwargs)
         # CCXT standard public_recent_trades fixing logic
         for recent_trade in fixed:
             try:
@@ -113,7 +113,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_trades(self, raw, **kwargs):
-        fixed = super().fix_trades(raw)
+        fixed = super().fix_trades(raw, **kwargs)
         # CCXT standard trades fixing logic
         for trade in fixed:
             try:
@@ -130,7 +130,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_position(self, raw, **kwargs):
-        fixed = super().fix_position(raw)
+        fixed = super().fix_position(raw, **kwargs)
         # CCXT standard position fixing logic
         return fixed
 
@@ -185,7 +185,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_funding_rate(self, raw, **kwargs):
-        fixed = super().fix_funding_rate(raw)
+        fixed = super().fix_funding_rate(raw, **kwargs)
         # CCXT standard funding_rate fixing logic
         return fixed
 
@@ -194,7 +194,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_funding_rate_history(self, raw, **kwargs):
-        fixed = super().fix_funding_rate_history(raw)
+        fixed = super().fix_funding_rate_history(raw, **kwargs)
         # CCXT standard funding_rate_history fixing logic
         return fixed
 
@@ -203,7 +203,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_mark_price(self, raw, **kwargs):
-        fixed = super().fix_mark_price(raw)
+        fixed = super().fix_mark_price(raw, **kwargs)
         # CCXT standard mark_price fixing logic
         return fixed
 
@@ -212,7 +212,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def fix_market_status(self, raw, **kwargs):
-        fixed = super().fix_market_status(raw)
+        fixed = super().fix_market_status(raw, **kwargs)
         # CCXT standard market_status fixing logic
         return fixed
 
