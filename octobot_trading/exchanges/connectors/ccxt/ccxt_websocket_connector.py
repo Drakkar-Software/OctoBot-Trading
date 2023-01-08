@@ -63,6 +63,16 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         Feeds.CANDLE,
         Feeds.KLINE,
     ]
+    # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#real-time-vs-throttling
+    # THROTTLED_CHANNELS are updated at each self.throttled_ws_updates.
+    # Used as real time channels when self.throttled_ws_updates is 0
+    # self.throttled_ws_updates is using trading_constants.THROTTLED_WS_UPDATES by default
+    THROTTLED_CHANNELS = [
+        Feeds.TRADES,
+        Feeds.L1_BOOK,
+        Feeds.L2_BOOK,
+        Feeds.L3_BOOK,
+    ]
 
     EXCHANGE_CONSTRUCTOR_KWARGS = {}
     RECONNECT_DELAY = 5
@@ -90,7 +100,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         )
         self.client = None  # ccxt.pro exchange: a ccxt.async_support exchange with websocket capabilities
         self.feed_tasks = {}
-        self.min_time_between_public_ws_updates = trading_constants.MIN_TIME_BETWEEN_PUBLIC_WS_UPDATES
+        self.throttled_ws_updates = trading_constants.THROTTLED_WS_UPDATES
 
         self._create_client()
 
@@ -184,7 +194,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def get_pair_from_exchange(self, pair):
         """
-        Convert a cryptofeed symbol format to uniformized symbol format
+        Convert a ccxt symbol format to uniformized symbol format
         :param pair: the pair to format
         :return: the formatted pair when success else an empty string
         """
@@ -193,7 +203,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def get_exchange_pair(self, pair) -> str:
         """
-        Convert an uniformized symbol format to a cryptofeed symbol format
+        Convert an uniformized symbol format to a ccxt symbol format
         :param pair: the pair to format
         :return: the ccxt pair when success else an empty string
         """
@@ -206,7 +216,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def _create_client(self):
         """
-        Creates cryptofeed client instance
+        Creates ccxt client instance
         """
         client_class = getattr(ccxtpro, self.get_feed_name())
         self.client, self.is_authenticated = ccxt_client_util.create_client(
@@ -412,25 +422,6 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             Feeds.TRADE: self.trades,
         }
 
-    async def _feed_task(self, callback, enable_timer_between_updates, generator_func, *g_args, **g_kwargs):
-        while not self.should_stop:
-            try:
-                update_data = await generator_func(*g_args, **g_kwargs)
-                await callback(update_data, **g_kwargs)
-                if enable_timer_between_updates:
-                    await asyncio.sleep(self.min_time_between_public_ws_updates)
-            except ccxt.NetworkError as err:
-                self.logger.debug(f"Can't connect to exchange websocket: {err}. "
-                                  f"Retrying in {self.RECONNECT_DELAY} seconds")
-                await asyncio.sleep(self.RECONNECT_DELAY)
-            except Exception as err:
-                self.logger.exception(
-                    err,
-                    True,
-                    f"Unexpected error when handling {generator_func.__name__} feed: {err}"
-                )
-                await asyncio.sleep(self.RECONNECT_DELAY)   # avoid spamming
-
     def _subscribe_feed(self, feed, symbols=None, time_frame=None, since=None, limit=None, params=None):
         """
         Subscribe a new feed
@@ -449,8 +440,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         except KeyError:
             self.logger.error(f"Impossible to subscribe to {feed}: feed not supported")
             return
-        enable_timer_between_updates = not self._is_authenticated_feed(feed) \
-            and self.min_time_between_public_ws_updates != 0.0
+        enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
         if feed in self.TIME_FRAME_PAIR_CHANNELS and time_frame is None:
             time_frame = self.min_timeframe.value
         kwargs = copy.copy(self._get_feed_default_kwargs())
@@ -466,20 +456,41 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             for symbol in symbols:
                 kwargs["symbol"] = symbol
                 # one task per symbol: ccxt_pro is not handling multi symbol generators
-                self._create_task_if_necessary(feed_callback, enable_timer_between_updates, feed_generator, **kwargs)
+                self._create_task_if_necessary(feed_callback, enable_throttling, feed_generator, **kwargs)
         else:
             # no symbol param
-            self._create_task_if_necessary(feed_callback, enable_timer_between_updates, feed_generator, **kwargs)
+            self._create_task_if_necessary(feed_callback, enable_throttling, feed_generator, **kwargs)
 
         symbols_str = f"for {', '.join(symbols)} " if symbols else ""
         time_frame_str = f"on {time_frame}" if time_frame else ""
         self.logger.debug(f"Subscribed to {feed.value} {symbols_str}{time_frame_str}")
 
-    def _create_task_if_necessary(self, feed_callback, enable_timer_between_updates, feed_generator, **kwargs):
+    async def _feed_task(self, callback, enable_throttling, generator_func, *g_args, **g_kwargs):
+        while not self.should_stop:
+            try:
+                update_data = await generator_func(*g_args, **g_kwargs)
+                await callback(update_data, **g_kwargs)
+                if enable_throttling:
+                    # ccxt keeps updating the internal structures while waiting
+                    # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
+                    await asyncio.sleep(self.throttled_ws_updates)
+            except ccxt.NetworkError as err:
+                self.logger.debug(f"Can't connect to exchange websocket: {err}. "
+                                  f"Retrying in {self.RECONNECT_DELAY} seconds")
+                await asyncio.sleep(self.RECONNECT_DELAY)
+            except Exception as err:
+                self.logger.exception(
+                    err,
+                    True,
+                    f"Unexpected error when handling {generator_func.__name__} feed: {err}"
+                )
+                await asyncio.sleep(self.RECONNECT_DELAY)   # avoid spamming
+
+    def _create_task_if_necessary(self, feed_callback, enable_throttling, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
         if identifier not in self.feed_tasks:
             self.feed_tasks[identifier] = asyncio.create_task(
-                self._feed_task(feed_callback, enable_timer_between_updates, feed_generator, **kwargs)
+                self._feed_task(feed_callback, enable_throttling, feed_generator, **kwargs)
             )
 
     def _get_feed_identifier(self, feed_generator, kwargs):
@@ -505,7 +516,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def _add_exchange_symbols(self):
         """
-        Populates self.filtered_pairs from self.pairs when pair is supported by the cryptofeed exchange
+        Populates self.filtered_pairs from self.pairs when pair is supported by the ccxt exchange
         """
         for pair in self.pairs:
             self._add_pair(pair, watching_only=False)
@@ -550,7 +561,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def _init_exchange_time_frames(self):
         """
-        Populates self.min_timeframe from self.time_frames when time frame is supported by the cryptofeed exchange
+        Populates self.min_timeframe from self.time_frames when time frame is supported by the ccxt exchange
         Leaves self.min_timeframe at None if no timeframe is available on this exchange ws
         """
         # Log error only if necessary (self.min_timeframe is used by candle feed only)
@@ -596,8 +607,9 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     async def ticker(self, ticker: dict, symbol=None, **kwargs):
         """
-        Cryptofeed ticker callback
         :param ticker: the ccxt ticker dict
+        :param symbol: the feed symbol
+        :param kwargs: the feed kwargs
         """
         adapted = self.adapter.adapt_ticker(ticker)
         await self.push_to_channel(
@@ -608,19 +620,20 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     async def recent_trades(self, trades: list, symbol=None, **kwargs):
         """
-        Cryptofeed ticker callback
-        :param trades: the ccxt trade dict
+        :param trades: the ccxt ticker list
+        :param symbol: the feed symbol
+        :param kwargs: the feed kwargs
         """
         adapted = self.adapter.adapt_public_recent_trades(trades)
         await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
                                    symbol,
                                    adapted)
 
-    async def book(self, order_book, symbol=None, **kwargs):
+    async def book(self, order_book: dict, symbol=None, **kwargs):
         """
-        Cryptofeed orderbook callback
-        :param order_book: the order_book object defined in cryptofeed.types.OrderBook
-        :param receipt_timestamp: received timestamp
+        :param order_book: the ccxt order_book dict
+        :param symbol: the feed symbol
+        :param kwargs: the feed kwargs
         """
         book_instance = self.get_book_instance(symbol)
 
@@ -639,11 +652,12 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
                                    book_instance.bids,
                                    update_order_book=False)
 
-    async def candle(self, candles, symbol=None, timeframe=None, **kwargs):
+    async def candle(self, candles: list, symbol=None, timeframe=None, **kwargs):
         """
-        Cryptofeed candle callback
-        :param candles: the candle object defined in cryptofeed.types.Candle
-        :param receipt_timestamp: received timestamp
+        :param candles: the ccxt ohlcv list
+        :param symbol: the feed symbol
+        :param timeframe: the feed timeframe
+        :param kwargs: the feed kwargs
         """
         time_frame = commons_enums.TimeFrames(timeframe)
         adapted = self.adapter.adapt_ohlcv(candles)
@@ -691,12 +705,15 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
                 ticker
             )
 
-    async def funding(self, funding, symbol=None, **kwargs):
+    async def funding(self, funding: dict, symbol=None, **kwargs):
         """
-        Cryptofeed funding callback
-        :param funding: the funding object defined in cryptofeed.types.Funding
-        :param receipt_timestamp: received timestamp
+        Unsupported, feed list https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#prerequisites
+        :param funding: the ccxt funding dict
+        :param symbol: the feed symbol
+        :param kwargs: the feed kwargs
         """
+        # TODO update this when supported
+        raise NotImplementedError("funding callback is not implemented")
         adapted = self.adapter.parse_funding_rate(funding)
         predicted_funding_rate = \
             adapted.get(trading_enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value,
@@ -710,60 +727,63 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             last_funding_time=adapted[trading_enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value]
         )
 
-    async def open_interest(self, open_interest, symbol=None, **kwargs):
+    async def open_interest(self, open_interest: dict, symbol=None, **kwargs):
         """
-        Cryptofeed open interest callback
-        :param open_interest: the open_interest object defined in cryptofeed.types.OpenInterest
-        :param receipt_timestamp: received timestamp
+        Unsupported, feed list https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#prerequisites
+        :param open_interest: the ccxt open_interest dict
+        :param symbol: the feed symbol
+        :param kwargs: the feed kwargs
         """
+        # TODO update this when supported
+        raise NotImplementedError("open_interest callback is not implemented")
 
-    async def index(self, index, symbol=None, **kwargs):
+    async def index(self, index: dict, symbol=None, **kwargs):
         """
-        Cryptofeed future index callback
-        :param index: the index object defined in cryptofeed.types.Index
-        :param receipt_timestamp: received timestamp
+        Unsupported, feed list https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#prerequisites
+        :param index: the ccxt index dict
+        :param symbol: the feed symbol
+        :param kwargs: the feed kwargs
         """
+        # TODO update this when supported
+        raise NotImplementedError("index callback is not implemented")
 
-    async def orders(self, orders, **kwargs):
+    async def orders(self, orders: list, **kwargs):
         """
-        Cryptofeed order callback
-        :param order the order object defined in cryptofeed.types.?
-        :param receipt_timestamp: received timestamp
+        :param orders: the ccxt orders list
+        :param kwargs: the feed kwargs
         """
+        # TODO update this when supported (ccxt is supporting it)
+        raise NotImplementedError("orders callback is not implemented")
         adapted = [self.adapter.adapt_order(order) for order in orders]
         await self.push_to_channel(trading_constants.ORDERS_CHANNEL, adapted)
 
-    async def trades(self, trades, **kwargs):
+    async def trades(self, trades: list, **kwargs):
         """
-        Cryptofeed filled order callback
-        :param trade: the trade object defined in cryptofeed.types.?
-        :param receipt_timestamp: received timestamp
+        :param trades: the ccxt trades list
+        :param kwargs: the feed kwargs
         """
+        # TODO update this when supported (ccxt is supporting it)
+        raise NotImplementedError("trades callback is not implemented")
         adapted = self.adapter.adapt_trades(self.exchange.parse_trade(trades))
         await self.push_to_channel(trading_constants.TRADES_CHANNEL, adapted)
 
-    async def balance(self, balance, **kwargs):
+    async def balance(self, balance: dict, **kwargs):
         """
-        Cryptofeed balance callback
-        :param balance: the balance object defined in cryptofeed.types.Balance
-        :param receipt_timestamp: received timestamp
+        :param balance: the ccxt balance dict
+        :param kwargs: the feed kwargs
         """
+        # TODO update this when supported (ccxt is supporting it)
+        raise NotImplementedError("balance callback is not implemented")
         await self.push_to_channel(trading_constants.BALANCE_CHANNEL,
                                    self.adapter.parse_balance(balance.balance))
 
-    async def transaction(self, transaction, **kwargs):
+    async def transaction(self, transaction: dict, **kwargs):
         """
-        Cryptofeed transaction callback
-        :param transaction: the transaction object defined in cryptofeed.types.Transaction
-        :param receipt_timestamp: received timestamp
+        :param transaction: the ccxt transaction dict
+        :param kwargs: the feed kwargs
         """
-
-    async def fill(self, fill, **kwargs):
-        """
-        Cryptofeed fill callback
-        :param fill: the fill object defined in cryptofeed.types.Fill
-        :param receipt_timestamp: received timestamp
-        """
+        # TODO update this when supported (ccxt is supporting it). Use watchLedger ?
+        raise NotImplementedError("transaction callback is not implemented")
 
     def _register_previous_open_candle(self, time_frame, symbol, candle):
         try:

@@ -116,7 +116,7 @@ class AbstractWebsocketExchange:
 
     @abc.abstractmethod
     def update_followed_pairs(self):
-        raise NotImplementedError("_updated_followed_pairs not implemented")
+        raise NotImplementedError("updated_followed_pairs not implemented")
 
     @abc.abstractmethod
     async def _close_and_restart_sockets(self, debounce_duration=0):
