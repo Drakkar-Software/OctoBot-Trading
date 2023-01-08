@@ -16,12 +16,14 @@
 import asyncio
 import copy
 import decimal
+import time
 
 import ccxt
 import ccxt.pro as ccxtpro
 
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.constants as trading_constants
@@ -63,6 +65,15 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         Feeds.CANDLE,
         Feeds.KLINE,
     ]
+    CURRENT_TIME_FILTERED_CHANNELS = [
+        Feeds.TRADES,
+        Feeds.ORDERS,
+        Feeds.TRADE,
+    ]
+    CANDLE_TIME_FILTERED_CHANNELS = [
+        Feeds.CANDLE,
+        Feeds.KLINE,
+    ]
     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#real-time-vs-throttling
     # THROTTLED_CHANNELS are updated at each self.throttled_ws_updates.
     # Used as real time channels when self.throttled_ws_updates is 0
@@ -83,6 +94,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         self.watched_pairs = []
         self.min_timeframe = None
         self._previous_open_candles = {}
+        self.start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
 
         self.local_loop = None
 
@@ -116,6 +128,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         asyncio.run(self._inner_start())
 
     async def _inner_start(self):
+        self.start_time_millis = self.client.milliseconds()
         self.stopped_event = asyncio.Event()
         self.local_loop = asyncio.get_event_loop()
         await self._init_client()
@@ -422,6 +435,16 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             Feeds.TRADE: self.trades,
         }
 
+    def _get_since_filter_value(self, feed, time_frame):
+        if feed in self.CURRENT_TIME_FILTERED_CHANNELS:
+            return self.start_time_millis
+        elif feed in self.CANDLE_TIME_FILTERED_CHANNELS:
+            candles_ms = commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame)] * \
+                commons_constants.MSECONDS_TO_MINUTE
+            time_delta = self.start_time_millis % candles_ms
+            return self.start_time_millis - time_delta
+        return None
+
     def _subscribe_feed(self, feed, symbols=None, time_frame=None, since=None, limit=None, params=None):
         """
         Subscribe a new feed
@@ -448,6 +471,12 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             kwargs["timeframe"] = time_frame
         if since is not None:
             kwargs["since"] = since
+        elif (auto_since := self._get_since_filter_value(feed, time_frame)) is not None:
+            kwargs["since"] = auto_since
+        elif feed in self.CURRENT_TIME_FILTERED_CHANNELS:
+            kwargs["since"] = self.start_time_millis
+        elif feed in self.CANDLE_TIME_FILTERED_CHANNELS:
+            kwargs["since"] = self.start_time_millis
         if limit is not None:
             kwargs["limit"] = limit
         if params is not None:
@@ -469,7 +498,9 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         while not self.should_stop:
             try:
                 update_data = await generator_func(*g_args, **g_kwargs)
-                await callback(update_data, **g_kwargs)
+                self.logger.info(f"{len(update_data)} {callback.__name__} {g_kwargs} {update_data}")
+                if update_data:
+                    await callback(update_data, **g_kwargs)
                 if enable_throttling:
                     # ccxt keeps updating the internal structures while waiting
                     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
@@ -489,6 +520,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     def _create_task_if_necessary(self, feed_callback, enable_throttling, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
         if identifier not in self.feed_tasks:
+            self.logger.debug(f"Subscribing to {feed_generator.__name__} with {kwargs}")
             self.feed_tasks[identifier] = asyncio.create_task(
                 self._feed_task(feed_callback, enable_throttling, feed_generator, **kwargs)
             )
@@ -573,7 +605,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             self.min_timeframe = time_frame_manager.find_min_time_frame(filtered_timeframes)
 
     def _should_run_candle_feed(self):
-        return self.EXCHANGE_FEEDS.get(Feeds.CANDLE)
+        return self.EXCHANGE_FEEDS.get(Feeds.CANDLE, Feeds.UNSUPPORTED.value) != Feeds.UNSUPPORTED.value
 
     def _is_supported_pair(self, pair):
         return pair in ccxt_client_util.get_symbols(self.client)
@@ -660,15 +692,32 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         :param kwargs: the feed kwargs
         """
         time_frame = commons_enums.TimeFrames(timeframe)
-        adapted = self.adapter.adapt_ohlcv(candles)
+        adapted = self.adapter.adapt_ohlcv(candles, time_frame=time_frame)
         last_candle = adapted[-1]
         if symbol not in self.watched_pairs:
             for candle in adapted:
                 previous_candle = self._get_previous_open_candle(time_frame, symbol)
-                now_push_previous_candle = previous_candle is not None and \
-                    previous_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] < \
-                    candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]
-                if now_push_previous_candle:
+                is_previous_candle_closed = False
+                if previous_candle is not None:
+                    current_candle_time = candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]
+                    previous_candle_time = previous_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]
+                    if previous_candle_time < current_candle_time:
+                        # new candle is after the previous one: the previous one is now closed
+                        is_previous_candle_closed = True
+                    elif previous_candle_time > current_candle_time:
+                        # should not happen: exchange feed is providing past candles after newer ones
+                        # candle feed should be marked as unsupported in this exchange (at least for now)
+                        self.logger.error(f"Ignored unexpected candle for {symbol} on {timeframe}: "
+                                          f"candle time {current_candle_time}, "
+                                          f"previous candle time: {previous_candle_time}")
+                        if candle is last_candle:
+                            # last candle in loop: don't go any further
+                            return
+                        else:
+                            # go to next candle in loop
+                            continue
+                if is_previous_candle_closed:
+                    # OHLCV_CHANNEL only takes closed candles
                     await self.push_to_channel(
                         trading_constants.OHLCV_CHANNEL,
                         time_frame,
