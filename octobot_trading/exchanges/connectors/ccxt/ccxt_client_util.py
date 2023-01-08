@@ -15,7 +15,6 @@
 #  License along with this library.
 import logging
 import ccxt
-import ccxt.pro as ccxtpro
 
 import octobot_trading.constants as constants
 
