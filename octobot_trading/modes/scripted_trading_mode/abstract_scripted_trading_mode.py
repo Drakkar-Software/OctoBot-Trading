@@ -67,6 +67,9 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await modes_util.clear_plotting_cache(self)
         elif action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
             await modes_util.clear_simulated_orders_cache(self)
+        elif action:
+            # custom action dict or str
+            await self.reload_scripts(action)
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id,
@@ -109,7 +112,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     def get_script_from_module(module):
         return module.script
 
-    async def reload_scripts(self):
+    async def reload_scripts(self, action: str or dict = None):
         for is_live in (False, True):
             module = self.__class__.TRADING_SCRIPT_MODULE if is_live else self.__class__.BACKTESTING_SCRIPT_MODULE
             importlib.reload(module)
@@ -118,9 +121,9 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await self.reload_config(self.exchange_manager.bot_id)
             if is_live:
                 # todo cancel and restart live tasks
-                await self.start_over_database()
+                await self.start_over_database(action)
 
-    async def start_over_database(self):
+    async def start_over_database(self, action: str or dict = None):
         await modes_util.clear_plotting_cache(self)
         symbol_db = databases.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
                                                                             self.exchange_manager.exchange_name,
@@ -133,7 +136,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 run_db.set_initialized_flags(False, (time_frame, ))
                 await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
                                                            reset_cache_db_ids=True)
-                await producer.call_script(*call_args)
+                await producer.call_script(*call_args, action=action)
                 await run_db.flush()
 
     def set_initialized_trading_pair_by_bot_id(self, symbol, time_frame, initialized):
@@ -267,7 +270,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def call_script(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame: str,
                           trigger_source: str, trigger_cache_timestamp: float,
-                          candle: dict = None, kline: dict = None, init_call: bool = False):
+                          candle: dict = None, kline: dict = None, init_call: bool = False, 
+                          action: str or dict = None):
         context = context_management.get_full_context(
             self.trading_mode, matrix_id, cryptocurrency, symbol, time_frame,
             trigger_source, trigger_cache_timestamp, candle, kline, init_call=init_call
@@ -281,7 +285,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         initialized = True
         run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
         try:
-            await self._pre_script_call(context)
+            await self._pre_script_call(context, action)
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
@@ -305,5 +309,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                                                                   self.exchange_name, symbol)\
                 .set_initialized_flags(initialized, (time_frame,))
 
-    async def _pre_script_call(self, context):
+    async def _pre_script_call(
+        self, context, action: dict or str = None):
         await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
