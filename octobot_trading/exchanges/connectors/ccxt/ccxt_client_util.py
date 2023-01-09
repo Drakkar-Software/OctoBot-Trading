@@ -35,9 +35,9 @@ def create_client(exchange_class, exchange_name, exchange_manager, logger,
             key, secret, password = exchange_manager.get_exchange_credentials(logger, exchange_name)
             if not (key and secret) and not exchange_manager.is_simulated:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
-                                    f"Enter your account details to enable real trading on this exchange.")
+                               f"Enter your account details to enable real trading on this exchange.")
             if should_authenticate:
-                client = exchange_class(_get_client_config(options, headers, additional_config, 
+                client = exchange_class(_get_client_config(options, headers, additional_config,
                                                            key, secret, password))
                 is_authenticated = True
                 if exchange_manager.check_credentials:
@@ -59,7 +59,7 @@ def create_client(exchange_class, exchange_name, exchange_manager, logger,
 
 
 def get_unauthenticated_exchange(exchange_class, options, headers, additional_config):
-    client = exchange_class(options, headers, additional_config)
+    client = exchange_class(_get_client_config(options, headers, additional_config))
     _use_http_proxy_if_necessary(client)
     return client
 

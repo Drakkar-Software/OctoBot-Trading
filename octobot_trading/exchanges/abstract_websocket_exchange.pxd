@@ -45,7 +45,7 @@ cdef class AbstractWebsocketExchange:
 
     cpdef int get_max_handled_pair_with_time_frame(self)
 
-    cpdef str feed_to_exchange(self, object feed)
+    cpdef object feed_to_exchange(self, object feed)
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef str get_exchange_pair(self, str pair)
     cpdef void clear(self)

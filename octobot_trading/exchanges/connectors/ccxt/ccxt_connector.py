@@ -137,7 +137,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.get_balance()
         except ccxt.AuthenticationError as e:
             await self.client.close()
-            self._unauthenticated_exchange_fallback(e)
+            self.unauthenticated_exchange_fallback(e)
         except Exception as e:
             # Is probably handled in exchange tentacles, important thing here is that authentication worked
             self.logger.debug(f"Error when checking exchange connection: {e}. This should not be an issue.")
@@ -146,16 +146,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.client, self.is_authenticated = ccxt_client_util.create_client(
             self.exchange_type, self.name, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
-            self._should_authenticate(), self._unauthenticated_exchange_fallback
+            self._should_authenticate(), self.unauthenticated_exchange_fallback
         )
 
     def _should_authenticate(self):
         return not (self.exchange_manager.is_simulated or
                     self.exchange_manager.is_backtesting)
 
-    def _unauthenticated_exchange_fallback(self, err):
+    def unauthenticated_exchange_fallback(self, err):
         self.handle_token_error(err)
-        self.client = ccxt_client_util.get_unauthenticated_exchange(
+        return ccxt_client_util.get_unauthenticated_exchange(
             self.exchange_type,
             self.options, self.headers, self.additional_config
         )

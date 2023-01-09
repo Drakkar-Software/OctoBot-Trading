@@ -45,7 +45,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.restart_task = None
 
     @classmethod
-    def get_exchange_connector_class(cls, exchange_manager: object):
+    def get_exchange_connector_class(cls, exchange_manager):
         raise NotImplementedError("get_exchange_connector_class is not implemented")
 
     def create_feeds(self):

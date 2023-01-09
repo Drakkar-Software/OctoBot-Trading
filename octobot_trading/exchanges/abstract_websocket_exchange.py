@@ -38,9 +38,7 @@ class AbstractWebsocketExchange:
 
     SUPPORTS_LIVE_PAIR_ADDITION = False
 
-    def __init__(self,
-                 config: object,
-                 exchange_manager: object):
+    def __init__(self, config, exchange_manager):
         self.config = config
 
         self.exchange_manager = exchange_manager
@@ -158,7 +156,7 @@ class AbstractWebsocketExchange:
         if not self.is_feed_supported(feed_name):
             self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
             raise ValueError(f"{feed} is not supported on {self.get_name()}")
-        return feed_name
+        return feed
 
     def get_book_instance(self, symbol):
         try:
