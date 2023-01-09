@@ -29,7 +29,7 @@ import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
-import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
+import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket_exchange
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC, \
@@ -37,7 +37,7 @@ from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBI
 from octobot_trading.enums import WebsocketFeeds as Feeds
 
 
-class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
+class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchange):
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
     SUPPORTS_LIVE_PAIR_ADDITION = True
     FEED_INITIALIZATION_TIMEOUT = 15 * commons_constants.MINUTE_TO_SECONDS
@@ -87,7 +87,12 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         Feeds.L2_BOOK,
         Feeds.L3_BOOK,
     ]
-
+    AUTHENTICATED_CHANNELS = [
+        trading_enums.WebsocketFeeds.ORDERS,
+        trading_enums.WebsocketFeeds.PORTFOLIO,
+        trading_enums.WebsocketFeeds.TRADE,
+        trading_enums.WebsocketFeeds.POSITION,
+    ]
     EXCHANGE_CONSTRUCTOR_KWARGS = {}
     RECONNECT_DELAY = 5
 
@@ -97,7 +102,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         self.watched_pairs = []
         self.min_timeframe = None
         self._previous_open_candles = {}
-        self.start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
+        self._start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
 
         self.local_loop = None
 
@@ -131,7 +136,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         asyncio.run(self._inner_start())
 
     async def _inner_start(self):
-        self.start_time_millis = self.client.milliseconds()
+        self._start_time_millis = self.client.milliseconds()
         self.stopped_event = asyncio.Event()
         self.local_loop = asyncio.get_event_loop()
         await self._init_client()
@@ -244,21 +249,13 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         return self._has_authenticated_channel() and super()._should_authenticate()
 
     def _has_authenticated_channel(self) -> bool:
-        return any(
-            feed in self.EXCHANGE_FEEDS
-            for feed in self._get_all_authenticated_feeds()
-        )
+        for feed in self.AUTHENTICATED_CHANNELS:
+            if feed in self.EXCHANGE_FEEDS:
+                return True
+        return False
 
     def _is_authenticated_feed(self, feed):
-        return feed in self._get_all_authenticated_feeds()
-
-    def _get_all_authenticated_feeds(self):
-        return (
-            trading_enums.WebsocketFeeds.ORDERS,
-            trading_enums.WebsocketFeeds.PORTFOLIO,
-            trading_enums.WebsocketFeeds.TRADE,
-            trading_enums.WebsocketFeeds.POSITION,
-         )
+        return feed in self.AUTHENTICATED_CHANNELS
 
     async def _init_client(self):
         """
@@ -439,12 +436,12 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def _get_since_filter_value(self, feed, time_frame):
         if feed in self.CURRENT_TIME_FILTERED_CHANNELS:
-            return self.start_time_millis
+            return self._start_time_millis
         elif feed in self.CANDLE_TIME_FILTERED_CHANNELS:
             candles_ms = commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame)] * \
                 commons_constants.MSECONDS_TO_MINUTE
-            time_delta = self.start_time_millis % candles_ms
-            return self.start_time_millis - time_delta
+            time_delta = self._start_time_millis % candles_ms
+            return self._start_time_millis - time_delta
         return None
 
     def _subscribe_feed(self, feed, symbols=None, time_frame=None, since=None, limit=None, params=None):
@@ -472,12 +469,14 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             kwargs["timeframe"] = time_frame
         if since is not None:
             kwargs["since"] = since
-        elif (auto_since := self._get_since_filter_value(feed, time_frame)) is not None:
-            kwargs["since"] = auto_since
-        elif feed in self.CURRENT_TIME_FILTERED_CHANNELS:
-            kwargs["since"] = self.start_time_millis
-        elif feed in self.CANDLE_TIME_FILTERED_CHANNELS:
-            kwargs["since"] = self.start_time_millis
+        else:
+            auto_since = self._get_since_filter_value(feed, time_frame)
+            if auto_since is not None:
+                kwargs["since"] = auto_since
+            elif feed in self.CURRENT_TIME_FILTERED_CHANNELS:
+                kwargs["since"] = self._start_time_millis
+            elif feed in self.CANDLE_TIME_FILTERED_CHANNELS:
+                kwargs["since"] = self._start_time_millis
         if limit is not None:
             kwargs["limit"] = limit
         if params is not None:
@@ -731,7 +730,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         last_candle = adapted[-1]
         if symbol not in self.watched_pairs:
             for candle in adapted:
-                previous_candle = self._get_previous_open_candle(time_frame, symbol)
+                previous_candle = self._get_previous_open_candle(timeframe, symbol)
                 is_previous_candle_closed = False
                 if previous_candle is not None:
                     current_candle_time = candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]
@@ -759,7 +758,7 @@ class CCXTWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
                         symbol,
                         previous_candle
                     )
-                self._register_previous_open_candle(time_frame, symbol, candle)
+                self._register_previous_open_candle(timeframe, symbol, candle)
             await self.push_to_channel(
                 trading_constants.KLINE_CHANNEL,
                 time_frame,
