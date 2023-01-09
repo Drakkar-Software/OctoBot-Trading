@@ -14,13 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.implementations import ccxt_websocket_exchange
-from octobot_trading.exchanges.implementations.ccxt_websocket_exchange import (
-    CCXTWebSocketExchange,
-)
-from octobot_trading.exchanges.implementations import cryptofeed_websocket_exchange
-from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
-    CryptofeedWebSocketExchange,
+from octobot_trading.exchanges.implementations import default_websocket_exchange
+from octobot_trading.exchanges.implementations.default_websocket_exchange import (
+    DefaultWebSocketExchange,
 )
 from octobot_trading.exchanges.implementations import default_rest_exchange
 from octobot_trading.exchanges.implementations.default_rest_exchange import (
@@ -32,8 +28,7 @@ from octobot_trading.exchanges.implementations.exchange_simulator import (
 )
 
 __all__ = [
-    "CCXTWebSocketExchange",
-    "CryptofeedWebSocketExchange",
+    "DefaultWebSocketExchange",
     "DefaultRestExchange",
     "ExchangeSimulator",
 ]

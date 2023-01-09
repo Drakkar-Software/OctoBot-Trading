@@ -44,6 +44,13 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
         self.restart_task = None
 
+    @classmethod
+    def get_exchange_connector_class(cls, exchange_manager: object):
+        raise NotImplementedError("get_exchange_connector_class is not implemented")
+
+    def create_feeds(self):
+        raise NotImplementedError("create_feeds is not implemented")
+
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         self.websocket_connector = self.get_exchange_connector_class(self.exchange_manager)
         self.pairs = trader_pairs
@@ -112,17 +119,6 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def has_name(cls, exchange_manager: object) -> bool:  # pylint: disable=arguments-renamed
         return cls.get_exchange_connector_class(exchange_manager) is not None
 
-    def create_feeds(self):
-        raise NotImplementedError("create_feeds is not implemented")
-
-    @classmethod
-    def get_exchange_connector_class(cls, exchange_manager: object):
-        raise NotImplementedError("get_exchange_connector_class is not implemented")
-
-    @staticmethod
-    def get_websocket_client(config, exchange_manager):
-        raise NotImplementedError("get_websocket_client is not implemented")
-
     async def start_sockets(self):
         if any(self.handled_feeds.values() and self.websocket_connectors):
             try:
@@ -175,6 +171,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.restart_task = asyncio.create_task(self._inner_close_and_restart_sockets(debounce_duration))
 
     async def stop_sockets(self):
+        """
+        Stops the websocket. Can be restarted
+        """
         try:
             for websocket in self.websocket_connectors:
                 await websocket.stop()
@@ -182,6 +181,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             self.logger.error(f"Error when stopping sockets : {e}")
 
     async def close_sockets(self):
+        """
+        Closes the websocket. Can't be restarted
+        """
         try:
             for websocket in self.websocket_connectors:
                 await websocket.close()
@@ -195,9 +197,6 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def add_pairs(self, pairs, watching_only=False):
         for websocket in self.websocket_connectors:
             websocket.add_pairs(pairs, watching_only=watching_only)
-
-    def is_handling(self, feed_name):
-        return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
 
     def clear(self):
         super(WebSocketExchange, self).clear()

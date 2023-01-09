@@ -35,7 +35,6 @@ cdef class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     cdef public object restart_task
 
     # public
-    cpdef bint is_handling(self, str feed_name)
     cpdef bint is_feed_available(self, object feed)
     cpdef bint is_feed_requiring_init(self, object feed)
     cpdef void create_feeds(self)

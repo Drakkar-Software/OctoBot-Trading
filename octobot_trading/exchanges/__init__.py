@@ -100,9 +100,8 @@ from octobot_trading.exchanges.types import (
 )
 from octobot_trading.exchanges import implementations
 from octobot_trading.exchanges.implementations import (
-    CCXTWebSocketExchange,
+    DefaultWebSocketExchange,
     ExchangeSimulator,
-    CryptofeedWebSocketExchange,
     DefaultRestExchange,
 )
 from octobot_trading.exchanges import exchange_builder
@@ -112,8 +111,6 @@ from octobot_trading.exchanges.exchange_builder import (
 )
 from octobot_trading.exchanges import connectors
 from octobot_trading.exchanges.connectors import (
-    AbstractWebsocketConnector,
-    CryptofeedWebsocketConnector,
     CCXTWebsocketConnector,
     CCXTConnector,
     CCXTAdapter,
@@ -155,11 +152,9 @@ __all__ = [
     "create_authenticated_producer_from_parent",
     "TraderSimulator",
     "Trader",
-    "CCXTWebSocketExchange",
-    "CryptofeedWebSocketExchange",
+    "DefaultWebSocketExchange",
     "DefaultRestExchange",
     "ExchangeSimulator",
-    "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
     "WebSocketExchange",
     "RestExchange",
@@ -168,7 +163,6 @@ __all__ = [
     "AbstractWebsocketExchange",
     "BasicExchangeWrapper",
     "temporary_exchange_wrapper",
-    "CryptofeedWebsocketConnector",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",

@@ -19,8 +19,7 @@ import octobot_trading.exchanges.types as exchanges_types
 import octobot_tentacles_manager.api as api
 
 
-#TODO remove?
-class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
+class DefaultWebSocketExchange(exchanges_types.WebSocketExchange):
     DEFAULT_CONNECTOR_CLASS = ccxt_websocket_connector.CCXTWebsocketConnector
 
     @classmethod

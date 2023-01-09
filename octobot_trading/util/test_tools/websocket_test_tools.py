@@ -50,13 +50,16 @@ async def ws_exchange_manager(config: object, exchange_name: str):
 
 async def test_unauthenticated_push_to_channel_coverage_websocket(
         websocket_exchange_class: exchanges.AbstractWebsocketExchange,
-        websocket_connector_class: exchanges.AbstractWebsocketConnector,
+        websocket_connector_class,
         exchange_manager: exchanges.ExchangeManager,
         config: object,
         symbols: list,
         time_frames: list,
         expected_pushed_channels: set = None,
         time_before_assert: int = 120):
+    """
+    DEPRECATED: TODO udpate for ccxt ws
+    """
 
     # To fix `TypeError: can't set attributes of built-in/extension type 'datetime.date'`
     class TestAbstractWebsocketExchange(websocket_exchange_class):

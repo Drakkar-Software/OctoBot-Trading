@@ -14,18 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.connectors cimport abstract_websocket_connector
-from octobot_trading.exchanges.connectors.abstract_websocket_connector cimport (
-    AbstractWebsocketConnector,
-)
 from octobot_trading.exchanges.connectors cimport ccxt
 from octobot_trading.exchanges.connectors.ccxt cimport (
     CCXTConnector,
     CCXTWebsocketConnector,
-)
-from octobot_trading.exchanges.connectors cimport cryptofeed
-from octobot_trading.exchanges.connectors.cryptofeed cimport (
-    CryptofeedWebsocketConnector,
 )
 from octobot_trading.exchanges.connectors cimport simulator
 from octobot_trading.exchanges.connectors.simulator cimport (
@@ -33,9 +25,7 @@ from octobot_trading.exchanges.connectors.simulator cimport (
 )
 
 __all__ = [
-    "AbstractWebsocketConnector",
     "CCXTConnector",
     "CCXTWebsocketConnector",
-    "CryptofeedWebsocketConnector",
     "ExchangeSimulatorConnector",
 ]
