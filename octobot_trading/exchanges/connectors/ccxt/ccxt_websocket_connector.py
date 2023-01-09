@@ -316,7 +316,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     def get_exchange_feed(cls, feed) -> str:
         feed_value = cls.EXCHANGE_FEEDS.get(feed, trading_enums.WebsocketFeeds.UNSUPPORTED.value)
         if cls.is_feed_supported(feed_value):
-            return feed
+            return feed.value
         return trading_enums.WebsocketFeeds.UNSUPPORTED.value
 
     def _subscribe_candle_feed(self):
