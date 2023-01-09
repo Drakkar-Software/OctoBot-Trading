@@ -620,6 +620,7 @@ class AbstractExchange(util.Initializable):
 
     @classmethod
     def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+        logger = logging.get_logger(cls.get_name())
         inputs = {}
         try:
             tentacle_config.update(
@@ -634,7 +635,8 @@ class AbstractExchange(util.Initializable):
             with cls.UI.local_factory(cls, lambda: tentacle_config):
                 cls.init_user_inputs(inputs)
         except Exception as e:
-            logging.get_logger(cls.get_name()).exception(e, True, f"Error when initializing user inputs: {e}")
+            logger.exception(e, True, f"Error when initializing user inputs: {e}")
+        logger.debug(f"Using config: {tentacle_config}")
         return inputs
 
     @classmethod
