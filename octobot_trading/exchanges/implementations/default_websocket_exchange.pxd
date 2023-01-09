@@ -17,5 +17,5 @@
 
 cimport octobot_trading.exchanges.types as exchanges_types
 
-cdef class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
+cdef class DefaultWebSocketExchange(exchanges_types.WebSocketExchange):
     pass

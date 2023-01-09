@@ -73,9 +73,9 @@ from octobot_trading.exchanges.util cimport (
 
 from octobot_trading.exchanges cimport implementations
 from octobot_trading.exchanges.implementations cimport (
-    CCXTWebSocketExchange,
+    DefaultWebSocketExchange,
+    DefaultRestExchange,
     ExchangeSimulator,
-    CryptofeedWebSocketExchange,
 )
 
 from octobot_trading.exchanges.exchange_builder cimport (
@@ -84,8 +84,6 @@ from octobot_trading.exchanges.exchange_builder cimport (
 
 from octobot_trading.exchanges cimport connectors
 from octobot_trading.exchanges.connectors cimport (
-    AbstractWebsocketConnector,
-    CryptofeedWebsocketConnector,
     CCXTWebsocketConnector,
     CCXTConnector,
     ExchangeSimulatorConnector,
@@ -109,7 +107,6 @@ __all__ = [
     "TraderSimulator",
     "Trader",
     "ExchangeSimulator",
-    "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
     "CCXTConnector",
     "ExchangeSimulatorConnector",
@@ -127,8 +124,7 @@ __all__ = [
     "get_default_exchange_type",
     "get_supported_exchange_types",
     "get_exchange_class_from_name",
+    "DefaultWebSocketExchange",
+    "DefaultRestExchange",
     "ExchangeSimulator",
-    "CCXTWebSocketExchange",
-    "CryptofeedWebSocketExchange",
-    "CryptofeedWebsocketConnector",
 ]

@@ -91,14 +91,6 @@ class AbstractWebsocketExchange:
     def has_name(cls, name: str) -> bool:
         raise NotImplementedError("has_name not implemented")
 
-    @staticmethod
-    def get_websocket_client(config, exchange_manager):
-        raise NotImplementedError("get_websocket_client not implemented")
-
-    @abc.abstractmethod
-    def is_handling(self, feed_name):
-        raise NotImplementedError("is_handling not implemented")
-
     @abc.abstractmethod
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         raise NotImplementedError("init_websocket not implemented")
@@ -112,10 +104,6 @@ class AbstractWebsocketExchange:
         raise NotImplementedError("wait_sockets not implemented")
 
     @abc.abstractmethod
-    async def subscribe(self):
-        raise NotImplementedError("subscribe is not implemented")
-
-    @abc.abstractmethod
     def update_followed_pairs(self):
         raise NotImplementedError("updated_followed_pairs not implemented")
 
@@ -125,19 +113,17 @@ class AbstractWebsocketExchange:
 
     @abc.abstractmethod
     async def stop_sockets(self):
+        """
+        Stops the websocket. Can be restarted
+        """
         raise NotImplementedError("stop_sockets not implemented")
 
     @abc.abstractmethod
     async def close_sockets(self):
+        """
+        Closes the websocket. Can't be restarted
+        """
         raise NotImplementedError("close_sockets not implemented")
-
-    @abc.abstractmethod
-    async def do_auth(self):
-        NotImplementedError("do_auth is not implemented")
-
-    @classmethod
-    def get_feeds(cls) -> dict:
-        return cls.EXCHANGE_FEEDS
 
     @classmethod
     def get_exchange_feed(cls, feed) -> str:

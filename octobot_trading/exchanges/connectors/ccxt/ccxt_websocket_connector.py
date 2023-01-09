@@ -530,7 +530,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             )
 
     async def _wait_for_initialization(self, feed, *g_args, **g_kwargs):
-        if g_kwargs["symbol"] not in self.filtered_pairs:
+        if not self.is_feed_requiring_init(feed) or g_kwargs["symbol"] not in self.filtered_pairs:
             # no need to wait for pairs not in self.filtered_pairs
             return True
         is_initialized_func = None
