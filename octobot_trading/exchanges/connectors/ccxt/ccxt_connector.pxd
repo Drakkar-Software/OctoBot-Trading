@@ -31,7 +31,7 @@ cdef class CCXTConnector(abstract_exchange.AbstractExchange):
 
 
     # private
-    cdef void _create_client(self)
+    cdef object _create_client(self)
 
     # @staticmethod waiting for a future version of cython
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
@@ -41,12 +41,9 @@ cdef class CCXTConnector(abstract_exchange.AbstractExchange):
     cpdef void add_options(self, dict options_dict)
     cpdef set get_client_symbols(self)
     cpdef set get_client_time_frames(self)
-    cpdef dict get_ccxt_client_login_options(self)
     cpdef str get_ccxt_order_type(self, object order_type)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
     cpdef dict get_bundled_order_parameters(self, object stop_loss_price=*, object take_profit_price=*)
 
     cdef void _unauthenticated_exchange_fallback(self, object err)
-    cdef object _get_unauthenticated_exchange(self)
-    cdef object _get_client_config(self, object api_key=*, object secret=*, object password=*)
     cdef bint _should_authenticate(self)

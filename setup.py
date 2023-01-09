@@ -176,6 +176,7 @@ packages_list = [
     "octobot_trading.exchanges.exchange_builder",
     "octobot_trading.exchanges.exchange_channels",
     "octobot_trading.exchanges.exchange_factory",
+    "octobot_trading.exchanges.connectors.ccxt.ccxt_client_util",
     "octobot_trading.exchanges.connectors.ccxt.ccxt_connector",
     "octobot_trading.exchanges.connectors.ccxt.ccxt_websocket_connector",
     "octobot_trading.exchanges.connectors.cryptofeed.cryptofeed_websocket_connector",
