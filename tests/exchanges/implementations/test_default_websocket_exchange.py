@@ -27,7 +27,7 @@ from tests.exchanges import exchange_manager, DEFAULT_EXCHANGE_NAME
 pytestmark = pytest.mark.asyncio
 
 
-class feedCallback:
+class FeedCallback:
     def __init__(self, connector, feed):
         self.connector = connector
         self.feed = feed
@@ -59,7 +59,7 @@ class MockedCCXTWebsocketConnector(exchanges.CCXTWebsocketConnector):
             for feed in self.EXCHANGE_FEEDS
         }
         self.callback_mocks = {
-            feed: mock.Mock(side_effect=feedCallback(self, feed))
+            feed: mock.Mock(side_effect=FeedCallback(self, feed))
             for feed in enums.WebsocketFeeds
         }
 
@@ -133,6 +133,7 @@ async def test_start_receive_feeds_and_stop(default_websocket_exchange):
     data_reception_timeout = 90
     try:
         await default_websocket_exchange.start_sockets()
+        assert len(default_websocket_exchange.websocket_connectors[0].channels) == 4
         await default_websocket_exchange.websocket_connectors[0].await_each_feed_call(data_reception_timeout)
     finally:
         await default_websocket_exchange.stop_sockets()
