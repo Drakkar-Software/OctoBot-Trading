@@ -258,10 +258,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         try:
             with self.error_describer():
                 symbols = kwargs.pop("symbols", None)
-                self.all_currencies_price_ticker = [
-                    self.adapter.adapt_ticker(ticker)
-                    for ticker in await self.client.fetch_tickers(symbols, params=kwargs)
-                ]
+                self.all_currencies_price_ticker = {
+                    symbol: self.adapter.adapt_ticker(ticker)
+                    for symbol, ticker in (await self.client.fetch_tickers(symbols, params=kwargs)).items()
+                }
             return self.all_currencies_price_ticker
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
