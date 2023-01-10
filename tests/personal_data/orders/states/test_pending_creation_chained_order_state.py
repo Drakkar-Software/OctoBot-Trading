@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import OrderStatus, OrderStates, States
+from octobot_trading.enums import OrderStatus, States
 from octobot_trading.personal_data.orders.states.order_state_factory import create_order_state
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -26,10 +26,13 @@ pytestmark = pytest.mark.asyncio
 
 async def test_on_order_refresh_successful(buy_limit_order):
     buy_limit_order.exchange_manager.is_backtesting = True
+    buy_limit_order.status = OrderStatus.PENDING_CREATION
+    buy_limit_order.is_waiting_for_chained_trigger = True
     await buy_limit_order.initialize()
-    assert isinstance(buy_limit_order.state, personal_data.OpenOrderState)
+    assert isinstance(buy_limit_order.state, personal_data.PendingCreationChainedOrderState)
     await buy_limit_order.state.on_refresh_successful()
-    assert buy_limit_order.state.state is States.OPEN
-    buy_limit_order.status = OrderStatus.FILLED
+    assert buy_limit_order.state.state is States.PENDING_CREATION
+    buy_limit_order.status = OrderStatus.PENDING_CREATION
     await buy_limit_order.state.on_refresh_successful()
-    assert buy_limit_order.is_filled()
+    buy_limit_order.status = OrderStatus.PENDING_CREATION
+    assert buy_limit_order.is_created() is False

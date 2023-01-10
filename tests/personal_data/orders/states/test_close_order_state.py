@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import OrderStatus
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -27,6 +28,7 @@ async def test_on_order_refresh_successful(sell_limit_order):
     sell_limit_order.status = OrderStatus.CLOSED
     sell_limit_order.exchange_manager.is_backtesting = True
     await sell_limit_order.initialize()
+    assert isinstance(sell_limit_order.state, personal_data.CloseOrderState)
     await sell_limit_order.state.on_refresh_successful()
     assert sell_limit_order.is_closed()
     sell_limit_order.clear()

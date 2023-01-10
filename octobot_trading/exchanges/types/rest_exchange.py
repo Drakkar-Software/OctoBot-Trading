@@ -129,7 +129,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
                                                   price=float_price, stop_price=float_stop_price, side=side,
                                                   current_price=float_current_price, params=params)
-            order, _ = await self._verify_order(edited_order, order_type, symbol, price, side)
+            order = await self._verify_order(edited_order, order_type, symbol, price, side)
             return order
         return None
 

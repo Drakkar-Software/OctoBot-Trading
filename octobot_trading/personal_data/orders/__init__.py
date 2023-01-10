@@ -56,6 +56,7 @@ from octobot_trading.personal_data.orders.states import (
     create_order_state,
     FillOrderState,
     PendingCreationOrderState,
+    PendingCreationChainedOrderState,
 )
 from octobot_trading.personal_data.orders import channel
 from octobot_trading.personal_data.orders.channel import (
@@ -184,6 +185,7 @@ __all__ = [
     "create_order_state",
     "FillOrderState",
     "PendingCreationOrderState",
+    "PendingCreationChainedOrderState",
     "UnknownOrder",
     "MarketOrder",
     "SellMarketOrder",

@@ -40,6 +40,9 @@ from octobot_trading.personal_data.orders.states.fill_order_state import (
 from octobot_trading.personal_data.orders.states.pending_creation_order_state import (
     PendingCreationOrderState,
 )
+from octobot_trading.personal_data.orders.states.pending_creation_chained_order_state import (
+    PendingCreationChainedOrderState,
+)
 
 __all__ = [
     "CloseOrderState",
@@ -48,4 +51,5 @@ __all__ = [
     "create_order_state",
     "FillOrderState",
     "PendingCreationOrderState",
+    "PendingCreationChainedOrderState",
 ]

@@ -13,37 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders.order_state as order_state
+import octobot_trading.personal_data.orders.states.pending_creation_order_state as pending_creation_order_state
 
 
-class PendingCreationOrderState(order_state.OrderState):
-
-    def __init__(self, order, is_from_exchange_data):
-        super().__init__(order, is_from_exchange_data)
-        self.state = enums.States.PENDING_CREATION
-
+class PendingCreationChainedOrderState(pending_creation_order_state.PendingCreationOrderState):
     def is_created(self) -> bool:
         """
         :return: True if the Order is created
         """
-        # order is created on exchange but not open yet
-        return True
-
-    def is_open(self) -> bool:
-        """
-        :return: True if the Order is considered as open
-        """
+        # order is to be triggered as chained order: not created
         return False
 
-    async def on_refresh_successful(self):
+    async def update(self) -> None:
         pass
-
-    async def terminate(self):
-        """
-        Should wait for being replaced by an OpenOrderState or be cancelled
-        """
-        self.log_event_message(enums.StatesMessages.PENDING_CREATION)
-
-    def is_pending(self) -> bool:
-        return True

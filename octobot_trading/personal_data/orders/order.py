@@ -345,7 +345,9 @@ class Order(util.Initializable):
 
     async def on_pending_creation(self, is_from_exchange_data=False):
         with self.order_state_creation():
-            self.state = orders_states.PendingCreationOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            state_class = orders_states.PendingCreationChainedOrderState if self.is_waiting_for_chained_trigger \
+                else orders_states.PendingCreationOrderState
+            self.state = state_class(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize()
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):

@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import OrderStatus, OrderStates, States
 from octobot_trading.personal_data.orders import create_order_state
 
@@ -27,12 +28,22 @@ pytestmark = pytest.mark.asyncio
 async def test_create_order_state_pending_creation(buy_limit_order):
     buy_limit_order.status = OrderStatus.PENDING_CREATION
     await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.PendingCreationOrderState)
+    assert buy_limit_order.state.state is States.PENDING_CREATION
+
+
+async def test_create_order_state_pending_chained_creation(buy_limit_order):
+    buy_limit_order.status = OrderStatus.PENDING_CREATION
+    buy_limit_order.is_waiting_for_chained_trigger = True
+    await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.PendingCreationChainedOrderState)
     assert buy_limit_order.state.state is States.PENDING_CREATION
 
 
 async def test_create_order_state_open(buy_limit_order):
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.OpenOrderState)
     assert buy_limit_order.state.state is States.OPEN
 
 
@@ -40,6 +51,7 @@ async def test_create_order_state_cancel(buy_limit_order):
     buy_limit_order.status = OrderStatus.CANCELED
     await create_order_state(buy_limit_order)
     # can be CANCELED or instant CLOSED
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     assert buy_limit_order.state.state in [OrderStates.FILLED, States.CLOSED]
 
 
@@ -47,36 +59,45 @@ async def test_create_order_state_fill(buy_limit_order):
     buy_limit_order.status = OrderStatus.FILLED
     await create_order_state(buy_limit_order)
     # can be FILLED or instant CLOSED
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     assert buy_limit_order.state.state in [OrderStates.FILLED, States.CLOSED]
 
 
 async def test_create_order_state_close(buy_limit_order):
     buy_limit_order.status = OrderStatus.CLOSED
     await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     assert buy_limit_order.state.state is States.CLOSED
 
 
 async def test_create_order_state_fill_to_open_without_ignore(buy_limit_order):
     buy_limit_order.status = OrderStatus.FILLED
     await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order, ignore_states=[])
+    assert isinstance(buy_limit_order.state, personal_data.OpenOrderState)
     assert buy_limit_order.state.state is States.OPEN
 
 
 async def test_create_order_state_fill_to_open_with_ignore(buy_limit_order):
     buy_limit_order.status = OrderStatus.FILLED
     await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order, ignore_states=[States.OPEN])
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     # can be FILLED or instant CLOSED
     assert buy_limit_order.state.state in [OrderStates.FILLED, States.CLOSED]
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
 
 
 async def test_create_order_state_cancel_to_open_with_ignore(buy_limit_order):
     buy_limit_order.status = OrderStatus.CANCELED
     await create_order_state(buy_limit_order)
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order, ignore_states=[States.OPEN])
+    assert isinstance(buy_limit_order.state, personal_data.CloseOrderState)
     # can be CANCELED or instant CLOSED
     assert buy_limit_order.state.state in [OrderStates.CANCELED, States.CLOSED]
