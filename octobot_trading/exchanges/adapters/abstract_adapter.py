@@ -23,6 +23,9 @@ import octobot_commons.constants as commons_constants
 def _adapter(func):
     def wrapper(*args, **kwargs):
         try:
+            if args[1] is None:
+                # element to adapt is None, no need to go any further
+                return None
             adapted = func(*args, **kwargs)
             # add any other common adapter function logic here
             return adapted
@@ -98,7 +101,7 @@ class AbstractAdapter:
 
     def get_uniformized_timestamp(self, timestamp):
         # override if the exchange time is not a second timestamp or millisecond
-        if timestamp > 16728292300:  # Friday 5 February 2500 11:51:40
+        if timestamp is not None and timestamp > 16728292300:  # Friday 5 February 2500 11:51:40
             return timestamp / commons_constants.MSECONDS_TO_SECONDS
         return timestamp
 
