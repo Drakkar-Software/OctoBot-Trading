@@ -44,6 +44,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         common_enums.ActivationTopics.EVALUATION_CYCLE.value:
             channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
     }
+    CONFIG_INIT_TIMEOUT = 30
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
@@ -373,9 +374,6 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         )
 
     async def _register_and_apply_required_user_inputs(self, context):
-        if context.exchange_manager.is_future:
-            await script_keywords.set_leverage(context, await script_keywords.user_select_leverage(context))
-
         if self.trading_mode.ALLOW_CUSTOM_TRIGGER_SOURCE:
             # register activating topics user input
             activation_topic_values = [
@@ -388,3 +386,11 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 common_enums.ActivationTopics.EVALUATION_CYCLE.value,
                 activation_topic_values
             )
+        await self._apply_exchange_side_config(context)
+
+    async def _apply_exchange_side_config(self, context):
+        # can be slow, call in a task if necessary
+        if context.exchange_manager.is_future:
+            await util.wait_for_topic_init(self.exchange_manager, self.CONFIG_INIT_TIMEOUT,
+                                           common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
+            await script_keywords.set_leverage(context, await script_keywords.user_select_leverage(context))
