@@ -20,6 +20,7 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc,
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
+import octobot_trading.errors as errors
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -80,6 +81,10 @@ class TestGateIORealExchangeTester(RealExchangeTester):
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+
+        # try with since and limit (used in data collector)
+        with pytest.raises(errors.FailedRequest):
+            assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()

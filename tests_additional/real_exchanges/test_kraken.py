@@ -85,6 +85,15 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
+        # try with since and limit (used in data collector)
+        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50)
+        assert len(symbol_prices) == 50
+        # check candles order (oldest first)
+        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        # check last candle is the current candle
+        for candle in symbol_prices:
+            assert candle[PriceIndexes.IND_PRICE_TIME.value] >= self.CANDLE_SINCE_SEC
+
     async def test_get_kline_price(self):
         # kline_price = await self.get_kline_price()
         client = kraken()

@@ -55,7 +55,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_get_market_status(self):
-        # await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         for market_status in await self.get_market_statuses():
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
@@ -97,6 +97,15 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+
+        # try with since and limit (used in data collector)
+        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50)
+        assert len(symbol_prices) == 50
+        # check candles order (oldest first)
+        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        # check last candle is the current candle
+        for candle in symbol_prices:
+            assert candle[PriceIndexes.IND_PRICE_TIME.value] >= self.CANDLE_SINCE_SEC
 
     async def test_get_kline_price(self):
         # await asyncio.sleep(10) # prevent rate api limit

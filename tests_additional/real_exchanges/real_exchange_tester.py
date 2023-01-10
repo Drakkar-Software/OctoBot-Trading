@@ -33,6 +33,8 @@ class RealExchangeTester:
     # default is 1h, change if necessary
     TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
+    CANDLE_SINCE = 631152000000    # 01/01/1990
+    CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -138,11 +140,15 @@ class RealExchangeTester:
     def get_allowed_time_delta(self):
         return (self.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1) * \
                commons_enums.TimeFramesMinutes[self.TIME_FRAME] * \
-               constants.MINUTE_TO_SECONDS * constants.MSECONDS_TO_SECONDS * 1.3
+               constants.MINUTE_TO_SECONDS * 1.3
 
     @staticmethod
     def get_time():
-        return Exchange.milliseconds()
+        return Exchange.seconds()
+
+    @staticmethod
+    def get_ms_time():
+        return int(Exchange.milliseconds())
 
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
