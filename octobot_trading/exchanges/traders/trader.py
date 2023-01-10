@@ -346,7 +346,7 @@ class Trader(util.Initializable):
                     self.logger.exception(e, True, f"Failed to cancel order {order}")
                     return False
                 if order_status is enums.OrderStatus.CANCELED:
-                    order.status = octobot_trading.enums.OrderStatus.CLOSED
+                    order.status = octobot_trading.enums.OrderStatus.CANCELED
                     self.logger.debug(f"Successfully cancelled order {order}")
                 elif order_status is enums.OrderStatus.PENDING_CANCEL:
                     order.status = octobot_trading.enums.OrderStatus.PENDING_CANCEL
