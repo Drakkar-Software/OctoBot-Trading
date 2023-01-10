@@ -76,21 +76,23 @@ async def test_create_order(trading_mode, buy_limit_order):
     # without context manager
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=False)) \
          as should_emit_trading_signal_mock:
-        assert await trading_mode.create_order(buy_limit_order, loaded=False, params=None, pre_init_callback=None) \
+        assert await trading_mode.create_order(buy_limit_order, loaded=False, params=None) \
                is buy_limit_order
         assert should_emit_trading_signal_mock.call_count == 1
         create_order_mock.assert_called_once_with(
-            buy_limit_order, loaded=False, params=None, pre_init_callback=None
+            buy_limit_order, loaded=False, params=None, wait_for_creation=True,
+            creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
         )
         create_order_mock.reset_mock()
         should_emit_trading_signal_mock.reset_mock()
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=True)) \
          as should_emit_trading_signal_mock:
         with pytest.raises(common_errors.MissingSignalBuilder):
-            await trading_mode.create_order(buy_limit_order, loaded=False, params=None, pre_init_callback=None)
+            await trading_mode.create_order(buy_limit_order, loaded=False, params=None,
+                                            wait_for_creation=False, creation_timeout=0)
         assert should_emit_trading_signal_mock.call_count == 1
         create_order_mock.assert_called_once_with(
-            buy_limit_order, loaded=False, params=None, pre_init_callback=None
+            buy_limit_order, loaded=False, params=None, wait_for_creation=False, creation_timeout=0
         )
         # created order but failed to register signal
         create_order_mock.reset_mock()
@@ -101,12 +103,13 @@ async def test_create_order(trading_mode, buy_limit_order):
                 as should_emit_trading_signal_mock:
             async with trading_mode.remote_signal_publisher("BTC/USDT") as builder:
                 assert await trading_mode.create_order(buy_limit_order, loaded=False,
-                                                       params=None, pre_init_callback=None) \
+                                                       params=None) \
                        is buy_limit_order
                 assert builder is None
                 assert should_emit_trading_signal_mock.call_count == 2
                 create_order_mock.assert_called_once_with(
-                    buy_limit_order, loaded=False, params=None, pre_init_callback=None
+                    buy_limit_order, loaded=False, params=None, wait_for_creation=True,
+                    creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
                 )
                 create_order_mock.reset_mock()
                 should_emit_trading_signal_mock.reset_mock()
@@ -114,13 +117,13 @@ async def test_create_order(trading_mode, buy_limit_order):
         with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=True)) \
                 as should_emit_trading_signal_mock:
             async with trading_mode.remote_signal_publisher("BTC/USDT") as builder:
-                assert await trading_mode.create_order(buy_limit_order, loaded=False, params=None,
-                                                       pre_init_callback=None) \
+                assert await trading_mode.create_order(buy_limit_order, loaded=False, params=None) \
                        is buy_limit_order
                 assert not builder.is_empty()
                 assert should_emit_trading_signal_mock.call_count == 2
                 create_order_mock.assert_called_once_with(
-                    buy_limit_order, loaded=False, params=None, pre_init_callback=None
+                    buy_limit_order, loaded=False, params=None, wait_for_creation=True,
+                    creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
                 )
                 # created order but failed to register signal
                 create_order_mock.reset_mock()

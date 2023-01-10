@@ -32,6 +32,7 @@ import octobot_trading.exchanges.connectors.ccxt.ccxt_connector as ccxt_connecto
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data.contracts as contracts
+import octobot_trading.personal_data.orders as orders
 
 
 
@@ -102,13 +103,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                           params: dict = None) \
-            -> typing.Optional[dict]:
+                           params: dict = None) -> typing.Optional[dict]:
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                 price, side, current_price, params)
             self.logger.debug(f"Created order: {created_order}")
-            return await self._verify_order(created_order, order_type, symbol, price)
+            return await self._verify_order(created_order, order_type, symbol, price, side)
         return None
 
     async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
@@ -129,7 +129,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
                                                   price=float_price, stop_price=float_stop_price, side=side,
                                                   current_price=float_current_price, params=params)
-            return await self._verify_order(edited_order, order_type, symbol, price)
+            order, _ = await self._verify_order(edited_order, order_type, symbol, price, side)
+            return order
         return None
 
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
@@ -153,18 +154,26 @@ class RestExchange(abstract_exchange.AbstractExchange):
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
 
-    async def _verify_order(self, created_order, order_type, symbol, price, params=None):
-        # todo move to adapter
+    async def _verify_order(self, created_order, order_type, symbol, price, side, params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
                 params = params or {}
-                created_order = await self.exchange_manager.exchange.get_order(
+                fetched_order = await self.get_order(
                     created_order[ecoc.ID.value], symbol=symbol, params=params
                 )
+                if fetched_order is None:
+                    created_order[ecoc.STATUS.value] = enums.OrderStatus.PENDING_CREATION.value
+                    # Order is created but not live on exchange. Consider it as pending.
+                    # It will be updated later on via order updater
+                    created_order[ecoc.SYMBOL.value] = symbol
+                    created_order[ecoc.TYPE.value] = orders.get_trade_order_type(order_type).value
+                    created_order[ecoc.SIDE.value] = side.value
+                else:
+                    created_order = fetched_order
 
         # on some exchange, market order are not including price, add it manually to ensure uniformity
-        if created_order[ecoc.PRICE.value] is None and price is not None:
+        if created_order is not None and created_order[ecoc.PRICE.value] is None and price is not None:
             created_order[ecoc.PRICE.value] = float(price)
 
         return created_order

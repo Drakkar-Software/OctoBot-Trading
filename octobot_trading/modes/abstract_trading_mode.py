@@ -346,10 +346,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
              as signal_builder:
             yield signal_builder
 
-    async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
+    async def create_order(self, order, loaded: bool = False, params: dict = None,
+                           wait_for_creation=True,
+                           creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
         return await signals.create_order(
             self.exchange_manager, self.should_emit_trading_signal(), order,
-            loaded=loaded, params=params, pre_init_callback=pre_init_callback
+            loaded=loaded, params=params,
+            wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
         )
 
     async def cancel_order(self, order, ignored_order: object = None) -> bool:

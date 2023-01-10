@@ -636,7 +636,8 @@ class AbstractExchange(util.Initializable):
                 cls.init_user_inputs(inputs)
         except Exception as e:
             logger.exception(e, True, f"Error when initializing user inputs: {e}")
-        logger.debug(f"Using config: {tentacle_config}")
+        if tentacle_config:
+            logger.debug(f"Using config: {tentacle_config}")
         return inputs
 
     @classmethod

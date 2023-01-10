@@ -23,10 +23,11 @@ def create_order_from_raw(trader, raw_order):
     return create_order_from_type(trader, order_type)
 
 
-def create_order_instance_from_raw(trader, raw_order, force_open=False):
+def create_order_instance_from_raw(trader, raw_order, force_open_or_pending_creation=False):
     order = create_order_from_raw(trader, raw_order)
     order.update_from_raw(raw_order)
-    if force_open:
+    if force_open_or_pending_creation \
+            and order.status not in (enums.OrderStatus.OPEN, enums.OrderStatus.PENDING_CREATION):
         order.status = enums.OrderStatus.OPEN
     return order
 

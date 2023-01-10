@@ -27,13 +27,18 @@ async def create_order(exchange_manager,
                        symbol: str,
                        current_price: float,
                        quantity: float,
-                       price: float) -> personal_data.Order:
+                       price: float,
+                       wait_for_creation=True,
+                       creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> personal_data.Order:
     return await exchange_manager.trader.create_order(
         exchange_manager.trader.create_order_instance(order_type=order_type,
                                                       symbol=symbol,
                                                       current_price=current_price,
                                                       quantity=quantity,
-                                                      price=price))
+                                                      price=price),
+        wait_for_creation=wait_for_creation,
+        creation_timeout=creation_timeout
+    )
 
 
 def get_open_orders(exchange_manager) -> list:

@@ -27,7 +27,11 @@ class PendingCreationOrderState(order_state.OrderState):
         """
         :return: True if the Order is created
         """
-        return False
+        if self.order.is_waiting_for_chained_trigger:
+            # order is to be triggered as chained order: not created
+            return False
+        # order is created on exchange but not open yet
+        return True
 
     def is_open(self) -> bool:
         """
@@ -35,12 +39,7 @@ class PendingCreationOrderState(order_state.OrderState):
         """
         return False
 
-    async def update(self) -> None:
-        # nothing to do as no actual order exists yet
-        pass
-
     async def on_refresh_successful(self):
-        # nothing to do as no actual order exists yet
         pass
 
     async def terminate(self):
@@ -50,4 +49,4 @@ class PendingCreationOrderState(order_state.OrderState):
         self.log_event_message(enums.StatesMessages.PENDING_CREATION)
 
     def is_pending(self) -> bool:
-        return False
+        return True

@@ -61,7 +61,9 @@ def should_emit_trading_signal(exchange_manager):
 
 
 async def create_order(exchange_manager, should_emit_signal, order,
-                       loaded: bool = False, params: dict = None, pre_init_callback=None):
+                       loaded: bool = False, params: dict = None,
+                       wait_for_creation=True,
+                       creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
     order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
     if should_emit_signal:
         percent = await orders.get_order_size_portfolio_percent(
@@ -72,7 +74,8 @@ async def create_order(exchange_manager, should_emit_signal, order,
         )
         order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
     created_order = await exchange_manager.trader.create_order(
-        order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
+        order, loaded=loaded, params=params,
+        wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
     )
     if created_order is not None and should_emit_signal:
         signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
