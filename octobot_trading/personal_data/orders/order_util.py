@@ -268,6 +268,26 @@ def is_stop_order(order_type):
                           enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]
 
 
+def get_trade_order_type(order_type: enums.TraderOrderType):
+    if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET):
+        return enums.TradeOrderType.MARKET
+    if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):
+        return enums.TradeOrderType.LIMIT
+    if order_type is enums.TraderOrderType.STOP_LOSS:
+        return enums.TradeOrderType.STOP_LOSS
+    if order_type is enums.TraderOrderType.TRAILING_STOP:
+        return enums.TradeOrderType.TRAILING_STOP
+    if order_type is enums.TraderOrderType.STOP_LOSS_LIMIT:
+        return enums.TradeOrderType.STOP_LOSS_LIMIT
+    if order_type is enums.TraderOrderType.TRAILING_STOP_LIMIT:
+        return enums.TradeOrderType.TRAILING_STOP_LIMIT
+    if order_type is enums.TraderOrderType.TAKE_PROFIT:
+        return enums.TradeOrderType.TAKE_PROFIT
+    if order_type is enums.TraderOrderType.TAKE_PROFIT_LIMIT:
+        return enums.TradeOrderType.TAKE_PROFIT_LIMIT
+    raise ValueError(order_type)
+
+
 async def create_as_chained_order(order):
     order.is_waiting_for_chained_trigger = False
     if not order.trader.simulate and order.has_been_bundled:
@@ -292,11 +312,13 @@ async def create_as_chained_order(order):
 
 
 def is_associated_pending_order(pending_order, created_order):
-    return created_order.symbol == pending_order.symbol and \
-           created_order.origin_quantity == pending_order.origin_quantity and \
-           created_order.origin_price == pending_order.origin_price and \
-           created_order.__class__ is pending_order.__class__ and \
-           created_order.trader is pending_order.trader
+    return created_order.order_id == pending_order.order_id or (
+        created_order.symbol == pending_order.symbol and
+        created_order.origin_quantity == pending_order.origin_quantity and
+        created_order.origin_price == pending_order.origin_price and
+        created_order.__class__ is pending_order.__class__ and
+        created_order.trader is pending_order.trader
+    )
 
 
 async def apply_pending_order_from_created_order(pending_order, created_order, to_be_initialized):
@@ -347,17 +369,15 @@ async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol)
                 await order.order_group.on_cancel(order)
 
 
-def get_order_quantity_currency(exchange_manager, symbol, side):
+def get_order_quantity_currency(exchange_manager, symbol):
     try:
-        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+        parsed_symbol = symbol_util.parse_symbol(symbol)
+        base, quote = parsed_symbol.base_and_quote()
     except ValueError:
         # symbol that can't be split
         return None
     if exchange_manager.is_future:
-        position = exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(
-            symbol, side
-        )
-        return quote if position.symbol_contract.is_inverse_contract() else base
+        return quote if parsed_symbol.is_inverse() else base
     # always base in spot
     return base
 

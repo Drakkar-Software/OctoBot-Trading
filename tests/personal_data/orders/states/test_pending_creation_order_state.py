@@ -32,4 +32,4 @@ async def test_on_order_refresh_successful(buy_limit_order):
     buy_limit_order.status = OrderStatus.PENDING_CREATION
     await buy_limit_order.state.on_refresh_successful()
     buy_limit_order.status = OrderStatus.PENDING_CREATION
-    assert buy_limit_order.is_created() is False
+    assert buy_limit_order.is_created() is True

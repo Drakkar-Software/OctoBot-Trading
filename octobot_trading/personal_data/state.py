@@ -103,13 +103,16 @@ class State(util.Initializable):
                 self.log_event_message(enums.StatesMessages.SYNCHRONIZING)
                 await self.synchronize()
             else:
-                try:
-                    async with self.lock:
-                        await self.terminate()
-                finally:
-                    self.on_terminate()
+                await self.trigger_terminate()
         else:
             self.log_event_message(enums.StatesMessages.ALREADY_SYNCHRONIZING)
+
+    async def trigger_terminate(self):
+        try:
+            async with self.lock:
+                await self.terminate()
+        finally:
+            self.on_terminate()
 
     async def synchronize(self, force_synchronization=False, catch_exception=False) -> None:
         """
@@ -177,7 +180,8 @@ class State(util.Initializable):
         Called after terminate is complete
         """
         self.get_logger().debug(f"{self.__class__.__name__} terminated")
-        self.terminated.set()
+        if not self.terminated.is_set():
+            self.terminated.set()
 
     def __del__(self):
         if not self.terminated.is_set() and self.terminated._waiters:
@@ -187,6 +191,8 @@ class State(util.Initializable):
             self.terminated.set()
 
     async def wait_for_terminate(self, timeout) -> None:
+        if self.terminated.is_set():
+            return
         await asyncio.wait_for(self.terminated.wait(), timeout=timeout)
 
     async def on_refresh_successful(self):

@@ -75,7 +75,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         "strat",
         exchange_manager,
         target_amount="1%",
-        target_position="2"
+        target_position="2",
     ) == {
         enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,

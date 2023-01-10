@@ -140,17 +140,7 @@ class Order(util.Initializable):
 
         if quantity_currency is None:
             if self.quantity_currency is None and self.symbol is not None:
-                try:
-                    side = self.get_position_side(
-                        self.exchange_manager.exchange.get_pair_future_contract(self.symbol)
-                    ) if self.exchange_manager.is_future else None
-                    self.quantity_currency = order_util.get_order_quantity_currency(
-                        self.exchange_manager,
-                        self.symbol,
-                        side
-                    )
-                except (errors.InvalidPositionSide, errors.ContractExistsError) as e:
-                    logging.get_logger(self.get_logger_name()).warning(f"Can't infer quantity_currency: {e}")
+                self.quantity_currency = order_util.get_order_quantity_currency(self.exchange_manager, self.symbol)
         else:
             self.quantity_currency = quantity_currency
 
@@ -360,6 +350,14 @@ class Order(util.Initializable):
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):
         with self.order_state_creation():
+            if isinstance(self.state, orders_states.PendingCreationOrderState):
+                await self.state.trigger_terminate()
+            if isinstance(self.state, orders_states.OpenOrderState):
+                if not self.state.is_initialized:
+                    logging.get_logger(self.get_logger_name()).error(f"on_open called with existing "
+                                                                     f"uninitialized OpenOrderState.")
+                # state has already been created and initialized
+                return
             self.state = orders_states.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_open)
 
@@ -532,6 +530,16 @@ class Order(util.Initializable):
     async def update_from_order(self, other_order):
         self.is_synchronized_with_exchange = other_order.is_synchronized_with_exchange
         self.is_from_this_octobot = other_order.is_from_this_octobot
+
+        self.origin_quantity = other_order.origin_quantity
+        self.origin_price = other_order.origin_price
+        self.origin_stop_price = other_order.origin_stop_price
+        self.symbol = other_order.symbol
+        self.currency = other_order.currency
+        self.market = other_order.market
+        self.quantity_currency = other_order.quantity_currency
+        self.taker_or_maker = other_order.taker_or_maker
+        self.side = other_order.side
 
         self.order_id = other_order.order_id
         self.status = other_order.status
