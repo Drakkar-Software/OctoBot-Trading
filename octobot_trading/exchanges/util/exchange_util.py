@@ -181,18 +181,18 @@ async def get_historical_ohlcv(local_exchange_manager, symbol, time_frame, start
     Async generator, use as follows:
         async for candles in get_historical_ohlcv(exchange_manager, pair, time_frame, start_time, end_time):
             # candles stuff
+    WARNING: start_time and end_time should be milliseconds timestamps
     """
     reached_max = False
     while start_time < end_time and not reached_max:
         candles = await local_exchange_manager.exchange.get_symbol_prices(symbol, time_frame, since=int(start_time))
         if candles:
-            start_time = candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value]
-            while start_time > end_time and candles:
-                start_time = candles.pop(-1)[common_enums.PriceIndexes.IND_PRICE_TIME.value]
+            while candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000 > end_time and candles:
+                candles.pop(-1)
                 reached_max = True
             if candles:
-                local_exchange_manager.exchange.uniformize_candles_if_necessary(candles)
                 yield candles
+                start_time = candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000
                 # avoid fetching the last element twice
                 start_time += 1
             else:
