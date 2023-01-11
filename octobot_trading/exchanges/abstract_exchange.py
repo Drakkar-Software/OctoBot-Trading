@@ -15,6 +15,7 @@
 #  License along with this library.
 import typing
 import decimal
+import time
 
 import octobot_commons.constants
 import octobot_commons.enums as common_enums
@@ -27,6 +28,7 @@ import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.errors as errors
 
 
 class AbstractExchange(util.Initializable):
@@ -413,6 +415,21 @@ class AbstractExchange(util.Initializable):
         :return: the exchange sub account list if supported by the exchange
         """
         raise NotImplementedError("get_sub_account_list is not available on this exchange")
+
+    async def retry_till_success(self, timeout, request_func, *args, **kwargs):
+        t0 = time.time()
+        attempt = 1
+        while time.time() - t0 < timeout:
+            try:
+                result = await request_func(*args, **kwargs)
+                if attempt > 1:
+                    self.logger.debug(f"Request retrier success for {request_func.__name__} after {attempt} attempts")
+                return result
+            except errors.FailedRequest:
+                self.logger.debug(f"Request retrier failed for {request_func.__name__} (attempt {attempt})")
+                attempt += 1
+        raise errors.FailedRequest(f"Failed to successfully run request {request_func.__name__} after {attempt} "
+                                   f"attempts.")
 
     """
     Parsers
