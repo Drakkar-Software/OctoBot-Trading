@@ -19,6 +19,7 @@ import asyncio
 import octobot_commons.async_job as async_job
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.channel.orders as orders_channel
@@ -38,6 +39,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     CLOSE_ORDER_REFRESH_TIME = 81
     TIME_BETWEEN_ORDERS_REFRESH = 2
     DEPENDENCIES_TIMEOUT = 30
+    OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT = 3 * commons_constants.MINUTE_TO_SECONDS
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -74,7 +76,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                 ],
                 self.DEPENDENCIES_TIMEOUT
             )
-            await self.fetch_and_push(is_from_bot=False)
+            await self.fetch_and_push(is_from_bot=False, retry_till_success=True)
         except errors.NotSupported:
             self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")
             await self.pause()
@@ -93,14 +95,16 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         await self.open_orders_job.run()
         # await self.closed_orders_job.run()
 
-    async def fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT):
+    async def fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT, retry_till_success=False):
         """
         Update open and closed orders from exchange
         :param is_from_bot: True if the order was created by OctoBot
         :param limit: the exchange request orders count limit
+        :param retry_till_success: retry request till it works. Should be rarely used as it might take some time
         """
         # should not raise: open orders are necessary
-        await self._open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit)
+        await self._open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit,
+                                               retry_till_success=retry_till_success)
         await asyncio.sleep(self.TIME_BETWEEN_ORDERS_REFRESH)
         try:
             # can raise, closed orders are not critical data
@@ -108,14 +112,23 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         except errors.NotSupported:
             self.logger.debug(f"{self.channel.exchange_manager.exchange_name} is not supporting closed orders updates")
 
-    async def _open_orders_fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT):
+    async def _open_orders_fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT, retry_till_success=False):
         """
         Update open orders from exchange
         :param is_from_bot: True if the order was created by OctoBot
         :param limit: the exchange request orders count limit
+        :param retry_till_success: retry request till it works. Should be rarely used as it might take some time
         """
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol, limit=limit)
+            if retry_till_success:
+                open_orders: list = await self.channel.exchange_manager.exchange.retry_till_success(
+                    self.OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT,
+                    self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit
+                )
+            else:
+                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
+                    symbol=symbol, limit=limit
+                )
             if open_orders:
                 await self.push(open_orders, is_from_bot=is_from_bot)
             else:

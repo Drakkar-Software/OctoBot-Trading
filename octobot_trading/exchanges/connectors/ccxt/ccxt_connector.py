@@ -662,3 +662,5 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     f"Last json response: {self.client.last_json_response}"
                 )
             raise
+        except ccxt.RequestTimeout as e:
+            raise octobot_trading.errors.FailedRequest(f"Request timeout: {e}") from e
