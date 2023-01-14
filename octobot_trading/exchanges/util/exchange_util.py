@@ -187,7 +187,7 @@ async def get_historical_ohlcv(local_exchange_manager, symbol, time_frame, start
     while start_time < end_time and not reached_max:
         candles = await local_exchange_manager.exchange.get_symbol_prices(symbol, time_frame, since=int(start_time))
         if candles:
-            while candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000 > end_time and candles:
+            while candles and candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000 > end_time:
                 candles.pop(-1)
                 reached_max = True
             if candles:
