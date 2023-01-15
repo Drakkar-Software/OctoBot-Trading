@@ -45,17 +45,26 @@ class OrdersManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_orders()
 
-    def get_all_orders(self, symbol=None, since=-1, limit=-1, tag=None):
-        return self._select_orders(None, symbol=symbol, since=since, limit=limit, tag=tag)
+    def get_all_orders(self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+        return self._select_orders(
+            None, symbol=symbol, since=since,
+            until=until, limit=limit, tag=tag)
 
-    def get_open_orders(self, symbol=None, since=-1, limit=-1, tag=None):
-        return self._select_orders(enums.OrderStatus.OPEN, symbol, since, limit, tag=tag)
+    def get_open_orders(self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+        return self._select_orders(
+            enums.OrderStatus.OPEN, symbol, since=since,
+            until=until, limit=limit, tag=tag)
 
-    def get_pending_cancel_orders(self, symbol=None, since=-1, limit=-1, tag=None):
-        return self._select_orders(enums.OrderStatus.PENDING_CANCEL, symbol, since, limit, tag=tag)
+    def get_pending_cancel_orders(
+        self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+        return self._select_orders(
+            enums.OrderStatus.PENDING_CANCEL, symbol, since=since, 
+            until=until, limit=limit, tag=tag)
 
-    def get_closed_orders(self, symbol=None, since=-1, limit=-1, tag=None):
-        return self._select_orders(enums.OrderStatus.CLOSED, symbol, since, limit, tag=tag)
+    def get_closed_orders(self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+        return self._select_orders(
+            enums.OrderStatus.CLOSED, symbol, since=since,
+            until=until, limit=limit, tag=tag)
 
     def get_order(self, order_id):
         return self.orders[order_id]
@@ -192,14 +201,16 @@ class OrdersManager(util.Initializable):
         if self.MAX_ORDERS_COUNT and len(self.orders) > self.MAX_ORDERS_COUNT:
             self._remove_oldest_orders(int(self.MAX_ORDERS_COUNT / 2))
 
-    def _select_orders(self, state=None, symbol=None, since=-1, limit=-1, tag=None):
+    def _select_orders(
+        self, state=None, symbol=None, since=-1, until=-1, limit=-1, tag=None):
         orders = [
             order
             for order in self.orders.values()
             if (
                     (state is None or order.status == state) and
                     (symbol is None or (symbol and order.symbol == symbol)) and
-                    (since == -1 or (since and order.timestamp < since)) and
+                    (since == -1 or (since and order.timestamp >= since)) and
+                    (until == -1 or (until and order.timestamp <= until)) and
                     (tag is None or order.tag == tag)
             )
         ]
