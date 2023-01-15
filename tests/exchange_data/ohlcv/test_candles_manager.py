@@ -166,4 +166,4 @@ def _gen_candles(size) -> list:
 
 
 def _get_candle(seed):
-    return [seed, seed * 10, seed * 100, seed * 1000, seed * 10000, seed * 100000]
+    return [int(seed), seed * 10, seed * 100, seed * 1000, seed * 10000, seed * 100000]

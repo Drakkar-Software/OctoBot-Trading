@@ -60,4 +60,4 @@ cdef class CandlesManager(util.Initializable):
     cdef void _check_max_candles(self)
     cdef object _inc_candle_index(self)
     cdef void _reset_candles(self)
-    cdef np.ndarray _extract_limited_data(self, np.float64_t[::1] data, int limit=*, int max_limit=*)
+    cdef np.ndarray _extract_limited_data(self, np.ndarray data, int limit=*, int max_limit=*)
