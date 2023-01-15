@@ -6,3 +6,6 @@
 [![Build Status](https://cloud.drone.io/api/badges/Drakkar-Software/OctoBot-Trading/status.svg)](https://cloud.drone.io/Drakkar-Software/OctoBot-Trading)
 
 OctoBot trading package.
+
+OctoBot trading is currently support exchange connections via CCXT. 
+If you wish to add new connectors, please contact the OctoBot team.
