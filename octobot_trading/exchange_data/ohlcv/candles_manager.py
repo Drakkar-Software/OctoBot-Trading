@@ -199,10 +199,10 @@ class CandlesManager(util.Initializable):
         max_handled_limit: int = self.max_candles_count if self.reached_max else max_limit
         if limit == -1:
             if max_limit == -1:
-                return np.array(data, dtype=float)
-            return np.array(data[:max_handled_limit], dtype=float)
+                return np.array(data, dtype=np.float64)
+            return np.array(data[:max_handled_limit], dtype=np.float64)
 
         if max_limit == -1:
-            return np.array(data[-min(limit, len(data)):], dtype=float)
+            return np.array(data[-min(limit, len(data)):], dtype=np.float64)
         else:
-            return np.array(data[max(0, max_handled_limit - limit): max_handled_limit], dtype=float)
+            return np.array(data[max(0, max_handled_limit - limit): max_handled_limit], dtype=np.float64)

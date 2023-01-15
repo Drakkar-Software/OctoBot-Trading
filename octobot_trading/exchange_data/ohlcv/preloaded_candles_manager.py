@@ -53,7 +53,7 @@ class PreloadedCandlesManager(candles_manager.CandlesManager):
         self.volume_candles = self._get_candle_values_array(new_candles_data, enums.PriceIndexes.IND_PRICE_VOL.value)
 
     def _get_candle_values_array(self, candles, key):
-        return np.array([candle[key] for candle in candles], dtype=float)
+        return np.array([candle[key] for candle in candles], dtype=np.float64)
 
     def _get_candle_index(self, candle):
         # Uses the given candle to find the index on the associated candle in preloaded candles.
@@ -90,12 +90,12 @@ class PreloadedCandlesManager(candles_manager.CandlesManager):
         if limit == -1:
             if max_limit == -1:
                 return data
-            return np.array(data[:max_limit], dtype=float)
+            return np.array(data[:max_limit], dtype=np.float64)
 
         if max_limit == -1:
-            return np.array(data[-min(limit, len(data)):], dtype=float)
+            return np.array(data[-min(limit, len(data)):], dtype=np.float64)
         else:
-            return np.array(data[max(0, max_limit - limit): max_limit], dtype=float)
+            return np.array(data[max(0, max_limit - limit): max_limit], dtype=np.float64)
 
     def add_new_candle(self, new_candle_data):
         self.logger.error("add_new_candle should not be called")
