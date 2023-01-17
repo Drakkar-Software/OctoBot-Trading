@@ -510,9 +510,11 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
                     await asyncio.sleep(self.throttled_ws_updates)
             except ccxt.NetworkError as err:
-                self.logger.debug(f"Can't connect to exchange websocket: {err}. "
+                ws_des = f"{generator_func.__name__} {g_kwargs}"
+                self.logger.debug(f"Can't connect to exchange {ws_des} websocket: {err}. "
                                   f"Retrying in {self.RECONNECT_DELAY} seconds")
                 await asyncio.sleep(self.RECONNECT_DELAY)
+                self.logger.debug(f"Reconnecting to {ws_des}")
             except Exception as err:
                 self.logger.exception(
                     err,
