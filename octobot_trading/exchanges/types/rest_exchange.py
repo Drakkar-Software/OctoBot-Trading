@@ -18,6 +18,8 @@ import decimal
 import typing
 import copy
 import asyncio
+import traceback
+import sys
 
 import ccxt.async_support as ccxt
 import octobot_commons.enums as commons_enums
@@ -40,6 +42,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
+    PRINT_DEBUG_LOGS = False
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -146,12 +149,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
             yield
         except ccxt.InsufficientFunds as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.warning(str(e))
+            if self.__class__.PRINT_DEBUG_LOGS:
+                self.logger.warning(str(e))
             raise errors.MissingFunds(e)
         except ccxt.NotSupported:
             raise errors.NotSupported
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
+            print(traceback.format_exc(), file=sys.stderr)
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
 
     async def _verify_order(self, created_order, order_type, symbol, price, side, params=None):
