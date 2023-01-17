@@ -23,6 +23,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_commons.enums as common_enums
+import octobot_commons.constants as common_constants
 
 
 class CCXTAdapter(adapters.AbstractAdapter):
@@ -41,20 +42,44 @@ class CCXTAdapter(adapters.AbstractAdapter):
         fixed.pop(ecoc.INFO.value)
         return fixed
 
+    def _fix_ohlcv_prices(self, ohlcv):
+        for index, value in enumerate(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value + 1:]):
+            ohlcv[index + 1] = float(value)
+
     def fix_ohlcv(self, raw, **kwargs):
         fixed = super().fix_ohlcv(raw, **kwargs)
+        # ensure open time is not the current time but the actual candle open time
+        # time_frame kwarg has to be passed to parse candle time
+        candles_s = 1
+        if "time_frame" in kwargs:
+            candles_s = common_enums.TimeFramesMinutes[common_enums.TimeFrames(kwargs["time_frame"])] * \
+                        common_constants.MINUTE_TO_SECONDS
         for ohlcv in fixed:
             try:
-                ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] = \
-                    int(self.get_uniformized_timestamp(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value]))
-                for index, value in enumerate(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value + 1:]):
-                    ohlcv[index + 1] = float(value)
+                int_val = int(self.get_uniformized_timestamp(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value]))
+                ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] = int_val - (int_val % candles_s)
+                self._fix_ohlcv_prices(ohlcv)
             except KeyError as e:
                 self.logger.error(f"Fail to fix ohlcv ({e})")
         return fixed
 
     def parse_ohlcv(self, fixed, **kwargs):
         # CCXT standard ohlcv parsing logic
+        return fixed
+
+    def fix_kline(self, raw, **kwargs):
+        fixed = super().fix_kline(raw, **kwargs)
+        for kline in fixed:
+            try:
+                kline[common_enums.PriceIndexes.IND_PRICE_TIME.value] = \
+                    int(self.get_uniformized_timestamp(kline[common_enums.PriceIndexes.IND_PRICE_TIME.value]))
+                self._fix_ohlcv_prices(kline)
+            except KeyError as e:
+                self.logger.error(f"Fail to fix kline ({e})")
+        return fixed
+
+    def parse_kline(self, fixed, **kwargs):
+        # CCXT standard kline parsing logic
         return fixed
 
     def fix_ticker(self, raw, **kwargs):

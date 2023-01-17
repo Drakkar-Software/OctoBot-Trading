@@ -50,6 +50,11 @@ class AbstractAdapter:
         return self.parse_ohlcv(fixed, **kwargs)
 
     @_adapter
+    def adapt_kline(self, raw, **kwargs):
+        fixed = self.fix_kline(raw, **kwargs)
+        return self.parse_kline(fixed, **kwargs)
+
+    @_adapter
     def adapt_ticker(self, raw, **kwargs):
         fixed = self.fix_ticker(raw, **kwargs)
         return self.parse_ticker(fixed, **kwargs)
@@ -123,6 +128,13 @@ class AbstractAdapter:
 
     def parse_ohlcv(self, fixed, **kwargs):
         raise NotImplementedError("parse_ohlcv is not implemented")
+
+    def fix_kline(self, raw, **kwargs):
+        # add generic logic if necessary
+        return raw
+
+    def parse_kline(self, fixed, **kwargs):
+        raise NotImplementedError("parse_kline is not implemented")
 
     def fix_ticker(self, raw, **kwargs):
         # add generic logic if necessary
