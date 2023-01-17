@@ -113,7 +113,7 @@ class TestBithumbRealExchangeTester(RealExchangeTester):
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()
-        assert len(recent_trades) == 20
+        assert len(recent_trades) == 50
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
