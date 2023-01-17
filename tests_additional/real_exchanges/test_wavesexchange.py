@@ -128,16 +128,17 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
             Ectc.PREVIOUS_CLOSE.value
         ))
         if check_content:
-            assert ticker[Ectc.HIGH.value]
-            assert ticker[Ectc.LOW.value]
+            # todo fix in tentacle: replace 0.0 by None
+            assert ticker[Ectc.HIGH.value] is None
+            assert ticker[Ectc.LOW.value] is None
             assert ticker[Ectc.BID.value] is None
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value] is None
             assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value]
-            assert ticker[Ectc.CLOSE.value]
-            assert ticker[Ectc.LAST.value]
+            assert ticker[Ectc.OPEN.value] is None
+            assert ticker[Ectc.CLOSE.value] is None
+            assert ticker[Ectc.LAST.value] is None
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value]
+            assert ticker[Ectc.BASE_VOLUME.value] is None
             assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
             RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)
