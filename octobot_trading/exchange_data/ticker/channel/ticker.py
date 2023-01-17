@@ -26,6 +26,7 @@ import octobot_trading.constants as constants
 class TickerProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, symbol, ticker):
         await self.perform(symbol, ticker)
+        await self._on_ticker_push(symbol, ticker)
 
     async def perform(self, symbol, ticker):
         try:
