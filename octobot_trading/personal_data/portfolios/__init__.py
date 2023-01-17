@@ -72,6 +72,7 @@ from octobot_trading.personal_data.portfolios.assets import (
 from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
+    filter_empty_values,
     portfolio_to_float,
     get_draw_down,
     get_coefficient_of_determination,
@@ -106,6 +107,7 @@ __all__ = [
     "SpotAsset",
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
+    "filter_empty_values",
     "portfolio_to_float",
     "get_draw_down",
     "get_coefficient_of_determination",

@@ -17,4 +17,5 @@
 
 cpdef dict parse_decimal_portfolio(dict portfolio)
 cpdef dict portfolio_to_float(dict portfolio)
+cpdef dict filter_empty_values(dict portfolio)
 cpdef object get_draw_down(object exchange_manager)

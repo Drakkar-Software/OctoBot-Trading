@@ -42,6 +42,14 @@ def parse_decimal_config_portfolio(portfolio):
     }
 
 
+def filter_empty_values(portfolio):
+    return {
+        symbol: value
+        for symbol, value in portfolio.items()
+        if value[commons_constants.PORTFOLIO_TOTAL] > 0
+    }
+
+
 def portfolio_to_float(portfolio):
     float_portfolio = {}
     for symbol, symbol_balance in portfolio.items():

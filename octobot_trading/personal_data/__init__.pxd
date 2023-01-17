@@ -60,6 +60,7 @@ from octobot_trading.personal_data.portfolios cimport (
     SpotAsset,
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
+    filter_empty_values,
     portfolio_to_float,
 )
 from octobot_trading.personal_data cimport positions
@@ -159,6 +160,7 @@ __all__ = [
     "SpotAsset",
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
+    "filter_empty_values",
     "portfolio_to_float",
     "PositionsUpdaterSimulator",
     "Position",
