@@ -728,6 +728,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         :param kwargs: the feed kwargs
         """
         time_frame = commons_enums.TimeFrames(timeframe)
+        kline = self.adapter.adapt_kline([copy.deepcopy(candles[-1])])[0]
         adapted = self.adapter.adapt_ohlcv(candles, time_frame=time_frame)
         last_candle = adapted[-1]
         if symbol not in self.watched_pairs:
@@ -765,23 +766,23 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 trading_constants.KLINE_CHANNEL,
                 time_frame,
                 symbol,
-                last_candle
+                kline
             )
 
         # Push a new ticker if necessary : only push on the min timeframe
         if time_frame is self.min_timeframe:
             ticker = {
-                Ectc.HIGH.value: last_candle[commons_enums.PriceIndexes.IND_PRICE_HIGH.value],
-                Ectc.LOW.value: last_candle[commons_enums.PriceIndexes.IND_PRICE_LOW.value],
+                Ectc.HIGH.value: kline[commons_enums.PriceIndexes.IND_PRICE_HIGH.value],
+                Ectc.LOW.value: kline[commons_enums.PriceIndexes.IND_PRICE_LOW.value],
                 Ectc.BID.value: None,
                 Ectc.BID_VOLUME.value: None,
                 Ectc.ASK.value: None,
                 Ectc.ASK_VOLUME.value: None,
-                Ectc.OPEN.value: last_candle[commons_enums.PriceIndexes.IND_PRICE_OPEN.value],
-                Ectc.CLOSE.value: last_candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
-                Ectc.LAST.value: last_candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+                Ectc.OPEN.value: kline[commons_enums.PriceIndexes.IND_PRICE_OPEN.value],
+                Ectc.CLOSE.value: kline[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+                Ectc.LAST.value: kline[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
                 Ectc.PREVIOUS_CLOSE.value: None,
-                Ectc.BASE_VOLUME.value: last_candle[commons_enums.PriceIndexes.IND_PRICE_VOL.value],
+                Ectc.BASE_VOLUME.value: kline[commons_enums.PriceIndexes.IND_PRICE_VOL.value],
                 Ectc.TIMESTAMP.value: self.exchange.get_exchange_current_time(),
             }
             await self.push_to_channel(

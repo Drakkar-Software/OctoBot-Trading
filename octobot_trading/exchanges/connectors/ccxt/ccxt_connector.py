@@ -211,9 +211,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                               time_frame: octobot_commons.enums.TimeFrames,
                               **kwargs: dict) -> typing.Optional[list]:
         try:
-            # default implementation
-            # already adapted in get_symbol_prices
-            return await self.get_symbol_prices(symbol, time_frame, limit=1, **kwargs)
+            with self.error_describer():
+                return self.adapter.adapt_kline(
+                    await self.client.fetch_ohlcv(symbol, time_frame.value, limit=1, params=kwargs)
+                )
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
