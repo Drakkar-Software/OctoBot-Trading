@@ -58,6 +58,7 @@ from octobot_trading.personal_data.portfolios.assets cimport (
 from octobot_trading.personal_data.portfolios cimport portfolio_util
 from octobot_trading.personal_data.portfolios.portfolio_util cimport (
     parse_decimal_portfolio,
+    filter_empty_values,
     portfolio_to_float,
 )
 from octobot_trading.personal_data.portfolios cimport history
@@ -88,6 +89,7 @@ __all__ = [
     "MarginAsset",
     "SpotAsset",
     "parse_decimal_portfolio",
+    "filter_empty_values",
     "portfolio_to_float",
     "create_historical_asset_value_from_dict_like_object",
     "HistoricalAssetValue",
