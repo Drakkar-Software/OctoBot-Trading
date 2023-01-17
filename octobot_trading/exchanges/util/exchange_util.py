@@ -166,8 +166,8 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         return False, False, _get_time_sync_error_message(exchange_name, "account details")
     except trading_backend.ExchangeAuthError:
         return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
-    except Exception as e:
-        return False, True, f"Error when loading exchange account: {e}"
+    except (AttributeError, Exception) as e:
+        return True, False, f"Error when loading exchange account: {e}"
     finally:
         # do not log stopping message
         logger = local_exchange_manager.exchange.connector.logger
