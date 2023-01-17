@@ -45,6 +45,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
     }
     CONFIG_INIT_TIMEOUT = 30
+    
+    AVAILABLE_API_ACTIONS = []
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
