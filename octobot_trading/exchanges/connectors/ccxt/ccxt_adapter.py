@@ -43,14 +43,14 @@ class CCXTAdapter(adapters.AbstractAdapter):
 
     def fix_ohlcv(self, raw, **kwargs):
         fixed = super().fix_ohlcv(raw, **kwargs)
-        try:
-            for ohlcv in fixed:
+        for ohlcv in fixed:
+            try:
                 ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] = \
                     int(self.get_uniformized_timestamp(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value]))
                 for index, value in enumerate(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value + 1:]):
                     ohlcv[index + 1] = float(value)
-        except KeyError as e:
-            self.logger.error(f"Fail to fix ohlcv ({e})")
+            except KeyError as e:
+                self.logger.error(f"Fail to fix ohlcv ({e})")
         return fixed
 
     def parse_ohlcv(self, fixed, **kwargs):
