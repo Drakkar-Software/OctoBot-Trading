@@ -250,9 +250,13 @@ class PortfolioValueHolder:
         It will try to create the symbol that fit with the exchange logic.
         :return: the value found of this currency quantity, if not found returns 0.
         """
+        settlement_asset = None
+        if self.portfolio_manager.exchange_manager.is_future:
+            settlement_asset = self.portfolio_manager.reference_market
         try:
             return self.convert_currency_value_using_last_prices(quantity, currency,
-                                                                 self.portfolio_manager.reference_market)
+                                                                 self.portfolio_manager.reference_market,
+                                                                 settlement_asset)
         except errors.MissingPriceDataError as missing_data_exception:
             if not self.portfolio_manager.exchange_manager.is_future:
                 try:
@@ -279,9 +283,10 @@ class PortfolioValueHolder:
         return constants.ZERO
 
     def convert_currency_value_using_last_prices(
-        self, quantity, current_currency, target_currency):
+        self, quantity, current_currency, target_currency, settlement_asset=None):
         try:
-            symbol = symbol_util.merge_currencies(current_currency, target_currency)
+            symbol = symbol_util.merge_currencies(
+                current_currency, target_currency, settlement_asset=settlement_asset)
             if self._has_price_data(symbol):
                 return quantity * self._get_last_price_data(symbol)
         except KeyError:
