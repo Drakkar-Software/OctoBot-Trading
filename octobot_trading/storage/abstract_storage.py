@@ -13,7 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
+import asyncio
 import octobot_commons.display as commons_display
+import octobot_commons.logging as logging
 
 import octobot_trading.exchange_channel as exchanges_channel
 
@@ -24,6 +26,7 @@ class AbstractStorage:
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
     HISTORY_TABLE = None
+    DEBOUNCE_DURATION = 10
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
@@ -34,6 +37,7 @@ class AbstractStorage:
             or self.USE_LIVE_CONSUMER_IN_BACKTESTING
         self.is_historical = is_historical or self.IS_HISTORICAL
         self.enabled = True
+        self._update_task = None
 
     def should_register_live_consumer(self):
         return self.IS_LIVE_CONSUMER and \
@@ -73,6 +77,8 @@ class AbstractStorage:
     async def stop(self, clear=True):
         if self.consumer is not None:
             await self.consumer.stop()
+        if self._update_task is not None and not self._update_task.done():
+            self._update_task.cancel()
         if clear:
             self.consumer = None
             self.exchange_manager = None
@@ -80,6 +86,24 @@ class AbstractStorage:
     async def store_history(self):
         if self.enabled:
             await self._store_history()
+
+    async def trigger_debounced_update_auth_data(self):
+        if self.exchange_manager.is_backtesting:
+            # no interest in backtesting data
+            return
+        if self._update_task is not None and not self._update_task.done():
+            self._update_task.cancel()
+        self._update_task = asyncio.create_task(self._waiting_update_auth_data())
+
+    async def _waiting_update_auth_data(self):
+        try:
+            await asyncio.sleep(self.DEBOUNCE_DURATION)
+            await self._update_auth_data()
+        except Exception as err:
+            logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when updating auth data: {err}")
+
+    async def _update_auth_data(self):
+        pass
 
     async def _live_callback(self, *args, **kwargs):
         raise NotImplementedError(f"_live_callback not implemented for {self.__class__.__name__}")
