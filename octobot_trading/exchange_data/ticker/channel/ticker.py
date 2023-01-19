@@ -108,16 +108,22 @@ class TickerProducer(exchanges_channel.ExchangeChannelProducer):
     async def _push_funding_rate(self, symbol: str, ticker: dict):
         try:
             ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
+            if not ticker.get(enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value, 0):
+                # not enough info, don't push possibly false data
+                return
             predicted_funding_rate = ticker.get(
                 enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN
             )
+            funding_rate = ticker.get(enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value, constants.NaN)
+            next_funding_time = ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value]
+            last_funding_time = ticker.get(enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value, constants.NaN)
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL, self.channel.exchange_manager.id)\
                 .get_internal_producer().push(
                     symbol,
-                    decimal.Decimal(str(ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
+                    decimal.Decimal(str(funding_rate or constants.NaN)),
                     decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
-                    ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
-                    ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value]
+                    decimal.Decimal(str(next_funding_time or constants.NaN)),
+                    decimal.Decimal(str(last_funding_time or constants.NaN)),
             )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate from ticker : {e}")
