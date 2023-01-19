@@ -86,7 +86,9 @@ class TickerUpdaterSimulator(ticker_updater.TickerUpdater):
             enums.ExchangeConstantsTickersColumns.HIGH.value: candle[common_enums.PriceIndexes.IND_PRICE_HIGH.value],
             enums.ExchangeConstantsTickersColumns.LOW.value: candle[common_enums.PriceIndexes.IND_PRICE_LOW.value],
             enums.ExchangeConstantsTickersColumns.OPEN.value: candle[common_enums.PriceIndexes.IND_PRICE_OPEN.value],
-            enums.ExchangeConstantsTickersColumns.CLOSE.value: candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value]
+            enums.ExchangeConstantsTickersColumns.CLOSE.value: candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+            enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value:
+                candle[common_enums.PriceIndexes.IND_PRICE_VOL.value]
         }
 
     async def pause(self):
