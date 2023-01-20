@@ -100,7 +100,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     SHORT_RECONNECT_DELAY = 0.5
     LONG_RECONNECT_DELAY = 5
 
-    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None):
+    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, websocket_name=None):
         super().__init__(config, exchange_manager)
         self.filtered_pairs = []
         self.watched_pairs = []
@@ -108,6 +108,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self._previous_open_candles = {}
         self._subsequent_unordered_candles_count = {}   # dict values: tuple(candle_count, candle_time)
         self._start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
+        self.websocket_name = websocket_name
 
         self.local_loop = None
 
@@ -135,9 +136,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     Methods
     """
 
-    @classmethod
-    def get_feed_name(cls):
-        return cls.get_name()
+    def get_feed_name(self):
+        return self.websocket_name
 
     def start(self):
         asyncio.run(self._inner_start())

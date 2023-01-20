@@ -133,9 +133,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
     async def fetch_position_per_symbol(self):
         positions = []
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            fetched_positions = await self.channel.exchange_manager.exchange.get_position(symbol=symbol)
-            if positions:
-                positions += fetched_positions
+            fetched_position = await self.channel.exchange_manager.exchange.get_position(symbol=symbol)
+            if fetched_position:
+                positions.append(fetched_position)
 
         if positions:
             exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions)

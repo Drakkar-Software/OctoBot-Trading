@@ -47,6 +47,7 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
             contract = self.channel.exchange_manager.exchange.create_pair_contract(
                 pair=pair,
                 current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
+                contract_size=constants.DEFAULT_SYMBOL_CONTRACT_SIZE,
                 margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
                 contract_type=
                 self.channel.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type

@@ -47,13 +47,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     CCXT_ISOLATED = "ISOLATED"
     CCXT_CROSSED = "CROSSED"
 
-    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None):
+    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None):
         super().__init__(config, exchange_manager)
         self.client = None
         self.exchange_type = None
         self.adapter = self.get_adapter_class(adapter_class)(self)
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
+        self.rest_name = rest_name
 
         self.additional_config = additional_config
         self.headers = {}
@@ -109,10 +110,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         return isinstance(exchange_candidate_name, str)
 
     def _create_exchange_type(self):
-        if self.is_supporting_exchange(self.exchange_manager.exchange_class_string):
-            self.exchange_type = getattr(ccxt, self.exchange_manager.exchange_class_string)
+        if self.is_supporting_exchange(self.rest_name):
+            self.exchange_type = getattr(ccxt, self.rest_name)
         else:
-            self.exchange_type = self.exchange_manager.exchange_class_string
+            self.exchange_type = self.rest_name
 
     def add_headers(self, headers_dict):
         """
@@ -421,15 +422,21 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise e
 
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
-        return [
-            self.adapter.adapt_position(position)
-            for position in await self.client.fetch_positions(symbols=symbols, params=kwargs)
-        ]
+        try:
+            return [
+                self.adapter.adapt_position(position)
+                for position in await self.client.fetch_positions(symbols=symbols, params=kwargs)
+            ]
+        except ccxt.NotSupported as err:
+            raise NotImplementedError from err
 
     async def get_position(self, symbol: str, **kwargs: dict) -> dict:
-        return self.adapter.adapt_position(
-            await self.client.fetch_position(symbol=symbol, params=kwargs)
-        )
+        try:
+            return self.adapter.adapt_position(
+                await self.client.fetch_position(symbol=symbol, params=kwargs)
+            )
+        except ccxt.NotSupported as err:
+            raise NotImplementedError from err
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         return self.adapter.adapt_funding_rate(
@@ -440,6 +447,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         return self.adapter.adapt_funding_rate(
             await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
         )
+
+    async def get_contract_size(self, symbol: str):
+        return decimal.Decimal(ccxt_client_util.get_contract_size(self.client, symbol))
 
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)

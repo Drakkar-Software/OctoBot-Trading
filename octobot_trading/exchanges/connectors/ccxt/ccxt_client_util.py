@@ -17,6 +17,7 @@ import logging
 import ccxt
 
 import octobot_trading.constants as constants
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 
 
 def create_client(exchange_class, exchange_name, exchange_manager, logger, 
@@ -111,6 +112,10 @@ def get_pair_cryptocurrency(client, pair) -> str:
         except KeyError:
             pass
     raise ValueError(f'{pair} is not supported')
+
+
+def get_contract_size(client, pair) -> float:
+    return client.markets[pair][ccxt_enums.ExchangeConstantsMarketStatusCCXTColumns.CONTRACT_SIZE.value]
 
 
 def add_headers(client, headers_dict):

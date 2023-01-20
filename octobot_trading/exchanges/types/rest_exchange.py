@@ -72,7 +72,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             config,
             exchange_manager,
             adapter_class=self.get_adapter_class(),
-            additional_config=self.get_additional_connector_config()
+            additional_config=self.get_additional_connector_config(),
+            rest_name=self.get_rest_name()
         )
 
     async def initialize_impl(self):
@@ -98,6 +99,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: The list of supported exchange types. Override if necessary
         """
         return [enums.ExchangeTypes.SPOT]
+
+    def get_rest_name(self):
+        return self.exchange_manager.exchange_class_string
 
     def get_adapter_class(self):
         # Override in tentacles when using a custom adapter
@@ -445,6 +449,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return self.create_pair_contract(
                 pair=pair,
                 current_leverage=await self.get_symbol_leverage(pair),
+                contract_size=await self.get_contract_size(pair),
                 margin_type=await self.get_margin_type(pair),
                 contract_type=self.get_contract_type(pair),
                 position_mode=await self.get_position_mode(pair),
@@ -457,7 +462,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 positions = await self.get_positions(symbols=[pair])
             contracts.update_contracts_from_positions(self.exchange_manager, positions)
 
-    def create_pair_contract(self, pair, current_leverage, margin_type,
+    def create_pair_contract(self, pair, current_leverage, contract_size, margin_type,
                              contract_type, position_mode, maintenance_margin_rate, maximum_leverage=None):
         """
         Create a new FutureContract for the pair
@@ -465,6 +470,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :param pair: the contract pair
         :param current_leverage: the contract current leverage
         :param margin_type: the contract margin type
+        :param contract_size: the size of a contract
         :param contract_type: the contract type
         :param position_mode: the contract position mode
         :param maintenance_margin_rate: the contract maintenance margin rate
@@ -472,6 +478,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         self.logger.debug(f"Creating {pair} contract...")
         contract = contracts.FutureContract(pair=pair,
+                                            contract_size=contract_size,
                                             margin_type=margin_type,
                                             contract_type=contract_type,
                                             maximum_leverage=maximum_leverage,
@@ -574,6 +581,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return enums.FutureContractType.LINEAR_PERPETUAL
         if self.is_inverse_symbol(symbol):
             return enums.FutureContractType.INVERSE_PERPETUAL
+
+    async def get_contract_size(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the contract size for the requested symbol.
+        """
+        return await self.connector.get_contract_size(symbol)
 
     async def get_position_mode(self, symbol: str):
         """

@@ -23,7 +23,7 @@ cdef class RestExchange(abstract_exchange.AbstractExchange):
     cpdef object get_adapter_class(self)
     cpdef contracts.FutureContract create_pair_contract(
             self, str pair,
-            object current_leverage, object margin_type,
+            object current_leverage, object contract_size, object margin_type,
             object contract_type, object position_mode,
             object maintenance_margin_rate,
             object maximum_leverage=*

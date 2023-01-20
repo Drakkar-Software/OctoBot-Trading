@@ -32,7 +32,8 @@ class DefaultWebSocketExchange(exchanges_types.WebSocketExchange):
 
     def create_feeds(self):
         try:
-            connector = self.websocket_connector(config=self.config, exchange_manager=self.exchange_manager)
+            connector = self.websocket_connector(config=self.config, exchange_manager=self.exchange_manager,
+                                                 websocket_name=self.websocket_connector.get_name())
             connector.initialize(pairs=self.pairs, time_frames=self.time_frames, channels=self.channels)
             self.websocket_connectors.append(connector)
 

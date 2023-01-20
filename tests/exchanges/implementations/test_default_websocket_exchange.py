@@ -52,8 +52,9 @@ class MockedCCXTWebsocketConnector(exchanges.CCXTWebsocketConnector):
         enums.WebsocketFeeds.L1_BOOK: True,
     }
 
-    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None):
-        super().__init__(config, exchange_manager, adapter_class=adapter_class, additional_config=additional_config)
+    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, websocket_name=None):
+        super().__init__(config, exchange_manager, adapter_class=adapter_class, additional_config=additional_config,
+                         websocket_name=websocket_name)
         self.called_feed_event = {
             feed: asyncio.Event()
             for feed in self.EXCHANGE_FEEDS
