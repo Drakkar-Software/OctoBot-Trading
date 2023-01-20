@@ -18,20 +18,20 @@ import octobot_trading.personal_data.orders.types.trailing.trailing_stop_order a
 
 
 class TrailingStopLimitOrder(trailing_stop_order.TrailingStopOrder):
-    UNINITIALIZED_LIMIT_PRICE = -1
 
-    def __init__(self, trader, side=enums.TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):
-        super().__init__(trader, side)
+    def __init__(self, trader, side=enums.TradeOrderSide.SELL,
+                 trailing_percent=trailing_stop_order.TrailingStopOrder.UNINITIALIZED_TRAILING_PERCENT
+    ):
+        super().__init__(trader, side, trailing_percent)
         self.order_type = enums.TraderOrderType.TRAILING_STOP_LIMIT
-        self.limit_price = limit_price
 
     async def on_filled(self):
         await trailing_stop_order.TrailingStopOrder.on_filled(self)
-        # TODO replace with chained order ?
-        await self.trader.create_artificial_order(enums.TraderOrderType.SELL_LIMIT
-                                                  if self.side is enums.TradeOrderSide.SELL else enums.TraderOrderType.BUY_LIMIT,
-                                                  self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity,
-                                                  self.limit_price
-                                                  if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
-                                                  self.origin_stop_price)
+        if not self.trader.simulate and self.is_self_managed():
+            # TODO replace with chained order ?
+            await self.trader.create_artificial_order(enums.TraderOrderType.SELL_LIMIT
+                                                      if self.side is enums.TradeOrderSide.SELL
+                                                      else enums.TraderOrderType.BUY_LIMIT,
+                                                      self.symbol, self.origin_stop_price,
+                                                      self.origin_quantity,
+                                                      self.origin_stop_price)
