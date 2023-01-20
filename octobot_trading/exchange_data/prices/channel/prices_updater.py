@@ -97,8 +97,9 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         Ticker channel consumer callback
         """
         try:
-            await self.push(symbol, decimal.Decimal(str(ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value])),
-                            mark_price_source=enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
+            if ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value]:
+                await self.push(symbol, decimal.Decimal(str(ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value])),
+                                mark_price_source=enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle ticker update : {e}")
 

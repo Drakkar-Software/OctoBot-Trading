@@ -65,6 +65,12 @@ class AbstractWebsocketExchange:
         self.time_frames = time_frames if time_frames is not None else []
         self.currencies = currencies if currencies else []
 
+    @classmethod
+    def update_exchange_feeds(cls, exchange_manager):
+        """
+        Called before exchange instantiation, should be used to patch cls.EXCHANGE_FEEDS if necessary
+        """
+
     def get_exchange_credentials(self):
         """
         Exchange credentials

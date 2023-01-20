@@ -27,6 +27,8 @@ def update_contracts_from_positions(exchange_manager, positions):
                 pair=pair,
                 current_leverage=position.get(
                     enums.ExchangeConstantsPositionColumns.LEVERAGE.value, constants.ZERO),
+                contract_size=position.get(
+                    enums.ExchangeConstantsPositionColumns.CONTRACT_SIZE.value, constants.DEFAULT_SYMBOL_CONTRACT_SIZE),
                 margin_type=position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None),
                 contract_type=position.get(enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value, None),
                 position_mode=position.get(enums.ExchangeConstantsPositionColumns.POSITION_MODE.value, None),

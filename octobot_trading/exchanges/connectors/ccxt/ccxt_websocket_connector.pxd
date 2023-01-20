@@ -23,6 +23,7 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef dict _previous_open_candles
     cdef dict _subsequent_unordered_candles_count
     cdef object _start_time_millis
+    cdef str websocket_name
 
     cdef public object local_loop
 

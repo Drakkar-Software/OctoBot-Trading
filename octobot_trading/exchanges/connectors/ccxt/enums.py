@@ -21,6 +21,10 @@ class ExchangeConstantsCCXTColumns(enum.Enum):
     DATETIME = "datetime"
 
 
+class ExchangeConstantsMarketStatusCCXTColumns(enum.Enum):
+    CONTRACT_SIZE = "contractSize"
+
+
 class ExchangePositionCCXTColumns(enum.Enum):
     CONTRACTS = "contracts"
     CONTRACT_SIZE = "contractSize"
@@ -53,6 +57,8 @@ class ExchangeFundingCCXTColumns(enum.Enum):
     FUNDING_RATE = "fundingRate"
     NEXT_FUNDING_TIME = "nextFundingTime"
     PREDICTED_FUNDING_RATE = "predictedFundingRate"
+    PREVIOUS_FUNDING_TIMESTAMP = "previousFundingTimestamp"
+    PREVIOUS_FUNDING_RATE = "previousFundingRate"
 
 
 class ExchangeOrderCCXTColumns(enum.Enum):

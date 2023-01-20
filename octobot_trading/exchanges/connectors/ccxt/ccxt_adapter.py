@@ -33,6 +33,12 @@ class CCXTAdapter(adapters.AbstractAdapter):
             exchange_timestamp = fixed[ecoc.TIMESTAMP.value]
             fixed[ecoc.TIMESTAMP.value] = \
                 self.get_uniformized_timestamp(exchange_timestamp)
+            try:
+                fees = fixed[enums.ExchangeConstantsOrderColumns.FEE.value]
+                if fees[enums.ExchangeConstantsOrderColumns.COST.value] is None:
+                    fees[enums.ExchangeConstantsOrderColumns.COST.value] = 0
+            except KeyError:
+                pass
         except KeyError as e:
             self.logger.error(f"Fail to cleanup order dict ({e})")
         return fixed
@@ -166,26 +172,31 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # todo when handling cross positions
         # side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value, enums.PositionSide.UNKNOWN.value)
         # position_side = enums.PositionSide.LONG \
-        #     if side == enums.PositionSide.LONG.value else enums.PositionSide.SHORT
+        #     if side == enums.PositionSide.LONG.value else enums.PositionSide.
+        symbol = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value)
+        contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)))
+        contracts = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
         try:
             fixed.update({
-                enums.ExchangeConstantsPositionColumns.SYMBOL.value:
-                    fixed.get(fixed[ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value]),
+                enums.ExchangeConstantsPositionColumns.SYMBOL.value: symbol,
                 enums.ExchangeConstantsPositionColumns.TIMESTAMP.value:
                     fixed.get(ccxt_enums.ExchangePositionCCXTColumns.TIMESTAMP.value,
                               self.connector.get_exchange_current_time()),
                 enums.ExchangeConstantsPositionColumns.SIDE.value: position_side,
                 enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
                     fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
-                enums.ExchangeConstantsPositionColumns.QUANTITY.value:
-                    decimal.Decimal(
-                        f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)}"),
+                enums.ExchangeConstantsPositionColumns.SIZE.value: contract_size * contracts,
+                enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value:
+                    self.connector.exchange_manager.exchange.get_contract_type(symbol),
                 enums.ExchangeConstantsPositionColumns.COLLATERAL.value:
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
                 enums.ExchangeConstantsPositionColumns.NOTIONAL.value:
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
+                enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value:
+                    decimal.Decimal(
+                        f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.INITIAL_MARGIN.value, 0)}"),
                 enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),

@@ -74,6 +74,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
         return self.create_pair_contract(
             pair=pair,
             current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
+            contract_size=constants.DEFAULT_SYMBOL_CONTRACT_SIZE,
             margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
             contract_type=self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type,
             position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,

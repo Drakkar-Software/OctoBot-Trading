@@ -46,7 +46,8 @@ class FutureContract(margin_contract.MarginContract):
                     f"{self.margin_type.value} x{self.current_leverage}")
         return (f"{self.pair} "
                 f"unhandled contract "
-                f"{self.margin_type.value} x{self.current_leverage}")
+                f"{self.margin_type.value if self.margin_type else 'unknown margin type'} "
+                f"x{self.current_leverage}")
 
     def is_inverse_contract(self):
         """

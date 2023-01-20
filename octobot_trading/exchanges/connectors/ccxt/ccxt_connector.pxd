@@ -22,8 +22,8 @@ cdef class CCXTConnector(abstract_exchange.AbstractExchange):
     cdef public object client
     cdef public object exchange_type
     cdef public object adapter
-
     cdef public bint is_authenticated
+    cdef public str rest_name
 
     cdef object additional_config
     cdef dict options

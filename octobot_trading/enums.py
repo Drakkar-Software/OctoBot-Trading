@@ -336,6 +336,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     LEVERAGE = "leverage"
     MARGIN_TYPE = "margin_type"
     CONTRACT_TYPE = "contract_type"
+    CONTRACT_SIZE = "contract_size"
     POSITION_MODE = "position_mode"
     MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     STATUS = "status"

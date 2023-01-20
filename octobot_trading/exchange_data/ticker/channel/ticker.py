@@ -63,6 +63,9 @@ class TickerProducer(exchanges_channel.ExchangeChannelProducer):
         Mini ticker
         """
         try:
+            if not ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value]:
+                # no need to push when there is not even a close price (0 or None)
+                return
             await exchanges_channel.get_chan(
                 constants.MINI_TICKER_CHANNEL,
                 self.channel.exchange_manager.id

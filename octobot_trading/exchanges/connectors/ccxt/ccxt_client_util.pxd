@@ -25,6 +25,7 @@ cpdef set get_symbols(object client)
 cpdef set get_time_frames(object client)
 cpdef set get_exchange_pair(object client, str pair)
 cpdef str get_pair_cryptocurrency(object client, str pair)
+cpdef object get_contract_size(object client, str pair)
 cpdef object add_headers(object client, dict headers_dict)
 cpdef object add_options(object client, dict options_dict)
 

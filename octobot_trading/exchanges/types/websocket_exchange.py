@@ -53,6 +53,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         self.websocket_connector = self.get_exchange_connector_class(self.exchange_manager)
+        self.websocket_connector.update_exchange_feeds(self.exchange_manager)
         self.pairs = trader_pairs
         self.time_frames = time_frames
 
