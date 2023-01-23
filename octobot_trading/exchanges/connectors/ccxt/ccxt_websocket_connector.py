@@ -41,6 +41,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
     SUPPORTS_LIVE_PAIR_ADDITION = True
     FEED_INITIALIZATION_TIMEOUT = 15 * commons_constants.MINUTE_TO_SECONDS
+    MIN_CONNECTION_CLOSE_INTERVAL = 2 * commons_constants.MINUTE_TO_SECONDS
+    EXCHANGE_RECONNECT_INTERVAL = None
 
     IGNORED_FEED_PAIRS = {
         # When ticker or future index is available : no need to calculate mark price from recent trades
@@ -94,7 +96,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         trading_enums.WebsocketFeeds.POSITION,
     ]
     EXCHANGE_CONSTRUCTOR_KWARGS = {}
-    RECONNECT_DELAY = 5
+    SHORT_RECONNECT_DELAY = 0.5
+    LONG_RECONNECT_DELAY = 5
 
     def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None):
         super().__init__(config, exchange_manager)
@@ -120,6 +123,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         )
         self.client = None  # ccxt.pro exchange: a ccxt.async_support exchange with websocket capabilities
         self.feed_tasks = {}
+        self._reconnect_task = None
+        self._last_close_time = 0
         self.throttled_ws_updates = trading_constants.THROTTLED_WS_UPDATES
 
         self._create_client()
@@ -166,6 +171,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
 
     async def _inner_stop(self):
         self.should_stop = True
+        if self._reconnect_task is not None and not self._reconnect_task.done():
+            self._reconnect_task.cancel()
         try:
             await self.client.close()
             self.stopped_event.set()
@@ -266,10 +273,34 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             await self.client.load_markets()
             self._filter_exchange_pairs_and_timeframes()
             self._subscribe_feeds()
+            if self.EXCHANGE_RECONNECT_INTERVAL is not None:
+                self._start_reconnect_task()
         except Exception as e:
             self.logger.exception(e, True, f"Failed to subscribe when creating websocket feed : {e}")
         finally:
             self.initialized_event.set()
+
+    async def _reconnect_loop(self):
+        while not self.should_stop:
+            try:
+                await asyncio.sleep(self.EXCHANGE_RECONNECT_INTERVAL)
+                await self._close_exchange_to_force_reconnect()
+            except Exception as err:
+                self.logger.exception(err, True, f"Error when trigger exchange auto-reconnect: {err}")
+
+    async def _close_exchange_to_force_reconnect(self):
+        if time.time() - self._last_close_time > self.MIN_CONNECTION_CLOSE_INTERVAL:
+            # Close client to force connections re-open. The next watch_xyz will recreate the connection
+            self.logger.debug(f"Auto-closing exchange connection to force reconnection after "
+                              f"{self.EXCHANGE_RECONNECT_INTERVAL / commons_constants.HOURS_TO_SECONDS} hours.")
+            await self.client.close()
+            self.logger.debug("Exchange connection closed. The next watch-xyz will re-open it.")
+            self._last_close_time = time.time()
+            return True
+        return False
+
+    def _start_reconnect_task(self):
+        self._reconnect_task = asyncio.create_task(self._reconnect_loop())
 
     def _subscribe_feeds(self):
         """
@@ -462,6 +493,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         except KeyError:
             self.logger.error(f"Impossible to subscribe to {feed}: feed not supported")
             return
+        added_subscriptions = []
+        has_added_feed = False
         if feed in self.TIME_FRAME_PAIR_CHANNELS and time_frame is None:
             time_frame = self.min_timeframe.value
         kwargs = copy.copy(self._get_feed_default_kwargs())
@@ -485,24 +518,33 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             for symbol in symbols:
                 kwargs["symbol"] = symbol
                 # one task per symbol: ccxt_pro is not handling multi symbol generators
-                self._create_task_if_necessary(feed, feed_callback, feed_generator, **kwargs)
+                if self._create_task_if_necessary(feed, feed_callback, feed_generator, **kwargs):
+                    added_subscriptions.append(symbol)
+                    has_added_feed = True
         else:
             # no symbol param
-            self._create_task_if_necessary(feed, feed_callback, feed_generator, **kwargs)
+            if self._create_task_if_necessary(feed, feed_callback, feed_generator, **kwargs):
+                has_added_feed = True
 
-        symbols_str = f"for {', '.join(symbols)} " if symbols else ""
+        symbols_str = f"for {', '.join(added_subscriptions)} " if added_subscriptions else ""
         time_frame_str = f"on {time_frame}" if time_frame else ""
-        self.logger.debug(f"Subscribed to {feed.value} {symbols_str}{time_frame_str}")
+        if has_added_feed:
+            self.logger.debug(f"Subscribed to {feed.value} {symbols_str}{time_frame_str}")
+        else:
+            self.logger.debug(f"No new feed to subscribe to on {feed.value} (inputs: {symbols_str}{time_frame_str})")
 
-    async def _feed_task(self, feed, callback, generator_func, *g_args, **g_kwargs):
+    async def _feed_task(self, feed, callback, watch_func, *g_args, **g_kwargs):
         if not await self._wait_for_initialization(feed, *g_args, **g_kwargs):
             self.logger.error(f"Aborting {feed.value} feed connection with {g_kwargs}: "
                               f"missing required initialization data")
             return
         enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
+        ws_des = f"{watch_func.__name__} {g_kwargs}"
+        just_got_disconnected = True
         while not self.should_stop:
             try:
-                update_data = await generator_func(*g_args, **g_kwargs)
+                update_data = await watch_func(*g_args, **g_kwargs)
+                just_got_disconnected = True
                 if update_data:
                     await callback(update_data, **g_kwargs)
                 if enable_throttling:
@@ -510,18 +552,30 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
                     await asyncio.sleep(self.throttled_ws_updates)
             except ccxt.NetworkError as err:
-                ws_des = f"{generator_func.__name__} {g_kwargs}"
+                reconnect_delay = self.SHORT_RECONNECT_DELAY if just_got_disconnected else self.LONG_RECONNECT_DELAY
                 self.logger.debug(f"Can't connect to exchange {ws_des} websocket: {err}. "
-                                  f"Retrying in {self.RECONNECT_DELAY} seconds")
-                await asyncio.sleep(self.RECONNECT_DELAY)
+                                  f"Retrying in {reconnect_delay} seconds")
+                if await self._close_exchange_to_force_reconnect():
+                    self.logger.error(f"Closed exchange connection to force reconnect. Error: {err}")
+                await asyncio.sleep(reconnect_delay)
                 self.logger.debug(f"Reconnecting to {ws_des}")
+                just_got_disconnected = False   # wait for a longer time before the next reconnect
+            except ccxt.NotSupported as err:
+                self.logger.exception(
+                    err,
+                    True,
+                    f"Impossible to start {ws_des} feed: {err}. "
+                    f"Stopping it. Please report to the OctoBot team if you see this error"
+                )
+                return
             except Exception as err:
                 self.logger.exception(
                     err,
                     True,
-                    f"Unexpected error when handling {generator_func.__name__} feed: {err}"
+                    f"Unexpected error when handling {watch_func.__name__} feed: {err}"
                 )
-                await asyncio.sleep(self.RECONNECT_DELAY)   # avoid spamming
+                await asyncio.sleep(self.LONG_RECONNECT_DELAY)   # avoid spamming
+                just_got_disconnected = False   # wait for a longer time before the next reconnect
 
     def _create_task_if_necessary(self, feed, feed_callback, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
@@ -530,6 +584,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             self.feed_tasks[identifier] = asyncio.create_task(
                 self._feed_task(feed, feed_callback, feed_generator, **kwargs)
             )
+            return True
+        return False
 
     async def _wait_for_initialization(self, feed, *g_args, **g_kwargs):
         if not self.is_feed_requiring_init(feed) or g_kwargs["symbol"] not in self.filtered_pairs:
@@ -555,7 +611,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         while not self.should_stop and time.time() - t0 < self.FEED_INITIALIZATION_TIMEOUT:
             # add timeout
             if is_initialized_func():
-                self.logger.debug(f"Starting {feed} feed with {g_kwargs}: initialization complete")
+                self.logger.debug(f"Starting {feed.value} feed with {g_kwargs}: initialization complete")
                 return True
             # quickly update at first
             await asyncio.sleep(0.1 if time.time() - t0 < self.FEED_INITIALIZATION_TIMEOUT / 10 else 1)
