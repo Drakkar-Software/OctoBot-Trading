@@ -21,6 +21,7 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef public list watched_pairs
     cdef public object min_timeframe
     cdef dict _previous_open_candles
+    cdef dict _subsequent_unordered_candles_count
     cdef object _start_time_millis
 
     cdef public object local_loop
@@ -32,6 +33,8 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef public dict headers
     cdef public dict options
     cdef public dict feed_tasks
+    cdef public object _reconnect_task
+    cdef public double _last_close_time
     cdef public double throttled_ws_updates
 
     # return object when an exception might be thrown
@@ -69,3 +72,5 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef list _convert_book_prices_to_orders(self, object book_prices_and_volumes, str book_side)
     cdef void _register_previous_open_candle(self, str time_frame, str symbol, list candle)
     cdef list _get_previous_open_candle(self, str time_frame, str symbol)
+    cdef void _register_subsequent_unordered_candle(self, str time_frame, str symbol, object parsed_timeframe, double current_candle_time)
+    cdef int _get_subsequent_unordered_candles_count(self, str time_frame, str symbol)
