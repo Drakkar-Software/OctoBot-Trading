@@ -127,6 +127,20 @@ class CandlesManager(util.Initializable):
         self._set_all_candles(all_candles_data)
         self.candles_initialized = True
 
+    def upsert_candle(self, updated_candle):
+        updated_candle_time = updated_candle[enums.PriceIndexes.IND_PRICE_TIME.value]
+        for index, candle_time in enumerate(self.time_candles):
+            if candle_time == updated_candle_time:
+                self.close_candles[index] = updated_candle[enums.PriceIndexes.IND_PRICE_CLOSE.value]
+                self.open_candles[index] = updated_candle[enums.PriceIndexes.IND_PRICE_OPEN.value]
+                self.high_candles[index] = updated_candle[enums.PriceIndexes.IND_PRICE_HIGH.value]
+                self.low_candles[index] = updated_candle[enums.PriceIndexes.IND_PRICE_LOW.value]
+                self.volume_candles[index] = updated_candle[enums.PriceIndexes.IND_PRICE_VOL.value]
+                return
+
+        # candle not in db, add it
+        self.add_new_candle(updated_candle)
+
     def add_old_and_new_candles(self, candles_data):
         """
         Same as add_new_candle but also checks if old candles are missing

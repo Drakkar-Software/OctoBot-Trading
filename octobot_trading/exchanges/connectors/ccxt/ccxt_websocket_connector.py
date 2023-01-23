@@ -802,6 +802,10 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     elif previous_candle_time > current_candle_time:
                         # should not happen: exchange feed is providing past candles after newer ones
                         # candle feed should be marked as unsupported in this exchange (at least for now)
+
+                        # update internal candle store to still keep track of the most up to date candle
+                        await self.exchange_manager.get_symbol_data(symbol) \
+                            .handle_candles_update(time_frame, candle, replace_all=False, partial=False, upsert=True)
                         self._register_subsequent_unordered_candle(timeframe, symbol, time_frame, current_candle_time)
                         subsequent_unordered_candles = self._get_subsequent_unordered_candles_count(timeframe, symbol)
                         error_message = f"Ignored unexpected candle for {symbol} on {timeframe}: " \
