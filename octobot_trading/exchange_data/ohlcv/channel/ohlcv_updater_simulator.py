@@ -157,7 +157,8 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                 .handle_candles_update(time_frame,
                                        [ohlcv[-1] for ohlcv in ohlcv_data],
                                        replace_all=True,
-                                       partial=False)
+                                       partial=False,
+                                       upsert=False)
             self.last_candles_by_pair_by_time_frame[pair][time_frame.value] = ohlcv_data[-1]
             self.require_last_init_candles_pairs_push = True
         # self.initial_timestamp - 1 to re-select this candle and push it when init step will be over
