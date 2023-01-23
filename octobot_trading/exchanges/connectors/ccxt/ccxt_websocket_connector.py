@@ -39,6 +39,7 @@ from octobot_trading.enums import WebsocketFeeds as Feeds
 
 class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchange):
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
+    MAX_ALLOWED_SUBSEQUENT_UNORDERED_CANDLES = 2
     SUPPORTS_LIVE_PAIR_ADDITION = True
     FEED_INITIALIZATION_TIMEOUT = 15 * commons_constants.MINUTE_TO_SECONDS
     MIN_CONNECTION_CLOSE_INTERVAL = 2 * commons_constants.MINUTE_TO_SECONDS
@@ -105,6 +106,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.watched_pairs = []
         self.min_timeframe = None
         self._previous_open_candles = {}
+        self._subsequent_unordered_candles_count = {}   # dict values: tuple(candle_count, candle_time)
         self._start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
 
         self.local_loop = None
@@ -318,7 +320,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.channels = [
             channel for channel in self.channels
             if self._is_supported_channel(channel)
-            and channel != self.EXCHANGE_FEEDS.get(Feeds.CANDLE)
+               and channel != self.EXCHANGE_FEEDS.get(Feeds.CANDLE)
         ]
 
         self._subscribe_channels_feeds(False)
@@ -339,8 +341,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         if self._is_authenticated_feed(channel) and not self._should_use_authenticated_feeds():
             return False
         return not (
-            self.EXCHANGE_FEEDS.get(channel, Feeds.UNSUPPORTED.value) == Feeds.UNSUPPORTED.value
-            or self.should_ignore_feed(channel)
+                self.EXCHANGE_FEEDS.get(channel, Feeds.UNSUPPORTED.value) == Feeds.UNSUPPORTED.value
+                or self.should_ignore_feed(channel)
         )
 
     @classmethod
@@ -470,7 +472,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             return self._start_time_millis
         elif feed in self.CANDLE_TIME_FILTERED_CHANNELS:
             candles_ms = commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame)] * \
-                commons_constants.MSECONDS_TO_MINUTE
+                         commons_constants.MSECONDS_TO_MINUTE
             time_delta = self._start_time_millis % candles_ms
             return self._start_time_millis - time_delta
         return None
@@ -559,7 +561,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     self.logger.error(f"Closed exchange connection to force reconnect. Error: {err}")
                 await asyncio.sleep(reconnect_delay)
                 self.logger.debug(f"Reconnecting to {ws_des}")
-                just_got_disconnected = False   # wait for a longer time before the next reconnect
+                just_got_disconnected = False  # wait for a longer time before the next reconnect
             except ccxt.NotSupported as err:
                 self.logger.exception(
                     err,
@@ -574,8 +576,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     True,
                     f"Unexpected error when handling {watch_func.__name__} feed: {err}"
                 )
-                await asyncio.sleep(self.LONG_RECONNECT_DELAY)   # avoid spamming
-                just_got_disconnected = False   # wait for a longer time before the next reconnect
+                await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
+                just_got_disconnected = False  # wait for a longer time before the next reconnect
 
     def _create_task_if_necessary(self, feed, feed_callback, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
@@ -678,7 +680,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         Add a time frame to filtered_timeframes if supported
         :param time_frame: the time frame to add
         """
-        if self._is_supported_time_frame(time_frame) :
+        if self._is_supported_time_frame(time_frame):
             filtered_timeframes.append(time_frame)
         elif log_on_error:
             self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
@@ -800,9 +802,16 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     elif previous_candle_time > current_candle_time:
                         # should not happen: exchange feed is providing past candles after newer ones
                         # candle feed should be marked as unsupported in this exchange (at least for now)
-                        self.logger.error(f"Ignored unexpected candle for {symbol} on {timeframe}: "
-                                          f"candle time {current_candle_time}, "
-                                          f"previous candle time: {previous_candle_time}")
+                        self._register_subsequent_unordered_candle(timeframe, symbol, time_frame, current_candle_time)
+                        subsequent_unordered_candles = self._get_subsequent_unordered_candles_count(timeframe, symbol)
+                        error_message = f"Ignored unexpected candle for {symbol} on {timeframe}: " \
+                                        f"candle time {current_candle_time}, " \
+                                        f"previous candle time: {previous_candle_time} " \
+                                        f"({subsequent_unordered_candles} unordered candles in a row)."
+                        if subsequent_unordered_candles > self.MAX_ALLOWED_SUBSEQUENT_UNORDERED_CANDLES:
+                            self.logger.error(error_message)
+                        else:
+                            self.logger.debug(error_message)
                         if candle is last_candle:
                             # last candle in loop: don't go any further
                             return
@@ -940,3 +949,22 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             return self._previous_open_candles[time_frame][symbol]
         except KeyError:
             return None
+
+    def _register_subsequent_unordered_candle(self, time_frame, symbol, parsed_timeframe, current_candle_time):
+        try:
+            count, last_candle_time = self._subsequent_unordered_candles_count[time_frame][symbol]
+            if current_candle_time - last_candle_time >= commons_enums.TimeFramesMinutes[parsed_timeframe] * \
+                    commons_constants.MINUTE_TO_SECONDS * 1.5:
+                # candle is not subsequent from the previous one: reset count
+                count = 0
+            self._subsequent_unordered_candles_count[time_frame][symbol] = (count + 1, current_candle_time)
+        except KeyError:
+            if time_frame not in self._subsequent_unordered_candles_count:
+                self._subsequent_unordered_candles_count[time_frame] = {}
+            self._subsequent_unordered_candles_count[time_frame][symbol] = (1, current_candle_time)
+
+    def _get_subsequent_unordered_candles_count(self, time_frame, symbol):
+        try:
+            return self._subsequent_unordered_candles_count[time_frame][symbol][0]
+        except KeyError:
+            return 0
