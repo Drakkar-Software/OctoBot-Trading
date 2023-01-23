@@ -277,7 +277,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 with self.error_describer():
                     params = kwargs.pop("params", {})
                     return self.adapter.adapt_order(
-                        await self.client.fetch_order(order_id, symbol, params=params, **kwargs)
+                        await self.client.fetch_order(order_id, symbol, params=params, **kwargs), symbol=symbol
                     )
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
@@ -298,7 +298,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client.has['fetchOrders']:
             with self.error_describer():
                 return [
-                    self.adapter.adapt_order(order)
+                    self.adapter.adapt_order(order, symbol=symbol)
                     for order in await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
                 ]
         else:
@@ -309,7 +309,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client.has['fetchOpenOrders']:
             with self.error_describer():
                 return [
-                    self.adapter.adapt_order(order)
+                    self.adapter.adapt_order(order, symbol=symbol)
                     for order in await self.client.fetch_open_orders(symbol=symbol, since=since,
                                                                      limit=limit, params=kwargs)
                 ]
@@ -321,7 +321,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client.has['fetchClosedOrders']:
             with self.error_describer():
                 return [
-                    self.adapter.adapt_order(order)
+                    self.adapter.adapt_order(order, symbol=symbol)
                     for order in await self.client.fetch_closed_orders(symbol=symbol, since=since,
                                                                        limit=limit, params=kwargs)
                 ]
@@ -339,22 +339,22 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_market_buy_order(symbol, quantity, params=params)
+            await self.client.create_market_buy_order(symbol, quantity, params=params), symbol=symbol
         )
 
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_limit_buy_order(symbol, quantity, price, params=params)
+            await self.client.create_limit_buy_order(symbol, quantity, price, params=params), symbol=symbol
         )
 
     async def create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_market_sell_order(symbol, quantity, params=params)
+            await self.client.create_market_sell_order(symbol, quantity, params=params), symbol=symbol
         )
 
     async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_limit_sell_order(symbol, quantity, price, params=params)
+            await self.client.create_limit_sell_order(symbol, quantity, price, params=params), symbol=symbol
         )
 
     async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
@@ -385,7 +385,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             price_to_use = None
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
         return self.adapter.adapt_order(
-            await self.client.edit_order(order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params)
+            await self.client.edit_order(order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params),
+            symbol=symbol
         )
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
@@ -448,8 +449,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
         )
 
-    async def get_contract_size(self, symbol: str):
-        return decimal.Decimal(ccxt_client_util.get_contract_size(self.client, symbol))
+    def get_contract_size(self, symbol: str):
+        return decimal.Decimal(str(ccxt_client_util.get_contract_size(self.client, symbol)))
 
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)

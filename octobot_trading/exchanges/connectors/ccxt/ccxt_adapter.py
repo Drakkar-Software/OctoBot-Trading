@@ -35,7 +35,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 self.get_uniformized_timestamp(exchange_timestamp)
             try:
                 fees = fixed[enums.ExchangeConstantsOrderColumns.FEE.value]
-                if fees[enums.ExchangeConstantsOrderColumns.COST.value] is None:
+                if fees is not None and fees[enums.ExchangeConstantsOrderColumns.COST.value] is None:
                     fees[enums.ExchangeConstantsOrderColumns.COST.value] = 0
             except KeyError:
                 pass

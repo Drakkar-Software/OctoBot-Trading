@@ -296,7 +296,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
-    def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, remove_price_limits=False):
+    def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, remove_price_limits=False,
+                                adapt_for_contract_size=False):
         """
         Use this method in local get_market_status overrides when market status has to be fixed by
         calling _fix_market_status.
@@ -310,9 +311,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
             ),
             remove_price_limits=remove_price_limits
         )
+        if adapt_for_contract_size and self.exchange_manager.is_future:
+            self._adapt_market_status_for_contract_size(market_status, self.get_contract_size(symbol))
         if with_fixer:
             return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
         return market_status
+
 
     def _fix_market_status(self, market_status, remove_price_limits=False): # todo move to adapter
         """
@@ -337,6 +341,26 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
 
         return market_status
+
+    def _apply_contract_size(self, value, contract_size):
+        if value is None:
+            return value
+        return number_util.get_digits_count(value * contract_size)
+
+    def _adapt_market_status_for_contract_size(self, market_status, contract_size):
+        float_size = float(contract_size)
+        for limit_type in (enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT.value, ):
+            for limit_val in (enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MIN.value,
+                              enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MAX.value):
+
+                market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][limit_type][limit_val] = \
+                    self._apply_contract_size(
+                        market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][limit_type][limit_val],
+                        float_size
+                    )
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = \
+            number_util.get_digits_count(float_size)
 
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
@@ -449,7 +473,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return self.create_pair_contract(
                 pair=pair,
                 current_leverage=await self.get_symbol_leverage(pair),
-                contract_size=await self.get_contract_size(pair),
+                contract_size=self.get_contract_size(pair),
                 margin_type=await self.get_margin_type(pair),
                 contract_type=self.get_contract_type(pair),
                 position_mode=await self.get_position_mode(pair),
@@ -582,12 +606,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
         if self.is_inverse_symbol(symbol):
             return enums.FutureContractType.INVERSE_PERPETUAL
 
-    async def get_contract_size(self, symbol: str):
+    def get_contract_size(self, symbol: str):
         """
         :param symbol: the symbol
         :return: the contract size for the requested symbol.
         """
-        return await self.connector.get_contract_size(symbol)
+        return self.connector.get_contract_size(symbol)
 
     async def get_position_mode(self, symbol: str):
         """
