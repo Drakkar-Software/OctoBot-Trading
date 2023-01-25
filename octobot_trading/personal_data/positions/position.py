@@ -718,7 +718,7 @@ class Position(util.Initializable):
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
             initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
                                             constants.ZERO),
-            position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
+            position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None) or symbol),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
                                             constants.ZERO),

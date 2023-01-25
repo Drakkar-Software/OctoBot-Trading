@@ -168,6 +168,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
     def parse_position(self, fixed, **kwargs):
         # CCXT standard position parsing logic
         # if mode is enums.PositionMode.ONE_WAY:
+        original_side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value)
         position_side = enums.PositionSide.BOTH
         # todo when handling cross positions
         # side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value, enums.PositionSide.UNKNOWN.value)
@@ -185,7 +186,9 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 enums.ExchangeConstantsPositionColumns.SIDE.value: position_side,
                 enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
                     fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
-                enums.ExchangeConstantsPositionColumns.SIZE.value: contract_size * contracts,
+                enums.ExchangeConstantsPositionColumns.SIZE.value:
+                    contract_size * contracts if original_side == enums.PositionSide.LONG.value
+                    else -contract_size * contracts,
                 enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value:
                     self.connector.exchange_manager.exchange.get_contract_type(symbol),
                 enums.ExchangeConstantsPositionColumns.COLLATERAL.value:

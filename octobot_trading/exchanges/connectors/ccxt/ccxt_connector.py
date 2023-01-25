@@ -205,7 +205,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices: {e.__class__.__name__} on {e}")
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices: {e.__class__.__name__} on {e}") from e
 
     async def get_kline_price(self,
                               symbol: str,
