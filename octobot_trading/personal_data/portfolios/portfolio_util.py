@@ -91,7 +91,7 @@ def get_draw_down(exchange_manager):
 
                 draw_down = current_draw_down if current_draw_down > draw_down else draw_down
         except Exception as e:
-            commons_logging.get_logger(__name__).exception(e, True, f"Error when computing draw down: {e}")
+            commons_logging.get_logger(__name__).warning(f"Error when computing draw down: {e}")
     return draw_down
 
 

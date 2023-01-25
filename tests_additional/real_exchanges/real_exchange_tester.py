@@ -33,7 +33,7 @@ class RealExchangeTester:
     # default is 1h, change if necessary
     TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
-    CANDLE_SINCE = 631152000000    # 01/01/1990
+    CANDLE_SINCE = 1325376000000    # 1 January 2012 00:00:00
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     # Public methods: to be implemented as tests

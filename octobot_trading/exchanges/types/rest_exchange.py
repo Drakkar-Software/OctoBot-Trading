@@ -317,7 +317,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
         return market_status
 
-
     def _fix_market_status(self, market_status, remove_price_limits=False): # todo move to adapter
         """
         Overrite if necessary
@@ -345,7 +344,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def _apply_contract_size(self, value, contract_size):
         if value is None:
             return value
-        return number_util.get_digits_count(value * contract_size)
+        return value * contract_size
 
     def _adapt_market_status_for_contract_size(self, market_status, contract_size):
         float_size = float(contract_size)
@@ -512,6 +511,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
         self.pair_contracts[pair] = contract
         self._set_contract_initialized_event(pair)
         return contract
+
+    def has_pair_future_contract(self, pair):
+        """
+        :param pair: the pair
+        :return: True if the given pair is in local contracts
+        """
+        return pair in self.pair_contracts
 
     def get_pair_future_contract(self, pair):
         """
