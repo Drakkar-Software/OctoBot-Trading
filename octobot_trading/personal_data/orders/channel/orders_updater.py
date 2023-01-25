@@ -33,7 +33,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     """
 
     CHANNEL_NAME = constants.ORDERS_CHANNEL
-    ORDERS_UPDATE_LIMIT = 200
+    ORDERS_UPDATE_LIMIT = None
     ORDERS_STARTING_REFRESH_TIME = 10
     OPEN_ORDER_REFRESH_TIME = 7
     CLOSE_ORDER_REFRESH_TIME = 81
