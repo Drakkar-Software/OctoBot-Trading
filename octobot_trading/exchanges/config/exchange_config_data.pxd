@@ -36,6 +36,7 @@ cdef class ExchangeConfig(util.Initializable):
 
     cdef public backtesting_exchange_config_import.BacktestingExchangeConfig backtesting_exchange_config
 
+    cpdef list get_all_traded_currencies(self)
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
     cpdef void set_historical_settings(self)

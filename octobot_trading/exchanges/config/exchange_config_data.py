@@ -68,6 +68,13 @@ class ExchangeConfig(util.Initializable):
     async def initialize_impl(self):
         pass
 
+    def get_all_traded_currencies(self):
+        currencies = []
+        for symbol in self.traded_symbols:
+            currencies.append(symbol.base)
+            currencies.append(symbol.quote)
+        return list(set(currencies))
+
     def set_config_traded_pairs(self):  # TODO
         self._set_config_traded_pairs()
 
