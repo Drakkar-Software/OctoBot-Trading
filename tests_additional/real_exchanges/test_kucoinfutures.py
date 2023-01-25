@@ -28,11 +28,11 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestBybitRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "bybit"
+class TestKucoinFuturesRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "kucoinfutures"
     EXCHANGE_TYPE = trading_enums.ExchangeTypes.FUTURE.value
     SYMBOL = "BTC/USDT:USDT"
-    SYMBOL_2 = "ETH/USD:ETH"
+    SYMBOL_2 = "BTC/USD:BTC"
     SYMBOL_3 = "XRP/USD:XRP"
 
     async def test_time_frames(self):
@@ -47,10 +47,10 @@ class TestBybitRealExchangeTester(RealExchangeTester):
             TimeFrames.TWO_HOURS.value,
             TimeFrames.FOUR_HOURS.value,
             TimeFrames.SIX_HOURS.value,
+            TimeFrames.HEIGHT_HOURS.value,
             TimeFrames.TWELVE_HOURS.value,
             TimeFrames.ONE_DAY.value,
-            TimeFrames.ONE_WEEK.value,
-            TimeFrames.ONE_MONTH.value
+            TimeFrames.ONE_WEEK.value
         ))
 
     async def test_get_market_status(self):
@@ -58,52 +58,41 @@ class TestBybitRealExchangeTester(RealExchangeTester):
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
-            # on Bybit, precision is a decimal instead of a number of digits
+            # on this exchange, precision is a decimal instead of a number of digits
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in Bybit tentacle
+                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in this exchange tentacle
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in Bybit tentacle
+                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in this exchange tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            # min cost and price can be inferior or equal as we are in /USD futures
+            # invalid values (should be much lower for XRP/BTC => remove price limit in tentacle
             self.check_market_status_limits(market_status,
-                                            low_price_min=0.0001,    # XRP/USD
-                                            low_price_max=0.1,    # XRP/USD
-                                            expect_invalid_price_limit_values=False,
-                                            expect_inferior_or_equal_price_and_cost=True)
+                                            expect_invalid_price_limit_values=True,
+                                            enable_price_and_cost_comparison=False)
 
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 200
-        # max is 200 on Bybit
-        symbol_prices = await self.get_symbol_prices(limit=200)
         assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # fetching more than 200 candles is fetching candles from the past
-        symbol_prices = await self.get_symbol_prices(limit=500)
-        assert len(symbol_prices) == 200
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] < self.get_time() - self.get_allowed_time_delta() \
-            * 100
-
         # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 200
+        symbol_prices = await self.get_symbol_prices(limit=100)
+        assert len(symbol_prices) == 100
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with since and limit (used in data collector)
-        assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []
-        # "end" param is required: add in tentacle
-        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, end=self.get_ms_time())
+        # assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []
+        # "to" param is required: add in tentacle
+        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, to=self.get_ms_time())
         assert len(symbol_prices) == 50
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
@@ -120,13 +109,16 @@ class TestBybitRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) == 5
+        # kucoin requires a limit of None, 20 or 100 in order book
+        order_book = await self.get_order_book(limit=20)
+        assert len(order_book[Ecobic.ASKS.value]) == 20
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 5
+        assert len(order_book[Ecobic.BIDS.value]) == 20
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
+        # note: on ccxt kucoin recent trades are received in reverse order from exchange and therefore should never be
+        # filtered by limit before reversing (or most recent trades are lost)
         recent_trades = await self.get_recent_trades()
         assert len(recent_trades) == 50
         # check trades order (oldest first)
@@ -157,16 +149,19 @@ class TestBybitRealExchangeTester(RealExchangeTester):
             Ectc.PREVIOUS_CLOSE.value
         ))
         if check_content:
-            assert ticker[Ectc.HIGH.value]
-            assert ticker[Ectc.LOW.value]
+            assert ticker[Ectc.HIGH.value] is None
+            assert ticker[Ectc.LOW.value] is None
             assert ticker[Ectc.BID.value]
-            assert ticker[Ectc.BID_VOLUME.value] is None
+            assert ticker[Ectc.BID_VOLUME.value]
             assert ticker[Ectc.ASK.value]
-            assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value]
+            assert ticker[Ectc.ASK_VOLUME.value]
+            assert ticker[Ectc.OPEN.value] is None
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value]
-            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
-            RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)
+            assert ticker[Ectc.BASE_VOLUME.value] is None
+            assert ticker[Ectc.TIMESTAMP.value]
+            RealExchangeTester.check_ticker_typing(
+                ticker,
+                check_open=False, check_low=False, check_high=False, check_base_volume=False
+            )
