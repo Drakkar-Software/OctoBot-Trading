@@ -108,7 +108,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self._previous_open_candles = {}
         self._subsequent_unordered_candles_count = {}   # dict values: tuple(candle_count, candle_time)
         self._start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
-        self.websocket_name = websocket_name
+        self.websocket_name = websocket_name or self.get_name()
 
         self.local_loop = None
 
