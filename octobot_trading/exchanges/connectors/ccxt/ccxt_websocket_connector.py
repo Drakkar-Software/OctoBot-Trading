@@ -916,6 +916,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         """
         # TODO update this when supported (ccxt is supporting it)
         raise NotImplementedError("orders callback is not implemented")
+        symbol = None #todo
         adapted = [self.adapter.adapt_order(order, symbol=symbol) for order in orders]
         await self.push_to_channel(trading_constants.ORDERS_CHANNEL, adapted)
 
