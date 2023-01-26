@@ -108,7 +108,8 @@ class Order(util.Initializable):
         self.has_been_bundled = False
         # True when this order is to be opened as a chained order and has not been open yet
         self.is_waiting_for_chained_trigger = False
-        # params give to the exchange request when this order is created
+        # Params given to the exchange request when this order is created. Include any exchange specific param here.
+        # All params and values in those will be ignored in simulated orders
         self.exchange_creation_params = {}
         # kwargs given to trader.create_order() when this order should be created later on
         self.trader_creation_kwargs = {}
@@ -127,7 +128,7 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               group=None, tag=None, quantity_currency=None) -> bool:
+               group=None, tag=None, quantity_currency=None, exchange_creation_params=None) -> bool:
         changed: bool = False
         should_update_total_cost = False
 
@@ -252,6 +253,9 @@ class Order(util.Initializable):
 
         if tag is not None:
             self.tag = tag
+
+        if exchange_creation_params is not None:
+            self.exchange_creation_params = exchange_creation_params
 
         if should_update_total_cost and not total_cost:
             self._update_total_cost()

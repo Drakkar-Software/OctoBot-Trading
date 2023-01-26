@@ -231,6 +231,7 @@ class Trader(util.Initializable):
         is_pending_creation = False
         if not self.simulate and not new_order.is_self_managed():
             order_params = self.exchange_manager.exchange.get_order_additional_params(new_order)
+            order_params.update(new_order.exchange_creation_params)
             order_params.update(params)
             created_order = await self.exchange_manager.exchange.create_order(new_order.order_type,
                                                                               new_order.symbol,
