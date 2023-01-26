@@ -54,7 +54,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.adapter = self.get_adapter_class(adapter_class)(self)
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
-        self.rest_name = rest_name
+        self.rest_name = rest_name or self.exchange_manager.exchange_class_string
 
         self.additional_config = additional_config
         self.headers = {}
