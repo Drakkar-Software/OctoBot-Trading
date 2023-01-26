@@ -46,4 +46,5 @@ cpdef object create_order_instance(object trader,
                                    object tag=*,
                                    object reduce_only=*,
                                    str quantity_currency=*,
-                                   bint close_position=*)
+                                   bint close_position=*,
+                                   dict exchange_creation_params=*)
