@@ -76,7 +76,7 @@ class AbstractWebsocketExchange:
         Exchange credentials
         :return: key, secret, password
         """
-        return self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_manager.exchange_name)
+        return self.exchange_manager.get_exchange_credentials(self.exchange_manager.exchange_name)
 
     async def push_to_channel(self, channel_name, *args, **kwargs):
         try:

@@ -286,6 +286,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         while not self.should_stop:
             try:
                 await asyncio.sleep(self.EXCHANGE_RECONNECT_INTERVAL)
+                self.logger.debug(f"Trigger exchange connection closing to force reconnection after "
+                                  f"{self.EXCHANGE_RECONNECT_INTERVAL / commons_constants.HOURS_TO_SECONDS} hours.")
                 await self._close_exchange_to_force_reconnect()
             except Exception as err:
                 self.logger.exception(err, True, f"Error when trigger exchange auto-reconnect: {err}")
@@ -293,8 +295,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     async def _close_exchange_to_force_reconnect(self):
         if time.time() - self._last_close_time > self.MIN_CONNECTION_CLOSE_INTERVAL:
             # Close client to force connections re-open. The next watch_xyz will recreate the connection
-            self.logger.debug(f"Auto-closing exchange connection to force reconnection after "
-                              f"{self.EXCHANGE_RECONNECT_INTERVAL / commons_constants.HOURS_TO_SECONDS} hours.")
+            self.logger.debug(f"Closing exchange connection.")
             await self.client.close()
             # Recreate self.client as close() is not enough to completely close the websocket connection to the exchange
             # at least up to ccxt 2.6.33
@@ -561,7 +562,11 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 self.logger.debug(f"Can't connect to exchange {ws_des} websocket: {err}. "
                                   f"Retrying in {reconnect_delay} seconds")
                 if await self._close_exchange_to_force_reconnect():
-                    self.logger.error(f"Closed exchange connection to force reconnect. Error: {err}")
+                    message = f"Closed exchange connection to force reconnect. Error: {err}"
+                    if just_got_disconnected:
+                        self.logger.debug(message)
+                    else:
+                        self.logger.error(f"Multiple disconnections if a row. {message}")
                 await asyncio.sleep(reconnect_delay)
                 # self.client might have changed
                 watch_func = self._get_feed_generator_by_feed()[feed]
