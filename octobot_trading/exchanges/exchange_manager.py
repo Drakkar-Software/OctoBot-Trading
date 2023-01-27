@@ -261,20 +261,17 @@ class ExchangeManager(util.Initializable):
         return max_handled != constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME and max_handled < \
             self.get_currently_handled_pair_with_time_frame()
 
-    def should_decrypt_token(self, logger):
+    def should_decrypt_token(self):
         if configuration.has_invalid_default_config_value(
                 self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
                     common_constants.CONFIG_EXCHANGE_KEY, ''),
                 self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
                     common_constants.CONFIG_EXCHANGE_SECRET, '')):
-            logger.warning(f"Exchange configuration tokens for {self.get_exchange_name()} are not set yet, "
-                           f"to use OctoBot's real trader's features, "
-                           f"please enter your api tokens in exchange configuration")
             return False
         return True
 
-    def get_exchange_credentials(self, logger, exchange_name):
-        if self.ignore_config or not self.should_decrypt_token(logger) or self.without_auth:
+    def get_exchange_credentials(self, exchange_name):
+        if self.ignore_config or not self.should_decrypt_token() or self.without_auth:
             return "", "", ""
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
         return (

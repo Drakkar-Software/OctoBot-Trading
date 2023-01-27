@@ -33,7 +33,7 @@ def create_client(exchange_class, exchange_name, exchange_manager, logger,
         logger.info(f"Creating {exchange_class.__name__} exchange with ccxt in version {ccxt.__version__}")
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_name):
         try:
-            key, secret, password = exchange_manager.get_exchange_credentials(logger, exchange_name)
+            key, secret, password = exchange_manager.get_exchange_credentials(exchange_name)
             if not (key and secret) and not exchange_manager.is_simulated:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
