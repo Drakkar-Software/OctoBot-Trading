@@ -128,7 +128,9 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
         else:
             color = "magenta"
             shape = "arrow-bar-left"
-
+    fee = trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value]
+    fee_cost = float(fee[enums.FeePropertyColumns.COST.value] if
+                     fee and fee[enums.FeePropertyColumns.COST.value] else 0)
     return {
         "x": trade_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
         "text": f"{tag}{trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value]} "
@@ -151,10 +153,7 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
         "shape": shape,
         "color": color,
         "size": "10",
-        "fees_amount": float(trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value]
-                             [enums.ExchangeConstantsFeesColumns.COST.value] if
-                             trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value] else 0),
-        "fees_currency": trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value][
-            enums.ExchangeConstantsFeesColumns.CURRENCY.value]
+        "fees_amount": fee_cost,
+        "fees_currency": fee[enums.FeePropertyColumns.CURRENCY.value]
         if trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }

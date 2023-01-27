@@ -40,6 +40,7 @@ def _assert_fee(fee, currency, price, rate, fee_type):
     assert fee[FeePropertyColumns.COST.value] == price
     assert fee[FeePropertyColumns.RATE.value] == rate
     assert fee[FeePropertyColumns.TYPE.value] == fee_type
+    assert fee[FeePropertyColumns.IS_FROM_EXCHANGE.value] == False
 
 
 async def test_is_authenticated(backtesting_trader):

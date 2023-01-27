@@ -488,6 +488,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                                          amount=float(quantity),
                                          price=float(price),
                                          takerOrMaker=taker_or_maker)
+        fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = False
         fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
         if self.exchange_manager.is_future:
             # fees on futures are wrong

@@ -97,7 +97,8 @@ class TestTradeFactory:
         assert trade.fee == {
             FeePropertyColumns.COST.value: decimal.Decimal("0.0015"),
             FeePropertyColumns.CURRENCY.value: "ETH",
-            FeePropertyColumns.RATE.value: 0.002
+            FeePropertyColumns.RATE.value: 0.002,
+            FeePropertyColumns.IS_FROM_EXCHANGE.value: True
         }
         assert trade.is_closing_order is True
         assert trade.tag is None

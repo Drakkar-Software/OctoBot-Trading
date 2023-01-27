@@ -189,6 +189,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     #     'currency': 'BTC', // the unified fee currency code
     #     'rate': percentage, // the fee rate, 0.05% = 0.0005, 1% = 0.01, ...
     #     'cost': feePaid, // the fee cost (amount * fee rate)
+    #     'is_from_exchange': False, // simulated fees
     # }
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         if not taker_or_maker:
@@ -211,6 +212,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
             enums.FeePropertyColumns.CURRENCY.value: fee_currency,
             enums.FeePropertyColumns.RATE.value: rate,
             enums.FeePropertyColumns.COST.value: decimal.Decimal(str(cost)),
+            enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
         }
 
     def get_time_frames(self, importer):

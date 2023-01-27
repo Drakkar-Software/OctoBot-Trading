@@ -352,13 +352,6 @@ class ExchangeConstantsLiquidationColumns(enum.Enum):
     SIDE = "side"
 
 
-class ExchangeConstantsFeesColumns(enum.Enum):
-    TYPE = "type"
-    CURRENCY = "currency"
-    RATE = "rate"
-    COST = "cost"
-
-
 class ExchangeConstantsMarketPropertyColumns(enum.Enum):
     TAKER = "taker"  # trading
     MAKER = "maker"  # trading
@@ -370,6 +363,8 @@ class FeePropertyColumns(enum.Enum):
     CURRENCY = "currency"  # currency the fee is paid in
     RATE = "rate"  # multiplier applied to compute fee
     COST = "cost"  # fee amount
+    IS_FROM_EXCHANGE = "is_from_exchange"   # True when the fee value has been fetched from exchange
+    EXCHANGE_ORIGINAL_COST = "exchange_original_cost"  # fee amount as fetched from exchange
 
 
 class FeesCurrencySide(enum.Enum):
