@@ -1318,4 +1318,5 @@ def _disable_fees(exchange_manager):
         enums.FeePropertyColumns.CURRENCY.value: "USDT",
         enums.FeePropertyColumns.RATE.value: 0,
         enums.FeePropertyColumns.COST.value: constants.ZERO,
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
     })

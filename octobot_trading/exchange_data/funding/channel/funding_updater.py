@@ -106,7 +106,7 @@ class FundingUpdater(funding_channel.FundingProducer):
             self.logger.exception(ne, True, f"get_funding_rate is not supported by "
                                             f"{self.channel.exchange_manager.exchange.name} : {ne}")
         except Exception as e:
-            self.logger.error(f"Fail to update funding rate on {self.channel.exchange_manager.exchange.name} : {e}")
+            self.logger.exception(e, True, f"Fail to update funding rate on {self.channel.exchange_manager.exchange.name} : {e}")
         return None
 
     async def _push_funding(self, symbol, funding_rate, predicted_funding_rate=None,

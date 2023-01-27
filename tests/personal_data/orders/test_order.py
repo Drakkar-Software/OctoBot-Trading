@@ -210,7 +210,11 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.timestamp == 1637579281.377
     assert order_inst.canceled_time == 0
     assert order_inst.executed_time == 1637579281.377
-    assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
+    assert order_inst.fee == {
+        enums.FeePropertyColumns.COST.value: decimal.Decimal('0.03764836'),
+        enums.FeePropertyColumns.CURRENCY.value: 'USDT',
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
+    }
 
     order_inst = personal_data.Order(trader_inst)
     # binance example limit order
@@ -256,7 +260,11 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.timestamp == 1637579281.377
     assert order_inst.canceled_time == 0
     assert order_inst.executed_time == 1637579281.377
-    assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
+    assert order_inst.fee == {
+        enums.FeePropertyColumns.COST.value: decimal.Decimal('0.03764836'),
+        enums.FeePropertyColumns.CURRENCY.value: 'USDT',
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
+    }
 
 
 async def test_set_as_chained_order(trader_simulator):

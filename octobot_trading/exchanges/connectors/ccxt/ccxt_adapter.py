@@ -33,20 +33,23 @@ class CCXTAdapter(adapters.AbstractAdapter):
             exchange_timestamp = fixed[ecoc.TIMESTAMP.value]
             fixed[ecoc.TIMESTAMP.value] = \
                 self.get_uniformized_timestamp(exchange_timestamp)
-            try:
-                fees = fixed[enums.ExchangeConstantsOrderColumns.FEE.value]
-                if fees is not None and fees[enums.ExchangeConstantsOrderColumns.COST.value] is None:
-                    fees[enums.ExchangeConstantsOrderColumns.COST.value] = 0
-            except KeyError:
-                pass
         except KeyError as e:
             self.logger.error(f"Fail to cleanup order dict ({e})")
+        self._register_exchange_fees(fixed)
         return fixed
 
     def parse_order(self, fixed, **kwargs):
         # CCXT standard order parsing logic
         fixed.pop(ecoc.INFO.value)
         return fixed
+
+    def _register_exchange_fees(self, order_or_trade):
+        try:
+            fees = order_or_trade[enums.ExchangeConstantsOrderColumns.FEE.value]
+            fees[enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value] = fees[enums.FeePropertyColumns.COST.value]
+            fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = True
+        except (KeyError, TypeError):
+            pass
 
     def _fix_ohlcv_prices(self, ohlcv):
         for index, value in enumerate(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value + 1:]):
@@ -152,6 +155,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     self.get_uniformized_timestamp(trade[ecoc.TIMESTAMP.value])
             except KeyError as e:
                 self.logger.error(f"Fail to clean trade dict ({e})")
+            self._register_exchange_fees(trade)
         return fixed
 
     def parse_trades(self, fixed, **kwargs):

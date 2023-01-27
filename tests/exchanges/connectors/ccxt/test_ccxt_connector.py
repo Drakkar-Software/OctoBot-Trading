@@ -179,4 +179,5 @@ def _get_fees(type, currency, rate, cost):
         enums.FeePropertyColumns.CURRENCY.value: currency,
         enums.FeePropertyColumns.RATE.value: rate,
         enums.FeePropertyColumns.COST.value: decimal.Decimal(str(cost)),
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
     }

@@ -107,7 +107,8 @@ def test_get_fees_for_currency():
 
     fee2 = {
         enums.FeePropertyColumns.CURRENCY.value: "BTC",
-        enums.FeePropertyColumns.COST.value: 0
+        enums.FeePropertyColumns.COST.value: 0,
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True
     }
     assert personal_data.get_fees_for_currency(fee2, "BTC") == 0
     assert personal_data.get_fees_for_currency(fee2, "BTC1") == 0

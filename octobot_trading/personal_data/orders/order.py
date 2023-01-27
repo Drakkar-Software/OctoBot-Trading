@@ -436,13 +436,25 @@ class Order(util.Initializable):
                 return True
         return False
 
+    def has_exchange_fetched_fees(self):
+        if not self.fee:
+            return False
+        try:
+            # requires fees to be from exchange and having a not None exchange original cost
+            return self.fee[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] \
+                   and self.fee[enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value] is not None
+        except KeyError:
+            return False
+
     def get_computed_fee(self, forced_value=None):
+        is_from_exchange = False
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
             computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type,
                                                                         self.filled_quantity, self.filled_price,
                                                                         self.taker_or_maker)
             value = computed_fee[enums.FeePropertyColumns.COST.value]
             currency = computed_fee[enums.FeePropertyColumns.CURRENCY.value]
+            is_from_exchange = computed_fee[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value]
         else:
             symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
             fees = decimal.Decimal(f"{symbol_fees[self.taker_or_maker]}")
@@ -453,8 +465,8 @@ class Order(util.Initializable):
                 value = self.filled_quantity * self.filled_price * fees
                 currency = self.market
         return {
-            enums.FeePropertyColumns.COST.value:
-                forced_value if forced_value is not None else value,
+            enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: is_from_exchange,
+            enums.FeePropertyColumns.COST.value: forced_value if forced_value is not None else value,
             enums.FeePropertyColumns.CURRENCY.value: currency,
         }
 

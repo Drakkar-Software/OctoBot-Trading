@@ -224,9 +224,18 @@ def get_fees_for_currency(fee, currency):
 
 def parse_raw_fees(raw_fees):
     fees = raw_fees
-    if fees and enums.ExchangeConstantsOrderColumns.COST.value in fees:
-        raw_fees[enums.ExchangeConstantsOrderColumns.COST.value] = \
-            decimal.Decimal(str(raw_fees[enums.ExchangeConstantsOrderColumns.COST.value]))
+    if fees:
+        # parsed fees should be from exchange by default
+        fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = \
+            fees.get(enums.FeePropertyColumns.IS_FROM_EXCHANGE.value, True)
+        if enums.FeePropertyColumns.COST.value in fees:
+            try:
+                raw_fees[enums.FeePropertyColumns.COST.value] = \
+                    decimal.Decimal(str(raw_fees[enums.FeePropertyColumns.COST.value]))
+            except decimal.InvalidOperation:
+                # Ensure fee cost can be used in computations. The original value is kept
+                # under the EXCHANGE_ORIGINAL_COST key if relevant
+                raw_fees[enums.FeePropertyColumns.COST.value] = constants.ZERO
     return fees
 
 

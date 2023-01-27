@@ -122,6 +122,7 @@ cdef class Order(util.Initializable):
     cpdef bint can_be_edited(self)
     cpdef object get_position_side(self, object future_contract)
     cpdef void on_fill_actions(self)
+    cpdef bint has_exchange_fetched_fees(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef object get_profitability(self)
     cpdef double generate_executed_time(self)
