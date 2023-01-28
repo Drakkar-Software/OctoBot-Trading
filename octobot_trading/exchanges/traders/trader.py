@@ -677,5 +677,8 @@ class Trader(util.Initializable):
         :param symbol: the position symbol
         :return: True if open position for :symbol: exists
         """
-        return len(self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(
-            symbol=symbol)) != 0
+        return any(
+                position.size
+                for position in self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(
+                    symbol=symbol
+                ))
