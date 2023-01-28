@@ -16,6 +16,7 @@
 
 import octobot_trading.modes as modes
 import octobot_commons.constants as commons_constants
+import octobot_trading.modes.modes_util as modes_util
 
 
 def get_trading_modes(exchange_manager) -> list:
@@ -64,3 +65,15 @@ async def create_trading_mode(trading_mode_class: modes.AbstractTradingMode.__cl
                                            symbol=symbol,
                                            time_frame=time_frame,
                                            bot_id=bot_id)
+
+
+async def get_run_analysis_plots(
+    trading_mode, exchange, symbol, analysis_settings, backtesting_id=None, 
+    optimizer_id=None, live_id=None, optimization_campaign=None
+    ):
+    return await modes_util.get_run_analysis_plots(
+    trading_mode=trading_mode, exchange=exchange, symbol=symbol, 
+    analysis_settings=analysis_settings, backtesting_id=backtesting_id, 
+    optimizer_id=optimizer_id, live_id=live_id,
+    optimization_campaign=optimization_campaign
+    )

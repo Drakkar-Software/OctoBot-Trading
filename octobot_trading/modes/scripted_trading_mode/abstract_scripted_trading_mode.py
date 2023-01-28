@@ -69,6 +69,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await modes_util.clear_simulated_orders_cache(self)
 
     @classmethod
+    # TODO delete when RunAnalysis Mode is stable
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id,
                                    optimization_campaign, backtesting_analysis_settings):
         ctx = context_management.Context.minimal(cls, logging.get_logger(cls.get_name()), exchange, symbol,
