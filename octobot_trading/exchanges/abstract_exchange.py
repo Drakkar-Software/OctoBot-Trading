@@ -298,7 +298,7 @@ class AbstractExchange(util.Initializable):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                           params: dict = None) \
+                           reduce_only: bool = False, params: dict = None) \
             -> typing.Optional[dict]:
         """
         Create a order on the exchange
