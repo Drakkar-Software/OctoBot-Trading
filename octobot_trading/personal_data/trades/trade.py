@@ -84,10 +84,16 @@ class Trade:
         self.tag = order.tag
 
     def get_time(self):
-        return self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
+        return (self.executed_time
+                if (self.status is not enums.OrderStatus.CANCELED
+                    and self.status is not enums.OrderStatus.EXPIRED)
+                else self.canceled_time)
 
     def get_quantity(self):
-        return self.executed_quantity if self.status is not enums.OrderStatus.CANCELED else self.origin_quantity
+        return (self.executed_quantity
+                if (self.status is not enums.OrderStatus.CANCELED
+                    and self.status is not enums.OrderStatus.EXPIRED)
+                else self.origin_quantity)
 
     def to_dict(self):
         return {
