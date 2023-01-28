@@ -126,11 +126,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                           params: dict = None) -> typing.Optional[dict]:
+                           reduce_only: bool = False, params: dict = None) -> typing.Optional[dict]:
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
-            created_order = await self._create_order_with_retry(order_type, symbol, quantity,
-                                                                price, stop_price, side,
-                                                                current_price, params)
+            created_order = await self._create_order_with_retry(
+                order_type=order_type, symbol=symbol, quantity=quantity, price=price,
+                stop_price=stop_price, side=side, current_price=current_price,
+                reduce_only=reduce_only, params=params)
             self.logger.debug(f"Created order: {created_order}")
             return await self._verify_order(created_order, order_type, symbol, price, side)
         return None
@@ -216,11 +217,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
                                        price: decimal.Decimal, stop_price: decimal.Decimal, 
                                        side: enums.TradeOrderSide,
-                                       current_price: decimal.Decimal, params) -> dict:
+                                       current_price: decimal.Decimal, 
+                                       reduce_only: bool, params) -> dict:
         try:
             return await self._create_specific_order(order_type, symbol, quantity, price=price,
                                                      stop_price=stop_price, side=side,
-                                                     current_price=current_price, params=params)
+                                                     current_price=current_price, 
+                                                     reduce_only=reduce_only, params=params)
         except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
             # can be raised when exchange precision/limits rules change
             self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
@@ -229,7 +232,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             # retry order creation with updated markets (ccxt will use the updated market values)
             return await self._create_specific_order(order_type, symbol, quantity, price=price, 
                                                      stop_price=stop_price, side=side,
-                                                     current_price=current_price, params=params)
+                                                     current_price=current_price, reduce_only=reduce_only, 
+                                                     params=params)
 
     def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
         if order_required_fields is None:
@@ -242,7 +246,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
                                      side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None, 
-                                     stop_price: decimal.Decimal = None, params=None) -> dict:
+                                     stop_price: decimal.Decimal = None, reduce_only: bool = False, params=None) -> dict:
         created_order = None
         float_quantity = float(quantity)
         float_price = float(price)
@@ -252,16 +256,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
         params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
         if order_type == enums.TraderOrderType.BUY_MARKET:
             created_order = await self._create_market_buy_order(symbol, float_quantity, price=float_price,
-                                                                params=params)
+                                                                reduce_only=reduce_only, params=params)
         elif order_type == enums.TraderOrderType.BUY_LIMIT:
             created_order = await self._create_limit_buy_order(symbol, float_quantity, price=float_price,
-                                                               params=params)
+                                                               reduce_only=reduce_only, params=params)
         elif order_type == enums.TraderOrderType.SELL_MARKET:
             created_order = await self._create_market_sell_order(symbol, float_quantity, price=float_price,
-                                                                 params=params)
+                                                                 reduce_only=reduce_only, params=params)
         elif order_type == enums.TraderOrderType.SELL_LIMIT:
             created_order = await self._create_limit_sell_order(symbol, float_quantity, price=float_price,
-                                                                params=params)
+                                                                reduce_only=reduce_only, params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS:
             created_order = await self._create_market_stop_loss_order(symbol, float_quantity, price=float_price,
                                                                       side=side, current_price=float_current_price,
@@ -277,23 +281,34 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                                                        side=side, params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP:
             created_order = await self._create_market_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                          side=side, params=params)
+                                                                          side=side, reduce_only=reduce_only, params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
             created_order = await self._create_limit_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                         side=side, params=params)
+                                                                         side=side, reduce_only=reduce_only, params=params)
         return created_order
 
-    async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_market_buy_order(
+        self, symbol, quantity, price=None, reduce_only: bool = False, params=None
+        ) -> dict:
         return await self.connector.create_market_buy_order(symbol, quantity, price=price, params=params)
 
-    async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.create_limit_buy_order(symbol, quantity, price, params=params)
+    async def _create_limit_buy_order(
+        self, symbol, quantity, price=None, reduce_only: bool = False, params=None
+        ) -> dict:
+        return await self.connector.create_limit_buy_order(
+            symbol, quantity, price, params=params
+            )
 
-    async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_market_sell_order(
+        self, symbol, quantity, price=None, reduce_only: bool = False, params=None
+        ) -> dict:
         return await self.connector.create_market_sell_order(symbol, quantity, price=price, params=params)
 
-    async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.create_limit_sell_order(symbol, quantity, price, params=params)
+    async def _create_limit_sell_order(
+        self, symbol, quantity, price=None, reduce_only: bool = False, params=None
+        ) -> dict:
+        return await self.connector.create_limit_sell_order(
+            symbol, quantity, price, params=params)
 
     async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
         return await self.connector.create_market_stop_loss_order(
@@ -310,10 +325,15 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def _create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_take_profit_order is not implemented")
 
-    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+    async def _create_market_trailing_stop_order(
+        self, symbol, quantity, price=None, side=None,
+        reduce_only: bool = False, params=None) -> dict:
         raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
 
-    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+    async def _create_limit_trailing_stop_order(
+        
+        self, symbol, quantity, price=None, side=None,
+        reduce_only: bool = False, params=None) -> dict:
         raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
 
     def get_exchange_current_time(self):
