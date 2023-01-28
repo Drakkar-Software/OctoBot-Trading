@@ -17,6 +17,7 @@ import typing
 import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders.orders_manager import OrdersManager
+import octobot_trading.constants as constants
 from octobot_trading.enums import (
     OrderStatus,
 )
@@ -157,7 +158,7 @@ class TestOrdersManager:
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(two_orders) == 2
@@ -167,8 +168,8 @@ class TestOrdersManager:
         since_orders = orders_manager.get_all_orders(
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
-            until=-1,
-            limit=-1,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(since_orders) == 3
@@ -178,9 +179,9 @@ class TestOrdersManager:
 
         until_orders = orders_manager.get_all_orders(
             symbol=self.DEFAULT_SYMBOL,
-            since=-1,
+            since=constants.NO_DATA_LIMIT,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(until_orders) == 3
@@ -189,7 +190,11 @@ class TestOrdersManager:
         assert until_orders[2].order_id == "3"
 
         all_orders = orders_manager.get_all_orders(
-            symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag=None
+            symbol=self.DEFAULT_SYMBOL,
+            since=constants.NO_DATA_LIMIT,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
+            tag=None,
         )
         assert len(all_orders) == 4
         assert all_orders[0].order_id == "1"
@@ -199,7 +204,7 @@ class TestOrdersManager:
 
         # TODO uncomment once tags are parsed
         # tagged_order = orders_manager.get_all_orders(
-        #     symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag="test"
+        #     symbol=self.DEFAULT_SYMBOL, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag="test"
         # )
         # assert len(tagged_order) == 1
         # assert tagged_order[0].order_id == "4"
@@ -224,7 +229,7 @@ class TestOrdersManager:
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(two_orders) == 2
@@ -234,8 +239,8 @@ class TestOrdersManager:
         since_orders = orders_manager.get_pending_cancel_orders(
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
-            until=-1,
-            limit=-1,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(since_orders) == 3
@@ -245,9 +250,9 @@ class TestOrdersManager:
 
         until_orders = orders_manager.get_pending_cancel_orders(
             symbol=self.DEFAULT_SYMBOL,
-            since=-1,
+            since=constants.NO_DATA_LIMIT,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(until_orders) == 3
@@ -256,7 +261,11 @@ class TestOrdersManager:
         assert until_orders[2].order_id == "3"
 
         all_orders = orders_manager.get_pending_cancel_orders(
-            symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag=None
+            symbol=self.DEFAULT_SYMBOL,
+            since=constants.NO_DATA_LIMIT,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
+            tag=None,
         )
         assert len(all_orders) == 4
         assert all_orders[0].order_id == "1"
@@ -266,7 +275,7 @@ class TestOrdersManager:
 
         # TODO uncomment once tags are parsed
         # tagged_order = orders_manager.get_pending_cancel_orders(
-        #     symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag="test"
+        #     symbol=self.DEFAULT_SYMBOL, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag="test"
         # )
         # assert len(tagged_order) == 1
         # assert tagged_order[0].order_id == "4"
@@ -289,7 +298,7 @@ class TestOrdersManager:
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(two_orders) == 2
@@ -299,8 +308,8 @@ class TestOrdersManager:
         since_orders = orders_manager.get_closed_orders(
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
-            until=-1,
-            limit=-1,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(since_orders) == 3
@@ -310,9 +319,9 @@ class TestOrdersManager:
 
         until_orders = orders_manager.get_closed_orders(
             symbol=self.DEFAULT_SYMBOL,
-            since=-1,
+            since=constants.NO_DATA_LIMIT,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(until_orders) == 3
@@ -321,7 +330,11 @@ class TestOrdersManager:
         assert until_orders[2].order_id == "3"
 
         all_orders = orders_manager.get_closed_orders(
-            symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag=None
+            symbol=self.DEFAULT_SYMBOL,
+            since=constants.NO_DATA_LIMIT,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
+            tag=None,
         )
         assert len(all_orders) == 4
         assert all_orders[0].order_id == "1"
@@ -331,7 +344,7 @@ class TestOrdersManager:
 
         # TODO uncomment once tags are parsed
         # tagged_order = orders_manager.get_closed_orders(
-        #     symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag="test"
+        #     symbol=self.DEFAULT_SYMBOL, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag="test"
         # )
         # assert len(tagged_order) == 1
         # assert tagged_order[0].order_id == "4"
@@ -355,7 +368,7 @@ class TestOrdersManager:
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(two_orders) == 2
@@ -365,8 +378,8 @@ class TestOrdersManager:
         since_orders = orders_manager.get_open_orders(
             symbol=self.DEFAULT_SYMBOL,
             since=self.second_time,
-            until=-1,
-            limit=-1,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(since_orders) == 3
@@ -376,9 +389,9 @@ class TestOrdersManager:
 
         until_orders = orders_manager.get_open_orders(
             symbol=self.DEFAULT_SYMBOL,
-            since=-1,
+            since=constants.NO_DATA_LIMIT,
             until=self.third_time,
-            limit=-1,
+            limit=constants.NO_DATA_LIMIT,
             tag=None,
         )
         assert len(until_orders) == 3
@@ -387,7 +400,11 @@ class TestOrdersManager:
         assert until_orders[2].order_id == "3"
 
         all_orders = orders_manager.get_open_orders(
-            symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag=None
+            symbol=self.DEFAULT_SYMBOL,
+            since=constants.NO_DATA_LIMIT,
+            until=constants.NO_DATA_LIMIT,
+            limit=constants.NO_DATA_LIMIT,
+            tag=None,
         )
         assert len(all_orders) == 4
         assert all_orders[0].order_id == "1"
@@ -397,7 +414,7 @@ class TestOrdersManager:
 
         # TODO uncomment once tags are parsed
         # tagged_order = orders_manager.get_open_orders(
-        #     symbol=self.DEFAULT_SYMBOL, since=-1, until=-1, limit=-1, tag="test"
+        #     symbol=self.DEFAULT_SYMBOL, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag="test"
         # )
         # assert len(tagged_order) == 1
         # assert tagged_order[0].order_id == "4"
