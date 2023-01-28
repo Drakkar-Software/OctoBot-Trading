@@ -393,8 +393,8 @@ class Trader(util.Initializable):
                                  emit_trading_signals=False,
                                  wait_for_cancelling=True,
                                  cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, 
-                                 since: typing.Union[int, float] = -1, 
-                                 until: typing.Union[int, float] = -1
+                                 since: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT, 
+                                 until: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT
                                  ) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol

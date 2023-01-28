@@ -20,6 +20,7 @@ import typing
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.util as util
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order as order_class
@@ -45,23 +46,30 @@ class OrdersManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_orders()
 
-    def get_all_orders(self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+    def get_all_orders(
+        self, symbol=None, since=constants.NO_DATA_LIMIT, 
+        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             None, symbol=symbol, since=since,
             until=until, limit=limit, tag=tag)
 
-    def get_open_orders(self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+    def get_open_orders(
+        self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
+        limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             enums.OrderStatus.OPEN, symbol, since=since,
             until=until, limit=limit, tag=tag)
 
     def get_pending_cancel_orders(
-        self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+        self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
+        limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             enums.OrderStatus.PENDING_CANCEL, symbol, since=since, 
             until=until, limit=limit, tag=tag)
 
-    def get_closed_orders(self, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+    def get_closed_orders(
+        self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
+        limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             enums.OrderStatus.CLOSED, symbol, since=since,
             until=until, limit=limit, tag=tag)
@@ -202,19 +210,20 @@ class OrdersManager(util.Initializable):
             self._remove_oldest_orders(int(self.MAX_ORDERS_COUNT / 2))
 
     def _select_orders(
-        self, state=None, symbol=None, since=-1, until=-1, limit=-1, tag=None):
+        self, state=None, symbol=None, since=constants.NO_DATA_LIMIT, 
+        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
         orders = [
             order
             for order in self.orders.values()
             if (
                     (state is None or order.status == state) and
                     (symbol is None or (symbol and order.symbol == symbol)) and
-                    (since == -1 or (since and order.timestamp >= since)) and
-                    (until == -1 or (until and order.timestamp <= until)) and
+                    (since == constants.NO_DATA_LIMIT or (since and order.timestamp >= since)) and
+                    (until == constants.NO_DATA_LIMIT or (until and order.timestamp <= until)) and
                     (tag is None or order.tag == tag)
             )
         ]
-        return orders if limit == -1 else orders[0:limit]
+        return orders if limit == constants.NO_DATA_LIMIT else orders[0:limit]
 
     def _remove_oldest_orders(self, nb_to_remove):
         for _ in range(nb_to_remove):
