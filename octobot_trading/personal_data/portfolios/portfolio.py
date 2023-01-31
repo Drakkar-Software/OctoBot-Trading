@@ -147,8 +147,8 @@ class Portfolio:
         :param order: the order to be taken into account
         """
         # stop losses and take profits aren't using available portfolio
-        # restoring available portfolio when order type is stop loss or take profit
-        if not _should_update_available(order):
+        # sync available portfolio funds when order type is stop loss or take profit
+        if _should_reduce_available_assets_on_fill(order):
             self.update_portfolio_available_from_order(order)
 
         self.update_portfolio_data_from_order(order)
@@ -283,6 +283,21 @@ class Portfolio:
         """
         self.logger.debug(f"Portfolio updated from withdraw | {currency} -{amount}"
                           f" | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+
+
+def _should_reduce_available_assets_on_fill(order):
+    """
+    Check if the order fill should trigger an update on the portfolio available funds.
+    It's the case for orders that are not counted in available funds (stop losses). As they
+    are filled, the available funds have to be reduced to keep sync with total funds.
+
+    This is required to keep uniformity with regular order that are already reducing
+    part of available funds. As we are here on the fill context of a stop-like order,
+    available funds now have to be updated.
+    :param order: The order to check
+    :return: True if the order should update available portfolio
+    """
+    return not order.is_counted_in_available_funds()
 
 
 def _should_update_available(order):

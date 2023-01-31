@@ -56,5 +56,6 @@ cdef class Portfolio:
     cdef void _reset_all_portfolio_available(self)
     cdef object _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
+cdef bint _should_reduce_available_assets_on_fill(order_class.Order order)
 cdef bint _should_update_available(order_class.Order order)
 cdef tuple _parse_raw_currency_balance(dict raw_currency_balance)
