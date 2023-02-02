@@ -103,7 +103,7 @@ class TickerProducer(exchanges_channel.ExchangeChannelProducer):
                                              self.channel.exchange_manager.id).get_internal_producer().push(
                 symbol,
                 decimal.Decimal(str(ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])),
-                mark_price_source=enums.MarkPriceSources.TICKER_CLOSE_PRICE.value
+                mark_price_source=enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value
             )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update mark price from ticker : {e}")
