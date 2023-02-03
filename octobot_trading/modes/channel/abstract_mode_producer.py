@@ -82,6 +82,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
         self.symbol = None
+
+        self._is_read_to_trade = None
         self.on_reload_config()
 
     def on_reload_config(self):
@@ -119,6 +121,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Start trading mode channels subscriptions
         """
+        self._is_read_to_trade = asyncio.Event()
         registration_topics = self.get_channels_registration()
         trigger_time_frames = self.get_trigger_time_frames()
         currency_filter = self.trading_mode.cryptocurrency \
@@ -142,6 +145,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                                                                      self.exchange_manager.id).matrix_id
         await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
         await self.init_user_inputs(False)
+        await self._wait_for_bot_init(self.CONFIG_INIT_TIMEOUT)
+        self._is_read_to_trade.set()
 
     async def _subscribe_to_registration_topic(self, registration_topics, currency_filter, symbol_filter):
         for registration_topic in registration_topics:
@@ -285,6 +290,10 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
         try:
+            if not self._is_read_to_trade.is_set():
+                self.logger.debug("Waiting for orders initialization to proceed")
+                await asyncio.wait_for(self._is_read_to_trade.wait(), self.CONFIG_INIT_TIMEOUT)
+                self.logger.debug("Order initialized")
             yield
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")
@@ -359,6 +368,15 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             if self.exchange_manager.is_future:
                 await util.wait_for_topic_init(self.exchange_manager, timeout,
                                                common_enums.InitializationEventExchangeTopics.CONTRACTS.value, symbol)
+            return True
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Initialization took more than {timeout} seconds")
+        return False
+
+    async def _wait_for_bot_init(self, timeout) -> bool:
+        try:
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.ORDERS.value)
             return True
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Initialization took more than {timeout} seconds")

@@ -82,9 +82,6 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             await self.pause()
         except Exception as e:
             self.logger.exception(e, True, f"Fail to initialize orders : {e}")
-        finally:
-            if self.channel is not None:
-                self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
 
     async def start(self) -> None:
         """
@@ -103,8 +100,12 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :param retry_till_success: retry request till it works. Should be rarely used as it might take some time
         """
         # should not raise: open orders are necessary
-        await self._open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit,
-                                               retry_till_success=retry_till_success)
+        try:
+            await self._open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit,
+                                                   retry_till_success=retry_till_success)
+        finally:
+            if self.channel is not None:
+                self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
         await asyncio.sleep(self.TIME_BETWEEN_ORDERS_REFRESH)
         try:
             # can raise, closed orders are not critical data
