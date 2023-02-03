@@ -119,7 +119,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                 await personal_data.get_pre_order_data(self.exchange_manager,
                                                        symbol=symbol,
                                                        timeout=constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                       portfolio_type=commons_constants.PORTFOLIO_TOTAL)
+                                                       portfolio_type=commons_constants.PORTFOLIO_AVAILABLE)
             side = enums.TradeOrderSide.SELL \
                 if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value \
                 else enums.TradeOrderSide.BUY
