@@ -178,7 +178,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         # fake a full candle call
         cryptocurrency, symbol, time_frame = self._get_initialization_call_args()
         # wait for symbol data to be initialized
-        candle = await self._wait_for_symbol_init(symbol, time_frame, 30)
+        candle = await self._wait_for_symbol_init(symbol, time_frame, self.CONFIG_INIT_TIMEOUT)
         if candle is None:
             self.logger.error(f"Can't initialize trading script: {symbol} {time_frame} candles are not fetched")
         await self.ohlcv_callback(self.exchange_name, self.exchange_manager.id, cryptocurrency, symbol, time_frame,
