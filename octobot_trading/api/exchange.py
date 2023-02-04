@@ -108,6 +108,14 @@ def get_exchange_current_time(exchange_manager) -> float:
     return exchange_manager.exchange.get_exchange_current_time()
 
 
+def get_exchange_backtesting_time_window(exchange_manager) -> (float, float):
+    return backtesting_api.get_backtesting_starting_time(
+        exchange_manager.exchange.backtesting
+    ), backtesting_api.get_backtesting_ending_time(
+        exchange_manager.exchange.backtesting
+    )
+
+
 def get_exchange_allowed_time_lag(exchange_manager) -> float:
     return exchange_manager.exchange.allowed_time_lag
 
