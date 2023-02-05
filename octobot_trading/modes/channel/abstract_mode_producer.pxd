@@ -28,7 +28,7 @@ cdef class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     cdef public int priority_level
 
-    cdef public object _is_read_to_trade
+    cdef public object _is_ready_to_trade
 
     cpdef void flush(self)
     cpdef bint is_cryptocurrency_wildcard(self)

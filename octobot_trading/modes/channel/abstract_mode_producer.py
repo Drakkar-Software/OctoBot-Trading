@@ -83,7 +83,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
         self.symbol = None
 
-        self._is_read_to_trade = None
+        self._is_ready_to_trade = None
         self.on_reload_config()
 
     def on_reload_config(self):
@@ -118,42 +118,40 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     # noinspection PyArgumentList
     async def start(self) -> None:
+        self._is_ready_to_trade = asyncio.Event()
+        try:
+            await self.inner_start()
+        finally:
+            self._is_ready_to_trade.set()
+
+    async def inner_start(self) -> None:
         """
         Start trading mode channels subscriptions
         """
-        with self._starter():
-            registration_topics = self.get_channels_registration()
-            trigger_time_frames = self.get_trigger_time_frames()
-            currency_filter = self.trading_mode.cryptocurrency \
-                if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard() \
-                else common_constants.CONFIG_WILDCARD
-            symbol_filter = self.trading_mode.symbol \
-                if self.trading_mode.symbol is not None and not self.is_symbol_wildcard() \
-                else common_constants.CONFIG_WILDCARD
-            self.time_frame_filter = self.trading_mode.time_frame \
-                if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
-                else [tf.value
-                      for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
-                      if tf.value in trigger_time_frames or
-                      trigger_time_frames == common_constants.CONFIG_WILDCARD]
-            if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
-               len(self.time_frame_filter) < len(trigger_time_frames):
-                missing_time_frames = [tf for tf in trigger_time_frames if tf not in self.time_frame_filter]
-                self.logger.error(f"Missing timeframe to satisfy {trigger_time_frames} required time frames. "
-                                  f"Please activate those timeframes {missing_time_frames}")
-            self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                         self.exchange_manager.id).matrix_id
-            await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
-            await self.init_user_inputs(False)
-            await self._wait_for_bot_init(self.CONFIG_INIT_TIMEOUT)
-
-    @contextlib.contextmanager
-    def _starter(self):
-        self._is_read_to_trade = asyncio.Event()
-        try:
-            yield
-        finally:
-            self._is_read_to_trade.set()
+        registration_topics = self.get_channels_registration()
+        trigger_time_frames = self.get_trigger_time_frames()
+        currency_filter = self.trading_mode.cryptocurrency \
+            if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard() \
+            else common_constants.CONFIG_WILDCARD
+        symbol_filter = self.trading_mode.symbol \
+            if self.trading_mode.symbol is not None and not self.is_symbol_wildcard() \
+            else common_constants.CONFIG_WILDCARD
+        self.time_frame_filter = self.trading_mode.time_frame \
+            if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
+            else [tf.value
+                  for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
+                  if tf.value in trigger_time_frames or
+                  trigger_time_frames == common_constants.CONFIG_WILDCARD]
+        if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
+           len(self.time_frame_filter) < len(trigger_time_frames):
+            missing_time_frames = [tf for tf in trigger_time_frames if tf not in self.time_frame_filter]
+            self.logger.error(f"Missing timeframe to satisfy {trigger_time_frames} required time frames. "
+                              f"Please activate those timeframes {missing_time_frames}")
+        self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                                     self.exchange_manager.id).matrix_id
+        await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
+        await self.init_user_inputs(False)
+        await self._wait_for_bot_init(self.CONFIG_INIT_TIMEOUT)
 
     async def _subscribe_to_registration_topic(self, registration_topics, currency_filter, symbol_filter):
         for registration_topic in registration_topics:
@@ -297,18 +295,18 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
         try:
-            if not self._is_read_to_trade.is_set():
+            if not self._is_ready_to_trade.is_set():
                 if self.exchange_manager.is_backtesting:
                     raise asyncio.TimeoutError(f"Trading mode producer has to be started in backtesting")
                 self.logger.debug("Waiting for orders initialization to proceed")
-                await asyncio.wait_for(self._is_read_to_trade.wait(), self.CONFIG_INIT_TIMEOUT)
+                await asyncio.wait_for(self._is_ready_to_trade.wait(), self.CONFIG_INIT_TIMEOUT)
                 self.logger.debug("Order initialized")
             yield
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")
         except AttributeError:
-            if self._is_read_to_trade is None:
-                raise AttributeError(f"{self.__class__.__name__} has to be started. self._is_read_to_trade is None")
+            if self._is_ready_to_trade is None:
+                raise AttributeError(f"{self.__class__.__name__} has to be started. self._is_ready_to_trade is None")
             raise
         except Exception as e:
             self.logger.exception(e, True, f"Error when calling trading mode: {e}")
