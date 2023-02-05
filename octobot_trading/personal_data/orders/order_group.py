@@ -45,7 +45,11 @@ class OrderGroup:
         self.enabled = enabled
 
     def get_group_open_orders(self):
-        return self.orders_manager.get_order_from_group(self.name)
+        return [
+            order
+            for order in self.orders_manager.get_order_from_group(self.name)
+            if order.is_open() and not order.is_cancelling()
+        ]
 
     def clear(self):
         self.orders_manager = None

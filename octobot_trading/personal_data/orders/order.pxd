@@ -115,6 +115,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
+    cpdef bint is_cancelling(self)
     cpdef bint is_closed(self)
     cpdef bint is_long(self)
     cpdef bint is_short(self)

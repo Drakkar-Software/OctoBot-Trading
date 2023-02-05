@@ -148,7 +148,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 ) + self.channel.exchange_manager.exchange_personal_data.orders_manager.get_pending_cancel_orders(
                     symbol
                 )
-                if not order.is_self_managed()) -
+                if not (order.is_cleared() or order.is_self_managed())) -
             set(
                 self.channel.exchange_manager.exchange.parse_order_id(order)
                 for order in orders)

@@ -19,6 +19,7 @@ import mock
 def order_mock(**kwargs):
     order = mock.Mock(**kwargs)
     order.is_open = mock.Mock(return_value=True)
+    order.is_cancelling = mock.Mock(return_value=False)
     order.trader = mock.Mock()
     order.trader.cancel_order = mock.AsyncMock()
     order.trader.edit_order = mock.AsyncMock()

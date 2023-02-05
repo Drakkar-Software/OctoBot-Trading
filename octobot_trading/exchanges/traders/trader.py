@@ -359,7 +359,9 @@ class Trader(util.Initializable):
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
         if wait_for_cancelling and order.state is not None and order.state.is_pending():
+            self.logger.debug(f"Waiting for order cancelling, order: {order}")
             await order.state.wait_for_terminate(cancelling_timeout)
+            self.logger.debug(f"Completed order cancelling, order: {order}")
         return True
 
     async def cancel_order_with_id(self, order_id, emit_trading_signals=False,
@@ -407,7 +409,7 @@ class Trader(util.Initializable):
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if order.symbol == symbol and \
                     (side is None or order.side is side) and \
-                    not order.is_cancelled() and \
+                    not (order.is_cancelled() or order.is_closed()) and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
                 async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
                     cancelled = await signals.cancel_order(

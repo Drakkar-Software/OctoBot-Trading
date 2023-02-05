@@ -319,6 +319,9 @@ class Order(util.Initializable):
     def is_cancelled(self):
         return self.state.is_canceled() or (self.state.is_closed() and self.status is enums.OrderStatus.CANCELED)
 
+    def is_cancelling(self):
+        return self.state.state is enums.OrderStates.CANCELING or self.status is enums.OrderStatus.PENDING_CANCEL
+
     def is_closed(self):
         return self.state.is_closed() if self.state is not None else self.status is enums.OrderStatus.CLOSED
 

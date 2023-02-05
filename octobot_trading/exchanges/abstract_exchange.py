@@ -40,12 +40,14 @@ class AbstractExchange(util.Initializable):
 
     # order that should be self-managed by OctoBot
     # can be overridden locally to match exchange support
-    UNSUPPORTED_ORDERS = [enums.TraderOrderType.STOP_LOSS,
-                          enums.TraderOrderType.STOP_LOSS_LIMIT,
-                          enums.TraderOrderType.TAKE_PROFIT,
-                          enums.TraderOrderType.TAKE_PROFIT_LIMIT,
-                          enums.TraderOrderType.TRAILING_STOP,
-                          enums.TraderOrderType.TRAILING_STOP_LIMIT]
+    UNSUPPORTED_ORDERS = [
+        enums.TraderOrderType.STOP_LOSS,
+        enums.TraderOrderType.STOP_LOSS_LIMIT,
+        enums.TraderOrderType.TAKE_PROFIT,
+        enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+        enums.TraderOrderType.TRAILING_STOP,
+        enums.TraderOrderType.TRAILING_STOP_LIMIT
+    ]
 
     # order that can be bundled together to create them all in one request
     # format: dict of bundled types by base order type
