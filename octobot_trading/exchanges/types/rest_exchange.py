@@ -28,6 +28,7 @@ import octobot_commons.tree as commons_tree
 from octobot_commons import number_util
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.exchanges.util as exchanges_util
 import octobot_trading.exchanges.connectors.ccxt.ccxt_connector as ccxt_connector
@@ -35,7 +36,6 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data.contracts as contracts
 import octobot_trading.personal_data.orders as orders
-
 
 
 class RestExchange(abstract_exchange.AbstractExchange):
@@ -59,6 +59,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Funding rate params
     FUNDING_WITH_MARK_PRICE = False
     FUNDING_IN_TICKER = False
+
+    # Set when order cost is not (yet) accurately computed for a given exchange
+    MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER = constants.ONE
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
