@@ -182,6 +182,11 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
         max_position_increased_order_quantity = get_max_order_quantity_for_price(
             current_position, unleveraged_quantity, current_price, new_position_side, symbol
         )
+        # apply MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER in case the total order cost computation
+        # is not (yet) accurate on this exchange (default is 1, meaning the calculation is accurate)
+        if exchange_manager.exchange.MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER != constants.ONE:
+            max_position_increased_order_quantity *= \
+                exchange_manager.exchange.MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER
         # increasing position: always use the same currency
         return max_position_increased_order_quantity, True
     return contract_market_quantity if side is enums.TradeOrderSide.BUY else contract_current_symbol_holding, False
