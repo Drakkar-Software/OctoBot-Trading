@@ -34,3 +34,5 @@ cpdef object create_trade_instance(object,
                                    double canceled_time= *,
                                    double creation_time= *,
                                    double executed_time= *)
+
+cpdef object create_trade_from_dict(object trader, dict trade_dict)

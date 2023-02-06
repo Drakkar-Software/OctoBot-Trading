@@ -90,6 +90,7 @@ from octobot_trading.personal_data.trades cimport (
     create_trade_instance_from_raw,
     create_trade_from_order,
     create_trade_instance,
+    create_trade_from_dict,
     TradesUpdater,
     Trade,
 )
@@ -182,6 +183,7 @@ __all__ = [
     "create_trade_instance_from_raw",
     "create_trade_from_order",
     "create_trade_instance",
+    "create_trade_from_dict",
     "TradesUpdater",
     "Trade",
     "ExchangePersonalData",

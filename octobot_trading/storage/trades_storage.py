@@ -36,7 +36,8 @@ class TradesStorage(abstract_storage.AbstractStorage):
         old_trade: bool
     ):
         if trade[enums.ExchangeConstantsOrderColumns.STATUS.value] != enums.OrderStatus.CANCELED.value:
-            await self._get_db().log(
+            database = self._get_db()
+            await database.log(
                 self.HISTORY_TABLE,
                 _format_trade(
                     trade,
@@ -48,6 +49,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
                 )
             )
             await self.trigger_debounced_update_auth_data()
+            await database.flush()
 
     async def _update_auth_data(self):
         authenticator = authentication.Authenticator.instance()
@@ -132,6 +134,7 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
     fee_cost = float(fee[enums.FeePropertyColumns.COST.value] if
                      fee and fee[enums.FeePropertyColumns.COST.value] else 0)
     return {
+        TradesStorage.ORIGIN_VALUE_KEY: TradesStorage.sanitize_for_storage(trade_dict),
         "x": trade_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
         "text": f"{tag}{trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value]} "
                 f"{trade_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]} "
