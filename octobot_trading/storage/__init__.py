@@ -20,35 +20,46 @@ from octobot_trading.storage.abstract_storage import (
     AbstractStorage,
 )
 
-
 from octobot_trading.storage import trades_storage
 from octobot_trading.storage.trades_storage import (
     TradesStorage,
 )
-
 
 from octobot_trading.storage import portfolio_storage
 from octobot_trading.storage.portfolio_storage import (
     PortfolioStorage,
 )
 
-
 from octobot_trading.storage import candles_storage
 from octobot_trading.storage.candles_storage import (
     CandlesStorage,
 )
-
 
 from octobot_trading.storage import transactions_storage
 from octobot_trading.storage.transactions_storage import (
     TransactionsStorage,
 )
 
-
 from octobot_trading.storage import storage_manager
 from octobot_trading.storage.storage_manager import (
     StorageManager,
 )
 
+from octobot_trading.storage import util
+from octobot_trading.storage.util import (
+    get_account_type_suffix_from_exchange_manager,
+    get_account_type_suffix_from_run_metadata,
+    get_account_type_suffix,
+)
 
-__all__ = ["AbstractStorage", "TradesStorage", "PortfolioStorage", "CandlesStorage", "TransactionsStorage", "StorageManager"]
+__all__ = [
+    "AbstractStorage",
+    "TradesStorage",
+    "PortfolioStorage",
+    "CandlesStorage",
+    "TransactionsStorage",
+    "StorageManager",
+    "get_account_type_suffix_from_exchange_manager",
+    "get_account_type_suffix_from_run_metadata",
+    "get_account_type_suffix",
+]

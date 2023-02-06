@@ -33,6 +33,7 @@ import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.script_keywords as script_keywords
+import octobot_trading.storage.util as storage_util
 
 
 class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
@@ -359,14 +360,15 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     def all_databases(self):
         provider = databases.RunDatabasesProvider.instance()
+        account_type = storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager)
         return {
             common_enums.RunDatabases.RUN_DATA_DB.value: provider.get_run_db(self.trading_mode.bot_id),
             common_enums.RunDatabases.ORDERS_DB.value:
-                provider.get_orders_db(self.trading_mode.bot_id, self.exchange_name),
+                provider.get_orders_db(self.trading_mode.bot_id, account_type, self.exchange_name),
             common_enums.RunDatabases.TRADES_DB.value:
-                provider.get_trades_db(self.trading_mode.bot_id, self.exchange_name),
+                provider.get_trades_db(self.trading_mode.bot_id, account_type, self.exchange_name),
             common_enums.RunDatabases.TRANSACTIONS_DB.value:
-                provider.get_transactions_db(self.trading_mode.bot_id, self.exchange_name),
+                provider.get_transactions_db(self.trading_mode.bot_id, account_type, self.exchange_name),
             self.trading_mode.symbol:
                 provider.get_symbol_db(self.trading_mode.bot_id, self.exchange_name, self.trading_mode.symbol)
                 if self.trading_mode.symbol else None,

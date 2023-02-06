@@ -29,6 +29,7 @@ import octobot_commons.signals as signals
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.signals as trading_signals
+import octobot_trading.storage.util as storage_util
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
@@ -105,18 +106,28 @@ class Context(databases.CacheClient):
             and databases.RunDatabasesProvider.instance().is_storage_enabled(
                 exchange_manager.bot_id
             ) else None
-        self.run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(bot_id) \
-            if bot_id else None
-        self.orders_writer = databases.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
-            if bot_id else None
-        self.trades_writer = databases.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
-            if bot_id else None
-        self.transaction_writer = databases.RunDatabasesProvider.instance().get_transactions_db(bot_id,
-                                                                                                self.exchange_name) \
-            if bot_id else None
-        self.symbol_writer = databases.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
-                                                                                     self.symbol) \
-            if bot_id else None
+        self.run_data_writer = self.orders_writer = self.trades_writer = self.transaction_writer = self.symbol_writer \
+            = None
+        if bot_id:
+            self.run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(bot_id)
+            account_type = None
+            if self.exchange_manager is not None:
+                account_type = storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager)
+            elif self.run_data_writer is not None:
+                account_type = storage_util.get_account_type_suffix_from_run_metadata(self.run_data_writer)
+            self.symbol_writer = databases.RunDatabasesProvider.instance().get_symbol_db(
+                bot_id, self.exchange_name, self.symbol
+            )
+            if account_type is not None:
+                self.orders_writer = databases.RunDatabasesProvider.instance().get_orders_db(
+                    bot_id, account_type, self.exchange_name
+                )
+                self.trades_writer = databases.RunDatabasesProvider.instance().get_trades_db(
+                    bot_id, account_type, self.exchange_name
+                )
+                self.transaction_writer = databases.RunDatabasesProvider.instance().get_transactions_db(
+                    bot_id, account_type, self.exchange_name
+                )
         self.trading_mode_class = trading_mode_class
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source

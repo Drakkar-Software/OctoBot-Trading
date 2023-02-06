@@ -188,6 +188,8 @@ from octobot_trading.api.storage import (
     clear_transactions_storage_history,
     clear_portfolio_storage_history,
     clear_orders_storage_history,
+    get_account_type,
+    get_account_type_from_run_metadata,
 )
 
 __all__ = [
@@ -326,6 +328,8 @@ __all__ = [
     "get_pair_contracts",
     "clear_trades_storage_history",
     "clear_candles_storage_history",
+    "get_account_type",
+    "get_account_type_from_run_metadata",
     "clear_transactions_storage_history",
     "clear_portfolio_storage_history",
     "clear_orders_storage_history",

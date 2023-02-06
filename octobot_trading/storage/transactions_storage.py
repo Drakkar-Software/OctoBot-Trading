@@ -17,6 +17,7 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
 
 import octobot_trading.storage.abstract_storage as abstract_storage
+import octobot_trading.storage.util as storage_util
 
 
 class TransactionsStorage(abstract_storage.AbstractStorage):
@@ -29,7 +30,7 @@ class TransactionsStorage(abstract_storage.AbstractStorage):
             for transaction in self.exchange_manager.exchange_personal_data.transactions_manager.transactions.values()
         ]
         y_data = self.plot_settings.y_data or [0] * len(transactions)
-        await self._get_db().log_many(
+        await self._get_db().replace_all(
             self.HISTORY_TABLE,
             [
                 _format_transaction(
@@ -42,12 +43,14 @@ class TransactionsStorage(abstract_storage.AbstractStorage):
                     y_data[index]
                 )
                 for index, transaction in enumerate(transactions)
-            ]
+            ],
+            cache=False,
         )
 
     def _get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_transactions_db(
             self.exchange_manager.bot_id,
+            storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager),
             self.exchange_manager.exchange_name
         )
 
