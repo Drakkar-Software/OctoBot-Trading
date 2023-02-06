@@ -295,6 +295,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     DATETIME = 'datetime'
     LAST_TRADE_TIMESTAMP = "lastTradeTimestamp"
     SYMBOL = "symbol"
+    MARKET = "market"
     QUANTITY_CURRENCY = "quantity_currency"
     TYPE = "type"
     SIDE = "side"

@@ -37,6 +37,7 @@ class TradesManager(util.Initializable):
 
     async def initialize_impl(self):
         self._reset_trades()
+        await self._load_trades_history()
         self.trades_initialized = True
         if self.trader.simulate:
             # force init as there is no trade updater simulator
@@ -91,6 +92,16 @@ class TradesManager(util.Initializable):
     def _reset_trades(self):
         self.trades_initialized = False
         self.trades = collections.OrderedDict()
+
+    async def _load_trades_history(self):
+        if self.trader.exchange_manager.is_backtesting:
+            # don't load history on backtesting
+            return
+        try:
+            for trade_dict in await self.trader.exchange_manager.storage_manager.trades_storage.get_history():
+                self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
+        except Exception as err:
+            self.logger.exception(err, True, f"Error when loading local trade history {err}")
 
     def _remove_oldest_trades(self, nb_to_remove):
         for _ in range(nb_to_remove):

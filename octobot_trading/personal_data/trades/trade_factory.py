@@ -81,3 +81,7 @@ def create_trade_instance(trader,
                                    canceled_time=canceled_time,
                                    creation_time=creation_time,
                                    executed_time=executed_time)
+
+
+def create_trade_from_dict(trader, trade_dict):
+    return trade_class.Trade.from_dict(trader, trade_dict)

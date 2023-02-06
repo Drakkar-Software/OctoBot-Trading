@@ -14,6 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 import asyncio
+import copy
+import decimal
+
 import octobot_commons.display as commons_display
 import octobot_commons.logging as logging
 
@@ -27,6 +30,7 @@ class AbstractStorage:
     IS_HISTORICAL = True
     HISTORY_TABLE = None
     DEBOUNCE_DURATION = 10
+    ORIGIN_VALUE_KEY = "origin_value"
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
@@ -95,6 +99,14 @@ class AbstractStorage:
             self._update_task.cancel()
         self._update_task = asyncio.create_task(self._waiting_update_auth_data())
 
+    async def get_history(self):
+        # override if necessary
+        return [
+            copy.copy(document[self.ORIGIN_VALUE_KEY])
+            for document in await self._get_db().all(self.HISTORY_TABLE)
+            if self.ORIGIN_VALUE_KEY in document
+        ]
+
     async def _waiting_update_auth_data(self):
         try:
             await asyncio.sleep(self.DEBOUNCE_DURATION)
@@ -121,3 +133,13 @@ class AbstractStorage:
         await database.delete(self.HISTORY_TABLE, None)
         if flush:
             await database.flush()
+
+    @classmethod
+    def sanitize_for_storage(cls, element: dict) -> dict:
+        sanitized = copy.copy(element)
+        for key, val in element.items():
+            if isinstance(val, decimal.Decimal):
+                sanitized[key] = float(val)
+            elif isinstance(val, dict):
+                sanitized[key] = cls.sanitize_for_storage(val)
+        return sanitized

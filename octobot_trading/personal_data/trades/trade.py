@@ -13,8 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+import copy
+
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.personal_data.orders.order as order_import
 
 
 class Trade:
@@ -84,21 +88,19 @@ class Trade:
         self.tag = order.tag
 
     def get_time(self):
-        return (self.executed_time
-                if (self.status is not enums.OrderStatus.CANCELED
-                    and self.status is not enums.OrderStatus.EXPIRED)
-                else self.canceled_time)
+        return self.executed_time if self.has_been_executed() else self.canceled_time
 
     def get_quantity(self):
-        return (self.executed_quantity
-                if (self.status is not enums.OrderStatus.CANCELED
-                    and self.status is not enums.OrderStatus.EXPIRED)
-                else self.origin_quantity)
+        return self.executed_quantity if self.has_been_executed() else self.origin_quantity
+
+    def has_been_executed(self):
+        return self.status is not enums.OrderStatus.CANCELED and self.status is not enums.OrderStatus.EXPIRED
 
     def to_dict(self):
         return {
             enums.ExchangeConstantsOrderColumns.ID.value: self.trade_id,
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
+            enums.ExchangeConstantsOrderColumns.MARKET.value: self.market,
             enums.ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
             enums.ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
             enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: self.get_time(),
@@ -110,5 +112,39 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: self.taker_or_maker,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
-            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
+            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
         }
+
+    @classmethod
+    def from_dict(cls, trader, trade_dict):
+        trade = cls(trader)
+        trade.trade_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ID.value)
+        trade.symbol = trade_dict.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value)
+        trade.market = trade_dict.get(enums.ExchangeConstantsOrderColumns.MARKET.value)
+        trade.executed_price = decimal.Decimal(str(trade_dict.get(enums.ExchangeConstantsOrderColumns.PRICE.value)))
+        trade.status = enums.OrderStatus(trade_dict.get(enums.ExchangeConstantsOrderColumns.STATUS.value,
+                                                        enums.OrderStatus.CLOSED.value))
+        if trade.has_been_executed():
+            trade.executed_time = trade_dict.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value)
+            trade.executed_quantity = \
+                decimal.Decimal(str(trade_dict.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value)))
+        else:
+            trade.canceled_time = trade_dict.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value)
+            trade.origin_quantity = \
+                decimal.Decimal(str(trade_dict.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value)))
+        trade.exchange_trade_type = enums.TradeOrderType(trade_dict.get(enums.ExchangeConstantsOrderColumns.TYPE.value))
+        trade.side = enums.TradeOrderSide(trade_dict.get(enums.ExchangeConstantsOrderColumns.SIDE.value))
+        trade.trade_type = order_import.parse_order_type({
+            enums.ExchangeConstantsOrderColumns.SIDE.value: trade.side.value,
+            enums.ExchangeConstantsOrderColumns.TYPE.value: trade.exchange_trade_type.value,
+        })[1]
+        trade.total_cost = decimal.Decimal(str(trade_dict.get(enums.ExchangeConstantsOrderColumns.COST.value)))
+        trade.quantity_currency = trade_dict.get(enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value)
+        trade.taker_or_maker = trade_dict.get(enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value)
+        trade.fee = copy.copy(trade_dict.get(enums.ExchangeConstantsOrderColumns.FEE.value))
+        if trade.fee and enums.FeePropertyColumns.COST.value in trade.fee:
+            trade.fee[enums.FeePropertyColumns.COST.value] = \
+                decimal.Decimal(str(trade.fee[enums.FeePropertyColumns.COST.value]))
+        trade.reduce_only = trade_dict.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value)
+        trade.tag = trade_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value)
+        return trade
