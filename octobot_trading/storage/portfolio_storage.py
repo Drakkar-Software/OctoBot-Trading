@@ -15,11 +15,11 @@
 #  License along with this library
 import octobot_commons.enums as commons_enums
 import octobot_commons.authentication as authentication
-import octobot_commons.constants as commons_constants
 import octobot_commons.databases as commons_databases
 import octobot_commons.tree as commons_tree
 
 import octobot_trading.storage.abstract_storage as abstract_storage
+import octobot_trading.storage.util as storage_util
 import octobot_trading.personal_data.portfolios.history as portfolio_history
 
 
@@ -79,19 +79,5 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
         return commons_databases.RunDatabasesProvider.instance().get_historical_portfolio_value_db(
             self.exchange_manager.bot_id,
             self.exchange_manager.exchange_name,
-            self.get_portfolio_type_suffix()
+            storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager)
         )
-
-    def get_portfolio_type_suffix(self):
-        suffix = ""
-        if self.exchange_manager.is_future:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_FUTURE}"
-        elif self.exchange_manager.is_margin:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_MARGIN}"
-        else:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_SPOT}"
-        if self.exchange_manager.is_sandboxed:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_SANDBOXED}"
-        if self.exchange_manager.is_trader_simulated:
-            suffix = f"{suffix}_{commons_constants.CONFIG_SIMULATOR}"
-        return suffix

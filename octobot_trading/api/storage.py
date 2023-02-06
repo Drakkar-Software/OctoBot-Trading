@@ -13,10 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.storage as storage
 
 
 async def clear_trades_storage_history(exchange_manager, flush=True):
     await exchange_manager.storage_manager.trades_storage.clear_history(flush=flush)
+    await exchange_manager.exchange_personal_data.trades_manager.reload_history()
 
 
 async def clear_orders_storage_history(exchange_manager, flush=True):
@@ -33,3 +35,11 @@ async def clear_portfolio_storage_history(exchange_manager, flush=True):
 
 async def clear_candles_storage_history(exchange_manager, flush=True):
     await exchange_manager.storage_manager.candles_storage.clear_history(flush=flush)
+
+
+def get_account_type(is_future, is_margin, is_sandboxed, is_trader_simulated) -> str:
+    return storage.get_account_type_suffix(is_future, is_margin, is_sandboxed, is_trader_simulated)
+
+
+def get_account_type_from_run_metadata(run_metadata) -> str:
+    return storage.get_account_type_suffix_from_run_metadata(run_metadata)

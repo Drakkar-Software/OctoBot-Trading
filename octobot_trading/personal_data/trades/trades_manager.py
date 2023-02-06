@@ -36,13 +36,16 @@ class TradesManager(util.Initializable):
         self.trades = collections.OrderedDict()
 
     async def initialize_impl(self):
-        self._reset_trades()
-        await self._load_trades_history()
+        await self.reload_history()
         self.trades_initialized = True
         if self.trader.simulate:
             # force init as there is no trade updater simulator
             for symbol in self.trader.exchange_manager.exchange_config.traded_symbol_pairs:
                 self._set_initialized_event(symbol)
+
+    async def reload_history(self):
+        self._reset_trades()
+        await self._load_trades_history()
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:

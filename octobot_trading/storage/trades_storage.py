@@ -20,6 +20,7 @@ import octobot_commons.databases as commons_databases
 
 import octobot_trading.enums as enums
 import octobot_trading.storage.abstract_storage as abstract_storage
+import octobot_trading.storage.util as storage_util
 
 
 class TradesStorage(abstract_storage.AbstractStorage):
@@ -62,7 +63,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
             await authenticator.update_trades(history)
 
     async def _store_history(self):
-        await self._get_db().log_many(
+        await self._get_db().replace_all(
             self.HISTORY_TABLE,
             [
                 _format_trade(
@@ -75,13 +76,15 @@ class TradesStorage(abstract_storage.AbstractStorage):
                 )
                 for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
                 if trade.status is not enums.OrderStatus.CANCELED
-            ]
+            ],
+            cache=False,
         )
 
     def _get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_trades_db(
             self.exchange_manager.bot_id,
-            self.exchange_manager.exchange_name
+            storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager),
+            self.exchange_manager.exchange_name,
         )
 
 
