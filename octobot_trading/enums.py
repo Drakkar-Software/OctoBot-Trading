@@ -21,6 +21,11 @@ class TradeOrderSide(enum.Enum):
     SELL = "sell"
 
 
+class HistoricalPortfolioValue(enum.Enum):
+    TIME = "time"
+    VALUE = "value"
+
+
 class PositionSide(enum.Enum):
     LONG = "long"
     SHORT = "short"

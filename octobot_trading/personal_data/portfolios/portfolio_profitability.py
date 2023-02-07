@@ -47,6 +47,9 @@ class PortfolioProfitability:
         self.valuated_currencies = util.get_all_currencies(self.portfolio_manager.config, enabled_only=False)
         self.valuated_currencies.add(self.portfolio_manager.reference_market)
 
+    def reset_profitability(self):
+        self._reset_before_profitability_calculation()
+
     def get_average_market_profitability(self):
         """
         Returns the % move average of all the watched cryptocurrencies between bot's start time and now

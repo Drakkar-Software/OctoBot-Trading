@@ -67,6 +67,16 @@ class FutureAsset(asset_class.Asset):
                    self.position_margin == other.position_margin and self.order_margin == other.order_margin
         return False
 
+    def _specific_restore_unavailable_from_other(self, other_asset):
+        if other_asset.initial_margin != constants.ZERO:
+            self.initial_margin = self.initial_margin + other_asset.initial_margin
+        # update wallet_balance when handling cross positions
+        if other_asset.position_margin != constants.ZERO:
+            self.position_margin = self.position_margin + other_asset.position_margin
+        if other_asset.order_margin != constants.ZERO:
+            self.order_margin = self.order_margin + other_asset.order_margin
+
+
     def restore(self, old_asset):
         """
         Restore asset from previous state

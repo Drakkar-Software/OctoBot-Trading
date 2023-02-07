@@ -31,6 +31,7 @@ async def clear_transactions_storage_history(exchange_manager, flush=True):
 
 async def clear_portfolio_storage_history(exchange_manager, flush=True):
     await exchange_manager.storage_manager.portfolio_storage.clear_history(flush=flush)
+    await exchange_manager.exchange_personal_data.portfolio_manager.reset_history()
 
 
 async def clear_candles_storage_history(exchange_manager, flush=True):

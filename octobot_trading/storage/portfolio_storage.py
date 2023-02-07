@@ -27,6 +27,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
     IS_HISTORICAL = True
     PRICE_INIT_TIMEOUT = 30
+    HISTORY_TABLE = commons_enums.RunDatabases.HISTORICAL_PORTFOLIO_VALUE.value
 
     async def store_history(self):
         if not self.enabled:
@@ -39,7 +40,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
         history = hist_portfolio_values_manager.get_dict_historical_values()
         await portfolio_db.upsert(commons_enums.RunDatabases.METADATA.value, metadata, None, uuid=1)
         await portfolio_db.replace_all(
-            commons_enums.RunDatabases.HISTORICAL_PORTFOLIO_VALUE.value,
+            self.HISTORY_TABLE,
             history,
             cache=False
         )
@@ -76,8 +77,11 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
             )
 
     def get_db(self):
+        return self._get_db()
+
+    def _get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_historical_portfolio_value_db(
             self.exchange_manager.bot_id,
+            storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager),
             self.exchange_manager.exchange_name,
-            storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager)
         )

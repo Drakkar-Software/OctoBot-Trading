@@ -39,6 +39,14 @@ class MarginAsset(asset_class.Asset):
                    self.borrowed == other.borrowed and self.interest == other.interest and self.locked == other.locked
         return False
 
+    def _specific_restore_unavailable_from_other(self, other_asset):
+        if other_asset.borrowed != constants.ZERO:
+            self.borrowed = self.borrowed + other_asset.borrowed
+        if other_asset.interest != constants.ZERO:
+            self.interest = self.interest + other_asset.interest
+        if other_asset.locked != constants.ZERO:
+            self.locked = self.locked + other_asset.locked
+
     def update(self, available=constants.ZERO, total=constants.ZERO, borrowed=constants.ZERO,
                interest=constants.ZERO, locked=constants.ZERO):
         """
