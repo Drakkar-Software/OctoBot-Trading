@@ -271,7 +271,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 time_frame_allowed_window_end = time_frame_allowed_window_start + \
                     max(time_frame_seconds * self.TIME_FRAME_RELEVANCY_TIME_RATIO,
                         self.MIN_TIME_FRAME_RELEVANCY_SECONDS)
-                if True or time_frame_allowed_window_start <= timestamp <= time_frame_allowed_window_end:    #TMP
+                if time_frame_allowed_window_start <= timestamp <= time_frame_allowed_window_end:
                     relevant_timestamps.add(time_frame_allowed_window_start)
         return relevant_timestamps
 
