@@ -46,6 +46,7 @@ class TransactionsStorage(abstract_storage.AbstractStorage):
             ],
             cache=False,
         )
+        await self.trigger_debounced_flush()
 
     def _get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_transactions_db(

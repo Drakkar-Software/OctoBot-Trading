@@ -101,8 +101,9 @@ class TradesManager(util.Initializable):
             # don't load history on backtesting
             return
         try:
-            for trade_dict in await self.trader.exchange_manager.storage_manager.trades_storage.get_history():
-                self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
+            if self.trader.exchange_manager.storage_manager.trades_storage:
+                for trade_dict in await self.trader.exchange_manager.storage_manager.trades_storage.get_history():
+                    self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
         except Exception as err:
             self.logger.exception(err, True, f"Error when loading local trade history {err}")
 

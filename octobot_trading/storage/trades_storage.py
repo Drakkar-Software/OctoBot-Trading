@@ -37,8 +37,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
         old_trade: bool
     ):
         if trade[enums.ExchangeConstantsOrderColumns.STATUS.value] != enums.OrderStatus.CANCELED.value:
-            database = self._get_db()
-            await database.log(
+            await self._get_db().log(
                 self.HISTORY_TABLE,
                 _format_trade(
                     trade,
@@ -49,8 +48,8 @@ class TradesStorage(abstract_storage.AbstractStorage):
                     self.plot_settings.mode
                 )
             )
+            await self.trigger_debounced_flush()
             await self.trigger_debounced_update_auth_data()
-            await database.flush()
 
     async def _update_auth_data(self):
         authenticator = authentication.Authenticator.instance()
@@ -63,7 +62,8 @@ class TradesStorage(abstract_storage.AbstractStorage):
             await authenticator.update_trades(history)
 
     async def _store_history(self):
-        await self._get_db().replace_all(
+        database = self._get_db()
+        await database.replace_all(
             self.HISTORY_TABLE,
             [
                 _format_trade(
@@ -79,6 +79,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
             ],
             cache=False,
         )
+        await database.flush()
 
     def _get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_trades_db(

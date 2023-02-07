@@ -44,7 +44,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
             history,
             cache=False
         )
-        await portfolio_db.flush()
+        await self.trigger_debounced_flush()
         await self.trigger_debounced_update_auth_data()
 
     async def _update_auth_data(self):

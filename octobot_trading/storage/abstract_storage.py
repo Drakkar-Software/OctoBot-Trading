@@ -29,7 +29,8 @@ class AbstractStorage:
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
     HISTORY_TABLE = None
-    DEBOUNCE_DURATION = 10
+    AUTH_UPDATE_DEBOUNCE_DURATION = 10
+    FLUSH_DEBOUNCE_DURATION = 0.5   # avoid disc spam on multiple quick live updated
     ORIGIN_VALUE_KEY = "origin_value"
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
@@ -42,6 +43,7 @@ class AbstractStorage:
         self.is_historical = is_historical or self.IS_HISTORICAL
         self.enabled = True
         self._update_task = None
+        self._flush_task = None
 
     def should_register_live_consumer(self):
         return self.IS_LIVE_CONSUMER and \
@@ -81,8 +83,9 @@ class AbstractStorage:
     async def stop(self, clear=True):
         if self.consumer is not None:
             await self.consumer.stop()
-        if self._update_task is not None and not self._update_task.done():
-            self._update_task.cancel()
+        for task in (self._update_task, self._flush_task):
+            if task is not None and not task.done():
+                task.cancel()
         if clear:
             self.consumer = None
             self.exchange_manager = None
@@ -99,6 +102,14 @@ class AbstractStorage:
             self._update_task.cancel()
         self._update_task = asyncio.create_task(self._waiting_update_auth_data())
 
+    async def trigger_debounced_flush(self):
+        if self.exchange_manager.is_backtesting:
+            # flush now in backtesting
+            await self._get_db().flush()
+        if self._flush_task is not None and not self._flush_task.done():
+            self._flush_task.cancel()
+        self._flush_task = asyncio.create_task(self._waiting_flush())
+
     async def get_history(self):
         # override if necessary
         return [
@@ -109,10 +120,18 @@ class AbstractStorage:
 
     async def _waiting_update_auth_data(self):
         try:
-            await asyncio.sleep(self.DEBOUNCE_DURATION)
+            await asyncio.sleep(self.AUTH_UPDATE_DEBOUNCE_DURATION)
             await self._update_auth_data()
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when updating auth data: {err}")
+
+    async def _waiting_flush(self):
+        try:
+            await asyncio.sleep(self.FLUSH_DEBOUNCE_DURATION)
+            logging.get_logger(self.__class__.__name__).warning("flush")
+            await self._get_db().flush()
+        except Exception as err:
+            logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when flushing database: {err}")
 
     async def _update_auth_data(self):
         pass
