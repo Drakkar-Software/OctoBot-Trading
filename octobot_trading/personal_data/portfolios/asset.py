@@ -62,6 +62,18 @@ class Asset:
         """
         self.available = self.total
 
+    def restore_unavailable_from_other(self, other_asset):
+        with self.update_or_restore():
+            if other_asset.available < other_asset.total:
+                self.available = self.available - (other_asset.total - other_asset.available)
+            self._specific_restore_unavailable_from_other(other_asset)
+
+    def _specific_restore_unavailable_from_other(self, other_asset):
+        """
+        Implement if necessary
+        """
+        pass
+
     def reset(self):
         """
         Reset asset portfolio to zero

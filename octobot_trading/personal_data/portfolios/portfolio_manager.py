@@ -25,6 +25,7 @@ import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
+import octobot_trading.enums as enums
 
 
 class PortfolioManager(util.Initializable):
@@ -48,9 +49,11 @@ class PortfolioManager(util.Initializable):
         """
         Reset the portfolio instance
         """
-        self._reset_portfolio()
-        if self.historical_portfolio_value_manager is not None:
+
+        if self.exchange_manager.is_storage_enabled() and self.historical_portfolio_value_manager is None:
+            self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
             await self.historical_portfolio_value_manager.initialize()
+        self._reset_portfolio()
 
     def handle_balance_update(self, balance, is_diff_update=False):
         """
@@ -135,7 +138,13 @@ class PortfolioManager(util.Initializable):
             self.exchange_manager.exchange.get_exchange_current_time(), time_frame
         )
         historical_values[current_historical_time] = self.portfolio_value_holder.portfolio_current_value
-        return historical_values
+        return [
+            {
+                enums.HistoricalPortfolioValue.TIME.value: key,
+                enums.HistoricalPortfolioValue.VALUE.value: val,
+            }
+            for key, val in historical_values.items()
+        ]
 
     async def update_historical_portfolio_values(self):
         if self.historical_portfolio_value_manager is None or \
@@ -194,17 +203,35 @@ class PortfolioManager(util.Initializable):
                                                self.exchange_manager.id).get_internal_producer().\
             refresh_real_trader_portfolio()
 
+    async def reset_history(self):
+        if self.trader.simulate:
+            # reset simulated portfolio
+            # save not_available assets to reapply them
+            previous_assets = self.portfolio.portfolio
+            self._load_portfolio(True)
+            self._apply_locked_assets(previous_assets)
+        # nothing specific to do for real trader
+        # reset values
+        self.portfolio_value_holder.reset_portfolio_values()
+        self.portfolio_profitability.reset_profitability()
+        # reset historical values using now as a starting point
+        if self.exchange_manager.is_storage_enabled():
+            await self.historical_portfolio_value_manager.reset_history()
+
+    def _apply_locked_assets(self, previous_assets):
+        for key, asset in self.portfolio.portfolio.items():
+            if key in previous_assets:
+                asset.restore_unavailable_from_other(previous_assets[key])
+
     def _reset_portfolio(self):
         """
         Reset the portfolio and portfolio profitability instances
         """
         self.portfolio = personal_data.create_portfolio_from_exchange_manager(self.exchange_manager)
-        self._load_portfolio()
+        self._load_portfolio(False)
 
         self.reference_market = util.get_reference_market(self.config)
         self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
-        if self.exchange_manager.is_storage_enabled():
-            self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
         self.portfolio_profitability = personal_data.PortfolioProfitability(self)
         self._is_initialized_event_set = False
 
@@ -227,14 +254,29 @@ class PortfolioManager(util.Initializable):
                                   f"for order {order.to_dict()}")
         return False
 
-    def _load_portfolio(self):
+    def _load_portfolio(self, reset_from_config):
         """
         Load simulated portfolio from config if required
         """
         if self.trader.is_enabled:
             if self.trader.simulate:
-                self._set_starting_simulated_portfolio()
+                if reset_from_config \
+                        or self.historical_portfolio_value_manager is None \
+                        or not self.historical_portfolio_value_manager.has_previous_session_portfolio():
+                    self._set_starting_simulated_portfolio()
+                else:
+                    self._load_simulated_portfolio_from_history()
             self.logger.info(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
+
+    def _load_simulated_portfolio_from_history(self):
+        #  todo also load available amounts when loading simulated orders
+        portfolio_amount_dict = personal_data.parse_decimal_config_portfolio(
+            {
+                symbol: value[commons_constants.PORTFOLIO_TOTAL]
+                for symbol, value in self.historical_portfolio_value_manager.historical_ending_portfolio.items()
+            }
+        )
+        self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
     def _set_starting_simulated_portfolio(self):
         """

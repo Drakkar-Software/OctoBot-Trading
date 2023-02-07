@@ -28,7 +28,7 @@ def get_portfolio(exchange_manager, as_decimal=True) -> dict:
 
 
 def get_portfolio_historical_values(exchange_manager, currency, time_frame, from_timestamp=None, to_timestamp=None) \
-        -> dict:
+        -> list:
     return exchange_manager.exchange_personal_data.portfolio_manager.get_portfolio_historical_values(
         currency, time_frame, from_timestamp, to_timestamp
     )
@@ -47,10 +47,6 @@ def get_global_portfolio_currencies_values(exchange_managers: list) -> dict:
             else:
                 currencies_values[currency] += value
     return currencies_values
-
-
-async def reset_portfolio_historical_values(exchange_manager):
-    await exchange_manager.exchange_personal_data.portfolio_manager.historical_portfolio_value_manager.reset_history()
 
 
 def get_portfolio_currency(exchange_manager, currency) -> personal_data.Asset:

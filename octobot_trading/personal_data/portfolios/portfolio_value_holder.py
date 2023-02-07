@@ -51,6 +51,15 @@ class PortfolioValueHolder:
         # set of currencies for which the current exchange is not providing any suitable price data
         self.missing_currency_data_in_exchange = set()
 
+    def reset_portfolio_values(self):
+        self.portfolio_origin_value = constants.ZERO
+        self.portfolio_current_value = constants.ZERO
+
+        self.origin_portfolio = None
+
+        self.origin_crypto_currencies_values = {}
+        self.current_crypto_currencies_values = {}
+
     def update_origin_crypto_currencies_values(self, symbol, mark_price):
         """
         Update origin cryptocurrencies value
@@ -215,6 +224,16 @@ class PortfolioValueHolder:
         """
         Compute origin portfolio initial value and update portfolio_origin_value
         """
+        if self.portfolio_manager.historical_portfolio_value_manager is not None \
+           and self.portfolio_manager.historical_portfolio_value_manager.has_historical_starting_portfolio_value(
+            self.portfolio_manager.reference_market
+        ):
+            # get origin value from history when possible
+            value = self.portfolio_manager.historical_portfolio_value_manager.\
+                get_historical_starting_starting_portfolio_value(self.portfolio_manager.reference_market)
+            if value is not None:
+                self.portfolio_origin_value = value
+                return
         self.portfolio_origin_value = \
             self._update_portfolio_current_value(self.origin_portfolio.portfolio,
                                                  currencies_values=self.origin_crypto_currencies_values,
