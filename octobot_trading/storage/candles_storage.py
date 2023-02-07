@@ -55,6 +55,7 @@ class CandlesStorage(abstract_storage.AbstractStorage):
             for time_frame in self.exchange_manager.exchange_config.get_relevant_time_frames():
                 await symbol_db.delete(self.HISTORY_TABLE, None)
                 await self._store_candles_if_necessary(symbol, time_frame.value, symbol_db)
+            await symbol_db.flush()
 
     async def _store_candles_if_necessary(self, symbol, time_frame, symbol_db):
         candles_data = {
