@@ -72,7 +72,6 @@ class Asset:
         """
         Implement if necessary
         """
-        pass
 
     def reset(self):
         """

@@ -53,6 +53,7 @@ cdef class Trade:
 
     cpdef double get_time(self)
     cpdef object get_quantity(self)
+    cpdef bint has_been_executed(self)
     cpdef void update_from_order(self,
                                  object order,
                                  double canceled_time=*,

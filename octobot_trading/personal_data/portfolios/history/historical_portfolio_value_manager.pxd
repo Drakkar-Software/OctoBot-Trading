@@ -31,6 +31,8 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
     cdef public object last_update_time
     cdef public dict starting_portfolio
     cdef public dict ending_portfolio
+    cdef public dict historical_ending_portfolio
+    cdef public dict historical_starting_portfolio_values
 
     cdef public int max_history_size
     cdef public object historical_portfolio_value
@@ -45,7 +47,7 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
 
     cdef void _add_historical_portfolio_value(self, double timestamp, dict value_by_currency)
     cdef void _load_metadata(self, list metadata)
-    cdef void _update_historical_starting_portfolio_values(self)
+    cdef void _load_historical_starting_portfolio_values(self)
     cdef bint _is_historical_timestamp_relevant(self, double timestamp, object time_frame_seconds, object from_timestamp, object to_timestamp)
     cdef set _get_relevant_timestamps(self, double timestamp, object currencies, list time_frames, bint force_update, bint include_past_data)
     cdef bint _should_update_timestamp(self, object currencies, object time_frame_allowed_window_start, bint force_update)

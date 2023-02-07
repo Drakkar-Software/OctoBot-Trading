@@ -45,7 +45,9 @@ cdef class PortfolioManager(util.Initializable):
     cpdef object handle_mark_price_update(self, str symbol, object mark_price)
     cpdef void clear(self)
 
-    cdef void _load_portfolio(self)
+    cdef object _apply_locked_assets(self, dict previous_assets)
+    cdef void _load_portfolio(self, bint reset_from_config)
+    cdef object _load_simulated_portfolio_from_history(self)
     cdef object _reset_portfolio(self)
     cdef void _set_starting_simulated_portfolio(self)
     cdef bint _refresh_simulated_trader_portfolio_from_order(self, object order)

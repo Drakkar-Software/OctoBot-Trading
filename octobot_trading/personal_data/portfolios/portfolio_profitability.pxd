@@ -38,6 +38,7 @@ cdef class PortfolioProfitability:
     cdef public set valuated_currencies
 
     cpdef object update_profitability(self, bint force_recompute_origin_portfolio=*)
+    cpdef void reset_profitability(self)
 
     cdef object _calculate_average_market_profitability(self)
     cdef void _reset_before_profitability_calculation(self)

@@ -27,3 +27,5 @@ cdef class Asset:
 
     cpdef object _ensure_update_validity(self, object origin_quantity, object update_quantity)
     cpdef object _ensure_not_negative(self, object new_value, object replacement_value=*)
+    cpdef object restore_unavailable_from_other(self, object other_asset)
+    cpdef object _specific_restore_unavailable_from_other(self, object other_asset)
