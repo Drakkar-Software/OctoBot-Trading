@@ -22,17 +22,20 @@ import octobot_commons.databases as commons_databases
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.storage.abstract_storage as abstract_storage
 import octobot_trading.util as util
+import octobot_trading.constants as constants
 
 
 class CandlesStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
     IS_HISTORICAL = False
     HISTORY_TABLE = commons_enums.DBTables.CANDLES_SOURCE.value
+    ENABLE_LIVE_CANDLES_STORAGE = constants.ENABLE_LIVE_CANDLES_STORAGE
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._init_task = None
         self._init_timeout = 5 * commons_constants.MINUTE_TO_SECONDS
+        self.enabled = self.exchange_manager.is_backtesting or self.ENABLE_LIVE_CANDLES_STORAGE
 
     async def on_start(self):
         self._init_task = asyncio.create_task(self._store_candles_when_available())
