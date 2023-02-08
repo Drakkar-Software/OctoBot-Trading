@@ -106,6 +106,7 @@ class AbstractStorage:
         if self.exchange_manager.is_backtesting:
             # flush now in backtesting
             await self._get_db().flush()
+            return
         if self._flush_task is not None and not self._flush_task.done():
             self._flush_task.cancel()
         self._flush_task = asyncio.create_task(self._waiting_flush())
@@ -128,7 +129,6 @@ class AbstractStorage:
     async def _waiting_flush(self):
         try:
             await asyncio.sleep(self.FLUSH_DEBOUNCE_DURATION)
-            logging.get_logger(self.__class__.__name__).warning("flush")
             await self._get_db().flush()
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when flushing database: {err}")
