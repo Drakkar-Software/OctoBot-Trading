@@ -824,7 +824,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                                         f"candle time {current_candle_time}, " \
                                         f"previous candle time: {previous_candle_time} " \
                                         f"({subsequent_unordered_candles} unordered candles in a row)."
-                        if subsequent_unordered_candles > self.MAX_ALLOWED_SUBSEQUENT_UNORDERED_CANDLES:
+                        if subsequent_unordered_candles == self.MAX_ALLOWED_SUBSEQUENT_UNORDERED_CANDLES:
                             self.logger.error(error_message)
                         else:
                             self.logger.debug(error_message)
