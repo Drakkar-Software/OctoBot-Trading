@@ -288,6 +288,10 @@ async def store_history_in_run_storage(exchange_manager):
     await exchange_manager.storage_manager.store_history()
 
 
+def get_enabled_exchanges_names(config) -> list:
+    return exchanges.get_enabled_exchanges(config)
+
+
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise

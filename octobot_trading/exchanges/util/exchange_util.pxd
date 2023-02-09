@@ -22,6 +22,7 @@ cpdef str get_partners_explanation_message()
 cpdef object get_exchange_type(object exchange_manager_instance)
 cpdef str get_default_exchange_type(str exchange_name)
 cpdef list get_supported_exchange_types(str exchange_name)
+cpdef list get_enabled_exchanges(dict config)
 cpdef object get_exchange_class_from_name(object exchange_parent_class,
                                           str exchange_name,
                                           object tentacles_setup_config,
