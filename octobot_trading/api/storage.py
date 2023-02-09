@@ -38,6 +38,10 @@ async def clear_candles_storage_history(exchange_manager, flush=True):
     await exchange_manager.storage_manager.candles_storage.clear_history(flush=flush)
 
 
+async def clear_database_storage_history(storage_class, database, flush=True):
+    await storage_class.clear_database_history(database, flush=flush)
+
+
 def get_account_type(is_future, is_margin, is_sandboxed, is_trader_simulated) -> str:
     return storage.get_account_type_suffix(is_future, is_margin, is_sandboxed, is_trader_simulated)
 

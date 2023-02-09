@@ -111,6 +111,7 @@ from octobot_trading.api.exchange import (
     get_required_historical_candles_count,
     is_overloaded,
     store_history_in_run_storage,
+    get_enabled_exchanges_names,
     cancel_ccxt_throttle_task,
     stop_exchange,
 )
@@ -184,6 +185,7 @@ from octobot_trading.api.contracts import (
 from octobot_trading.api.storage import (
     clear_trades_storage_history,
     clear_candles_storage_history,
+    clear_database_storage_history,
     clear_transactions_storage_history,
     clear_portfolio_storage_history,
     clear_orders_storage_history,
@@ -270,6 +272,7 @@ __all__ = [
     "get_required_historical_candles_count",
     "is_overloaded",
     "store_history_in_run_storage",
+    "get_enabled_exchanges_names",
     "cancel_ccxt_throttle_task",
     "stop_exchange",
     "get_trading_modes",
@@ -326,6 +329,7 @@ __all__ = [
     "get_pair_contracts",
     "clear_trades_storage_history",
     "clear_candles_storage_history",
+    "clear_database_storage_history",
     "get_account_type",
     "get_account_type_from_run_metadata",
     "clear_transactions_storage_history",

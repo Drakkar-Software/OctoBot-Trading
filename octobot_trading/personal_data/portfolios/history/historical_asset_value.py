@@ -30,6 +30,10 @@ class HistoricalAssetValue:
     def __contains__(self, item):
         return item in self._value_by_currency
 
+    def __repr__(self):
+        return f"{self.__class__.__name__} " \
+               f"[timestamp: {HistoricalAssetValue}, _value_by_currency{self._value_by_currency}]"
+
     def get(self, currency):
         return self._value_by_currency[currency]
 

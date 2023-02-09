@@ -146,10 +146,13 @@ class AbstractStorage:
         raise NotImplementedError(f"_get_db not implemented for {self.__class__.__name__}")
 
     async def clear_history(self, flush=True):
-        if self.HISTORY_TABLE is None:
-            raise NotImplementedError(f"{self.__class__.__name__}.HISTORY_TABLE has to be set")
-        database = self._get_db()
-        await database.delete(self.HISTORY_TABLE, None)
+        await self.clear_database_history(self._get_db(), flush=flush)
+
+    @classmethod
+    async def clear_database_history(cls, database, flush=True):
+        if cls.HISTORY_TABLE is None:
+            raise NotImplementedError(f"{cls.__name__}.HISTORY_TABLE has to be set")
+        await database.delete(cls.HISTORY_TABLE, None)
         if flush:
             await database.flush()
 

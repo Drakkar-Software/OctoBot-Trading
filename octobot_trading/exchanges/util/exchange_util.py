@@ -131,6 +131,15 @@ def _get_minimal_exchange_config(exchange_name, exchange_config):
     }
 
 
+def get_enabled_exchanges(config):
+    return [
+        exchange_name
+        for exchange_name in config[common_constants.CONFIG_EXCHANGES]
+        if config[common_constants.CONFIG_EXCHANGES][exchange_name].get(
+                common_constants.CONFIG_ENABLED_OPTION, True)
+    ]
+
+
 async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
         -> (bool, bool, str):
     """
