@@ -35,9 +35,10 @@ async def test_on_order_refresh_successful(sell_limit_order):
     sell_limit_order.clear()
 
 
-async def test_constructor_with_pending_cancel_status(buy_limit_order):
+async def test_constructor_real_order_with_pending_cancel_status(buy_limit_order):
     # with PENDING_CANCEL status
     buy_limit_order.status = enums.OrderStatus.PENDING_CANCEL
+    buy_limit_order.simulated = False
     state = octobot_trading.personal_data.CancelOrderState(buy_limit_order, True)
     assert state.state is enums.OrderStates.CANCELING
     assert state.is_pending()
@@ -45,6 +46,18 @@ async def test_constructor_with_pending_cancel_status(buy_limit_order):
     if not os.getenv('CYTHON_IGNORE'):
         assert state.is_status_pending()
         assert not state.is_status_cancelled()
+
+
+async def test_constructor_simulated_order_with_pending_cancel_status(buy_limit_order):
+    buy_limit_order.status = enums.OrderStatus.PENDING_CANCEL
+    buy_limit_order.simulated = True
+    state = octobot_trading.personal_data.CancelOrderState(buy_limit_order, True)
+    assert state.state is enums.OrderStates.CANCELED
+    assert not state.is_pending()
+    assert state.is_canceled()
+    if not os.getenv('CYTHON_IGNORE'):
+        assert not state.is_status_pending()
+        assert state.is_status_cancelled()
 
 
 async def test_constructor_with_cancelled_status(sell_limit_order):
