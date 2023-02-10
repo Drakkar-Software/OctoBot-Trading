@@ -230,7 +230,8 @@ async def test_get_pending_cancel_orders(order_and_exchange_managers):
         exchange_manager.trader, _get_raw_order(RAW_ORDERS[0], enums.OrderStatus.PENDING_CANCEL.value)
     )
     # order is not initialized and therefore not yet closed
-    orders_manager._add_order(selectable_order.order_id, selectable_order)
+    #  can't use ._add_order() as it is cythonized as private
+    orders_manager.orders[selectable_order.order_id] = selectable_order
     orders = orders_manager.get_pending_cancel_orders(
         symbol=DEFAULT_SYMBOL,
         since=constants.NO_DATA_LIMIT,
@@ -262,7 +263,8 @@ async def test_get_closed_orders(order_and_exchange_managers):
         exchange_manager.trader, _get_raw_order(RAW_ORDERS[0], enums.OrderStatus.CLOSED.value)
     )
     # order is not initialized and therefore not yet closed
-    orders_manager._add_order(selectable_order.order_id, selectable_order)
+    #  can't use ._add_order() as it is cythonized as private
+    orders_manager.orders[selectable_order.order_id] = selectable_order
     orders = orders_manager.get_closed_orders(
         symbol=DEFAULT_SYMBOL,
         since=constants.NO_DATA_LIMIT,
