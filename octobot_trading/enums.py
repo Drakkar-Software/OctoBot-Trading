@@ -36,8 +36,14 @@ class PositionSide(enum.Enum):
 class TradeOrderType(enum.Enum):
     LIMIT = "limit"
     MARKET = "market"
+    # stop loss == reduce only on futures
     STOP_LOSS = "stop_loss"
     STOP_LOSS_LIMIT = "stop_loss_limit"
+    # conditional orders
+    # TODO handle them
+    CONDITIONAL_MARKET = "stop_market"
+    CONDITIONAL_LIMIT = "stop_limit"
+    
     TAKE_PROFIT = "take_profit"
     TAKE_PROFIT_LIMIT = "take_profit_limit"
     TRAILING_STOP = "trailing_stop"
