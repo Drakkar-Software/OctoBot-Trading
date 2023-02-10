@@ -13,21 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
 import typing
 import pytest
 import pytest_asyncio
 
-from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.personal_data.orders.orders_manager import OrdersManager
+import octobot_trading.personal_data as personal_data
+import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-from octobot_trading.enums import (
-    OrderStatus,
-)
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
-from octobot_trading.api.exchange import cancel_ccxt_throttle_task
+import octobot_trading.enums as enums
 
-import tests.exchanges as test_exchanges
+from tests.exchanges import simulated_exchange_manager, simulated_trader
 
 pytestmark = pytest.mark.asyncio
 
@@ -53,7 +49,7 @@ RAW_ORDERS = [
         "average": None,
         "filled": 0,
         "remaining": 5.4,
-        "status": "closed",
+        "status": "closed",  # will not be accessible from orders_manager as it is closed
         "fee": {"cost": 0.03764836, "currency": "USDT"},
     },
     {
@@ -84,7 +80,7 @@ RAW_ORDERS = [
         "side": "buy",
         "price": 60,
         "stopPrice": None,
-        "amount": 5.4,
+        "amount": 3.4,
         "cost": None,
         "average": None,
         "filled": 0.0,
@@ -103,7 +99,7 @@ RAW_ORDERS = [
         "side": "buy",
         "price": 70,
         "stopPrice": None,
-        "amount": 5.4,
+        "amount": 3.4,
         "cost": None,
         "average": None,
         "filled": 5.4,
@@ -116,26 +112,27 @@ RAW_ORDERS = [
 
 
 @pytest_asyncio.fixture
-async def order_and_exchange_managers() -> typing.Tuple[OrdersManager, ExchangeManager]:
-    config = load_test_config()
-    exchange_manager = ExchangeManager(
-        config, test_exchanges.DEFAULT_EXCHANGE_NAME
-    )
-    await exchange_manager.initialize()
-
-    trader = TraderSimulator(config, exchange_manager)
-    await trader.initialize()
-    orders_manager = OrdersManager(trader)
-    try:
-        yield orders_manager, exchange_manager
-    finally:
-        cancel_ccxt_throttle_task()
-        await exchange_manager.stop()
+async def order_and_exchange_managers(simulated_trader) -> typing.Tuple[personal_data.OrdersManager,
+                                                                        exchanges.ExchangeManager]:
+    config, exchange_manager, trader = simulated_trader
+    return exchange_manager.exchange_personal_data.orders_manager, exchange_manager
 
 
 async def reset_orders_manager(orders_manager, status=None):
     orders_manager.initialize_impl()
-    await upsert_raw_orders(RAW_ORDERS, orders_manager, status)
+    await _upsert_raw_orders(RAW_ORDERS, orders_manager, status)
+
+
+async def _upsert_raw_orders(raw_orders, orders_manager: personal_data.OrdersManager, status=None):
+    for order in raw_orders:
+        order = _get_raw_order(order, status=status)
+        await orders_manager.upsert_order_from_raw(order["id"], order, False)
+
+
+def _get_raw_order(order, status=None):
+    order = copy.deepcopy(order)
+    order["status"] = status or order["status"]
+    return order
 
 
 async def test_get_order(order_and_exchange_managers):
@@ -188,10 +185,9 @@ async def test_get_all_orders(order_and_exchange_managers):
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(until_orders) == 3
-    assert until_orders[0].order_id == "1"
-    assert until_orders[1].order_id == "2"
-    assert until_orders[2].order_id == "3"
+    assert len(until_orders) == 2
+    assert until_orders[0].order_id == "2"
+    assert until_orders[1].order_id == "3"
 
     all_orders = orders_manager.get_all_orders(
         symbol=DEFAULT_SYMBOL,
@@ -200,11 +196,10 @@ async def test_get_all_orders(order_and_exchange_managers):
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(all_orders) == 4
-    assert all_orders[0].order_id == "1"
-    assert all_orders[1].order_id == "2"
-    assert all_orders[2].order_id == "3"
-    assert all_orders[3].order_id == "4"
+    assert len(all_orders) == 3
+    assert all_orders[0].order_id == "2"
+    assert all_orders[1].order_id == "3"
+    assert all_orders[2].order_id == "4"
 
     # TODO uncomment once tags are parsed
     # tagged_order = orders_manager.get_all_orders(
@@ -217,52 +212,8 @@ async def test_get_all_orders(order_and_exchange_managers):
 async def test_get_pending_cancel_orders(order_and_exchange_managers):
     orders_manager, exchange_manager = order_and_exchange_managers
     await reset_orders_manager(
-        orders_manager, OrderStatus.PENDING_CANCEL.value
+        orders_manager, enums.OrderStatus.PENDING_CANCEL.value
     )
-    one_order = orders_manager.get_pending_cancel_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=SECOND_TIME,
-        until=THIRD_TIME,
-        limit=1,
-        tag=None,
-    )
-    assert len(one_order) == 1
-    assert one_order[0].order_id == "2"
-
-    two_orders = orders_manager.get_pending_cancel_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=SECOND_TIME,
-        until=THIRD_TIME,
-        limit=constants.NO_DATA_LIMIT,
-        tag=None,
-    )
-    assert len(two_orders) == 2
-    assert two_orders[0].order_id == "2"
-    assert two_orders[1].order_id == "3"
-
-    since_orders = orders_manager.get_pending_cancel_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=SECOND_TIME,
-        until=constants.NO_DATA_LIMIT,
-        limit=constants.NO_DATA_LIMIT,
-        tag=None,
-    )
-    assert len(since_orders) == 3
-    assert since_orders[0].order_id == "2"
-    assert since_orders[1].order_id == "3"
-    assert since_orders[2].order_id == "4"
-
-    until_orders = orders_manager.get_pending_cancel_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=constants.NO_DATA_LIMIT,
-        until=THIRD_TIME,
-        limit=constants.NO_DATA_LIMIT,
-        tag=None,
-    )
-    assert len(until_orders) == 3
-    assert until_orders[0].order_id == "1"
-    assert until_orders[1].order_id == "2"
-    assert until_orders[2].order_id == "3"
 
     all_orders = orders_manager.get_pending_cancel_orders(
         symbol=DEFAULT_SYMBOL,
@@ -271,67 +222,31 @@ async def test_get_pending_cancel_orders(order_and_exchange_managers):
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(all_orders) == 4
-    assert all_orders[0].order_id == "1"
-    assert all_orders[1].order_id == "2"
-    assert all_orders[2].order_id == "3"
-    assert all_orders[3].order_id == "4"
+    # simulated pending cancel orders are turned into cancelled orders when initialized therefore not available
+    # in orders_manager as their state init is turning them into trades
+    assert len(all_orders) == 0
 
-    # TODO uncomment once tags are parsed
-    # tagged_order = orders_manager.get_pending_cancel_orders(
-    #     symbol=DEFAULT_SYMBOL, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag="test"
-    # )
-    # assert len(tagged_order) == 1
-    # assert tagged_order[0].order_id == "4"
-
-
-async def test_get_closed_orders(order_and_exchange_managers):
-    orders_manager, exchange_manager = order_and_exchange_managers
-    await reset_orders_manager(orders_manager, OrderStatus.CLOSED.value)
-    one_order = orders_manager.get_closed_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=SECOND_TIME,
-        until=THIRD_TIME,
-        limit=1,
-        tag=None,
+    selectable_order = personal_data.create_order_instance_from_raw(
+        exchange_manager.trader, _get_raw_order(RAW_ORDERS[0], enums.OrderStatus.PENDING_CANCEL.value)
     )
-    assert len(one_order) == 1
-    assert one_order[0].order_id == "2"
-
-    two_orders = orders_manager.get_closed_orders(
+    # order is not initialized and therefore not yet closed
+    orders_manager._add_order(selectable_order.order_id, selectable_order)
+    orders = orders_manager.get_pending_cancel_orders(
         symbol=DEFAULT_SYMBOL,
-        since=SECOND_TIME,
-        until=THIRD_TIME,
-        limit=constants.NO_DATA_LIMIT,
-        tag=None,
-    )
-    assert len(two_orders) == 2
-    assert two_orders[0].order_id == "2"
-    assert two_orders[1].order_id == "3"
-
-    since_orders = orders_manager.get_closed_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=SECOND_TIME,
+        since=constants.NO_DATA_LIMIT,
         until=constants.NO_DATA_LIMIT,
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(since_orders) == 3
-    assert since_orders[0].order_id == "2"
-    assert since_orders[1].order_id == "3"
-    assert since_orders[2].order_id == "4"
+    assert len(orders) == 1
+    assert orders[0] is selectable_order
 
-    until_orders = orders_manager.get_closed_orders(
-        symbol=DEFAULT_SYMBOL,
-        since=constants.NO_DATA_LIMIT,
-        until=THIRD_TIME,
-        limit=constants.NO_DATA_LIMIT,
-        tag=None,
+
+async def test_get_closed_orders(order_and_exchange_managers):
+    orders_manager, exchange_manager = order_and_exchange_managers
+    await reset_orders_manager(
+        orders_manager, enums.OrderStatus.CLOSED.value
     )
-    assert len(until_orders) == 3
-    assert until_orders[0].order_id == "1"
-    assert until_orders[1].order_id == "2"
-    assert until_orders[2].order_id == "3"
 
     all_orders = orders_manager.get_closed_orders(
         symbol=DEFAULT_SYMBOL,
@@ -340,23 +255,28 @@ async def test_get_closed_orders(order_and_exchange_managers):
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(all_orders) == 4
-    assert all_orders[0].order_id == "1"
-    assert all_orders[1].order_id == "2"
-    assert all_orders[2].order_id == "3"
-    assert all_orders[3].order_id == "4"
+    # closed are not available in orders_manager as their state init is turning them into trades
+    assert len(all_orders) == 0
 
-    # TODO uncomment once tags are parsed
-    # tagged_order = orders_manager.get_closed_orders(
-    #     symbol=DEFAULT_SYMBOL, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag="test"
-    # )
-    # assert len(tagged_order) == 1
-    # assert tagged_order[0].order_id == "4"
+    selectable_order = personal_data.create_order_instance_from_raw(
+        exchange_manager.trader, _get_raw_order(RAW_ORDERS[0], enums.OrderStatus.CLOSED.value)
+    )
+    # order is not initialized and therefore not yet closed
+    orders_manager._add_order(selectable_order.order_id, selectable_order)
+    orders = orders_manager.get_closed_orders(
+        symbol=DEFAULT_SYMBOL,
+        since=constants.NO_DATA_LIMIT,
+        until=constants.NO_DATA_LIMIT,
+        limit=constants.NO_DATA_LIMIT,
+        tag=None,
+    )
+    assert len(orders) == 1
+    assert orders[0] is selectable_order
 
 
 async def test_get_open_orders(order_and_exchange_managers):
     orders_manager, exchange_manager = order_and_exchange_managers
-    await reset_orders_manager(orders_manager, OrderStatus.OPEN.value)
+    await reset_orders_manager(orders_manager, enums.OrderStatus.OPEN.value)
     one_order = orders_manager.get_open_orders(
         symbol=DEFAULT_SYMBOL,
         since=SECOND_TIME,
@@ -397,10 +317,9 @@ async def test_get_open_orders(order_and_exchange_managers):
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(until_orders) == 3
-    assert until_orders[0].order_id == "1"
-    assert until_orders[1].order_id == "2"
-    assert until_orders[2].order_id == "3"
+    assert len(until_orders) == 2
+    assert until_orders[0].order_id == "2"
+    assert until_orders[1].order_id == "3"
 
     all_orders = orders_manager.get_open_orders(
         symbol=DEFAULT_SYMBOL,
@@ -409,11 +328,10 @@ async def test_get_open_orders(order_and_exchange_managers):
         limit=constants.NO_DATA_LIMIT,
         tag=None,
     )
-    assert len(all_orders) == 4
-    assert all_orders[0].order_id == "1"
-    assert all_orders[1].order_id == "2"
-    assert all_orders[2].order_id == "3"
-    assert all_orders[3].order_id == "4"
+    assert len(all_orders) == 3
+    assert all_orders[0].order_id == "2"
+    assert all_orders[1].order_id == "3"
+    assert all_orders[2].order_id == "4"
 
     # TODO uncomment once tags are parsed
     # tagged_order = orders_manager.get_open_orders(
@@ -421,10 +339,3 @@ async def test_get_open_orders(order_and_exchange_managers):
     # )
     # assert len(tagged_order) == 1
     # assert tagged_order[0].order_id == "4"
-
-
-async def upsert_raw_orders(raw_orders, orders_manager: OrdersManager, status=None):
-    for order in raw_orders:
-        order = {**order}
-        order["status"] = status or order["status"]
-        await orders_manager.upsert_order_from_raw(order["id"], order, False)

@@ -45,7 +45,7 @@ class CancelOrderState(order_state.OrderState):
         return self.state is enums.OrderStates.CANCELED
 
     def is_status_pending(self) -> bool:
-        return self.order.status is enums.OrderStatus.PENDING_CANCEL
+        return self.order.status is enums.OrderStatus.PENDING_CANCEL and not self.order.simulated
 
     def is_status_cancelled(self) -> bool:
         return not self.is_status_pending() and self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE
@@ -102,7 +102,7 @@ class CancelOrderState(order_state.OrderState):
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order,
                                                                                                             False)
 
-            # notify order filled
+            # notify order cancelled
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order,
                                                                                                       False)
 
