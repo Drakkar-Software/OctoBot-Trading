@@ -47,11 +47,13 @@ async def exchange_manager():
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = False
     await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
 
 @pytest_asyncio.fixture
@@ -60,11 +62,13 @@ async def simulated_exchange_manager():
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = True
     await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
 
 @pytest_asyncio.fixture
@@ -73,11 +77,13 @@ async def margin_exchange_manager():
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_margin = True
     await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
 
 @pytest_asyncio.fixture
@@ -87,11 +93,13 @@ async def margin_simulated_exchange_manager():
     exchange_manager_instance.is_simulated = True
     exchange_manager_instance.is_margin = True
     await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
 
 @pytest_asyncio.fixture
@@ -100,11 +108,13 @@ async def future_exchange_manager():
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_future = True
     await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
 
 @pytest_asyncio.fixture
@@ -114,11 +124,13 @@ async def future_simulated_exchange_manager():
     exchange_manager_instance.is_simulated = True
     exchange_manager_instance.is_future = True
     await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
 
 @pytest_asyncio.fixture
@@ -130,8 +142,10 @@ async def exchange_builder(request):
 
     exchange_builder_instance = create_exchange_builder(config if config is not None else load_test_config(),
                                                         exchange_name).is_simulated().is_rest_only()
-    yield exchange_builder_instance
-    await exchange_builder_instance.exchange_manager.stop()
+    try:
+        yield exchange_builder_instance
+    finally:
+        await exchange_builder_instance.exchange_manager.stop()
 
 
 # SIMULATED / BACKTESTING
