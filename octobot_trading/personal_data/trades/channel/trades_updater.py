@@ -69,13 +69,6 @@ class TradesUpdater(trades_channel.TradesProducer):
             trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
                 symbol=symbol,
                 limit=self.MAX_OLD_TRADES_TO_FETCH)
-            if not trades:
-                # on some exchanges, recent trades are only fetching very recent trade. also try closed orders
-                trades = await self.channel.exchange_manager.exchange.get_closed_orders(
-                    symbol=symbol,
-                    limit=self.MAX_OLD_TRADES_TO_FETCH
-                )
-
             if trades:
                 await self.push(trades)
             if not self._is_initialized_event_set:

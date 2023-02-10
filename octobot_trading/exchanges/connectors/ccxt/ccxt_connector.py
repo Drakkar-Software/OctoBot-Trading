@@ -333,7 +333,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
             with self.error_describer():
                 method = self.client.fetch_my_trades if self.client.has['fetchMyTrades'] else self.client.fetch_trades
-                return self.adapter.adapt_trades(await method(symbol=symbol, since=since, limit=limit, params=kwargs))
+                trades = self.adapter.adapt_trades(await method(symbol=symbol, since=since, limit=limit, params=kwargs))
+                if trades:
+                    return trades
+                # on some exchanges, recent trades are only fetching very recent trade. also try closed orders
+                return await self.exchange_manager.exchange.get_closed_orders(
+                    symbol=symbol,
+                    since=since,
+                    limit=limit,
+                    **kwargs
+                )
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
