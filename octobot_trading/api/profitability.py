@@ -15,6 +15,8 @@
 #  License along with this library.
 import decimal
 
+import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.util as util
 
 
@@ -36,8 +38,20 @@ def get_current_portfolio_value(exchange_manager) -> float:
 
 
 def get_current_crypto_currency_value(exchange_manager, currency) -> decimal.Decimal:
-    return exchange_manager.exchange_personal_data.portfolio_manager. \
-        portfolio_value_holder.current_crypto_currencies_values[currency]
+    try:
+        return exchange_manager.exchange_personal_data.portfolio_manager. \
+            portfolio_value_holder.current_crypto_currencies_values[currency]
+    except KeyError:
+        try:
+            # try using last prices by trading pair
+            return exchange_manager.exchange_personal_data.portfolio_manager. \
+                portfolio_value_holder.convert_currency_value_using_last_prices(
+                    constants.ONE,
+                    currency,
+                    exchange_manager.exchange_personal_data.portfolio_manager.reference_market
+                )
+        except errors.MissingPriceDataError as err:
+            raise KeyError from err
 
 
 def get_current_holdings_values(exchange_manager) -> dict:
