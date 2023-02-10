@@ -136,7 +136,8 @@ def get_enabled_exchanges(config):
         exchange_name
         for exchange_name in config[common_constants.CONFIG_EXCHANGES]
         if config[common_constants.CONFIG_EXCHANGES][exchange_name].get(
-                common_constants.CONFIG_ENABLED_OPTION, True)
+                common_constants.CONFIG_ENABLED_OPTION, True
+        )
     ]
 
 
