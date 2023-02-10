@@ -292,10 +292,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return await self.connector.create_limit_sell_order(symbol, quantity, price, params=params)
 
     async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
-        raise NotImplementedError("_create_market_stop_loss_order is not implemented")
+        return await self.connector.create_market_stop_loss_order(
+            symbol=symbol, quantity=quantity, price=price,
+            side=side, current_price=current_price, params=params)
 
-    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
+    async def _create_limit_stop_loss_order(self, symbol, quantity, price, stop_price, side, params=None) -> dict:
+        return await self.connector.create_limit_stop_loss_order(
+            symbol=symbol, quantity=quantity, price=price, stop_price=stop_price, side=side, params=params)
 
     async def _create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_market_take_profit_order is not implemented")

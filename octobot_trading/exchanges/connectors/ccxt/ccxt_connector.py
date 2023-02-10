@@ -373,9 +373,46 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         )
 
     async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        if self.client.has.get("createStopMarketOrder"):
+            try:
+                return self.adapter.adapt_order(
+                    await self.client.createStopMarketOrder(
+                        symbol,
+                        side=side,
+                        amount=quantity,
+                        stopPrice=price,
+                        params=params,
+                    )
+                )
+            except ccxt.OrderImmediatelyFillable:
+                # make sure stop always stops
+                created_order = await self.exchange_manager.exchange.create_order(
+                    order_type=(enums.TraderOrderType.BUY_MARKET
+                                if side == enums.TradeOrderSide.BUY.value
+                                else enums.TraderOrderType.SELL_MARKET),
+                    symbol=symbol,
+                    quantity=decimal.Decimal(str(quantity)),
+                    price=decimal.Decimal(str(price)),
+                    current_price=decimal.Decimal(str(current_price))
+                )
+                created_order[enums.ExchangeConstantsOrderColumns.TYPE.value] = (
+                    enums.TraderOrderType.STOP_LOSS.value
+                    )
+                return created_order
         raise NotImplementedError("create_market_stop_loss_order is not implemented")
 
-    async def create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+    async def create_limit_stop_loss_order(self, symbol, quantity, price, stop_price, side, params=None) -> dict:
+        if self.client.has.get("createStopLimitOrder"):
+            return self.adapter.adapt_order(
+                await self.client.create_stop_limit_order(
+                    symbol,
+                    side=side,
+                    amount=quantity,
+                    price=price,
+                    stopPrice=stop_price,
+                    params=params,
+                )
+            )
         raise NotImplementedError("create_limit_stop_loss_order is not implemented")
 
     async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
