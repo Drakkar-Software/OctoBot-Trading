@@ -47,7 +47,8 @@ cdef class PortfolioValueHolder:
     cpdef void reset_portfolio_values(self)
     cpdef object get_origin_portfolio_current_value(self, bint refresh_values=*)
     cpdef object handle_profitability_recalculation(self, bint force_recompute_origin_portfolio)
-    cpdef object convert_currency_value_using_last_prices(self, object quantity, str current_currency, str target_currency)
+    cpdef object convert_currency_value_using_last_prices(self, object quantity, str current_currency, str target_currency, str settlement_asset=*)
+    cpdef object try_convert_currency_value_using_multiple_pairs(self, str currency, object quantity)
     # cpdef object get_currency_holding_ratio(self, str currency)
 
     cdef object _init_portfolio_values_if_necessary(self, bint force_recompute_origin_portfolio)

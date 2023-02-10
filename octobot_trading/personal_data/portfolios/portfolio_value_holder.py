@@ -19,6 +19,7 @@ import decimal
 
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
+import octobot_trading.api.symbol_data as symbol_data
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -69,25 +70,28 @@ class PortfolioValueHolder:
         """
         currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         # update origin values if this price has relevant data regarding the origin portfolio (using both quote and base)
+        origin_crypto_currencies_with_values \
+            = set(self.origin_crypto_currencies_values.keys())
         origin_currencies_should_be_updated = (
-                (
-                        currency not in set(self.origin_crypto_currencies_values.keys()) and
-                        market == self.portfolio_manager.reference_market
-                )
-                or
-                (
-                        market not in set(self.origin_crypto_currencies_values.keys()) and
-                        currency == self.portfolio_manager.reference_market
-                )
+                currency not in  origin_crypto_currencies_with_values
+                or market not in origin_crypto_currencies_with_values
         )
+        self.last_prices_by_trading_pair[symbol] = mark_price
         if origin_currencies_should_be_updated:
-            # will fail if symbol doesn't have a price in self.origin_crypto_currencies_values and therefore
-            # requires the origin portfolio value to be recomputed using this price info in case this price is relevant
+            # will fail if symbol doesn't have a price in 
+            #   self.origin_crypto_currencies_values and therefore
+            # requires the origin portfolio value to be recomputed 
+            #   using this price info in case this price is relevant
             if market == self.portfolio_manager.reference_market:
                 self.origin_crypto_currencies_values[currency] = mark_price
+            elif currency == self.portfolio_manager.reference_market:
+                self.origin_crypto_currencies_values[market] = (
+                    constants.ONE / mark_price)
             else:
-                self.origin_crypto_currencies_values[market] = constants.ONE / mark_price
-        self.last_prices_by_trading_pair[symbol] = mark_price
+                converted_value = self.try_convert_currency_value_using_multiple_pairs (
+                    currency, constants.ONE)
+                if converted_value is not None:
+                    self.origin_crypto_currencies_values[currency] = converted_value
         return origin_currencies_should_be_updated
 
     def get_current_crypto_currencies_values(self):
@@ -241,7 +245,8 @@ class PortfolioValueHolder:
 
     def _try_get_value_of_currency(self, currency, quantity, raise_error):
         """
-        try_get_value_of_currency will try to obtain the current value of the currency quantity in reference currency.
+        try_get_value_of_currency will try to obtain the current value of
+            the currency quantity in reference currency.
         It will try to create the symbol that fit with the exchange logic.
         :return: the value found of this currency quantity, if not found returns 0.
         """
@@ -249,9 +254,21 @@ class PortfolioValueHolder:
             return self.convert_currency_value_using_last_prices(quantity, currency,
                                                                  self.portfolio_manager.reference_market)
         except errors.MissingPriceDataError as missing_data_exception:
-            symbol = symbol_util.merge_currencies(currency, self.portfolio_manager.reference_market)
-            reversed_symbol = symbol_util.merge_currencies(self.portfolio_manager.reference_market, currency)
-            if not any(self.portfolio_manager.exchange_manager.symbol_exists(s) for s in (symbol, reversed_symbol)) \
+            if not self.portfolio_manager.exchange_manager.is_future:
+                try:
+                    value = self.try_convert_currency_value_using_multiple_pairs (currency, quantity)
+                    if value is not None:
+                        return value
+                except errors.MissingPriceDataError:
+                    pass
+            symbol = symbol_util.merge_currencies(
+                currency, self.portfolio_manager.reference_market,
+                settlement_asset=settlement_asset)
+            reversed_symbol = symbol_util.merge_currencies(
+                self.portfolio_manager.reference_market, currency,
+                settlement_asset=settlement_asset)
+            if not any(self.portfolio_manager.exchange_manager.symbol_exists(s)
+                       for s in (symbol, reversed_symbol)) \
                and currency not in self.missing_currency_data_in_exchange:
                 self._inform_no_matching_symbol(currency)
                 self.missing_currency_data_in_exchange.add(currency)
@@ -261,7 +278,8 @@ class PortfolioValueHolder:
                     raise missing_data_exception
         return constants.ZERO
 
-    def convert_currency_value_using_last_prices(self, quantity, current_currency, target_currency):
+    def convert_currency_value_using_last_prices(
+        self, quantity, current_currency, target_currency):
         try:
             symbol = symbol_util.merge_currencies(current_currency, target_currency)
             if self._has_price_data(symbol):
@@ -275,7 +293,53 @@ class PortfolioValueHolder:
             pass
         except KeyError:
             pass
-        raise errors.MissingPriceDataError(f"no price data to evaluate {current_currency} price in {target_currency}")
+        raise errors.MissingPriceDataError(
+            f"no price data to evaluate {current_currency} price in {target_currency}")
+
+    def try_convert_currency_value_using_multiple_pairs (
+        self, currency, quantity) -> decimal.Decimal:
+        # settlement_asset needs to be handled to add support for futures
+                
+        # try with two pairs
+        # for example:
+        # currency: ETH - ref market: USDT
+        #                   BTC/ETH      ->    BTC/USDT
+        # first convert ETH -> BTC and then BTC -> USDT
+        for symbol_str in symbol_data.get_config_symbols(
+            self.portfolio_manager.exchange_manager.config, True
+        ):
+            parsed_symbol = symbol_util.parse_symbol(symbol_str)
+            if parsed_symbol.base == currency:
+                first_ref_market = parsed_symbol.quote
+                second_symbol_str = symbol_util.merge_currencies(
+                        first_ref_market, self.portfolio_manager.reference_market
+                        )
+                # check if second pair is available
+                # first pair is already known to be available
+                if self.portfolio_manager.exchange_manager.symbol_exists(
+                    second_symbol_str
+                    ):
+                    try:
+                        first_ref_market_value = (
+                            self.convert_currency_value_using_last_prices(
+                                quantity, currency, first_ref_market
+                            )
+                        )
+                        if first_ref_market_value:
+                            ref_market_value = (
+                                self.convert_currency_value_using_last_prices(
+                                    first_ref_market_value,
+                                    first_ref_market,
+                                    self.portfolio_manager.reference_market,
+                                )
+                            )
+                            if ref_market_value:
+                                return ref_market_value
+                    except errors.MissingPriceDataError:
+                        # conversion pairs might not be initialized
+                        # or is not available at all
+                        pass # continue trying with other pairs
+        return None
 
     def _has_price_data(self, symbol):
         return self._get_last_price_data(symbol) is not constants.ZERO
@@ -284,11 +348,14 @@ class PortfolioValueHolder:
         try:
             return self.last_prices_by_trading_pair[symbol]
         except KeyError:
-            # a settlement asset or other symbol extra data might be different, try to ignore it
+            # a settlement asset or other symbol extra 
+            # data might be different, try to ignore it
             to_find_symbol = symbol_util.parse_symbol(symbol)
-            for symbol_key in self.last_prices_by_trading_pair:
-                if symbol_util.parse_symbol(symbol_key).is_same_base_and_quote(to_find_symbol):
-                    return self.last_prices_by_trading_pair[symbol_key]
+            for symbol_key, this_last_prices \
+                in self.last_prices_by_trading_pair.items():
+                if symbol_util.parse_symbol(
+                    symbol_key).is_same_base_and_quote(to_find_symbol):
+                    return this_last_prices
         raise KeyError(symbol)
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
