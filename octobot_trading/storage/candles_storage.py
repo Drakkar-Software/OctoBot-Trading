@@ -35,7 +35,8 @@ class CandlesStorage(abstract_storage.AbstractStorage):
         super().__init__(*args, **kwargs)
         self._init_task = None
         self._init_timeout = 5 * commons_constants.MINUTE_TO_SECONDS
-        self.enabled = self.exchange_manager.is_backtesting or self.ENABLE_LIVE_CANDLES_STORAGE
+        self.enabled = (self.exchange_manager is not None and self.exchange_manager.is_backtesting) \
+            or self.ENABLE_LIVE_CANDLES_STORAGE
 
     async def on_start(self):
         self._init_task = asyncio.create_task(self._store_candles_when_available())

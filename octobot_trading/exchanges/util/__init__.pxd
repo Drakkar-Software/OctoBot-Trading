@@ -27,6 +27,7 @@ from octobot_trading.exchanges.util.exchange_util cimport (
     get_default_exchange_type,
     get_supported_exchange_types,
     get_exchange_class_from_name,
+    get_enabled_exchanges,
 )
 from octobot_trading.exchanges.util cimport websockets_util
 from octobot_trading.exchanges.util.websockets_util cimport (
@@ -47,4 +48,5 @@ __all__ = [
     "get_default_exchange_type",
     "get_supported_exchange_types",
     "get_exchange_class_from_name",
+    "get_enabled_exchanges",
 ]
