@@ -272,25 +272,35 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         if time_frame is None or time_frame in self.time_frame_filter:
             await self.finalize(exchange_name=exchange_name, matrix_id=matrix_id, cryptocurrency=cryptocurrency,
-                                symbol=symbol, time_frame=time_frame)
+                                symbol=symbol, time_frame=time_frame,
+                                trigger_source=common_enums.TriggerSource.EVALUATION_MATRIX.value)
 
     async def finalize(self, exchange_name: str,
                        matrix_id: str,
                        cryptocurrency: str = None,
                        symbol: str = None,
-                       time_frame=None) -> None:
+                       time_frame=None,
+                       trigger_source: str = common_enums.TriggerSource.UNDEFINED.value
+                       ) -> None:
         """
         Finalize evaluation
         """
         if exchange_name != self.exchange_name or not self.exchange_manager.trader.is_enabled:
             # Do nothing if not its exchange
             return
+        await self.trigger(matrix_id, cryptocurrency, symbol, time_frame, trigger_source)
 
+    async def trigger(self, matrix_id: str = None, cryptocurrency: str = None, symbol: str = None, time_frame = None,
+                      trigger_source: str = common_enums.TriggerSource.UNDEFINED.value) -> None:
+        """
+        Called by finalize and MANUAL_TRIGGER user command. Override if necessary
+        """
         async with self.trading_mode_trigger(), self.trading_mode.remote_signal_publisher(symbol):
             await self.set_final_eval(matrix_id=matrix_id,
                                       cryptocurrency=cryptocurrency,
                                       symbol=symbol,
-                                      time_frame=time_frame)
+                                      time_frame=time_frame,
+                                      trigger_source=trigger_source)
 
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
@@ -320,7 +330,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 if database:
                     await database.flush()
 
-    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame) -> None:
+    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame,
+                             trigger_source: str) -> None:
         """
         Called to calculate the final note or state => when any notification appears
         """
