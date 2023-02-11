@@ -93,7 +93,8 @@ class ExchangePersonalData(util.Initializable):
                     # should this be done only "if should_notify" ?
                     await self.handle_position_instance_update(
                         order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(order),
-                        should_notify=True)
+                        should_notify=True
+                    )
                 elif self.exchange_manager.is_margin:
                     pass  # TODO : nothing for now
             return changed
