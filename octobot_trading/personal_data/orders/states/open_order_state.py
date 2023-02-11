@@ -42,8 +42,13 @@ class OpenOrderState(order_state.OrderState):
         if self.order.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized:
             # update the availability of the currency in the portfolio if order is not
             # from exchange initialization (otherwise it's already taken into account in portfolio)
-            self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
-                update_portfolio_available(self.order, is_new_order=True)
+            portfolio = self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
+            before_order_details = str(portfolio)
+            portfolio.update_portfolio_available(self.order, is_new_order=True)
+            self.get_logger().debug(
+                f"Updated portfolio available after new open order. "
+                f"Before order: {before_order_details}. After order: {portfolio}"
+            )
 
         return await super().initialize_impl()
 

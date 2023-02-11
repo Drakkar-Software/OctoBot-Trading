@@ -117,9 +117,10 @@ class Trader(util.Initializable):
                 self.logger.warning(f"Order not created order on {self.exchange_manager.exchange_name} "
                                     f"(failed attempt to create: {order}). This is likely due to "
                                     f"the order being refused by the exchange.")
+        except errors.MissingFunds:
+            # forward errors that require actions to fix the situation
+            raise
         except Exception as e:
-            import traceback
-            print(traceback.format_exc())
             self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
             return None
 
