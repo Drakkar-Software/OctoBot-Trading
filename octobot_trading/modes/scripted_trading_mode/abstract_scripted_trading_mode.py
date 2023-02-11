@@ -219,7 +219,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                            commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame)] * \
                            commons_constants.MINUTE_TO_SECONDS
             await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
-                                   commons_enums.ActivationTopics.FULL_CANDLES.value,
+                                   commons_enums.TriggerSource.OHLCV.value,
                                    trigger_time,
                                    candle=candle,
                                    init_call=init_call)
@@ -228,13 +228,12 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                              time_frame, kline: dict):
         async with self.trading_mode_trigger(), self.trading_mode.remote_signal_publisher(symbol):
             await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
-                                   commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value,
+                                   commons_enums.TriggerSource.KLINE.value,
                                    kline[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
                                    kline=kline)
 
-    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
-        await self.call_script(matrix_id, cryptocurrency, symbol, time_frame,
-                               commons_enums.ActivationTopics.EVALUATION_CYCLE.value,
+    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame, trigger_source: str):
+        await self.call_script(matrix_id, cryptocurrency, symbol, time_frame, trigger_source,
                                self._get_latest_eval_time(matrix_id, cryptocurrency, symbol, time_frame))
 
     def _get_latest_eval_time(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):

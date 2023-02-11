@@ -247,6 +247,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     async def user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command")
+        if action == common_enums.UserCommands.MANUAL_TRIGGER.value:
+            self.logger.debug(f"Triggering trading mode from {action} command with data: {data}")
+            await self._manual_trigger(data)
         if action == common_enums.UserCommands.RELOAD_CONFIG.value:
             await self.reload_config(bot_id)
             self.logger.debug("Reloaded configuration")
@@ -255,6 +258,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         elif action == common_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
             await modes_util.clear_simulated_orders_cache(self)
 
+    async def _manual_trigger(self, data):
+        kwargs = {
+            "trigger_source": common_enums.TriggerSource.MANUAL.value
+        }
+        kwargs.update(data.get("kwargs", {}))
+        for producer in self.producers:
+            await producer.trigger(**kwargs)
 
     async def _create_mode_consumer(self, mode_consumer_class):
         """
