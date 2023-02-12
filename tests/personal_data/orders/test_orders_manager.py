@@ -119,7 +119,7 @@ async def order_and_exchange_managers(simulated_trader) -> typing.Tuple[personal
 
 
 async def reset_orders_manager(orders_manager, status=None):
-    orders_manager.initialize_impl()
+    await orders_manager.initialize_impl()
     await _upsert_raw_orders(RAW_ORDERS, orders_manager, status)
 
 
