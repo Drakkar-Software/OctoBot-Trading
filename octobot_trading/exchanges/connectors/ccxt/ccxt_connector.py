@@ -545,8 +545,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def stop(self) -> None:
         self.logger.info(f"Closing connection.")
-        await self.client.close()
+        await ccxt_client_util.close_client(self.client)
         self.logger.info(f"Connection closed.")
+        self.client = None
         self.exchange_manager = None
 
     def get_pair_from_exchange(self, pair) -> typing.Optional[str]:

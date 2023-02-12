@@ -183,6 +183,8 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         logger = local_exchange_manager.exchange.connector.logger
         logger.disable(True)
         await local_exchange_manager.stop(enable_logs=False)
+        builder.clear()
+        builder = local_exchange_manager = None
         logger.disable(False)
 
 

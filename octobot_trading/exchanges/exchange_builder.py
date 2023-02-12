@@ -47,6 +47,9 @@ class ExchangeBuilder:
             raise e
         return self.exchange_manager
 
+    def clear(self):
+        self.exchange_manager = None
+
     async def _build_exchange_manager(self):
         trading_mode_class = None
 

@@ -46,6 +46,7 @@ cdef class ExchangeBuilder:
     cpdef ExchangeBuilder set_bot_id(self, str bot_id)
     cpdef ExchangeBuilder disable_trading_mode(self)
     cpdef ExchangeBuilder has_matrix(self, str matrix_id)
+    cpdef void clear(self)
 
     cdef void _register_trading_modes_requirements(self, object trading_mode_class, object tentacles_setup_config)
     cdef object _ensure_exchange_compatibility(self)

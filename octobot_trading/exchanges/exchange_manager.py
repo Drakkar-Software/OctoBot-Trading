@@ -129,6 +129,8 @@ class ExchangeManager(util.Initializable):
             self.exchange = None
         if self.exchange_personal_data is not None:
             await self.exchange_personal_data.stop()
+        if self.exchange_symbols_data is not None:
+            await self.exchange_symbols_data.stop()
         if enable_logs:
             self.logger.debug(f"Stopped exchange channels for exchange_id: {self.id}")
 
@@ -139,6 +141,8 @@ class ExchangeManager(util.Initializable):
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
+        if self.exchange_backend is not None:
+            self.exchange_backend.stop()
         if enable_logs:
             self.logger.debug("Stopping trader ...")
         if self.trader is not None:

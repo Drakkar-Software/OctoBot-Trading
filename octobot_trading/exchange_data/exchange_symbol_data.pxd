@@ -44,3 +44,4 @@ cdef class ExchangeSymbolData:
     cpdef bint handle_mark_price_update(self, object mark_price, str mark_price_source)
     cpdef void handle_ticker_update(self, dict ticker)
     cpdef void handle_mini_ticker_update(self, dict mini_ticker)
+    cpdef void stop(self)

@@ -48,6 +48,10 @@ class PricesManager(util.Initializable):
     def initialized(self):
         return self.mark_price is not constants.ZERO
 
+    def stop(self):
+        self._reset_prices()
+        self.exchange_manager = None
+
     def set_mark_price(self, mark_price, mark_price_source) -> bool:
         """
         Set the mark price if the mark price come from MarkPriceSources.EXCHANGE_MARK_PRICE

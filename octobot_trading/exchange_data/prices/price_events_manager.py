@@ -32,11 +32,15 @@ class PriceEventsManager:
     PRICE_EVENT_INDEX = 2
     PRICE_KEY = "price"
     TIME_KEY = "time"
+    MAX_LAST_RECENT_PRICES = 50
 
     def __init__(self):
         self.logger = logging.get_logger(self.__class__.__name__)
         self.events = []
         self._last_recent_prices = []
+
+    def stop(self):
+        self.reset()
 
     def reset(self):
         """
@@ -80,6 +84,12 @@ class PriceEventsManager:
             self.PRICE_KEY: price,
             self.TIME_KEY: timestamp
         })
+        self._ensure_last_prices_length()
+
+    def _ensure_last_prices_length(self):
+        if len(self._last_recent_prices) > self.MAX_LAST_RECENT_PRICES:
+            # only take the most recent prices
+            self._last_recent_prices = self._last_recent_prices[self.MAX_LAST_RECENT_PRICES // 2:]
 
     def new_event(self, price, timestamp, trigger_above, allow_instant_fill=True):
         """
