@@ -50,6 +50,11 @@ class ExchangeSymbolData:
 
         self.logger = logging.get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
+    def stop(self):
+        self.price_events_manager.stop()
+        self.prices_manager.stop()
+        self.exchange_manager = None
+
     # candle functions
     async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False, partial=False,
                                     upsert=False):

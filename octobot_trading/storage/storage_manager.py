@@ -43,15 +43,16 @@ class StorageManager(util.Initializable):
         ).initialize(
             exchange=self.exchange_manager.exchange_name
         )
-        for storage in self._storages():
+        for storage in self._storages(True):
             try:
                 await storage.start()
             except Exception as e:
                 self.logger.exception(e, True, f"Error when initializing {storage}: {e}")
 
     async def stop(self):
-        for storage in self._storages():
-            await storage.stop()
+        for storage in self._storages(False):
+            if storage:
+                await storage.stop()
         self.exchange_manager = None
         self.trades_storage = self.orders_storage = self.transactions_storage = \
             self.portfolio_storage = self.candles_storage = None
@@ -63,16 +64,16 @@ class StorageManager(util.Initializable):
             await storage.store_history()
 
     def _historical_storages(self):
-        for storage in self._storages():
+        for storage in self._storages(True):
             if storage.is_historical:
                 yield storage
 
-    def _storages(self):
+    def _storages(self, create_missing):
         return (
-            self.trades_storage or self._trade_storage_factory(),
-            self.transactions_storage or self._transaction_storage_factory(),
-            self.candles_storage or self._candles_storage_factory(),
-            self.portfolio_storage or self._portfolio_storage_factory(),
+            self.trades_storage or self._trade_storage_factory() if create_missing else self.trades_storage,
+            self.transactions_storage or self._transaction_storage_factory() if create_missing else self.transactions_storage,
+            self.candles_storage or self._candles_storage_factory() if create_missing else self.candles_storage,
+            self.portfolio_storage or self._portfolio_storage_factory() if create_missing else self.portfolio_storage,
         )
 
     def _trade_storage_factory(self):

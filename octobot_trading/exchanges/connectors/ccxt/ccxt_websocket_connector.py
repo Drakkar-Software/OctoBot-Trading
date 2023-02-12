@@ -296,7 +296,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         if time.time() - self._last_close_time > self.MIN_CONNECTION_CLOSE_INTERVAL:
             # Close client to force connections re-open. The next watch_xyz will recreate the connection
             self.logger.debug(f"Closing exchange connection.")
-            await self.client.close()
+            await ccxt_client_util.close_client(self.client)
             # Recreate self.client as close() is not enough to completely close the websocket connection to the exchange
             # at least up to ccxt 2.6.33
             self._create_client()

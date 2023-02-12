@@ -26,6 +26,13 @@ class ExchangeSymbolsData:
         self.config = exchange_manager.config
         self.exchange_symbol_data = {}
 
+    async def stop(self):
+        self.exchange_manager = None
+        self.exchange = None
+        for exchange_symbol_data in self.exchange_symbol_data.values():
+            exchange_symbol_data.stop()
+        self.exchange_symbol_data = {}
+
     def get_exchange_symbol_data(self, symbol, allow_creation=True):
         try:
             return self.exchange_symbol_data[symbol]

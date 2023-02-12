@@ -59,6 +59,30 @@ def create_client(exchange_class, exchange_name, exchange_manager, logger,
     return client, is_authenticated
 
 
+async def close_client(client):
+    await client.close()
+    client.markets = {}
+    client.markets_by_id = {}
+    client.ids = []
+    client.last_json_response = {}
+    client.last_http_response = ""
+    client.last_response_headers = {}
+    client.markets_loading = None
+    client.currencies = {}
+    client.baseCurrencies = {}
+    client.quoteCurrencies = {}
+    client.currencies_by_id = {}
+    client.codes = []
+    client.symbols = {}
+    client.accounts = []
+    client.accounts_by_id = {}
+    client.ohlcvs = {}
+    client.trades = {}
+    client.orderbooks = {}
+    throttler = client.throttle
+    throttler.queue.clear()
+
+
 def get_unauthenticated_exchange(exchange_class, options, headers, additional_config):
     client = exchange_class(_get_client_config(options, headers, additional_config))
     _use_http_proxy_if_necessary(client)
