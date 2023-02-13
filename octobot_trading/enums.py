@@ -391,6 +391,7 @@ class MarkPriceSources(enum.Enum):
     EXCHANGE_MARK_PRICE = "exchange_mark_price"
     RECENT_TRADE_AVERAGE = "recent_trade_average"
     TICKER_CLOSE_PRICE = "ticker_close_price"
+    CANDLE_CLOSE_PRICE = "candle_close_price"
 
 
 class WebsocketFeeds(enum.Enum):

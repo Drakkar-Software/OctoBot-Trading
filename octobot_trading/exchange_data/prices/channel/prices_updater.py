@@ -84,8 +84,11 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         """
         try:
             mark_price = prices_manager.calculate_mark_price_from_recent_trade_prices(
-                [decimal.Decimal(str(last_price[enums.ExchangeConstantsOrderColumns.PRICE.value]))
-                 for last_price in recent_trades])
+                [
+                    decimal.Decimal(str(last_price[enums.ExchangeConstantsOrderColumns.PRICE.value]))
+                    for last_price in recent_trades
+                ]
+            )
 
             await self.push(symbol, mark_price, mark_price_source=enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value)
         except Exception as e:

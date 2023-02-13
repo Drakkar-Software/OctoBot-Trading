@@ -16,12 +16,14 @@
 #  License along with this library.
 import asyncio
 import time
+import decimal
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
 import octobot_trading.exchanges as exchanges
 
@@ -57,7 +59,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 self.tasks = [
                     asyncio.create_task(self._candle_callback(time_frame, pair))
                     for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
-                    for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
+                    for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+                ]
 
     def _get_traded_pairs(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs
@@ -130,6 +133,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             await self.channel.exchange_manager.get_symbol_data(pair) \
                 .handle_candles_update(time_frame, candles[:-1], replace_all=True, partial=False, upsert=False)
             self.logger.debug(f"Candle history loaded for {pair} on {time_frame}")
+            self._set_mark_price_from_candle(pair, candles[-1])
             return pair, time_frame, candles
         elif should_retry:
             # When candle history cannot be loaded, retry to load it later
@@ -142,6 +146,15 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             self.logger.warning(f"Failed to initialize candle history for {pair} on {time_frame}. Retrying on "
                                 f"the next time frame update")
             return None
+
+    def _set_mark_price_from_candle(self, pair, candle):
+        # Initialize mark price with last candle close to allow trading low liquidity markets. Those that might
+        # take some time to produce a trade and therefore initialize their mark price, which is
+        # required to create orders and might block the trading initialization
+        self.channel.exchange_manager.get_symbol_data(pair).handle_mark_price_update(
+            decimal.Decimal(str(candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value])),
+            enums.MarkPriceSources.TICKER_CLOSE_PRICE.value
+        )
 
     async def _push_initial_candles(self, initial_candles_data):
         self.logger.debug("Pushing completed initialization candles")
