@@ -75,7 +75,7 @@ TESTED_EXCHANGES = ["binance", "okx", "gateio", "huobi", "bitget",
 DEFAULT_FUTURE_EXCHANGES = ["bybit"]
 SIMULATOR_TESTED_EXCHANGES = ["bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
-                              "wavesexchange"]
+                              "wavesexchange", "cryptocom"]
 
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
