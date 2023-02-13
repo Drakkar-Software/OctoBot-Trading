@@ -79,8 +79,6 @@ async def close_client(client):
     client.ohlcvs = {}
     client.trades = {}
     client.orderbooks = {}
-    throttler = client.throttle
-    throttler.queue.clear()
 
 
 def get_unauthenticated_exchange(exchange_class, options, headers, additional_config):
