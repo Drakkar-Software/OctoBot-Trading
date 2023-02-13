@@ -44,7 +44,8 @@ class RecentTradesManager(util.Initializable):
             new_recent_trades: list = [
                 trade
                 for trade in recent_trades
-                if trade not in self.recent_trades]
+                if trade not in self.recent_trades
+            ]
             self.recent_trades.extend(new_recent_trades)
             return new_recent_trades
 

@@ -78,8 +78,9 @@ class PricesManager(util.Initializable):
                 self.mark_price_from_sources[mark_price_source] = (mark_price, 0)
 
         # set mark price value if other sources have expired
-        elif mark_price_source == enums.MarkPriceSources.TICKER_CLOSE_PRICE.value and not \
-                self._are_other_sources_valid(enums.MarkPriceSources.TICKER_CLOSE_PRICE.value):
+        elif mark_price_source in (enums.MarkPriceSources.TICKER_CLOSE_PRICE.value,
+                                   enums.MarkPriceSources.CANDLE_CLOSE_PRICE.value) and not \
+                self._are_other_sources_valid(mark_price_source):
             self._set_mark_price_value(mark_price)
             is_mark_price_updated = True
 
@@ -104,10 +105,9 @@ class PricesManager(util.Initializable):
                     raise asyncio.TimeoutError()
                 await asyncio.wait_for(self.valid_price_received_event.wait(), timeout)
             except asyncio.TimeoutError:
-                self.logger.warning("Timeout when waiting for current market price. This probably means that too many "
-                                    "trading pairs are being used at the same time and the exchange's rate limit is "
-                                    "preventing OctoBot from working properly. If this issue persists, please consider "
-                                    "using websocket connections.")
+                self.logger.warning("Timeout when waiting for current market price. This probably means that the "
+                                    "required mark price market as a very low liquidity. Market price will be "
+                                    "available as soon as a trade will happen on this market.")
                 raise
         return self.mark_price
 
