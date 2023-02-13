@@ -17,25 +17,32 @@ import octobot_trading.storage as storage
 
 
 async def clear_trades_storage_history(exchange_manager, flush=True):
-    await exchange_manager.storage_manager.trades_storage.clear_history(flush=flush)
-    await exchange_manager.exchange_personal_data.trades_manager.reload_history()
+    if exchange_manager.storage_manager.trades_storage:
+        await exchange_manager.storage_manager.trades_storage.clear_history(flush=flush)
+    if exchange_manager.exchange_personal_data.trades_manager:
+        await exchange_manager.exchange_personal_data.trades_manager.reload_history()
 
 
 async def clear_orders_storage_history(exchange_manager, flush=True):
-    await exchange_manager.storage_manager.orders_storage.clear_history(flush=flush)
+    if exchange_manager.storage_manager.orders_storage:
+        await exchange_manager.storage_manager.orders_storage.clear_history(flush=flush)
 
 
 async def clear_transactions_storage_history(exchange_manager, flush=True):
-    await exchange_manager.storage_manager.transactions_storage.clear_history(flush=flush)
+    if exchange_manager.storage_manager.transactions_storage:
+        await exchange_manager.storage_manager.transactions_storage.clear_history(flush=flush)
 
 
 async def clear_portfolio_storage_history(exchange_manager, flush=True):
-    await exchange_manager.storage_manager.portfolio_storage.clear_history(flush=flush)
-    await exchange_manager.exchange_personal_data.portfolio_manager.reset_history()
+    if exchange_manager.storage_manager.portfolio_storage:
+        await exchange_manager.storage_manager.portfolio_storage.clear_history(flush=flush)
+    if exchange_manager.exchange_personal_data.portfolio_manager:
+        await exchange_manager.exchange_personal_data.portfolio_manager.reset_history()
 
 
 async def clear_candles_storage_history(exchange_manager, flush=True):
-    await exchange_manager.storage_manager.candles_storage.clear_history(flush=flush)
+    if exchange_manager.storage_manager.candles_storage:
+        await exchange_manager.storage_manager.candles_storage.clear_history(flush=flush)
 
 
 async def clear_database_storage_history(storage_class, database, flush=True):
