@@ -38,6 +38,7 @@ cdef class PortfolioManager(util.Initializable):
     cdef public portfolio_history.HistoricalPortfolioValueManager historical_portfolio_value_manager
 
     cdef bint _is_initialized_event_set
+    cdef dict _simulated_portfolio_initial_config
 
     cpdef object handle_balance_updated(self)
     cpdef bint handle_balance_update(self, dict balance, bint is_diff_update=*)
@@ -48,6 +49,7 @@ cdef class PortfolioManager(util.Initializable):
     cdef object _apply_locked_assets(self, dict previous_assets)
     cdef void _load_portfolio(self, bint reset_from_config)
     cdef object _load_simulated_portfolio_from_history(self)
+    cdef void set_simulated_portfolio_initial_config(self, dict portfolio_config)
     cdef object _reset_portfolio(self)
-    cdef void _set_starting_simulated_portfolio(self)
+    cdef void _apply_starting_simulated_portfolio(self)
     cdef bint _refresh_simulated_trader_portfolio_from_order(self, object order)

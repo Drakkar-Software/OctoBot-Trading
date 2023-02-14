@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import copy
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
@@ -44,6 +45,7 @@ class PortfolioManager(util.Initializable):
         self.historical_portfolio_value_manager = None
         self.reference_market = None
         self._is_initialized_event_set = False
+        self._simulated_portfolio_initial_config = None
 
     async def initialize_impl(self):
         """
@@ -53,6 +55,9 @@ class PortfolioManager(util.Initializable):
         if self.exchange_manager.is_storage_enabled() and self.historical_portfolio_value_manager is None:
             self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
             await self.historical_portfolio_value_manager.initialize()
+        self.set_simulated_portfolio_initial_config(
+            self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]
+        )
         self._reset_portfolio()
 
     def handle_balance_update(self, balance, is_diff_update=False):
@@ -263,7 +268,7 @@ class PortfolioManager(util.Initializable):
                 if reset_from_config \
                         or self.historical_portfolio_value_manager is None \
                         or not self.historical_portfolio_value_manager.has_previous_session_portfolio():
-                    self._set_starting_simulated_portfolio()
+                    self._apply_starting_simulated_portfolio()
                 else:
                     self._load_simulated_portfolio_from_history()
             self.logger.info(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
@@ -278,13 +283,14 @@ class PortfolioManager(util.Initializable):
         )
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
-    def _set_starting_simulated_portfolio(self):
+    def set_simulated_portfolio_initial_config(self, portfolio_config):
+        self._simulated_portfolio_initial_config = copy.deepcopy(portfolio_config)
+
+    def _apply_starting_simulated_portfolio(self):
         """
         Load new portfolio from config settings
         """
-        portfolio_amount_dict = personal_data.parse_decimal_config_portfolio(
-            self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]
-        )
+        portfolio_amount_dict = personal_data.parse_decimal_config_portfolio(self._simulated_portfolio_initial_config)
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
     def _set_initialized_event(self):
