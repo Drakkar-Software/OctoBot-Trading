@@ -55,3 +55,7 @@ def get_account_type(is_future, is_margin, is_sandboxed, is_trader_simulated) ->
 
 def get_account_type_from_run_metadata(run_metadata) -> str:
     return storage.get_account_type_suffix_from_run_metadata(run_metadata)
+
+
+def get_account_type_from_exchange_manager(exchange_manager) -> str:
+    return storage.get_account_type_suffix_from_exchange_manager(exchange_manager)
