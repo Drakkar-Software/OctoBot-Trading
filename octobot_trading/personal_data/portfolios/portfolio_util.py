@@ -172,6 +172,9 @@ async def get_coefficient_of_determination(exchange_manager, use_high_instead_of
     :param use_high_instead_of_end_balance: best case exponential growth based on end balance or highest balance
     """
     coefficient_of_determination = 0
+    if exchange_manager.exchange_personal_data.portfolio_manager is None or \
+            exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio is None:
+        return 0
     # get data the data necessary to compute the coefficient_of_determination
     origin_portfolio = portfolio_to_float(
         exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
