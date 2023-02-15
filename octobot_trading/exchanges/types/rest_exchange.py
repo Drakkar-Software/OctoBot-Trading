@@ -605,7 +605,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     Margin and leverage
     """
 
-    async def get_symbol_leverage(self, symbol: str):
+    async def get_symbol_leverage(self, symbol: str, **kwargs: dict):
         """
         :param symbol: the symbol
         :return: the current symbol leverage multiplier
@@ -652,7 +652,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_maintenance_margin_rate is not implemented")
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs):
+    async def set_symbol_leverage(self, symbol: str, leverage: float, **kwargs):
         """
         Set the symbol leverage
         :param symbol: the symbol

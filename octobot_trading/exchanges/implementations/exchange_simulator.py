@@ -82,7 +82,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
             maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE
         )
 
-    async def get_symbol_leverage(self, symbol: str):
+    async def get_symbol_leverage(self, symbol: str, **kwargs: dict):
         return constants.DEFAULT_SYMBOL_LEVERAGE
 
     async def get_margin_type(self, symbol: str):
@@ -97,7 +97,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     async def get_position_mode(self, symbol: str, **kwargs: dict):
         return constants.DEFAULT_SYMBOL_POSITION_MODE
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs):
+    async def set_symbol_leverage(self, symbol: str, leverage: float, **kwargs):
         pass  # let trader update the contract
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):

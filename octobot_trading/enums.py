@@ -364,6 +364,11 @@ class ExchangeConstantsMarketPropertyColumns(enum.Enum):
     FEE = "fee"  # withdraw
 
 
+class ExchangeConstantsLeveragePropertyColumns(enum.Enum):
+    LEVERAGE = "leverage"
+    RAW = "raw"
+
+
 class FeePropertyColumns(enum.Enum):
     TYPE = "type"  # taker of maker
     CURRENCY = "currency"  # currency the fee is paid in

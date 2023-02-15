@@ -750,6 +750,8 @@ class Position(util.Initializable):
         """
         _check_for_liquidation defines rules for a position to be liquidated
         """
+        if self.liquidation_price.is_nan():
+            return
         if (self.is_short()
             and self.mark_price >= self.liquidation_price > constants.ZERO) or (
             self.is_long()

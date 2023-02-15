@@ -90,6 +90,11 @@ class AbstractAdapter:
         return self.parse_funding_rate(fixed, **kwargs)
 
     @_adapter
+    def adapt_leverage(self, raw, **kwargs):
+        fixed = self.fix_leverage(raw, **kwargs)
+        return self.parse_leverage(fixed, **kwargs)
+
+    @_adapter
     def adapt_funding_rate_history(self, raw, **kwargs):
         fixed = self.fix_funding_rate_history(raw, **kwargs)
         return self.parse_funding_rate_history(fixed, **kwargs)
@@ -184,6 +189,13 @@ class AbstractAdapter:
 
     def parse_funding_rate(self, fixed, **kwargs):
         raise NotImplementedError("parse_funding_rate is not implemented")
+
+    def fix_leverage(self, raw, **kwargs):
+        # add generic logic if necessary
+        return raw
+
+    def parse_leverage(self, fixed, **kwargs):
+        raise NotImplementedError("parse_leverage is not implemented")
 
     def fix_funding_rate_history(self, raw, **kwargs):
         # add generic logic if necessary
