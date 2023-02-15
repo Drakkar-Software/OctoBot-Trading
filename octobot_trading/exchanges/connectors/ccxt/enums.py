@@ -48,6 +48,7 @@ class ExchangePositionCCXTColumns(enum.Enum):
     DATETIME = "datetime"
     PERCENTAGE = "percentage"
     SIDE = "side"
+    HEDGED = "hedged"
     INFO = "info"
 
 

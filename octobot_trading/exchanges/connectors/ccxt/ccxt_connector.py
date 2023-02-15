@@ -449,6 +449,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported as err:
             raise NotImplementedError from err
 
+    async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
+        return self.adapter.adapt_position(
+            self.client.parse_position({}, market=self.client.market(symbol)),
+            force_empty=True
+        )
+
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         return self.adapter.adapt_funding_rate(
             await self.client.fetch_funding_rate(symbol=symbol, params=kwargs)
@@ -596,6 +602,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             trading_type_to_ccxt_property[trading_type],
             "False"
         ) == "True"
+
+    def is_expirable_symbol(self, symbol) -> bool:
+        return self.client.market(symbol).get("expiry") is not None
 
     def get_pair_market_type(self, pair, property_name, def_value=False):
         return self.client.safe_string(

@@ -44,6 +44,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     PRINT_DEBUG_LOGS = False
     ALLOW_TRADES_FROM_CLOSED_ORDERS = False  # set True when get_my_recent_trades should use get_closed_orders
+    # Set True when exchange is not returning empty position details when fetching a position with a specified symbol
+    # Exchange will then fallback to self.get_mocked_empty_position when having get_position returning None
+    REQUIRES_MOCKED_EMPTY_POSITION = False
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -558,11 +561,15 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         """
-        Get the current user symbol position list
+        Get the current user symbol position
         :param symbol: the position symbol
-        :return: the user symbol position list
+        :return: the user symbol position
         """
-        return await self.connector.get_position(symbol=symbol, **kwargs)
+        position = await self.connector.get_position(symbol=symbol, **kwargs)
+        if position is None and self.REQUIRES_MOCKED_EMPTY_POSITION:
+            # this exchange does not support empty position fetching, create an empty position from available data
+            return await self.get_mocked_empty_position(symbol, **kwargs)
+        return position
 
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
         """
@@ -570,6 +577,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: the user position list
         """
         return await self.connector.get_positions(symbols=symbols, **kwargs)
+
+    async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
+        """
+        Override when necessary
+        Called when self.REQUIRES_MOCKED_EMPTY_POSITION is True and a fetched position is None
+        :param symbol: the position symbol
+        """
+        return await self.connector.get_mocked_empty_position(symbol=symbol, **kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         """
@@ -685,6 +700,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: True if the symbol is related to an inverse contract
         """
         return self.supports_trading_type(symbol, enums.FutureContractType.INVERSE_PERPETUAL)
+
+    def is_expirable_symbol(self, symbol):
+        """
+        :param symbol: the symbol
+        :return: True if the symbol is related to a contract having an expiration date
+        """
+        return self.connector.is_expirable_symbol(symbol)
 
     """
     Parsers todo remove ?
