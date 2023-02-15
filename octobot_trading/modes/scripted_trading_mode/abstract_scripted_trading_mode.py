@@ -292,3 +292,13 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def _pre_script_call(self, context):
         await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
+
+    async def post_trigger(self):
+        if not self.exchange_manager.is_backtesting:
+            # update db after each run only in live mode
+            for database in self.all_databases().values():
+                if database:
+                    try:
+                        await database.flush()
+                    except Exception as err:
+                        self.logger.exception(err, True, f"Error when flushing database: {err}")
