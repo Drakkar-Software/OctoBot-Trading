@@ -325,11 +325,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             await self.post_trigger()
 
     async def post_trigger(self):
-        if not self.exchange_manager.is_backtesting:
-            # update db after each run only in live mode
-            for database in self.all_databases().values():
-                if database:
-                    await database.flush()
+        pass
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame,
                              trigger_source: str) -> None:
