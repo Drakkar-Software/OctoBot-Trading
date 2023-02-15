@@ -182,11 +182,12 @@ class CCXTAdapter(adapters.AbstractAdapter):
         contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)))
         contracts = constants.ZERO if force_empty \
             else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
+        is_empty = contracts == constants.ZERO
         liquidation_price = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)
         if force_empty or liquidation_price is None:
             liquidation_price = constants.NaN
         else:
-            liquidation_price = decimal.Decimal(str(fixed))
+            liquidation_price = decimal.Decimal(str(liquidation_price))
         try:
             fixed.update({
                 enums.ExchangeConstantsPositionColumns.SYMBOL.value: symbol,
@@ -201,34 +202,35 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     else -contract_size * contracts,
                 enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value:
                     self.connector.exchange_manager.exchange.get_contract_type(symbol),
-                enums.ExchangeConstantsPositionColumns.COLLATERAL.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
+                    self.safe_decimal(fixed, ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value,
+                                      constants.DEFAULT_SYMBOL_LEVERAGE),
+                enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: None if is_empty else
+                    enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED, True) else
+                    enums.PositionMode.ONE_WAY,
+                # next values are always 0 when the position empty (0 contracts)
+                enums.ExchangeConstantsPositionColumns.COLLATERAL.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.NOTIONAL.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.NOTIONAL.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.INITIAL_MARGIN.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.LEVERAGE.value: constants.ZERO if force_empty else
-                    decimal.Decimal(
-                        f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.REALISED_PNL.value, 0)}"),
                 enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: liquidation_price,
-                enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: constants.ZERO if force_empty else
+                enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: constants.ZERO if is_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: None if force_empty else
-                    enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED, True) else
-                    enums.PositionMode.ONE_WAY,
             })
         except KeyError as e:
             self.logger.error(f"Fail to parse position dict ({e})")
@@ -242,6 +244,18 @@ class CCXTAdapter(adapters.AbstractAdapter):
     def parse_funding_rate(self, fixed, **kwargs):
         # CCXT standard funding_rate parsing logic
         return fixed
+
+    def fix_leverage(self, raw, **kwargs):
+        fixed = super().fix_leverage(raw, **kwargs)
+        # CCXT standard leverage fixing logic
+        return fixed
+
+    def parse_leverage(self, fixed, **kwargs):
+        # WARNING no CCXT standard leverage parsing logic
+        # HAS TO BE IMPLEMENTED IN EACH EXCHANGE IMPLEMENTATION
+        return {
+            enums.ExchangeConstantsLeveragePropertyColumns.RAW.value: fixed,
+        }
 
     def fix_funding_rate_history(self, raw, **kwargs):
         fixed = super().fix_funding_rate_history(raw, **kwargs)

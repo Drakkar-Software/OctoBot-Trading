@@ -468,7 +468,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def get_contract_size(self, symbol: str):
         return decimal.Decimal(str(ccxt_client_util.get_contract_size(self.client, symbol)))
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
+    async def get_symbol_leverage(self, symbol: str, **kwargs: dict):
+        return self.adapter.adapt_leverage(
+            await self.client.fetch_leverage(symbol=symbol, params=kwargs)
+        )
+
+    async def set_symbol_leverage(self, symbol: str, leverage: float, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
