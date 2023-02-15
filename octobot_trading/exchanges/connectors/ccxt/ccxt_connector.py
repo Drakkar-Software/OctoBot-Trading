@@ -334,7 +334,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             with self.error_describer():
                 method = self.client.fetch_my_trades if self.client.has['fetchMyTrades'] else self.client.fetch_trades
                 trades = self.adapter.adapt_trades(await method(symbol=symbol, since=since, limit=limit, params=kwargs))
-                if trades:
+                if trades or not self.exchange_manager.exchange.ALLOW_TRADES_FROM_CLOSED_ORDERS:
                     return trades
                 # on some exchanges, recent trades are only fetching very recent trade. also try closed orders
                 return await self.exchange_manager.exchange.get_closed_orders(
