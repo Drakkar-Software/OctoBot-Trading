@@ -169,7 +169,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard position fixing logic
         return fixed
 
-    def parse_position(self, fixed, **kwargs):
+    def parse_position(self, fixed, force_empty=False, **kwargs):
         # CCXT standard position parsing logic
         # if mode is enums.PositionMode.ONE_WAY:
         original_side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value)
@@ -180,7 +180,13 @@ class CCXTAdapter(adapters.AbstractAdapter):
         #     if side == enums.PositionSide.LONG.value else enums.PositionSide.
         symbol = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value)
         contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)))
-        contracts = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
+        contracts = constants.ZERO if force_empty \
+            else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
+        liquidation_price = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)
+        if force_empty or liquidation_price is None:
+            liquidation_price = constants.NaN
+        else:
+            liquidation_price = decimal.Decimal(str(fixed))
         try:
             fixed.update({
                 enums.ExchangeConstantsPositionColumns.SYMBOL.value: symbol,
@@ -195,33 +201,34 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     else -contract_size * contracts,
                 enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value:
                     self.connector.exchange_manager.exchange.get_contract_type(symbol),
-                enums.ExchangeConstantsPositionColumns.COLLATERAL.value:
+                enums.ExchangeConstantsPositionColumns.COLLATERAL.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.NOTIONAL.value:
+                enums.ExchangeConstantsPositionColumns.NOTIONAL.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value:
+                enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.INITIAL_MARGIN.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
+                enums.ExchangeConstantsPositionColumns.LEVERAGE.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value:
+                enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.REALISED_PNL.value:
+                enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.REALISED_PNL.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value:
-                    decimal.Decimal(
-                        f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.MARK_PRICE.value:
+                enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: liquidation_price,
+                enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0)}"),
-                enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value:
+                enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: constants.ZERO if force_empty else
                     decimal.Decimal(
                         f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0)}"),
+                enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: None if force_empty else
+                    enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED, True) else
+                    enums.PositionMode.ONE_WAY,
             })
         except KeyError as e:
             self.logger.error(f"Fail to parse position dict ({e})")
