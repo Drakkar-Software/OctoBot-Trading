@@ -20,6 +20,7 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc,
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
+import octobot_trading.exchanges as exchanges
 import octobot_trading.errors as errors
 # required to catch async loop context exceptions
 from tests import event_loop
@@ -30,9 +31,10 @@ pytestmark = pytest.mark.asyncio
 
 class TestWavesExchangeRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "wavesexchange"
-    SYMBOL = "BTC/USDN"
+    SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "WAVES/BTC"
+    ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = RealExchangeTester.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1    # account for dumped candle
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -67,33 +69,46 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
             self.check_market_status_limits(market_status, expect_invalid_price_limit_values=False)
 
     async def test_get_symbol_prices(self):
-        # without limit
-        symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 1440
-        # check candles order (oldest first)
-        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
-        # check last candle is the current candle
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+        previous_DUMP_INCOMPLETE_LAST_CANDLE_value = exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE
+        try:
+            # todo set RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True in exchange tentacle
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True
+            # without limit
+            symbol_prices = await self.get_symbol_prices()
+            assert len(symbol_prices) == 1440 - 1 or len(symbol_prices) == 1440  # last candle might be removed
+            # check candles order (oldest first)
+            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            # check last candle is the current candle
+            assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 200
-        # check candles order (oldest first)
-        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
-        # check last candle is the current candle
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+            # try with candles limit (used in candled updater)
+            symbol_prices = await self.get_symbol_prices(limit=201)
+            assert len(symbol_prices) == 200 or len(symbol_prices) == 201  # last candle might be removed
+            # check candles order (oldest first)
+            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            # check last candle is the current candle
+            assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        with pytest.raises(errors.UnexpectedAdapterError):
-            # try with since and limit (used in data collector)
-            assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
+            with pytest.raises(errors.UnexpectedAdapterError):
+                # try with since and limit (used in data collector)
+                assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
+        finally:
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = previous_DUMP_INCOMPLETE_LAST_CANDLE_value
 
     async def test_get_kline_price(self):
-        kline_price = await self.get_kline_price()
-        assert len(kline_price) == 1
-        assert len(kline_price[0]) == 6
-        kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
-        # assert kline is the current candle
-        assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
+        previous_DUMP_INCOMPLETE_LAST_CANDLE_value = exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE
+        try:
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True
+            # not supported because of exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE
+            with pytest.raises(errors.NotSupported):
+                kline_price = await self.get_kline_price(limit=2)
+                assert len(kline_price) == 1
+                assert len(kline_price[0]) == 6
+                kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
+                # assert kline is the current candle
+                assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
+        finally:
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = previous_DUMP_INCOMPLETE_LAST_CANDLE_value
 
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
@@ -128,17 +143,16 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
             Ectc.PREVIOUS_CLOSE.value
         ))
         if check_content:
-            # todo fix in tentacle: replace 0.0 by None
-            assert ticker[Ectc.HIGH.value] is None
-            assert ticker[Ectc.LOW.value] is None
+            assert ticker[Ectc.HIGH.value]
+            assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value] is None
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value] is None
             assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value] is None
-            assert ticker[Ectc.CLOSE.value] is None
-            assert ticker[Ectc.LAST.value] is None
+            assert ticker[Ectc.OPEN.value]
+            assert ticker[Ectc.CLOSE.value]
+            assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value] is None
+            assert ticker[Ectc.BASE_VOLUME.value]
             assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
             RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)

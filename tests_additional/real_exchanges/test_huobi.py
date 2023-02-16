@@ -85,8 +85,7 @@ class TestHuobiRealExchangeTester(RealExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with since and limit (used in data collector)
-        with pytest.raises(errors.FailedRequest):
-            assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
+        assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()

@@ -214,8 +214,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                               **kwargs: dict) -> typing.Optional[list]:
         try:
             with self.error_describer():
+                limit = kwargs.pop("limit", 1)
+                since = kwargs.pop("since", None)
                 return self.adapter.adapt_kline(
-                    await self.client.fetch_ohlcv(symbol, time_frame.value, limit=1, params=kwargs)
+                    await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since, params=kwargs)
                 )
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported

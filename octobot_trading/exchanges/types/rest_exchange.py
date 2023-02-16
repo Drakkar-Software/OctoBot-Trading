@@ -47,6 +47,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Set True when exchange is not returning empty position details when fetching a position with a specified symbol
     # Exchange will then fallback to self.get_mocked_empty_position when having get_position returning None
     REQUIRES_MOCKED_EMPTY_POSITION = False
+    DUMP_INCOMPLETE_LAST_CANDLE = False  # set True in tentacle when the exchange can return incomplete last candles
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -375,7 +376,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                 **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_symbol_prices(symbol=symbol, time_frame=time_frame, limit=limit, **kwargs)
 
-    async def get_kline_price(self, symbol: str, time_frame: commons_enums.TimeFrames, **kwargs: dict) -> typing.Optional[list]:
+    async def get_kline_price(self, symbol: str, time_frame: commons_enums.TimeFrames,
+                              **kwargs: dict) -> typing.Optional[list]:
+        if self.DUMP_INCOMPLETE_LAST_CANDLE:
+            raise errors.NotSupported(f"Can't fetch kline when the last candle from exchange can't be fetched")
         return await self.connector.get_kline_price(symbol=symbol, time_frame=time_frame, **kwargs)
 
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:

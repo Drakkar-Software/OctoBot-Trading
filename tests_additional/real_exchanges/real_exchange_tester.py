@@ -150,6 +150,9 @@ class RealExchangeTester:
     def get_ms_time():
         return int(Exchange.milliseconds())
 
+    def get_timeframe_seconds(self):
+        return commons_enums.TimeFramesMinutes[self.TIME_FRAME] * constants.MINUTE_TO_SECONDS
+
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
         assert sorted(elements, key=lambda x: x[sort_key], reverse=reverse) == elements
