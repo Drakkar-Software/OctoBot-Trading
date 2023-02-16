@@ -19,7 +19,7 @@ cpdef tuple create_client(object exchange_class, str exchange_name, object excha
                                    dict options, dict headers, dict additional_config,
                                    bint should_authenticate, object unauthenticated_exchange_fallback=*)
 cpdef object get_unauthenticated_exchange(object exchange_class, dict options, dict headers, dict additional_config)
-cpdef object set_sandbox_mode(object client, bint is_sandboxed)
+cpdef object set_sandbox_mode(object exchange_connector, bint is_sandboxed)
 cpdef dict get_ccxt_client_login_options(object exchange_manager)
 cpdef set get_symbols(object client)
 cpdef set get_time_frames(object client)
