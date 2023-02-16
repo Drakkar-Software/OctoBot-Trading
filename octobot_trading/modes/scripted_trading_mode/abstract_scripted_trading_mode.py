@@ -97,15 +97,19 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
 
     async def reload_scripts(self):
         for is_live in (False, True):
-            module = self.__class__.TRADING_SCRIPT_MODULE if is_live else self.__class__.BACKTESTING_SCRIPT_MODULE
-            importlib.reload(module)
-            self.register_script_module(module, live=is_live)
-            # reload config
-            await self.reload_config(self.exchange_manager.bot_id)
-            if is_live:
-                # todo cancel and restart live tasks
-                await self.start_over_database()
-
+            if ((is_live and self.__class__.TRADING_SCRIPT_MODULE)
+                or (not is_live and self.__class__.BACKTESTING_SCRIPT_MODULE)):
+                module = (self.__class__.TRADING_SCRIPT_MODULE 
+                          if is_live 
+                          else self.__class__.BACKTESTING_SCRIPT_MODULE)
+                importlib.reload(module)
+                self.register_script_module(module, live=is_live)
+                # reload config
+                await self.reload_config(self.exchange_manager.bot_id)
+                if is_live:
+                    # todo cancel and restart live tasks
+                    await self.start_over_database()
+                    
     async def start_over_database(self):
         await modes_util.clear_plotting_cache(self)
         symbol_db = databases.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
@@ -267,7 +271,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
         try:
             await self._pre_script_call(context)
-            await self.trading_mode.get_script(live=True)(context)
+            if hasattr(self.trading_mode, "TRADING_SCRIPT_MODULE") and self.trading_mode.TRADING_SCRIPT_MODULE:
+                await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
         except (commons_errors.MissingDataError, commons_errors.ExecutionAborted) as e:
