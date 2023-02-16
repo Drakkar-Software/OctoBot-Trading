@@ -87,9 +87,15 @@ def get_unauthenticated_exchange(exchange_class, options, headers, additional_co
     return client
 
 
-def set_sandbox_mode(client, is_sandboxed):
-    client.setSandboxMode(is_sandboxed)
-
+def set_sandbox_mode(exchange_connector, is_sandboxed):
+    try:
+        exchange_connector.client.setSandboxMode(is_sandboxed)
+    except ccxt.NotSupported as e:
+        default_type = exchange_connector.client.options.get('defaultType', None)
+        additional_info = f" in type {default_type}" if default_type else ""
+        exchange_connector.logger.warning(f"{exchange_connector.name} does not support sandboxing {additional_info}: {e}")
+        # raise exception to stop this exchange and prevent dealing with a real funds exchange
+        raise e
 
 def get_ccxt_client_login_options(exchange_manager):
     """

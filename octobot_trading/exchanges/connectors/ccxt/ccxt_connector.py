@@ -70,8 +70,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def initialize_impl(self):
         try:
             if self.exchange_manager.exchange.is_supporting_sandbox():
-                self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
-
+                ccxt_client_util.set_sandbox_mode(
+                    self, self.exchange_manager.is_sandboxed)
+                
             if self._should_authenticate() and not self.exchange_manager.exchange_only:
                 await self._ensure_auth()
 
@@ -601,15 +602,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.client.safe_value(self.client.markets, pair, {}), property_name, def_value
         )
 
-    def set_sandbox_mode(self, is_sandboxed):
-        try:
-            ccxt_client_util.set_sandbox_mode(self.client, is_sandboxed)
-        except ccxt.NotSupported as e:
-            default_type = self.client.options.get('defaultType', None)
-            additional_info = f" in type {default_type}" if default_type else ""
-            self.logger.warning(f"{self.name} does not support sandboxing {additional_info}: {e}")
-            # raise exception to stop this exchange and prevent dealing with a real funds exchange
-            raise e
 
     """
     Parsers todo: remove all parsers
