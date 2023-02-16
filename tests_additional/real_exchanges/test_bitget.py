@@ -88,9 +88,8 @@ class TestBitgetRealExchangeTester(RealExchangeTester):
         # try with candles limit (used in candled updater)
         symbol_prices = await self.get_symbol_prices(limit=50)
         assert len(symbol_prices) == 50
-        # Bitget is not supporting more than 100 candles per request (exchange side limitation)
         symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 100
+        assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle

@@ -15,7 +15,7 @@
 #  License along with this library.
 import pytest
 
-from octobot_commons.enums import TimeFrames, PriceIndexes
+from octobot_commons.enums import TimeFrames, PriceIndexes, TimeFramesMinutes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
@@ -75,30 +75,47 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
                                             low_cost_max=1,
                                             expect_invalid_price_limit_values=False)
 
+    def _get_ohlcv_params(self, limit):
+        # to be added in tentacle
+        to_time = self.get_ms_time()
+        return {
+            "since": to_time - (self.get_timeframe_seconds() * (limit + 1) * 1000),
+            "limit": limit,
+        }
+
     async def test_get_symbol_prices(self):
-        # without limit
-        symbol_prices = await self.get_symbol_prices()
+        # without limit is not supported
+        with pytest.raises(errors.FailedRequest):
+            await self.get_symbol_prices()
+        # limit is required
+        # todo add param in tentacle
+        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(100))
         assert len(symbol_prices) == 100
-        symbol_prices = await self.get_symbol_prices(limit=751)
-        assert len(symbol_prices) == 751
+        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(500))
+        assert len(symbol_prices) == 500
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 200
+        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(200))
+        assert len(symbol_prices) == 200    # see possibleLimitValues
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with since and limit (used in data collector)
-        assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
+        params = {
+            "since": self.CANDLE_SINCE,
+            "limit": 50,
+        }
+        assert await self.get_symbol_prices(**params) == []    # not supported
 
     async def test_get_kline_price(self):
-        kline_price = await self.get_kline_price()
+        # todo add param in tentacle
+        kline_price = await self.get_kline_price(**self._get_ohlcv_params(1))
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
         kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
