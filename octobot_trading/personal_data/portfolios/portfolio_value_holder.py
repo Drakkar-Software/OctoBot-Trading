@@ -312,20 +312,24 @@ class PortfolioValueHolder:
             if parsed_symbol.base == currency:
                 first_ref_market = parsed_symbol.quote
                 second_symbol_str = symbol_util.merge_currencies(
-                        first_ref_market, self.portfolio_manager.reference_market
+                    first_ref_market, self.portfolio_manager.reference_market
+                )
+                try:
+                    first_ref_market_value = (
+                        self.convert_currency_value_using_last_prices(
+                            quantity, currency, first_ref_market
                         )
-                # check if second pair is available
-                # first pair is already known to be available
-                if self.portfolio_manager.exchange_manager.symbol_exists(
-                    second_symbol_str
+                    )
+                except errors.MissingPriceDataError:
+                    # first pair might not be initialized
+                    # or is not available at all
+                    continue  # trying with other pairs
+                if first_ref_market_value:
+                    # check if second pair is available
+                    if self.portfolio_manager.exchange_manager.symbol_exists(
+                        second_symbol_str
                     ):
-                    try:
-                        first_ref_market_value = (
-                            self.convert_currency_value_using_last_prices(
-                                quantity, currency, first_ref_market
-                            )
-                        )
-                        if first_ref_market_value:
+                        try:
                             ref_market_value = (
                                 self.convert_currency_value_using_last_prices(
                                     first_ref_market_value,
@@ -334,11 +338,36 @@ class PortfolioValueHolder:
                                 )
                             )
                             if ref_market_value:
+                                if currency in self.missing_currency_data_in_exchange:
+                                    self.missing_currency_data_in_exchange.remove(currency)
                                 return ref_market_value
-                    except errors.MissingPriceDataError:
-                        # conversion pairs might not be initialized
-                        # or is not available at all
-                        pass # continue trying with other pairs
+                        except errors.MissingPriceDataError:
+                            # conversion pairs might not be initialized
+                            # or is not available at all
+                            pass  # continue trying with reversed pair
+                    # try reversed second pair
+                    reversed_second_symbol_str = symbol_util.merge_currencies(
+                        self.portfolio_manager.reference_market, first_ref_market
+                    )
+                    if self.portfolio_manager.exchange_manager.symbol_exists(
+                        reversed_second_symbol_str
+                    ):
+                        try:
+                            conversion_value = (
+                                self.convert_currency_value_using_last_prices(
+                                    constants.ONE,
+                                    self.portfolio_manager.reference_market,
+                                    first_ref_market,
+                                )
+                            )
+                            if conversion_value:
+                                if currency in self.missing_currency_data_in_exchange:
+                                    self.missing_currency_data_in_exchange.remove(currency)
+                                return first_ref_market_value / conversion_value
+                        except errors.MissingPriceDataError:
+                            # conversion pairs might not be initialized
+                            # or is not available at all
+                            pass  # continue trying with other pairs
         return None
 
     def _has_price_data(self, symbol):
