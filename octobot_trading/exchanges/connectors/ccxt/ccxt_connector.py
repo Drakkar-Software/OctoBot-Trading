@@ -680,6 +680,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # 15 pairs, each on 3 time frames
         return 45
 
+    def log_ddos_error(self, error):
+        self.logger.error(
+            f"DDoSProtection triggered [{error} ({error.__class__.__name__})]. "
+            f"Last response headers: {self.client.last_response_headers} "
+            f"Last json response: {self.client.last_json_response}"
+        )
+
     @contextlib.contextmanager
     def error_describer(self):
         try:
@@ -687,11 +694,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
             if self.exchange_manager.exchange.should_log_on_ddos_exception(e):
-                self.logger.error(
-                    f"DDoSProtection triggered [{e} ({e.__class__.__name__})]. "
-                    f"Last response headers: {self.client.last_response_headers} "
-                    f"Last json response: {self.client.last_json_response}"
-                )
+                self.log_ddos_error(e)
             raise
         except ccxt.RequestTimeout as e:
             raise octobot_trading.errors.FailedRequest(f"Request timeout: {e}") from e

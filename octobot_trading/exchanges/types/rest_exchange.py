@@ -166,6 +166,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
             raise errors.MissingFunds(e)
         except ccxt.NotSupported:
             raise errors.NotSupported
+        except ccxt.DDoSProtection as e:
+            # raised upon rate limit issues, last response data might have details on what is happening
+            if self.should_log_on_ddos_exception(e):
+                self.connector.log_ddos_error(e)
+            raise errors.FailedRequest(f"Failed to order operation: {e.__class__.__name__} {e}") from e
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             print(traceback.format_exc(), file=sys.stderr)
