@@ -31,6 +31,8 @@ import octobot_tentacles_manager.api as tentacles_manager_api
 
 
 class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
+    last_calls_by_bot_id_and_time_frame: dict = {}
+
     TRADING_SCRIPT_MODULE = None
     BACKTESTING_SCRIPT_MODULE = None
     ALLOW_CUSTOM_TRIGGER_SOURCE = True
@@ -112,19 +114,40 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                     
     async def start_over_database(self):
         await modes_util.clear_plotting_cache(self)
-        symbol_db = databases.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
-                                                                            self.exchange_manager.exchange_name,
-                                                                            self.symbol)
+        symbol_db = databases.RunDatabasesProvider.instance().get_symbol_db(
+            self.bot_id, self.exchange_manager.exchange_name, self.symbol
+        )
         symbol_db.set_initialized_flags(False)
+        run_db = databases.RunDatabasesProvider.instance().get_run_db(self.bot_id)
         for producer in self.producers:
-            for time_frame, call_args in producer.last_call_by_timeframe.items():
-                run_db = databases.RunDatabasesProvider.instance().get_run_db(self.bot_id)
+            for (
+                time_frame,
+                call_args_by_symbols,
+            ) in self.last_calls_by_bot_id_and_time_frame[
+                self.exchange_manager.bot_id
+            ].items():
                 await producer.init_user_inputs(False)
-                run_db.set_initialized_flags(False, (time_frame, ))
-                await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
-                                                           reset_cache_db_ids=True)
-                await producer.call_script(*call_args)
-                await run_db.flush()
+                run_db.set_initialized_flags(False, (time_frame,))
+                await databases.CacheManager().close_cache(
+                    commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
+                    reset_cache_db_ids=True,
+                )
+                await producer.init_user_inputs(False)
+                run_db.set_initialized_flags(False, (time_frame,))
+                await databases.CacheManager().close_cache(
+                    commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
+                    reset_cache_db_ids=True,
+                )
+                if self.symbol in call_args_by_symbols:
+                    await producer.call_script(
+                        *call_args_by_symbols[self.symbol],
+                    )
+                    await run_db.flush()
+                else:
+                    self.logger.debug(
+                        "Wont't call script as last_calls_by_bot_id_and_time_frame "
+                        f"is not initialized for {self.symbol}."
+                    )
 
     def set_initialized_trading_pair_by_bot_id(self, symbol, time_frame, initialized):
         # todo migrate to event tree
@@ -164,7 +187,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel, config, trading_mode, exchange_manager)
-        self.last_call_by_timeframe = {}
 
     async def start(self) -> None:
         await super().start()
@@ -222,6 +244,16 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trigger_time = candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] + \
                            commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame)] * \
                            commons_constants.MINUTE_TO_SECONDS
+            self.log_last_call_by_exchange_id(
+                matrix_id=self.matrix_id,
+                cryptocurrency=cryptocurrency,
+                symbol=symbol,
+                time_frame=time_frame,
+                trigger_source=commons_enums.ActivationTopics.FULL_CANDLES.value,
+                trigger_cache_timestamp=trigger_time,
+                candle=candle,
+                kline=None,
+            )
             await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
                                    commons_enums.TriggerSource.OHLCV.value,
                                    trigger_time,
@@ -231,6 +263,18 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
     async def kline_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame, kline: dict):
         async with self.trading_mode_trigger(), self.trading_mode.remote_signal_publisher(symbol):
+            self.log_last_call_by_exchange_id(
+                matrix_id=self.matrix_id,
+                cryptocurrency=cryptocurrency,
+                symbol=symbol,
+                time_frame=time_frame,
+                trigger_source=commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value,
+                trigger_cache_timestamp=kline[
+                    commons_enums.PriceIndexes.IND_PRICE_TIME.value
+                ],
+                candle=None,
+                kline=kline,
+            )
             await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
                                    commons_enums.TriggerSource.KLINE.value,
                                    kline[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
@@ -261,8 +305,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.trading_mode, matrix_id, cryptocurrency, symbol, time_frame,
             trigger_source, trigger_cache_timestamp, candle, kline, init_call=init_call
         )
-        self.last_call_by_timeframe[time_frame] = \
-            (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp, candle, kline, init_call)
         context.matrix_id = matrix_id
         context.cryptocurrency = cryptocurrency
         context.symbol = symbol
@@ -297,7 +339,47 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def _pre_script_call(self, context):
         await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
+        
+    def log_last_call_by_exchange_id(
+        self,
+        matrix_id,
+        cryptocurrency,
+        symbol,
+        time_frame,
+        trigger_source,
+        trigger_cache_timestamp,
+        candle,
+        kline,
+    ):
+        if (
+            self.exchange_manager.bot_id
+            not in self.trading_mode.last_calls_by_bot_id_and_time_frame
+        ):
+            self.trading_mode.last_calls_by_bot_id_and_time_frame[
+                self.exchange_manager.bot_id
+            ] = {}
+        if (
+            time_frame
+            not in self.trading_mode.last_calls_by_bot_id_and_time_frame[
+                self.exchange_manager.bot_id
+            ]
+        ):
+            self.trading_mode.last_calls_by_bot_id_and_time_frame[
+                self.exchange_manager.bot_id
+            ][time_frame] = {}
 
+        self.trading_mode.last_calls_by_bot_id_and_time_frame[
+            self.exchange_manager.bot_id
+        ][time_frame][symbol] = (
+            matrix_id,
+            cryptocurrency,
+            symbol,
+            time_frame,
+            trigger_source,
+            trigger_cache_timestamp,
+            candle,
+            kline,
+        )
     async def post_trigger(self):
         if not self.exchange_manager.is_backtesting:
             # update db after each run only in live mode
