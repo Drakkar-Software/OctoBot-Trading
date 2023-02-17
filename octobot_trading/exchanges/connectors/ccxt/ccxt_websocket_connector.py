@@ -253,8 +253,9 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             self.options, self.headers, self.additional_config,
             self._should_authenticate()
         )
-        if self.exchange_manager.exchange.is_supporting_sandbox():
-            ccxt_client_util.set_sandbox_mode(self, self.exchange_manager.is_sandboxed)
+        if (self.exchange_manager.is_sandboxed 
+            and self.exchange_manager.exchange.is_supporting_sandbox()):
+            ccxt_client_util.set_sandbox_mode(self, is_sandboxed=True)
 
     def _should_authenticate(self):
         return self._has_authenticated_channel() and super()._should_authenticate()
