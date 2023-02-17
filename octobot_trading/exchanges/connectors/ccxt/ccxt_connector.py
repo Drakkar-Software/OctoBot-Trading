@@ -278,9 +278,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client.has['fetchOrder']:
             try:
                 with self.error_describer():
-                    params = kwargs.pop("params", {})
                     return self.adapter.adapt_order(
-                        await self.client.fetch_order(order_id, symbol, params=params, **kwargs), symbol=symbol
+                        await self.client.fetch_order(order_id, symbol, params=kwargs),
+                        symbol=symbol
                     )
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
@@ -478,9 +478,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def set_symbol_leverage(self, symbol: str, leverage: float, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
-    async def set_symbol_margin_type(self, symbol: str, isolated: bool):
-        return await self.client.set_margin_mode(symbol=symbol,
-                                                 marginType=self.CCXT_ISOLATED if isolated else self.CCXT_CROSSED)
+    async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
+        return await self.client.set_margin_mode(
+            symbol=symbol,
+            marginType=self.CCXT_ISOLATED if isolated else self.CCXT_CROSSED,
+            params=kwargs,
+        )
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         return await self.client.set_position_mode(self, hedged=not one_way, symbol=symbol)

@@ -100,7 +100,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     async def set_symbol_leverage(self, symbol: str, leverage: float, **kwargs):
         pass  # let trader update the contract
 
-    async def set_symbol_margin_type(self, symbol: str, isolated: bool):
+    async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         pass  # let trader update the contract
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
