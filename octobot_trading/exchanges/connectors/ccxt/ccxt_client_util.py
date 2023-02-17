@@ -96,6 +96,8 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
         exchange_connector.logger.warning(f"{exchange_connector.name} does not support sandboxing {additional_info}: {e}")
         # raise exception to stop this exchange and prevent dealing with a real funds exchange
         raise e
+    return None
+
 
 def get_ccxt_client_login_options(exchange_manager):
     """
