@@ -176,13 +176,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
             print(traceback.format_exc(), file=sys.stderr)
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
 
-    async def _verify_order(self, created_order, order_type, symbol, price, side, params=None):
+    async def _verify_order(self, created_order, order_type, symbol, price, side, get_order_params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
-                params = params or {}
+                params = get_order_params or {}
                 fetched_order = await self.get_order(
-                    created_order[ecoc.ID.value], symbol=symbol, params=params
+                    created_order[ecoc.ID.value], symbol=symbol, **params
                 )
                 if fetched_order is None:
                     created_order[ecoc.STATUS.value] = enums.OrderStatus.PENDING_CREATION.value
@@ -670,14 +670,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol, **kwargs)
 
-    async def set_symbol_margin_type(self, symbol: str, isolated: bool):
+    async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         """
         Set the symbol margin type
         :param symbol: the symbol
         :param isolated: when False, margin type is cross, else it's isolated
         :return: the update result
         """
-        return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated)
+        return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated, **kwargs)
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         """

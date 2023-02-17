@@ -86,6 +86,7 @@ from octobot_trading.personal_data.orders.order_util import (
     get_pre_order_data,
     get_pnl_transaction_source_from_order,
     is_stop_order,
+    is_take_profit_order,
     get_trade_order_type,
     create_as_chained_order,
     is_associated_pending_order,
