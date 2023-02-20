@@ -21,7 +21,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
 import pytest
 
-from tests.exchanges import exchange_manager, DEFAULT_EXCHANGE_NAME
+from tests.exchanges import exchange_manager as exchange_manager_fixture, DEFAULT_EXCHANGE_NAME
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -52,8 +52,8 @@ class MockedCCXTWebsocketConnector(exchanges.CCXTWebsocketConnector):
         enums.WebsocketFeeds.L1_BOOK: True,
     }
 
-    def __init__(self, config, local_exchange_manager, adapter_class=None, additional_config=None, websocket_name=None):
-        super().__init__(config, local_exchange_manager, adapter_class=adapter_class, additional_config=additional_config,
+    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, websocket_name=None):
+        super().__init__(config, exchange_manager, adapter_class=adapter_class, additional_config=additional_config,
                          websocket_name=websocket_name)
         self.called_feed_event = {
             feed: asyncio.Event()
@@ -119,10 +119,10 @@ class MockedWebSocketExchange(exchanges.DefaultWebSocketExchange):
 
 
 @pytest.fixture
-def default_websocket_exchange(exchange_manager):
+def default_websocket_exchange(exchange_manager_fixture):
     try:
         print("yield MockedWebSocketExchange")
-        yield MockedWebSocketExchange(exchange_manager.config, exchange_manager)
+        yield MockedWebSocketExchange(exchange_manager_fixture.config, exchange_manager_fixture)
         print("post 1 yield MockedWebSocketExchange")
     finally:
         print("post 2 yield MockedWebSocketExchange")
