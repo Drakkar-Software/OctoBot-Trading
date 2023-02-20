@@ -554,11 +554,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 update_data = await watch_func(*g_args, **g_kwargs)
                 just_got_disconnected = True
                 if update_data:
-                    try:
-                        print(f"pre callback {callback.__name__}")
-                        await callback(update_data, **g_kwargs)
-                    finally:
-                        print(f"post callback {callback.__name__}")
+                    await callback(update_data, **g_kwargs)
                 if enable_throttling:
                     # ccxt keeps updating the internal structures while waiting
                     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
