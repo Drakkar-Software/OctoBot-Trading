@@ -124,6 +124,7 @@ def default_websocket_exchange(exchange_manager):
 
 
 async def test_start_receive_feeds_and_stop(default_websocket_exchange):
+    print("init_websocket")
     await default_websocket_exchange.init_websocket(
         default_websocket_exchange.exchange_manager.exchange_config.traded_time_frames,
         default_websocket_exchange.exchange_manager.exchange_config.traded_symbol_pairs,
@@ -133,10 +134,15 @@ async def test_start_receive_feeds_and_stop(default_websocket_exchange):
     # usually last about 5s
     data_reception_timeout = 90
     try:
+        print("default_websocket_exchange.start_sockets")
         await default_websocket_exchange.start_sockets()
         assert len(default_websocket_exchange.websocket_connectors[0].channels) == 4
         await default_websocket_exchange.websocket_connectors[0].await_each_feed_call(data_reception_timeout)
+        print("await_each_feed_call done")
     finally:
+        print("default_websocket_exchange.stop_sockets")
         await default_websocket_exchange.stop_sockets()
+        print("default_websocket_exchange.close_sockets")
         await default_websocket_exchange.close_sockets()
+        print("default_websocket_exchange.clear")
         default_websocket_exchange.clear()

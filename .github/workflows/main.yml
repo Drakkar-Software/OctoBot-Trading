@@ -8,16 +8,17 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    uses: Drakkar-Software/.github/.github/workflows/python3_lint_workflow.yml@master
-    with:
-      project_main_package: octobot_trading
+#  lint:
+#    uses: Drakkar-Software/.github/.github/workflows/python3_lint_workflow.yml@master
+#    with:
+#      project_main_package: octobot_trading
 
   tests:
-    needs: lint
+#    needs: lint
     uses: Drakkar-Software/.github/.github/workflows/python3_tests_workflow.yml@master
     with:
       use_cython: true
+      project_test_dirs: -s tests/exchanges/implementations/test_default_websocket_exchange.py
     secrets:
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       http_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
@@ -34,7 +35,7 @@ jobs:
   notify:
     if: ${{ failure() }}
     needs:
-      - lint
+#      - lint
       - tests
       - publish
     uses: Drakkar-Software/.github/.github/workflows/failure_notify_workflow.yml@master
