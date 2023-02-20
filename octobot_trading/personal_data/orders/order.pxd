@@ -121,6 +121,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_short(self)
     cpdef bint is_refreshing(self)
     cpdef bint can_be_edited(self)
+    cpdef bint use_current_price_as_origin_price(self)
     cpdef object get_position_side(self, object future_contract)
     cpdef void on_fill_actions(self)
     cpdef bint has_exchange_fetched_fees(self)

@@ -38,3 +38,8 @@ class MarketOrder(order_class.Order):
     def can_be_edited(self):
         # instantly filled orders can't be edited
         return False
+
+    def use_current_price_as_origin_price(self):
+        # Override to return True when the current order price can't be set by the user (ex: market orders)
+        return True
+
