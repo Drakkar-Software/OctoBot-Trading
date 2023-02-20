@@ -132,6 +132,8 @@ class Order(util.Initializable):
         changed: bool = False
         should_update_total_cost = False
 
+        price = current_price if self.use_current_price_as_origin_price() else price
+
         if order_id and self.order_id != order_id:
             self.order_id = order_id
 
@@ -331,6 +333,10 @@ class Order(util.Initializable):
     def can_be_edited(self):
         # orders that are not yet open or already open can be edited
         return self.state is None or (self.state.is_open() and not self.is_refreshing())
+
+    def use_current_price_as_origin_price(self):
+        # Override to return True when the current order price can't be set by the user (ex: market orders)
+        return False
 
     def get_position_side(self, future_contract):
         """
