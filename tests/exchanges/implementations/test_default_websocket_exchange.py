@@ -142,7 +142,9 @@ async def test_start_receive_feeds_and_stop(default_websocket_exchange):
     try:
         print("default_websocket_exchange.start_sockets")
         await default_websocket_exchange.start_sockets()
+        print("done default_websocket_exchange.start_sockets")
         assert len(default_websocket_exchange.websocket_connectors[0].channels) == 4
+        print("await_each_feed_call")
         await default_websocket_exchange.websocket_connectors[0].await_each_feed_call(data_reception_timeout)
         print("await_each_feed_call done")
     finally:
