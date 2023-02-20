@@ -120,7 +120,13 @@ class MockedWebSocketExchange(exchanges.DefaultWebSocketExchange):
 
 @pytest.fixture
 def default_websocket_exchange(exchange_manager):
-    yield MockedWebSocketExchange(exchange_manager.config, exchange_manager)
+    try:
+        print("yield MockedWebSocketExchange")
+        yield MockedWebSocketExchange(exchange_manager.config, exchange_manager)
+        print("post 1 yield MockedWebSocketExchange")
+    finally:
+        print("post 2 yield MockedWebSocketExchange")
+
 
 
 async def test_start_receive_feeds_and_stop(default_websocket_exchange):
