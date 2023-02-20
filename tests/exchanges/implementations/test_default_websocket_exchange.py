@@ -146,3 +146,4 @@ async def test_start_receive_feeds_and_stop(default_websocket_exchange):
         await default_websocket_exchange.close_sockets()
         print("default_websocket_exchange.clear")
         default_websocket_exchange.clear()
+        print("default_websocket_exchange.clear DONE")
