@@ -584,7 +584,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 )
                 return
             except Exception as err:
-                print(f"Exception !!! {err}")
                 self.logger.exception(
                     err,
                     True,
