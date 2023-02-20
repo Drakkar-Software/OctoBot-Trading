@@ -176,7 +176,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         if self._reconnect_task is not None and not self._reconnect_task.done():
             self._reconnect_task.cancel()
         try:
-            await self.client.close()
+            if self.client is not None:
+                await self.client.close()
             self.stopped_event.set()
         except Exception as e:
             self.logger.exception(e, False)
@@ -295,7 +296,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 self.logger.exception(err, True, f"Error when trigger exchange auto-reconnect: {err}")
 
     async def _close_exchange_to_force_reconnect(self):
-        if time.time() - self._last_close_time > self.MIN_CONNECTION_CLOSE_INTERVAL:
+        if time.time() - self._last_close_time > self.MIN_CONNECTION_CLOSE_INTERVAL and not self.should_stop:
             # Close client to force connections re-open. The next watch_xyz will recreate the connection
             self.logger.debug(f"Closing exchange connection.")
             await ccxt_client_util.close_client(self.client)
