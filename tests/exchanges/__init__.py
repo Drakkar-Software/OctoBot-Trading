@@ -47,17 +47,12 @@ async def exchange_manager():
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = False
     await exchange_manager_instance.initialize()
-    print("init exchange_manager_instance")
     try:
         yield exchange_manager_instance
-        print("post yield exchange_manager_instance")
     finally:
-        print("cancel_ccxt_throttle_task")
         cancel_ccxt_throttle_task()
-        print("exchange_manager_instance.stop")
         await exchange_manager_instance.stop()
         # let updaters gracefully shutdown
-        print("wait_asyncio_next_cycle.stop")
         await wait_asyncio_next_cycle()
 
 
