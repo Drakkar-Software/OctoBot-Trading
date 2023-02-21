@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import decimal
 import typing
 
 import octobot_commons.async_job as async_job
@@ -93,14 +92,13 @@ class FundingUpdater(funding_channel.FundingProducer):
 
             if funding:
                 next_funding_time = funding[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value]
-                predicted_funding_rate = \
-                    funding.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN)
                 await self._push_funding(
                     symbol,
-                    decimal.Decimal(funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value]),
-                    predicted_funding_rate=decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
+                    funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
+                    predicted_funding_rate=funding[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value],
                     next_funding_time=next_funding_time,
-                    last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
+                    last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value]
+                )
                 return next_funding_time
         except (errors.NotSupported, NotImplementedError) as ne:
             self.logger.exception(ne, True, f"get_funding_rate is not supported by "
@@ -142,7 +140,18 @@ class FundingUpdater(funding_channel.FundingProducer):
             return False
         return not (
                 self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
-                or self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
+                or (
+                    (
+                        self.channel.exchange_manager.has_websocket
+                        and self.channel.exchange_manager.exchange.FUNDING_IN_WEBSOCKET_TICKER
+                    )
+                    or
+                    (
+                        not self.channel.exchange_manager.has_websocket
+                        and self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
+                    )
+
+                )
         )
 
     def _get_time_until_next_funding(self, next_funding_time):
