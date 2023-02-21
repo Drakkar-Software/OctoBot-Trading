@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_state as order_state
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
@@ -21,13 +23,15 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 class OpenOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = enums.States.OPEN if is_from_exchange_data \
-                                          or self.order.simulated \
-                                          or self.order.is_self_managed() \
-                                          or self.order.status is enums.OrderStatus.OPEN \
+        self.state = enums.States.OPEN if \
+            is_from_exchange_data \
+            or self.order.simulated \
+            or self.order.is_self_managed() \
+            or self.order.status is enums.OrderStatus.OPEN \
             else enums.States.OPENING
 
         self.has_terminated = False
+        self._is_not_open_anymore = asyncio.Event()
 
     def is_open(self) -> bool:
         """
@@ -68,10 +72,23 @@ class OpenOrderState(order_state.OrderState):
                 if self.order.status is enums.OrderStatus.CLOSED:
                     self.order.status = enums.OrderStatus.FILLED
                     self.order.state = None
+                self.set_is_not_open_anymore()
                 await order_state_factory.create_order_state(self.order, is_from_exchange_data=True)
         else:
             self.get_logger().debug(f"on_refresh_successful triggered from previous state "
                                     f"after state change on {self.order}")
+
+    def set_is_not_open_anymore(self):
+        if not self._is_not_open_anymore.is_set():
+            self._is_not_open_anymore.set()
+
+    def __del__(self):
+        super(OpenOrderState, self).__del__()
+        self.set_is_not_open_anymore()
+
+    async def wait_for_next_state(self, timeout) -> None:
+        # terminate can't be used to follow state transition in open orders
+        await asyncio.wait_for(self._is_not_open_anymore.wait(), timeout=timeout)
 
     async def terminate(self):
         """

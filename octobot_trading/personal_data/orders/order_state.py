@@ -115,6 +115,10 @@ class OrderState(state_class.State):
         except octobot_trading.errors.InvalidOrderState:
             self.get_logger().debug(f"Skipping exchange synchronisation as order has already been closed.")
 
+    async def wait_for_next_state(self, timeout) -> None:
+        # terminate is called at the end of the state for most order states
+        await self.wait_for_terminate(timeout)
+
     @staticmethod
     def ensure_not_cleared(order):
         if order.is_cleared():

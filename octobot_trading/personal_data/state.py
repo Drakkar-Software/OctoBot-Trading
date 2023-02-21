@@ -195,6 +195,9 @@ class State(util.Initializable):
             return
         await asyncio.wait_for(self.terminated.wait(), timeout=timeout)
 
+    async def wait_for_next_state(self, timeout) -> None:
+        raise NotImplementedError("wait_for_next_state is not implemented")
+
     async def on_refresh_successful(self):
         """
         Called when synchronize succeed to update the instance

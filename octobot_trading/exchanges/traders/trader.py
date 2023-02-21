@@ -149,7 +149,7 @@ class Trader(util.Initializable):
                 creation_timeout=creation_timeout
             )
 
-    async def edit_order(self, order: object,
+    async def edit_order(self, order,
                          edited_quantity: decimal.Decimal = None,
                          edited_price: decimal.Decimal = None,
                          edited_stop_price: decimal.Decimal = None,
@@ -222,7 +222,7 @@ class Trader(util.Initializable):
                 # order id changed: update orders_manager to keep consistency
                 self.exchange_manager.exchange_personal_data.orders_manager.replace_order(previous_order_id, order)
 
-    async def _create_new_order(self, new_order: object, params: dict,
+    async def _create_new_order(self, new_order, params: dict,
                                 wait_for_creation=True,
                                 creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> object:
         """
@@ -304,7 +304,7 @@ class Trader(util.Initializable):
         order.add_chained_order(chained_order)
         return params
 
-    async def cancel_order(self, order: object, ignored_order: object = None,
+    async def cancel_order(self, order, ignored_order = None,
                            wait_for_cancelling=True,
                            cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
         """
@@ -326,45 +326,85 @@ class Trader(util.Initializable):
                                                          wait_for_cancelling, cancelling_timeout)
         return False
 
-    async def _handle_order_cancellation(self, order: object, ignored_order: object,
+    async def _handle_order_cancellation(self, order, ignored_order,
                                          wait_for_cancelling: bool, cancelling_timeout: float) -> bool:
         success = True
-        async with order.lock:
-            if order.is_waiting_for_chained_trigger:
-                # order will just never get created
-                order.is_waiting_for_chained_trigger = False
-                return success
-            # if real order: cancel on exchange
-            if not self.simulate and not order.is_self_managed():
-                try:
+        if order.is_waiting_for_chained_trigger:
+            # order will just never get created
+            order.is_waiting_for_chained_trigger = False
+            return success
+        # if real order: cancel on exchange
+        if not self.simulate and not order.is_self_managed():
+            try:
+                async with order.lock:
                     try:
                         order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
                     except errors.NotSupported:
                         raise
                     except (errors.OrderCancelError, Exception) as err:
                         # retry to cancel order
-                        self.logger.debug(f"Failed to cancel order ({err}), retrying")
+                        self.logger.debug(f"Failed to cancel order ({err} {err.__class__.__name__}), retrying")
                         order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
-                except Exception as e:
-                    self.logger.exception(e, True, f"Failed to cancel order {order}")
-                    return False
-                if order_status is enums.OrderStatus.CANCELED:
-                    order.status = octobot_trading.enums.OrderStatus.CANCELED
-                    self.logger.debug(f"Successfully cancelled order {order}")
-                elif order_status is enums.OrderStatus.PENDING_CANCEL:
-                    order.status = octobot_trading.enums.OrderStatus.PENDING_CANCEL
-                    self.logger.debug(f"Order cancel in progress for {order}")
-            else:
+            except errors.OrderCancelError as err:
+                if await self._handle_order_cancel_error(order, err, wait_for_cancelling, cancelling_timeout):
+                    return True
+            except Exception as e:
+                self.logger.exception(e, True, f"Failed to cancel order {order}")
+                return False
+            if order_status is enums.OrderStatus.CANCELED:
                 order.status = octobot_trading.enums.OrderStatus.CANCELED
+                self.logger.debug(f"Successfully cancelled order {order}")
+            elif order_status is enums.OrderStatus.PENDING_CANCEL:
+                order.status = octobot_trading.enums.OrderStatus.PENDING_CANCEL
+                self.logger.debug(f"Order cancel in progress for {order}")
+        else:
+            order.status = octobot_trading.enums.OrderStatus.CANCELED
 
         await order.on_cancel(force_cancel=order.status is octobot_trading.enums.OrderStatus.CANCELED,
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
         if wait_for_cancelling and order.state is not None and order.state.is_pending():
-            self.logger.debug(f"Waiting for order cancelling, order: {order}")
-            await order.state.wait_for_terminate(cancelling_timeout)
-            self.logger.debug(f"Completed order cancelling, order: {order}")
+            await self._wait_for_order_cancel(order, cancelling_timeout)
         return True
+
+    async def _handle_order_cancel_error(self, order, err, wait_for_cancelling, cancelling_timeout):
+        # can't cancel order: it likely means that the order is not open on exchange anymore
+        if order.state is None:
+            raise err
+        # trigger forced refresh to get an update of the order
+        if order.state.is_refreshing():
+            await order.state.wait_for_next_state(cancelling_timeout)
+        else:
+            previous_status = order.status
+            await order.state.synchronize(force_synchronization=True)
+            if previous_status != order.status:
+                # status changed: wait for state change
+                await order.state.wait_for_next_state(cancelling_timeout)
+        if order.is_cancelled():
+            self.logger.debug(f"Tried to cancel an already cancelled order.")
+            return True
+        if order.is_cancelling():
+            if wait_for_cancelling:
+                await self._wait_for_order_cancel(order, cancelling_timeout)
+            return True
+        elif order.is_open():
+            raise errors.OpenOrderError(
+                "Order is open, but can't be cancelled. This is unexpected"
+            ) from err
+        elif order.is_filled():
+            raise errors.FilledOrderError("Order is filled, it can't be cancelled") from err
+        elif order.is_closed():
+            raise errors.ClosedOrderError("Order is closed, it can't be cancelled") from err
+        else:
+            # should not happen
+            raise errors.OrderCancelError(
+                f"Can't cancel order and unknown post sync order state for order: {order}."
+            ) from err
+
+    async def _wait_for_order_cancel(self, order, cancelling_timeout):
+        self.logger.debug(f"Waiting for order cancelling, order: {order}")
+        await order.state.wait_for_terminate(cancelling_timeout)
+        self.logger.debug(f"Completed order cancelling, order: {order}")
 
     async def cancel_order_with_id(self, order_id, emit_trading_signals=False,
                                    wait_for_cancelling=True,

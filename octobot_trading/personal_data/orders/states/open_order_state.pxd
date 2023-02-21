@@ -18,3 +18,6 @@ cimport octobot_trading.personal_data.orders.order_state as order_state
 
 cdef class OpenOrderState(order_state.OrderState):
     cdef bint has_terminated
+    cdef object _is_not_open_anymore    # asyncio.Event()
+
+    cpdef void set_is_not_open_anymore(self)

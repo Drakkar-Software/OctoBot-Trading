@@ -423,7 +423,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 # get a cancelled order).
                 return enums.OrderStatus.CANCELED
         except ccxt.OrderNotFound as e:
-            self.logger.error(f"Trying to cancel order with id {order_id} but order was not found")
+            self.logger.debug(f"Trying to cancel order with id {order_id} but order was not found")
             raise octobot_trading.errors.OrderCancelError from e
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
             raise octobot_trading.errors.NotSupported from e

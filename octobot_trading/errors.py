@@ -51,6 +51,36 @@ class OrderCancelError(Exception):
     """
 
 
+class UnexpectedExchangeSideOrderStateError(Exception):
+    """
+    Raised when an order is in an unexpected state when fetched from exchange
+    """
+
+
+class OpenOrderError(UnexpectedExchangeSideOrderStateError):
+    """
+    Raised when an order is unexpectedly open
+    """
+
+
+class FilledOrderError(UnexpectedExchangeSideOrderStateError):
+    """
+    Raised when an order is unexpectedly filled
+    """
+
+
+class CancellingOrderError(UnexpectedExchangeSideOrderStateError):
+    """
+    Raised when an order is unexpectedly cancelling
+    """
+
+
+class ClosedOrderError(UnexpectedExchangeSideOrderStateError):
+    """
+    Raised when an order is unexpectedly closed
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the required element
