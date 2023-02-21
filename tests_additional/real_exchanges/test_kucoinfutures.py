@@ -19,8 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-import octobot_trading.enums as trading_enums
-from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
+from tests_additional.real_exchanges.real_futures_exchange_tester import RealFuturesExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -28,9 +27,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestKucoinFuturesRealExchangeTester(RealExchangeTester):
+class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
     EXCHANGE_NAME = "kucoinfutures"
-    EXCHANGE_TYPE = trading_enums.ExchangeTypes.FUTURE.value
     SYMBOL = "BTC/USDT:USDT"
     SYMBOL_2 = "BTC/USD:BTC"
     SYMBOL_3 = "XRP/USD:XRP"
@@ -133,6 +131,14 @@ class TestKucoinFuturesRealExchangeTester(RealExchangeTester):
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
 
+    async def test_get_funding_rate(self):
+        funding_rate, ticker_funding_rate = await self.get_funding_rate()
+        # patch NEXT_FUNDING_TIME in tentacle
+        self._check_funding_rate(funding_rate, has_next_time=False)
+        # no funding info in ticker
+        self._check_funding_rate(ticker_funding_rate, has_rate=False, has_last_time=False,
+                                 has_next_rate=False, has_next_time=False)
+
     @staticmethod
     def _check_ticker(ticker, symbol, check_content=False):
         assert ticker[Ectc.SYMBOL.value] == symbol
@@ -161,7 +167,7 @@ class TestKucoinFuturesRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value] is None
             assert ticker[Ectc.TIMESTAMP.value]
-            RealExchangeTester.check_ticker_typing(
+            RealFuturesExchangeTester.check_ticker_typing(
                 ticker,
                 check_open=False, check_low=False, check_high=False, check_base_volume=False
             )

@@ -32,7 +32,7 @@ class FundingManager(util.Initializable):
         self.reset_funding()
 
     def initialized(self):
-        return self.funding_rate is not constants.NaN
+        return self.funding_rate.is_nan()
 
     def reset_funding(self):
         self.funding_rate = constants.NaN
