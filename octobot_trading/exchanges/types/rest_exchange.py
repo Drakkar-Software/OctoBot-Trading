@@ -64,6 +64,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Funding rate params
     FUNDING_WITH_MARK_PRICE = False
     FUNDING_IN_TICKER = False
+    FUNDING_IN_WEBSOCKET_TICKER = False
 
     # Set when order cost is not (yet) accurately computed for a given exchange
     MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER = constants.ONE

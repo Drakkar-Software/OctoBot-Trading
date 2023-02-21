@@ -114,12 +114,6 @@ class TickerProducer(exchanges_channel.ExchangeChannelProducer):
             if not funding_from_ticker:
                 # not enough info, don't push possibly false data
                 return
-            predicted_funding_rate = funding_from_ticker.get(
-                enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN
-            )
-            funding_rate = funding_from_ticker.get(enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value, constants.NaN)
-            next_funding_time = funding_from_ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value]
-            last_funding_time = funding_from_ticker.get(enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value, constants.NaN)
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL, self.channel.exchange_manager.id)\
                 .get_internal_producer().push(
                     symbol,
