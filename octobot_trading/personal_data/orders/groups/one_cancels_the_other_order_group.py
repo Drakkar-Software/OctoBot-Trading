@@ -35,16 +35,7 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
         """
         if not self.enabled:
             return
-        for order in self.get_group_open_orders():
-            if order is not filled_order and order.is_open():
-                self.logger.info(f"Cancelling order [{order}] from order group as {filled_order} is filled")
-                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
-                    await signals.cancel_order(
-                        order.trader.exchange_manager,
-                        signals.should_emit_trading_signal(order.trader.exchange_manager),
-                        order,
-                        ignored_order=filled_order
-                    )
+        await self._cancel_orders(filled_order, "filled", filled_order)
 
     async def on_cancel(self, cancelled_order, ignored_orders=None):
         """
@@ -60,11 +51,19 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
             raise errors.OrderGroupTriggerArgumentError(f"ignored_orders supports at most 1 argument "
                                                         f"for {self.__class__.__name__}")
         ignored_order = ignored_orders[0] if ignored_orders else None
+        await self._cancel_orders(cancelled_order, "cancelled", ignored_order)
+
+    async def _cancel_orders(self, triggering_order, trigger, ignored_order):
         for order in self.get_group_open_orders():
-            if order is not cancelled_order and order.is_open():
-                self.logger.info(f"Cancelling order [{order}] from order group as {cancelled_order} is cancelled")
-                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
-                    await signals.cancel_order(order.trader.exchange_manager,
-                                               signals.should_emit_trading_signal(order.trader.exchange_manager),
-                                               order,
-                                               ignored_order=ignored_order)
+            if order is not triggering_order and order.is_open():
+                try:
+                    self.logger.info(f"Cancelling order [{order}] from order group as {triggering_order} is {trigger}")
+                    async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                        await signals.cancel_order(
+                            order.trader.exchange_manager,
+                            signals.should_emit_trading_signal(order.trader.exchange_manager),
+                            order,
+                            ignored_order=ignored_order
+                        )
+                except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
+                    self.logger.error(f"Skipping order cancel: {err}")
