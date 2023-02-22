@@ -378,9 +378,15 @@ async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol)
         # reduce only order are automatically cancelled on exchanges, only cancel simulated orders
         if (exchange_manager.is_trader_simulated or order.is_self_managed()) \
                 and order.is_open() and order.reduce_only:
-            await order.trader.cancel_order(order)
-            if order.order_group:
-                await order.order_group.on_cancel(order)
+            try:
+                await order.trader.cancel_order(order)
+                if order.order_group:
+                    await order.order_group.on_cancel(order)
+            except (    # pylint: disable=try-except-raise
+                errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError
+            ):
+                # should never happen as those should be simulated orders
+                raise
 
 
 def get_order_quantity_currency(exchange_manager, symbol):

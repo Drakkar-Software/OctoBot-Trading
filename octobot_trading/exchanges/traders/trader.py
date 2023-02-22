@@ -368,9 +368,19 @@ class Trader(util.Initializable):
         return True
 
     async def _handle_order_cancel_error(self, order, err, wait_for_cancelling, cancelling_timeout):
-        # can't cancel order: it likely means that the order is not open on exchange anymore
+        """
+        Use when an order can't be cancelled: it usually means that the order is not open on exchange anymore.
+        Will synch the given order on exchange to figure out the cancel issue if any.
+        Returns True when the order cancel ends up successful even though an error initially occurred
+        Raises OrderCancelError on unrecoverable cases
+        Raises a subclass of UnexpectedExchangeSideOrderStateError when the order is in a unexpected state
+        on exchange but is still manageable.
+        """
         if order.state is None:
-            raise err
+            raise errors.OrderCancelError(
+                f"Error when cancelling order. This order state is unset, which makes "
+                f"it impossible to this the issue. Please report it if you see it."
+            ) from err
         # trigger forced refresh to get an update of the order
         if order.state.is_refreshing():
             await order.state.wait_for_next_state(cancelling_timeout)
@@ -455,16 +465,19 @@ class Trader(util.Initializable):
                     (side is None or order.side is side) and \
                     not (order.is_cancelled() or order.is_closed()) and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
-                    cancelled = await signals.cancel_order(
-                        self.exchange_manager,
-                        emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
-                        order,
-                        wait_for_cancelling=wait_for_cancelling,
-                        cancelling_timeout=cancelling_timeout, )
-                if cancelled:
-                    cancelled_orders.append(order)
-                all_cancelled = cancelled and all_cancelled
+                try:
+                    async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                        cancelled = await signals.cancel_order(
+                            self.exchange_manager,
+                            emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
+                            order,
+                            wait_for_cancelling=wait_for_cancelling,
+                            cancelling_timeout=cancelling_timeout, )
+                    if cancelled:
+                        cancelled_orders.append(order)
+                    all_cancelled = cancelled and all_cancelled
+                except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
+                    self.logger.warning(f"Skipping order cancel: {err}")
         return all_cancelled, cancelled_orders
 
     async def cancel_all_open_orders_with_currency(
@@ -506,13 +519,19 @@ class Trader(util.Initializable):
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if not order.is_cancelled():
-                async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
-                    all_cancelled = await signals.cancel_order(
-                        self.exchange_manager,
-                        emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
-                        order,
-                        wait_for_cancelling=wait_for_cancelling,
-                        cancelling_timeout=cancelling_timeout, ) and all_cancelled
+                try:
+                    async with signals.remote_signal_publisher(
+                            self.exchange_manager, order.symbol, emit_trading_signals
+                    ):
+                        all_cancelled = await signals.cancel_order(
+                            self.exchange_manager,
+                            emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
+                            order,
+                            wait_for_cancelling=wait_for_cancelling,
+                            cancelling_timeout=cancelling_timeout, ) and all_cancelled
+                except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
+                    self.logger.warning(f"Skipping order cancel: {err}")
+                    all_cancelled = False
         return all_cancelled
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
