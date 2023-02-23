@@ -91,8 +91,14 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
     TAG = "tag"
+    MARGIN_MODE = "marginMode"
 
 
 class ExchangeWrapperLibs(enum.Enum):
     ASYNC_CCXT = "async_ccxt"
     CCXT = "ccxt"
+
+
+class ExchangeMarginTypes(enum.Enum):
+    ISOLATED = "isolated"
+    CROSS = "cross"

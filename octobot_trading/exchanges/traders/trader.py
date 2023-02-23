@@ -292,12 +292,14 @@ class Trader(util.Initializable):
         if is_bundled:
             if chained_order.order_type is enums.TraderOrderType.STOP_LOSS:
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
+                    order,
                     stop_loss_price=chained_order.origin_price
                 ))
             elif chained_order.order_type in (enums.TraderOrderType.TAKE_PROFIT,
                                               enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
                                               enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
+                    order,
                     take_profit_price=chained_order.origin_price
                 ))
         await chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
@@ -676,6 +678,7 @@ class Trader(util.Initializable):
                     symbol=symbol,
                     leverage=leverage
                 )
+            self.logger.info(f"Switching {symbol} leverage from {contract.current_leverage} to {leverage}")
             contract.set_current_leverage(leverage)
 
     async def set_symbol_take_profit_stop_loss_mode(self, symbol, new_mode: enums.TakeProfitStopLossMode):
@@ -690,6 +693,9 @@ class Trader(util.Initializable):
             if not self.simulate:
                 await self.exchange_manager.exchange.set_symbol_partial_take_profit_stop_loss(
                     symbol, contract.is_inverse_contract(), new_mode)
+            self.logger.info(
+                f"Switching {symbol} profit_stop_loss_mode from {contract.take_profit_stop_loss_mode} to {new_mode}"
+            )
             contract.set_take_profit_stop_loss_mode(new_mode)
 
     async def set_margin_type(self, symbol, side, margin_type):
@@ -701,15 +707,17 @@ class Trader(util.Initializable):
         :param margin_type: the new margin type (enums.MarginType)
         """
         contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
-        if not self.simulate:
-            await self.exchange_manager.exchange.set_symbol_margin_type(
-                symbol=symbol,
-                isolated=margin_type is enums.MarginType.ISOLATED
+        if contract.margin_type != margin_type:
+            if not self.simulate:
+                await self.exchange_manager.exchange.set_symbol_margin_type(
+                    symbol=symbol,
+                    isolated=margin_type is enums.MarginType.ISOLATED
+                )
+            self.logger.info(f"Switching {symbol} margin_type from {contract.margin_type} to {margin_type}")
+            contract.set_margin_type(
+                is_isolated=margin_type is enums.MarginType.ISOLATED,
+                is_cross=margin_type is enums.MarginType.CROSS
             )
-        contract.set_margin_type(
-            is_isolated=margin_type is enums.MarginType.ISOLATED,
-            is_cross=margin_type is enums.MarginType.CROSS
-        )
 
     async def set_position_mode(self, symbol, position_mode):
         """

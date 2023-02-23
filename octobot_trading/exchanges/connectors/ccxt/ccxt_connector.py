@@ -16,7 +16,6 @@
 #  License along with this library.
 import contextlib
 import decimal
-
 import ccxt.async_support as ccxt
 import typing
 
@@ -31,6 +30,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
@@ -44,8 +44,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     Always returns adapted data. Always throws octobot_trading errors
     Never returns row ccxt data or throw ccxt errors
     """
-    CCXT_ISOLATED = "ISOLATED"
-    CCXT_CROSSED = "CROSSED"
 
     def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None):
         super().__init__(config, exchange_manager)
@@ -311,6 +309,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                               limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOpenOrders']:
             with self.error_describer():
+                orders = await self.client.fetch_open_orders(symbol=symbol, since=since,
+                                                                     limit=limit, params=kwargs)
                 return [
                     self.adapter.adapt_order(order, symbol=symbol)
                     for order in await self.client.fetch_open_orders(symbol=symbol, since=since,
@@ -480,8 +480,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         return await self.client.set_margin_mode(
+            ccxt_enums.ExchangeMarginTypes.ISOLATED.value if isolated else ccxt_enums.ExchangeMarginTypes.CROSS.value,
             symbol=symbol,
-            marginType=self.CCXT_ISOLATED if isolated else self.CCXT_CROSSED,
             params=kwargs,
         )
 
@@ -491,10 +491,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def set_symbol_partial_take_profit_stop_loss(self, symbol: str, inverse: bool,
                                                        tp_sl_mode: enums.TakeProfitStopLossMode):
         raise NotImplementedError("set_symbol_partial_take_profit_stop_loss is not implemented")
-
-    def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
-        return self.connector.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
-                                                           take_profit_price=take_profit_price)
 
     def get_ccxt_order_type(self, order_type: enums.TraderOrderType):
         if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT,

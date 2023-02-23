@@ -44,6 +44,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         # their position)
         self.should_use_position_per_symbol = False
 
+        # used to force margin type update before positions init (if necessary)
+        self.forced_margin_type = enums.MarginType.ISOLATED
+
         # create async jobs
         self.position_update_job = async_job.AsyncJob(self._positions_fetch_and_push,
                                                       execution_interval_delay=self.POSITION_REFRESH_TIME,
@@ -74,6 +77,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             try:
                 await self.channel.exchange_manager.exchange.load_pair_future_contract(pair)
+                await self._update_contract_settings(pair)
             except NotImplementedError as e:
                 self.logger.debug(f"Can't to load {pair} contract info from exchange: {e}. "
                                   f"This contract will be created from fetched positions.")
@@ -139,6 +143,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
         if positions:
             exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions)
+            await self._update_positions_contract_settings(positions)
             await self._push_positions(positions)
 
     def _is_relevant_position(self, position_dict):
@@ -162,6 +167,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                                                           relevant_positions)
             exchange_data.update_contracts_from_positions(self.channel.exchange_manager,
                                                           positions)
+            await self._update_positions_contract_settings(positions)
             # only consider positions that are relevant to the current setup
             await self._push_positions(relevant_positions)
 
@@ -171,6 +177,22 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         if self._should_push_mark_price():
             for position in positions:
                 await self.extract_mark_price(position)
+
+    async def _update_positions_contract_settings(self, positions):
+        for position in positions:
+            if symbol := position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None):
+                await self._update_contract_settings(symbol)
+
+    async def _update_contract_settings(self, symbol):
+        try:
+            if self.forced_margin_type:
+                await self.channel.exchange_manager.trader.set_margin_type(
+                    symbol, enums.PositionSide.BOTH, self.forced_margin_type
+                )
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to update contracts settings : {e}")
+        finally:
+            self.channel.exchange_manager.exchange.set_contract_initialized_event(symbol)
 
     async def extract_mark_price(self, position_dict: dict):
         try:
