@@ -69,4 +69,4 @@ def test_get_order_additional_params(abstract_exchange):
 
 def test_get_bundled_order_parameters(abstract_exchange):
     with pytest.raises(NotImplementedError):
-        abstract_exchange.get_bundled_order_parameters()
+        abstract_exchange.get_bundled_order_parameters(None)

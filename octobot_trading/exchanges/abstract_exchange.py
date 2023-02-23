@@ -326,10 +326,11 @@ class AbstractExchange(util.Initializable):
         except KeyError:
             return False
 
-    def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
+    def get_bundled_order_parameters(self, order, stop_loss_price=None, take_profit_price=None) -> dict:
         """
-        Returns True when this exchange supports orders created upon other orders fill (ex: a stop loss created at
-        the same time as a buy order)
+        Returns the updated params when this exchange supports orders created upon other orders fill
+        (ex: a stop loss created at the same time as a buy order)
+        :param order: the initial order
         :param stop_loss_price: the bundled order stop_loss price
         :param take_profit_price: the bundled order take_profit price
         :return: A dict with the necessary parameters to create the bundled order on exchange alongside the

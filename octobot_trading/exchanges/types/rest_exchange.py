@@ -44,10 +44,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     PRINT_DEBUG_LOGS = False
     ALLOW_TRADES_FROM_CLOSED_ORDERS = False  # set True when get_my_recent_trades should use get_closed_orders
+    DUMP_INCOMPLETE_LAST_CANDLE = False  # set True in tentacle when the exchange can return incomplete last candles
     # Set True when exchange is not returning empty position details when fetching a position with a specified symbol
     # Exchange will then fallback to self.get_mocked_empty_position when having get_position returning None
     REQUIRES_MOCKED_EMPTY_POSITION = False
-    DUMP_INCOMPLETE_LAST_CANDLE = False  # set True in tentacle when the exchange can return incomplete last candles
+    # set True when get_positions() is not returning empty positions and should use get_position() instead
+    REQUIRES_SYMBOL_FOR_EMPTY_POSITION = False
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -526,7 +528,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                             position_mode=position_mode,
                                             maintenance_margin_rate=maintenance_margin_rate)
         self.pair_contracts[pair] = contract
-        self._set_contract_initialized_event(pair)
         return contract
 
     def has_pair_future_contract(self, pair):
@@ -556,7 +557,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         self.pair_contracts[pair] = future_contract
 
-    def _set_contract_initialized_event(self, symbol):
+    def set_contract_initialized_event(self, symbol):
         commons_tree.EventProvider.instance().trigger_event(
             self.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.exchange_manager.exchange_name,
@@ -586,7 +587,15 @@ class RestExchange(abstract_exchange.AbstractExchange):
         Get the current user position list
         :return: the user position list
         """
-        return await self.connector.get_positions(symbols=symbols, **kwargs)
+        if not self.REQUIRES_SYMBOL_FOR_EMPTY_POSITION:
+            return await self.connector.get_positions(symbols=symbols, **kwargs)
+        if symbols is None:
+            raise NotImplementedError(f"The symbols param is required to get multiple positions at once")
+        # force get_position when symbols is set as ccxt get_positions is only returning open positions
+        return [
+            await self.get_position(symbol, **kwargs)
+            for symbol in symbols
+        ]
 
     async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
         """
@@ -671,6 +680,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol, **kwargs)
 
+    # todo check kucoin & bybit
     async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         """
         Set the symbol margin type

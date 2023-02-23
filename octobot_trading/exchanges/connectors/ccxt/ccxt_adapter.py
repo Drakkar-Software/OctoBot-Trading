@@ -216,8 +216,8 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     self.safe_decimal(fixed, ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value,
                                       constants.DEFAULT_SYMBOL_LEVERAGE),
                 enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: None if is_empty else
-                    enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED, True) else
-                    enums.PositionMode.ONE_WAY,
+                    enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED.value, True)
+                    else enums.PositionMode.ONE_WAY,
                 # next values are always 0 when the position empty (0 contracts)
                 enums.ExchangeConstantsPositionColumns.COLLATERAL.value: constants.ZERO if is_empty else
                     decimal.Decimal(

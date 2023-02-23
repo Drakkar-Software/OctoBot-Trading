@@ -155,11 +155,6 @@ class TraderOrderType(enum.Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
-class TraderPositionType(enum.Enum):
-    CROSS = "cross"
-    ISOLATED = "isolated"
-
-
 class PositionMode(enum.Enum):
     HEDGE = "hedge_mode"
     ONE_WAY = "one_way_mode"
