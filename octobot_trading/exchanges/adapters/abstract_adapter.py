@@ -40,6 +40,13 @@ class AbstractAdapter:
         self.connector = connector
 
     @_adapter
+    def adapt_orders(self, raw, **kwargs):
+        return [
+            self.adapt_order(element, **kwargs)
+            for element in raw
+        ]
+
+    @_adapter
     def adapt_order(self, raw, **kwargs):
         fixed = self.fix_order(raw, **kwargs)
         return self.parse_order(fixed, **kwargs)

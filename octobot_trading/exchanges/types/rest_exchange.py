@@ -271,13 +271,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.create_market_buy_order(symbol, quantity, params=params)
+        return await self.connector.create_market_buy_order(symbol, quantity, price=price, params=params)
 
     async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.create_limit_buy_order(symbol, quantity, price, params=params)
 
     async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.create_market_sell_order(symbol, quantity, params=params)
+        return await self.connector.create_market_sell_order(symbol, quantity, price=price, params=params)
 
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.create_limit_sell_order(symbol, quantity, price, params=params)
@@ -451,8 +451,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
 
-    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
-        return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)
+    async def cancel_order(
+            self, order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
+    ) -> enums.OrderStatus:
+        return await self.connector.cancel_order(order_id, symbol, order_type, **kwargs)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)

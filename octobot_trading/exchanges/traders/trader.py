@@ -306,7 +306,7 @@ class Trader(util.Initializable):
         order.add_chained_order(chained_order)
         return params
 
-    async def cancel_order(self, order, ignored_order = None,
+    async def cancel_order(self, order, ignored_order=None,
                            wait_for_cancelling=True,
                            cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
         """
@@ -340,13 +340,17 @@ class Trader(util.Initializable):
             try:
                 async with order.lock:
                     try:
-                        order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+                        order_status = await self.exchange_manager.exchange.cancel_order(
+                            order.order_id, order.symbol, order.order_type
+                        )
                     except errors.NotSupported:
                         raise
                     except (errors.OrderCancelError, Exception) as err:
                         # retry to cancel order
                         self.logger.debug(f"Failed to cancel order ({err} {err.__class__.__name__}), retrying")
-                        order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+                        order_status = await self.exchange_manager.exchange.cancel_order(
+                            order.order_id, order.symbol, order.order_type
+                        )
             except errors.OrderCancelError as err:
                 if await self._handle_order_cancel_error(order, err, wait_for_cancelling, cancelling_timeout):
                     return True
@@ -381,7 +385,7 @@ class Trader(util.Initializable):
         if order.state is None:
             raise errors.OrderCancelError(
                 f"Error when cancelling order. This order state is unset, which makes "
-                f"it impossible to this the issue. Please report it if you see it."
+                f"it impossible to handle this the issue. Please report it if you see it."
             ) from err
         # trigger forced refresh to get an update of the order
         if order.state.is_refreshing():
