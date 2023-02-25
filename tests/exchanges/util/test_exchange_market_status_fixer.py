@@ -61,9 +61,11 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(1, 0, 1),
-            Ecmsc.LIMITS.value: self._get_limits(0.002190990480628382, 219.0990480628382,
-                                                 current_price / 1000, current_price * 1000,
-                                                 0.010000000000000012, 1000000000.0000011)
+            Ecmsc.LIMITS.value: self._get_limits(
+                0.002190990480628382, 21909.904806283797,
+                0.05, 10000.0,
+                0.0001095495240314191, 219099048.062838
+            )
         }
 
         ms = {
@@ -73,9 +75,11 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(4, 4, 4),
-            Ecmsc.LIMITS.value: self._get_limits(0.002190990480628382, 219.0990480628382,
-                                                 current_price / 1000, current_price * 1000,
-                                                 0.010000000000000012, 1000000000.0000011)
+            Ecmsc.LIMITS.value: self._get_limits(
+                0.002190990480628382, 21909.904806283797,
+                0.05, 10000.0,
+                0.0001095495240314191, 219099048.062838
+            )
         }
 
         current_price = 1.56e-6
@@ -86,9 +90,11 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(8, 8, 8),
-            Ecmsc.LIMITS.value: self._get_limits(641.0256410256403, 6410256.4102564035,
-                                                 current_price / 1000, current_price * 1000,
-                                                 9.999999999999991e-07, 9999.99999999999)
+            Ecmsc.LIMITS.value: self._get_limits(
+                641.0256410256403, 64102564102564.04,
+                1.5600000000000002e-09, 0.0015600000000000002,
+                9.999999999999991e-07, 99999999999.99991
+            )
         }
 
         current_price = 1.5678999
@@ -99,9 +105,11 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(7, 7, 7),
-            Ecmsc.LIMITS.value: self._get_limits(6.37795818470299, 637795.8184702988,
-                                                 current_price / 1000, current_price * 1000,
-                                                 0.01, 999999999.9999996)
+            Ecmsc.LIMITS.value: self._get_limits(
+                6.37795818470299, 63779581.84702988,
+                0, 1567.8999000000001,
+                0, 99999999999.99997
+            )
         }
 
         current_price = 25.87257
@@ -112,9 +120,11 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(5, 5, 5),
-            Ecmsc.LIMITS.value: self._get_limits(0.3865097282566056, 38650.97282566052,
-                                                 current_price / 1000, current_price * 1000,
-                                                 0.010000000000000007, 999999999.9999996)
+            Ecmsc.LIMITS.value: self._get_limits(
+                0.3865097282566056, 3865097.2825660524,
+                0, current_price * 1000,
+                0, 99999999999.99997
+            )
         }
 
         current_price = 200.555
@@ -125,9 +135,11 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(3, 3, 3),
-            Ecmsc.LIMITS.value: self._get_limits(0.04986163396574511, 4986.163396574511,
-                                                 current_price / 1000, current_price * 1000,
-                                                 0.01000000000000001, 1000000000.0000011)
+            Ecmsc.LIMITS.value: self._get_limits(
+                0.04986163396574511, 498616.3396574511,
+                3, 3,
+                0.14958490189723533, 1495849.0189723533
+            )
         }
 
     def test_exchange_market_status_fixer_without_market_status(self):
@@ -230,33 +242,35 @@ class TestExchangeMarketStatusFixer:
         emsf = ExchangeMarketStatusFixer({}, 98765)
         if not os.getenv('CYTHON_IGNORE'):
             emsf._fix_market_status_limits_with_price()
-            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(0.00010125044297068805,
-                                                                              10.125044297068806,
-                                                                              98.765, 98765000,
-                                                                              0.010000000000000005,
-                                                                              1000000000.0000006)
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                0.00010125044297068805, 1012.5044297068805,
+                98.765, 98765000,
+                0.010000000000000005, 100000000000.00005
+            )
 
             emsf = ExchangeMarketStatusFixer({}, 0.00123456)
             emsf._fix_market_status_limits_with_price()
-            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(0.8100051840331779, 8100.051840331779,
-                                                                              1.23456e-06, 1.23456,
-                                                                              1.0000000000000002e-06,
-                                                                              10000.000000000002)
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                0.8100051840331779, 81000518403.3177,
+                1.23456e-06, 1.23456,
+                1.0000000000000002e-06, 99999999999.99991
+            )
 
             emsf = ExchangeMarketStatusFixer({}, 0.0000012)
             emsf._fix_market_status_limits_with_price()
-            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(833.3333333333311, 8333333.333333311,
-                                                                              1.2e-9, 0.0012,
-                                                                              9.999999999999974e-07,
-                                                                              9999.999999999973)
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                833.3333333333311, 83333333333333.28,
+                1.2e-09, 0.0012,
+                9.999999999999974e-07, 99999999999.99992
+            )
 
             emsf = ExchangeMarketStatusFixer({}, 0.000999)
             emsf._fix_market_status_limits_with_price()
-            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(1.001001001001,
-                                                                              10010.010010009999,
-                                                                              9.99e-07, 0.9990000000000001,
-                                                                              9.999999999999991e-07,
-                                                                              9999.99999999999)
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                1.001001001001, 100100100100.09999,
+                9.99e-07, 0.9990000000000001,
+                9.999999999999991e-07, 99999999999.99991
+            )
 
     # Precision
     def test_get_price_precision(self):
