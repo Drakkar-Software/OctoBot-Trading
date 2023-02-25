@@ -79,6 +79,7 @@ cdef class AbstractExchange(util.Initializable):
     cpdef void log_order_creation_error(self, object error, object order_type, str symbol, object quantity,
                                         object price, object stop_price)
     cpdef void handle_token_error(self, object error)
+    cpdef dict get_bundled_order_parameters(self, object order, object stop_loss_price=*, object take_profit_price=*)
     cpdef bint is_supported_order_type(self, object order_type)
     cpdef bint supports_bundled_order_on_order_creation(self, object base_order, object bundled_order_type)
     cpdef bint should_log_on_ddos_exception(self, object exception)

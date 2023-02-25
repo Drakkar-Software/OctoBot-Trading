@@ -300,6 +300,7 @@ class Trader(util.Initializable):
                                               enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     order,
+                    stop_loss_price=None,
                     take_profit_price=chained_order.origin_price
                 ))
         await chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
