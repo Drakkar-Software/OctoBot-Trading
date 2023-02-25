@@ -51,28 +51,32 @@ class OrdersManager(util.Initializable):
         until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             None, symbol=symbol, since=since,
-            until=until, limit=limit, tag=tag)
+            until=until, limit=limit, tag=tag
+        )
 
     def get_open_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
         limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             enums.OrderStatus.OPEN, symbol, since=since,
-            until=until, limit=limit, tag=tag)
+            until=until, limit=limit, tag=tag
+        )
 
     def get_pending_cancel_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
         limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             enums.OrderStatus.PENDING_CANCEL, symbol, since=since, 
-            until=until, limit=limit, tag=tag)
+            until=until, limit=limit, tag=tag
+        )
 
     def get_closed_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
         limit=constants.NO_DATA_LIMIT, tag=None):
         return self._select_orders(
             enums.OrderStatus.CLOSED, symbol, since=since,
-            until=until, limit=limit, tag=tag)
+            until=until, limit=limit, tag=tag
+        )
 
     def get_order(self, order_id):
         return self.orders[order_id]
