@@ -94,9 +94,9 @@ class State(util.Initializable):
 
     async def update(self) -> None:
         """
-        Update the instance state if necessary
-        Necessary when the state is not already synchronizing and when the instance should be updated
-        Try to fix the pending state or terminate
+        Update the instance state if necessary.
+        Necessary when the state is not already synchronizing and when the instance should be updated.
+        Try to fix the pending state or terminate.
         """
         if not self.is_refreshing():
             if self.is_pending() and not await self.should_be_updated():
