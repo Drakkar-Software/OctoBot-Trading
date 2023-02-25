@@ -19,7 +19,8 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 
 
-def update_contracts_from_positions(exchange_manager, positions):
+def update_contracts_from_positions(exchange_manager, positions) -> bool:
+    updated = False
     for position in positions:
         pair = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
         if pair and pair not in exchange_manager.exchange.pair_contracts:
@@ -37,7 +38,9 @@ def update_contracts_from_positions(exchange_manager, positions):
                     constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE)
             )
             # contracts are updated from positions are fully initialized
-            if not contract.is_handled_contract():
+            if contract.is_handled_contract():
+                updated = True
+            else:
                 message = f"Unhandled contract {contract}. This contract can't be traded"
                 if pair in exchange_manager.exchange_config.traded_symbol_pairs:
                     # inform user that the contract can't be used
@@ -45,6 +48,7 @@ def update_contracts_from_positions(exchange_manager, positions):
                 else:
                     # no need to inform as the contract is not requested
                     _get_logger().debug(message)
+    return updated
 
 
 def _get_logger():

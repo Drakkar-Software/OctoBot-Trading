@@ -89,6 +89,9 @@ DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
 DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
 DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = decimal.Decimal("0.01")
 
+# used to force margin type update before positions init (if necessary)
+FORCED_MARGIN_TYPE = enums.MarginType(os.getenv("FORCED_MARGIN_TYPE", enums.MarginType.ISOLATED.value))
+
 # API
 API_LOGGER_TAG = "TradingApi"
 
