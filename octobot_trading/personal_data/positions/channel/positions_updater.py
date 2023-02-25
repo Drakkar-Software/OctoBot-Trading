@@ -177,7 +177,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
     async def _update_positions_contract_settings(self, positions):
         for position in positions:
-            if symbol := position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None):
+            symbol = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
+            if symbol is not None:
                 await self._update_contract_settings(symbol)
 
     async def _update_contract_settings(self, symbol):
