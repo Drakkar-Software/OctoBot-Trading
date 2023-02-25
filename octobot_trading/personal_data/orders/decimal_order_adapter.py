@@ -160,6 +160,10 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
     limit_cost = symbol_market_limits[Ecmsc.LIMITS_COST.value]
     limit_price = symbol_market_limits[Ecmsc.LIMITS_PRICE.value]
 
+    # adapt digits if necessary
+    valid_quantity = decimal_adapt_quantity(symbol_market, quantity, truncate)
+    valid_price = decimal_adapt_price(symbol_market, price, truncate)
+
     # case 1: try with data directly from exchange
     if personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value):
         min_quantity = decimal.Decimal(str(limit_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)))
@@ -167,10 +171,6 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
         # not all symbol data have a max quantity
         if personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value):
             max_quantity = decimal.Decimal(str(limit_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value, math.nan)))
-
-        # adapt digits if necessary
-        valid_quantity = decimal_adapt_quantity(symbol_market, quantity, truncate)
-        valid_price = decimal_adapt_price(symbol_market, price, truncate)
 
         total_order_price = valid_quantity * valid_price
 
@@ -228,8 +228,8 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
         return decimal_check_and_adapt_order_details_if_necessary(quantity, price, fixed_data,
                                                                   fixed_symbol_data=True, truncate=truncate)
     else:
-        # impossible to check if order is valid: refuse it
-        return []
+        # impossible to check if order is valid: try anyway, the exchange will tell
+        return [(valid_quantity, valid_price)]
 
 
 def decimal_add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, current_symbol_holding):

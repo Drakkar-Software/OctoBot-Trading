@@ -334,7 +334,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
         return market_status
 
-    def _fix_market_status(self, market_status, remove_price_limits=False): # todo move to adapter
+    def _fix_market_status(self, market_status, remove_price_limits=False):  # todo move to adapter
         """
         Overrite if necessary
         """

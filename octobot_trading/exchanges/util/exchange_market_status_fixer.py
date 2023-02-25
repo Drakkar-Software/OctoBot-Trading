@@ -127,8 +127,8 @@ class ExchangeMarketStatusFixer:
     LIMIT_COST_MULTIPLIER = 1
 
     # calculated from popular exchanges
-    LIMIT_AMOUNT_MAX_SUP_ATTENUATION = 6  # when log(price, 10) >= 0
-    LIMIT_AMOUNT_MAX_MINUS_3_ATTENUATION = 1  # when log(price, 10) > -3
+    LIMIT_AMOUNT_MAX_SUP_ATTENUATION = 8  # when log(price, 10) >= 0
+    LIMIT_AMOUNT_MAX_MINUS_3_ATTENUATION = 8  # when log(price, 10) < 0
     LIMIT_AMOUNT_MIN_ATTENUATION = 3  # when log(price, 10) < 0
     LIMIT_AMOUNT_MIN_SUP_ATTENUATION = 1  # when log(price, 10) >= 0
 
@@ -251,11 +251,22 @@ class ExchangeMarketStatusFixer:
         return amount_min, amount_max
 
     def _fix_market_status_limits_with_price(self):
-        # self.LIMIT_AMOUNT_MULTIPLIER
-        amount_min, amount_max = self._calculate_amount()
-        price_max = self.price_example * self.LIMIT_PRICE_MULTIPLIER
-        price_min = self.price_example / self.LIMIT_PRICE_MULTIPLIER
+        candidate_amount_min, candidate_amount_max = self._calculate_amount()
+        limits_amount = self.market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value]
+        amount_min = limits_amount.get(Ecmsc.LIMITS_PRICE_MIN.value)
+        if not is_ms_valid(amount_min, zero_valid=True):
+            amount_min = candidate_amount_min
+        amount_max = limits_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value)
+        if not is_ms_valid(amount_max, zero_valid=False):
+            amount_max = candidate_amount_max
 
+        limits_price = self.market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value]
+        price_min = limits_price.get(Ecmsc.LIMITS_PRICE_MIN.value)
+        if not is_ms_valid(price_min, zero_valid=True):
+            price_min = self.price_example / self.LIMIT_PRICE_MULTIPLIER
+        price_max = limits_price.get(Ecmsc.LIMITS_PRICE_MAX.value)
+        if not is_ms_valid(price_max, zero_valid=False):
+            price_max = self.price_example * self.LIMIT_PRICE_MULTIPLIER
         self.market_status[Ecmsc.LIMITS.value] = {
             Ecmsc.LIMITS_AMOUNT.value: {
                 Ecmsc.LIMITS_AMOUNT_MIN.value: amount_min,
