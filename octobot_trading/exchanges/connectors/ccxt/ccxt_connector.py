@@ -298,10 +298,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                              limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOrders']:
             with self.error_describer():
-                return [
-                    self.adapter.adapt_order(order, symbol=symbol)
-                    for order in await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
-                ]
+                return self.adapter.adapt_orders(
+                    await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
+                    symbol=symbol
+                )
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrders")
 
@@ -309,13 +309,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                               limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOpenOrders']:
             with self.error_describer():
-                orders = await self.client.fetch_open_orders(symbol=symbol, since=since,
-                                                                     limit=limit, params=kwargs)
-                return [
-                    self.adapter.adapt_order(order, symbol=symbol)
-                    for order in await self.client.fetch_open_orders(symbol=symbol, since=since,
-                                                                     limit=limit, params=kwargs)
-                ]
+                return self.adapter.adapt_orders(
+                    await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
+                    symbol=symbol
+                )
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
@@ -323,11 +320,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                                 limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchClosedOrders']:
             with self.error_describer():
-                return [
-                    self.adapter.adapt_order(order, symbol=symbol)
-                    for order in await self.client.fetch_closed_orders(symbol=symbol, since=since,
-                                                                       limit=limit, params=kwargs)
-                ]
+                return self.adapter.adapt_orders(
+                    await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
+                    symbol=symbol
+                )
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
@@ -401,7 +397,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol
         )
 
-    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
+    async def cancel_order(
+            self, order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
+    ) -> enums.OrderStatus:
         try:
             with self.error_describer():
                 await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
