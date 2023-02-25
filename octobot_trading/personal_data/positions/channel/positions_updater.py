@@ -44,8 +44,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         # their position)
         self.should_use_position_per_symbol = False
 
-        self.forced_margin_type = constants.FORCED_MARGIN_TYPE
-
         # create async jobs
         self.position_update_job = async_job.AsyncJob(self._positions_fetch_and_push,
                                                       execution_interval_delay=self.POSITION_REFRESH_TIME,
@@ -183,9 +181,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
     async def _update_contract_settings(self, symbol):
         try:
-            if self.forced_margin_type:
+            if constants.FORCED_MARGIN_TYPE:
                 await self.channel.exchange_manager.trader.set_margin_type(
-                    symbol, enums.PositionSide.BOTH, self.forced_margin_type
+                    symbol, enums.PositionSide.BOTH, constants.FORCED_MARGIN_TYPE
                 )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update contracts settings : {e}")
