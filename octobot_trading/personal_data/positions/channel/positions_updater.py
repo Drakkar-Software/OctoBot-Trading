@@ -44,8 +44,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         # their position)
         self.should_use_position_per_symbol = False
 
-        # used to force margin type update before positions init (if necessary)
-        self.forced_margin_type = enums.MarginType.ISOLATED
+        self.forced_margin_type = constants.FORCED_MARGIN_TYPE
 
         # create async jobs
         self.position_update_job = async_job.AsyncJob(self._positions_fetch_and_push,
@@ -142,8 +141,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 positions.append(fetched_position)
 
         if positions:
-            exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions)
-            await self._update_positions_contract_settings(positions)
+            if exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions):
+                await self._update_positions_contract_settings(positions)
             await self._push_positions(positions)
 
     def _is_relevant_position(self, position_dict):
@@ -163,11 +162,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 if self._is_relevant_position(position)
             ]
             # initialize relevant contracts first as they might be waited for
-            exchange_data.update_contracts_from_positions(self.channel.exchange_manager,
-                                                          relevant_positions)
-            exchange_data.update_contracts_from_positions(self.channel.exchange_manager,
-                                                          positions)
-            await self._update_positions_contract_settings(positions)
+            updated = exchange_data.update_contracts_from_positions(self.channel.exchange_manager, relevant_positions)
+            if exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions) or updated:
+                await self._update_positions_contract_settings(positions)
             # only consider positions that are relevant to the current setup
             await self._push_positions(relevant_positions)
 
