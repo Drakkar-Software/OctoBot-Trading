@@ -17,6 +17,7 @@
 from octobot_trading.personal_data.orders.types import limit
 from octobot_trading.personal_data.orders.types import trailing
 from octobot_trading.personal_data.orders.types import market
+from octobot_trading.personal_data.orders.types import unsupported_order
 from octobot_trading.personal_data.orders.types import unknown_order
 
 from octobot_trading.personal_data.orders.types.limit import (
@@ -40,11 +41,16 @@ from octobot_trading.personal_data.orders.types.market import (
     BuyMarketOrder,
 )
 
+from octobot_trading.personal_data.orders.types.unsupported_order import (
+    UnsupportedOrder,
+)
+
 from octobot_trading.personal_data.orders.types.unknown_order import (
     UnknownOrder,
 )
 
 __all__ = [
+    "UnsupportedOrder",
     "UnknownOrder",
     "MarketOrder",
     "SellMarketOrder",

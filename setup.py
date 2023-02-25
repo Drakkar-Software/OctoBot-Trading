@@ -107,6 +107,7 @@ packages_list = [
     "octobot_trading.personal_data.orders.states.order_state_factory",
     "octobot_trading.personal_data.orders.states.open_order_state",
     "octobot_trading.personal_data.orders.types.unknown_order",
+    "octobot_trading.personal_data.orders.types.unsupported_order",
     "octobot_trading.personal_data.orders.types.market.buy_market_order",
     "octobot_trading.personal_data.orders.types.market.market_order",
     "octobot_trading.personal_data.orders.types.market.sell_market_order",

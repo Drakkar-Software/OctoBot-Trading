@@ -723,6 +723,8 @@ def parse_order_type(raw_order):
 
         if order_type is enums.TradeOrderType.UNKNOWN:
             parsed_order_type = enums.TraderOrderType.UNKNOWN
+        elif order_type is enums.TradeOrderType.UNSUPPORTED:
+            parsed_order_type = enums.TraderOrderType.UNSUPPORTED
         elif side is enums.TradeOrderSide.BUY:
             if order_type is enums.TradeOrderType.LIMIT or order_type == enums.TradeOrderType.LIMIT_MAKER:
                 parsed_order_type = enums.TraderOrderType.BUY_LIMIT

@@ -37,6 +37,7 @@ from octobot_trading.personal_data.orders cimport order_adapter
 from octobot_trading.personal_data.orders cimport order_factory
 from octobot_trading.personal_data.orders cimport types
 from octobot_trading.personal_data.orders.types cimport (
+    UnsupportedOrder,
     UnknownOrder,
     MarketOrder,
     SellMarketOrder,
@@ -150,6 +151,7 @@ __all__ = [
     "OpenOrderState",
     "PendingCreationOrderState",
     "FillOrderState",
+    "UnsupportedOrder",
     "UnknownOrder",
     "MarketOrder",
     "SellMarketOrder",

@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.orders.types.unsupported_order as unsupported_order
+cimport octobot_trading.personal_data.orders.order as order_class
 
-cdef class UnknownOrder(unsupported_order.UnsupportedOrder):
+cdef class UnsupportedOrder(order_class.Order):
     pass

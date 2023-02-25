@@ -50,6 +50,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     REQUIRES_MOCKED_EMPTY_POSITION = False
     # set True when get_positions() is not returning empty positions and should use get_position() instead
     REQUIRES_SYMBOL_FOR_EMPTY_POSITION = False
+    SUPPORTS_SET_MARGIN_TYPE = True  # set False when there is no API to switch between cross and isolated margin types
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -682,7 +683,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol, **kwargs)
 
-    # todo check kucoin & bybit
     async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         """
         Set the symbol margin type
@@ -690,7 +690,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :param isolated: when False, margin type is cross, else it's isolated
         :return: the update result
         """
-        return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated, **kwargs)
+        if self.SUPPORTS_SET_MARGIN_TYPE:
+            return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated, **kwargs)
+        raise errors.NotSupported(f"set_symbol_margin_type is not supported on {self.get_name()}")
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         """
