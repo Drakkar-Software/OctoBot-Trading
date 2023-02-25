@@ -39,8 +39,13 @@ from octobot_trading.personal_data.orders.types cimport unknown_order
 from octobot_trading.personal_data.orders.types.unknown_order cimport (
     UnknownOrder,
 )
+from octobot_trading.personal_data.orders.types cimport unsupported_order
+from octobot_trading.personal_data.orders.types.unsupported_order cimport (
+    UnsupportedOrder,
+)
 
 __all__ = [
+    "UnsupportedOrder",
     "UnknownOrder",
     "MarketOrder",
     "SellMarketOrder",

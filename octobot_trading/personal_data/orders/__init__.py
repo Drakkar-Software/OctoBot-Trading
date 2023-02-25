@@ -34,6 +34,7 @@ from octobot_trading.personal_data.orders.order import (
 )
 from octobot_trading.personal_data.orders import types
 from octobot_trading.personal_data.orders.types import (
+    UnsupportedOrder,
     UnknownOrder,
     MarketOrder,
     SellMarketOrder,
@@ -187,6 +188,7 @@ __all__ = [
     "FillOrderState",
     "PendingCreationOrderState",
     "PendingCreationChainedOrderState",
+    "UnsupportedOrder",
     "UnknownOrder",
     "MarketOrder",
     "SellMarketOrder",

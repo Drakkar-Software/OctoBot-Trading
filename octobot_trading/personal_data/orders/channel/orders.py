@@ -15,8 +15,6 @@
 #  License along with this library.
 import asyncio
 
-import async_channel.constants as channel_constants
-
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
@@ -33,21 +31,20 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             has_new_order = False
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
-                    self.channel.exchange_manager.exchange.parse_order_symbol(order))
-                if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
-                        self.channel.get_filtered_consumers(symbol=symbol):
-                    order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
+                    self.channel.exchange_manager.exchange.parse_order_symbol(order)
+                )
+                order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
 
-                    # if this order was not managed by order_manager before
-                    is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
-                        has_order(order_id)
-                    has_new_order |= is_new_order
+                # if this order was not managed by order_manager before
+                is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
+                    has_order(order_id)
+                has_new_order |= is_new_order
 
-                    # update this order
-                    if are_closed:
-                        await self._handle_close_order_update(order_id, order)
-                    else:
-                        await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
+                # update this order
+                if are_closed:
+                    await self._handle_close_order_update(order_id, order)
+                else:
+                    await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
 
             if not are_closed:
                 await self.handle_post_open_order_update(symbol, orders, has_new_order)

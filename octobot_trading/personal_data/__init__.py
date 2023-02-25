@@ -85,6 +85,7 @@ from octobot_trading.personal_data.orders import (
     FillOrderState,
     PendingCreationOrderState,
     PendingCreationChainedOrderState,
+    UnsupportedOrder,
     UnknownOrder,
     MarketOrder,
     SellMarketOrder,
@@ -207,6 +208,7 @@ TraderOrderTypeClasses = {
     octobot_trading.enums.TraderOrderType.SELL_MARKET: SellMarketOrder,
     octobot_trading.enums.TraderOrderType.SELL_LIMIT: SellLimitOrder,
     octobot_trading.enums.TraderOrderType.UNKNOWN: UnknownOrder,
+    octobot_trading.enums.TraderOrderType.UNSUPPORTED: UnsupportedOrder,
 }
 
 TraderPositionTypeClasses = {
@@ -281,6 +283,7 @@ __all__ = [
     "FillOrderState",
     "PendingCreationOrderState",
     "PendingCreationChainedOrderState",
+    "UnsupportedOrder",
     "UnknownOrder",
     "MarketOrder",
     "SellMarketOrder",

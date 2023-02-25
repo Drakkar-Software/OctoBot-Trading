@@ -13,14 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data.orders.order as order_class
+import octobot_trading.personal_data.orders.types.unsupported_order as unsupported_order
 
 
-class UnknownOrder(order_class.Order):
+class UnknownOrder(unsupported_order.UnsupportedOrder):
     """UnknownOrder is used when an exchange is giving an order without a type (ex: binance 2yo+ orders)"""
-    async def update_order_status(self, force_refresh=False):
-        if not self.trader.simulate:
-            await self.default_exchange_update_order_status()
-        else:
-            # SHOULD NEVER HAPPEN
-            raise RuntimeError(f"{self.get_name()} can't be updated and should not appear in simulation mode")

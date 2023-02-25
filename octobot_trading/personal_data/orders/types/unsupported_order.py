@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,7 +13,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.orders.types.unsupported_order as unsupported_order
+import octobot_trading.personal_data.orders.order as order_class
+import octobot_trading.errors as errors
 
-cdef class UnknownOrder(unsupported_order.UnsupportedOrder):
-    pass
+
+class UnsupportedOrder(order_class.Order):
+    """
+    UnsupportedOrder is used when an exchange order is fetched but is on purpose set to unsupported.
+    Used to handle orders that are fetched but can't (yet) be handled in OctoBot.
+    """
+    async def update_order_status(self, force_refresh=False):
+        if self.trader.simulate:
+            # SHOULD NEVER HAPPEN
+            raise errors.NotSupported(
+                f"{self.get_name()} can't be updated and should not appear in simulation mode"
+            )
+        await self.default_exchange_update_order_status()
