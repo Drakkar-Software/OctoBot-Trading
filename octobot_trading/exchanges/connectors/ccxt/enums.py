@@ -89,6 +89,7 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     TAKER_OR_MAKER = "takerOrMaker"
     REDUCE_ONLY = "reduceOnly"
     STOP_PRICE = "stopPrice"
+    TRIGGER_PRICE = "triggerPrice"
     TRIGGER_ABOVE = "triggerAbove"
     TAG = "tag"
     MARGIN_MODE = "marginMode"
