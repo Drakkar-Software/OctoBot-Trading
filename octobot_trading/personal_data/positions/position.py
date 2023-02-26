@@ -102,7 +102,7 @@ class Position(util.Initializable):
         :param force_open: if the new state should be forced
         :param is_from_exchange_data: if it's call from exchange data
         """
-        self.state = positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data)
+        self.change_state(positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data))
         await self.state.initialize(forced=force_open)
 
     async def on_liquidate(self, force_liquidate=False, is_from_exchange_data=False):
@@ -111,8 +111,13 @@ class Position(util.Initializable):
         :param force_liquidate: if the new state should be forced
         :param is_from_exchange_data: if it's call from exchange data
         """
-        self.state = positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data)
+        self.change_state(positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data))
         await self.state.initialize(forced=force_liquidate)
+
+    def change_state(self, new_state):
+        if self.state is not None:
+            self.state.update_is_active()
+        self.state = new_state
 
     def _should_change(self, original_value, new_value):
         if new_value is not None and original_value != new_value:
@@ -192,13 +197,13 @@ class Position(util.Initializable):
         self._update_prices_if_necessary(mark_price)
         return changed
 
-    async def _ensure_position_initialized(self):
+    async def ensure_position_initialized(self, **kwargs):
         """
         Checks if the position has already been initialized
         When it's not initialize it
         """
         if self.state is None:
-            await self.initialize()
+            await self.initialize(**kwargs)
 
     async def update(self, update_size=None, mark_price=None, update_margin=None):
         """
@@ -207,7 +212,7 @@ class Position(util.Initializable):
         :param mark_price: the mark price update value
         :param update_margin: the margin update value
         """
-        await self._ensure_position_initialized()
+        await self.ensure_position_initialized()
 
         try:
             with self.update_or_restore():
@@ -674,6 +679,8 @@ class Position(util.Initializable):
         """
         Resets the side related data when a position side changes
         """
+        if self.state is not None:
+            self.state.update_is_active()
         if reset_entry_price:
             self._reset_entry_price()
         self.exit_price = constants.ZERO

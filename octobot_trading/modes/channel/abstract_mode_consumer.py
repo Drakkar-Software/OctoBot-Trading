@@ -14,6 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
 
@@ -147,6 +149,36 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
     def get_number_of_traded_assets(self):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder
                    .origin_crypto_currencies_values)
+
+    async def wait_for_active_position(self, symbol, timeout, side=None) -> bool:
+        """
+        Instantly return when the position is already active.
+        Wait for the given timeout if the position is not active.
+        :return: Return True when the position is active
+        """
+        if self.exchange_manager.is_backtesting:
+            # never wait in backtesting
+            return True
+        if not self.exchange_manager.exchange.has_pair_future_contract(symbol):
+            self.logger.error(f"Missing required contract for {symbol}")
+            return False
+        if not self.exchange_manager.exchange.get_pair_future_contract(symbol).is_one_way_position_mode() \
+                and side is None:
+            raise errors.NotSupported("The side parameter is required when dealing with non one-way contracts")
+        position = self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(
+            symbol,
+            side or enums.PositionSide.BOTH
+        )
+        if position.is_idle():
+            if position.state is None:
+                self.logger.error(f"Can't wait for active position: position state is unset for position: {position}")
+            else:
+                try:
+                    self.logger.debug(f"Waiting for position idle to be active, position: {position}")
+                    await position.state.wait_for_active_position(timeout)
+                except asyncio.TimeoutError:
+                    self.logger.debug(f"Timeout while waiting for idle position to be active, position: {position}")
+        return not position.is_idle()
 
 
 def check_factor(min_val, max_val, factor):

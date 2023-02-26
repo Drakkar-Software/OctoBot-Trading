@@ -114,6 +114,7 @@ cdef class Position(util.Initializable):
     cpdef void update_liquidation_price(self)
     cpdef void update_cross_liquidation_price(self)
     cpdef void update_isolated_liquidation_price(self)
+    cpdef void change_state(self, object new_state)
     cpdef object get_bankruptcy_price(self, object price, object side, bint with_mark_price=*)
     cpdef object get_maker_fee(self, str symbol)
     cpdef object get_taker_fee(self, str symbol)

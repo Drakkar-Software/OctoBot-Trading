@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 import octobot_trading.constants
 import octobot_trading.enums as enums
@@ -27,6 +28,10 @@ class PositionState(state_class.State):
 
         # related position
         self.position = position
+
+        # set when the position is not idle
+        self.is_active = asyncio.Event()
+        self.update_is_active()
 
     def is_liquidated(self) -> bool:
         """
@@ -57,6 +62,28 @@ class PositionState(state_class.State):
                 update_position_from_exchange(position=self.position,
                                               wait_for_refresh=True,
                                               force_job_execution=force_synchronization))
+
+    def set_active(self, active):
+        if active:
+            self.is_active.set()
+        else:
+            self.is_active.clear()
+
+    def update_is_active(self):
+        if self.position is not None:
+            self.set_active(not self.position.is_idle())
+
+    def __del__(self):
+        """
+        Call update_is_active in case this state has not been updated
+        """
+        self.update_is_active()
+        super().__del__()
+
+    async def wait_for_active_position(self, timeout):
+        if self.is_active.is_set():
+            return
+        await asyncio.wait_for(self.is_active.wait(), timeout=timeout)
 
     def clear(self):
         """

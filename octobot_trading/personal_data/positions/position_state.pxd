@@ -17,6 +17,9 @@
 cimport octobot_trading.personal_data.state as state_class
 
 cdef class PositionState(state_class.State):
-    cdef public object position  # instance of Position
+    cdef public object position   # instance of Position
+    cdef public object is_active  # asyncio.Event()
 
     cpdef bint is_liquidated(self)
+    cpdef void set_active(self, bint active)
+    cpdef void update_is_active(self)
