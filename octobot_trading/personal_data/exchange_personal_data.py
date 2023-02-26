@@ -300,9 +300,11 @@ class ExchangePersonalData(util.Initializable):
     async def handle_position_update(self, symbol, side, position, should_notify: bool = True):
         try:
             changed: bool = await self.positions_manager.upsert_position(symbol, side, position)
+            position_instance = self.positions_manager.get_symbol_position(symbol=symbol, side=side)
+            # Position has been fetched from exchange, make sure it is initialized.
+            # Position might have been previously created without exchange data and therefore not be initialized
+            await position_instance.ensure_position_initialized(is_from_exchange_data=True)
             if should_notify:
-                position_instance = self.positions_manager.get_symbol_position(
-                    symbol=symbol, side=None if position.symbol_contract.is_one_way_position_mode() else side)
                 await self.handle_position_update_notification(position_instance, is_updated=changed)
             return changed
         except errors.UnhandledContractError as e:

@@ -15,8 +15,6 @@
 #  License along with this library.
 import asyncio
 
-import async_channel.constants as channel_constants
-
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.enums as enums
 
@@ -31,21 +29,18 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
                 if not position:
                     continue
                 symbol: str = position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]
-                if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
-                        self.channel.get_filtered_consumers(symbol=symbol):
-                    side: object = position[enums.ExchangeConstantsPositionColumns.SIDE.value]
-                    changed = await self.channel.exchange_manager.exchange_personal_data. \
-                        handle_position_update(symbol=symbol,
-                                               side=side,
-                                               position=position,
-                                               should_notify=False)
+                changed = await self.channel.exchange_manager.exchange_personal_data. \
+                    handle_position_update(symbol=symbol,
+                                           side=position[enums.ExchangeConstantsPositionColumns.SIDE.value],
+                                           position=position,
+                                           should_notify=False)
 
-                    if changed:
-                        await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
-                                        get_pair_cryptocurrency(symbol),
-                                        symbol=symbol,
-                                        position=position,
-                                        is_updated=changed)
+                if changed:
+                    await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                    get_pair_cryptocurrency(symbol),
+                                    symbol=symbol,
+                                    position=position,
+                                    is_updated=changed)
         except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
