@@ -191,11 +191,11 @@ class TestTradeFactory:
         assert trade.origin_order_id == '362550114'
         assert trade.trade_type == TraderOrderType.SELL_MARKET
         assert trade.symbol == 'UNI/USDT'
-        assert trade.total_cost == ZERO
+        assert trade.total_cost == decimal.Decimal("202338000")
         assert trade.executed_quantity == decimal.Decimal("44964.0")
         assert trade.origin_quantity == decimal.Decimal("44964.0")
-        assert trade.origin_price == ZERO
-        assert trade.executed_price == ZERO
+        assert trade.origin_price == decimal.Decimal("4500")
+        assert trade.executed_price == decimal.Decimal("4500")
         assert trade.status == OrderStatus.FILLED
         assert trade.executed_time == 1637579281.377
         assert trade.is_closing_order is True

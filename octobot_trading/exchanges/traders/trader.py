@@ -730,11 +730,15 @@ class Trader(util.Initializable):
             is_hedge=position_mode is enums.PositionMode.HEDGE
         )
 
-    def _has_open_position(self, symbol):
+    def _has_open_position(self, symbol) -> bool:
         """
         Checks if open position exists for :symbol:
         :param symbol: the position symbol
         :return: True if open position for :symbol: exists
         """
-        return len(self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(
-            symbol=symbol)) != 0
+        for position in self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(
+            symbol=symbol
+        ):
+            if position.size:
+                return True
+        return False

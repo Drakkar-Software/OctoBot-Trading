@@ -41,7 +41,7 @@ cdef class Position(util.Initializable):
     cdef public object exit_price
     cdef public object mark_price
     cdef public object liquidation_price
-    cdef public object quantity
+    cdef public object single_contract_value
     cdef public object size
     cdef public object already_reduced_size
     cdef public object value
@@ -65,7 +65,7 @@ cdef class Position(util.Initializable):
                       object entry_price,
                       object mark_price,
                       object liquidation_price,
-                      object quantity,
+                      object single_contract_value,
                       object size,
                       object value,
                       object initial_margin,
