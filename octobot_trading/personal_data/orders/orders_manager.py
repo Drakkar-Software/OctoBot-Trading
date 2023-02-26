@@ -129,8 +129,8 @@ class OrdersManager(util.Initializable):
             if is_from_exchange:
                 new_order.is_synchronized_with_exchange = True
             self._add_order(order_id, new_order)
-            await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
+            await new_order.initialize(is_from_exchange_data=True)
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
 

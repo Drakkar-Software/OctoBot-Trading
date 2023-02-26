@@ -40,7 +40,6 @@ class CCXTAdapter(adapters.AbstractAdapter):
 
     def parse_order(self, fixed, **kwargs):
         # CCXT standard order parsing logic
-        fixed.pop(ecoc.INFO.value)
         return fixed
 
     def _register_exchange_fees(self, order_or_trade):
