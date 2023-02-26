@@ -18,6 +18,7 @@ import asyncio
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 
 
 class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
@@ -27,12 +28,14 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
     async def perform(self, orders, is_from_bot=False, are_closed=False):
         try:
             self.logger.debug(f"Received order update for {len(orders)} orders.")
-            symbol = None
             has_new_order = False
+            waiting_complete_init_orders = []
+            symbols = set()
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order)
                 )
+                symbols.add(symbol)
                 order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
 
                 # if this order was not managed by order_manager before
@@ -44,10 +47,25 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 if are_closed:
                     await self._handle_close_order_update(order_id, order)
                 else:
-                    await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
-
+                    try:
+                        await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
+                    except errors.PortfolioNegativeValueError:
+                        # Special case for new orders: their order init does not finish properly when this happens
+                        if is_new_order and self.channel.exchange_manager.exchange_personal_data.orders_manager. \
+                           has_order(order_id):
+                            new_order = self.channel.exchange_manager.exchange_personal_data.orders_manager.get_order(
+                                order_id
+                            )
+                            # Order init might have failed due to a portfolio update on the exchange side
+                            # (added funds, etc).
+                            waiting_complete_init_orders.append(new_order)
+                        else:
+                            # order was not even added to orders_manager: another issue happened, raise
+                            raise
             if not are_closed:
-                await self.handle_post_open_order_update(symbol, orders, has_new_order)
+                await self.handle_post_open_orders_update(
+                    symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
+                )
 
         except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
@@ -72,6 +90,20 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                             is_new=is_new_order,
                             is_closed=False)
 
+    async def _complete_open_order_init(self, orders, is_from_bot):
+        """
+        Called when open order init failed due to a portfolio sync issue, will now complete their init
+        """
+        for order in orders:
+            self.logger.debug(f"Completing order init for order: {order}")
+            await self.channel.exchange_manager.exchange_personal_data.on_order_refresh_success(order, False, False)
+            await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                            get_pair_cryptocurrency(order.symbol),
+                            symbol=order.symbol, order=order.to_dict(),
+                            is_from_bot=is_from_bot,
+                            is_new=True,
+                            is_closed=False)
+
     async def _handle_close_order_update(self, order_id, order):
         """
         Create or update a close Order from exchange data
@@ -80,24 +112,34 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         """
         await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(order_id, order)
 
-    async def handle_post_open_order_update(self, symbol, orders, has_new_order):
+    async def handle_post_open_orders_update(
+            self, symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
+    ):
         """
         Perform post open Order update actions :
-        - Check if some previously known open order has not been found during update
-        - Force portfolio refresh if a new order has been loaded
-        :param symbol: the update symbol
-        :param orders: the update order dicts
+        - 1. Check if some previously known open order has not been found during update
+        - 2. Force portfolio refresh if a new order has been loaded or waiting a init order exists
+        - 3. Complete order init process when necessary
+        :param symbols: the updated orders symbols
+        :param orders: the updated orders dicts
+        :param waiting_complete_init_orders: orders which init process should be completed after portfolio refresh
         :param has_new_order: if a new order has been loaded
+        :param is_from_bot: If the order was created by OctoBot
         :return:
         """
-        if symbol is not None:
+        for symbol in symbols:
             await self._check_missing_open_orders(symbol, orders)
 
-            # if a new order have been loaded : refresh portfolio to ensure available funds are up to date
-            if has_new_order:
-                await exchanges_channel.get_chan(constants.BALANCE_CHANNEL,
-                                                 self.channel.exchange_manager.id).get_internal_producer(). \
-                    refresh_real_trader_portfolio()
+        # if a new order have been loaded : refresh portfolio to ensure available funds are up to date
+        if has_new_order or waiting_complete_init_orders:
+            await exchanges_channel.get_chan(constants.BALANCE_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer(). \
+                refresh_real_trader_portfolio()
+        if waiting_complete_init_orders:
+            self.logger.debug(
+                f"Completing order init after portfolio sync for {len(waiting_complete_init_orders)} orders"
+            )
+            await self._complete_open_order_init(waiting_complete_init_orders, is_from_bot)
 
     async def update_order_from_exchange(self, order,
                                          should_notify=False,

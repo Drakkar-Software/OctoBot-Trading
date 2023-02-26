@@ -133,7 +133,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             if open_orders:
                 await self.push(open_orders, is_from_bot=is_from_bot)
             else:
-                await self.handle_post_open_order_update(symbol, open_orders, False)
+                await self.handle_post_open_orders_update((symbol, ), open_orders, [], False, True)
             if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
         self._is_initialized_event_set = True

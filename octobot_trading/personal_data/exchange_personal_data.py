@@ -183,17 +183,28 @@ class ExchangePersonalData(util.Initializable):
                 changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order, is_from_exchange)
                 if changed:
                     updated_order = self.orders_manager.get_order(order_id)
-                    asyncio.create_task(updated_order.state.on_refresh_successful())
-
-                    if should_notify:
-                        await self.handle_order_update_notification(updated_order, is_new_order)
-
+                    await self.on_order_refresh_success(updated_order, should_notify, is_new_order)
                 return changed
+            except errors.PortfolioNegativeValueError as e:
+                if is_new_order:
+                    self.logger.debug(f"Impossible to count new order in portfolio: a synch is necessary "
+                                      f"(order: {raw_order}).")
+                    # forward to caller: this is a new order: portfolio might not be synchronized
+                    raise
+                self.logger.exception(e, True, f"Failed to update order : {e}")
             except KeyError as ke:
                 self.logger.debug(f"Failed to update order : Order was not found ({ke})")
             except Exception as e:
                 self.logger.exception(e, True, f"Failed to update order : {e}")
         return False
+
+    async def on_order_refresh_success(self, order, should_notify, is_new_order):
+        if order.state is not None:
+            asyncio.create_task(order.state.on_refresh_successful())
+
+        if should_notify:
+            await self.handle_order_update_notification(order, is_new_order)
+        return order.state is not None
 
     def _is_out_of_sync_order(self, order_id) -> bool:
         return self.trades_manager.has_closing_trade_with_order_id(order_id)
@@ -203,10 +214,7 @@ class ExchangePersonalData(util.Initializable):
             changed: bool = await self.orders_manager.upsert_order_instance(order)
 
             if changed:
-                asyncio.create_task(order.state.on_refresh_successful())
-
-                if should_notify:
-                    await self.handle_order_update_notification(order, is_new_order)
+                await self.on_order_refresh_success(order, should_notify, is_new_order)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
@@ -245,8 +253,7 @@ class ExchangePersonalData(util.Initializable):
             found_order = await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
             if found_order is None:
                 return False
-            if found_order.state is not None:
-                asyncio.create_task(found_order.state.on_refresh_successful())
+            await self.on_order_refresh_success(found_order, False, False)
             return True
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
