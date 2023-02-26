@@ -184,6 +184,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
+                order_id = created_order[ecoc.ID.value]
+                if order_id is None:
+                    self.logger.error(f"No order id on created order: {created_order}")
+                    return None
                 params = get_order_params or {}
                 fetched_order = await self.get_order(
                     created_order[ecoc.ID.value], symbol=symbol, **params
