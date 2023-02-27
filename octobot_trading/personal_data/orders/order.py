@@ -58,6 +58,7 @@ class Order(util.Initializable):
         self.timestamp = 0
         self.side = side
         self.tag = None
+        self.associated_entry_ids = None
 
         # original order attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -108,6 +109,7 @@ class Order(util.Initializable):
         self.has_been_bundled = False
         # True when this order is to be opened as a chained order and has not been open yet
         self.is_waiting_for_chained_trigger = False
+
         # Params given to the exchange request when this order is created. Include any exchange specific param here.
         # All params and values in those will be ignored in simulated orders
         self.exchange_creation_params = {}
@@ -408,6 +410,11 @@ class Order(util.Initializable):
         Filling complete callback
         """
         await self._trigger_chained_orders()
+
+    def associate_to_entry(self, entry_order):
+        if self.associated_entry_ids is None:
+            self.associated_entry_ids = []
+        self.associated_entry_ids.append(entry_order.order_id)
 
     async def _trigger_chained_orders(self):
         logger = logging.get_logger(self.get_logger_name())

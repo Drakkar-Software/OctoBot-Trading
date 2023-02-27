@@ -20,9 +20,17 @@ import octobot_trading.personal_data as personal_data
 
 
 def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False, include_cancelled=False) -> list:
-    return [trade.to_dict() if as_dict else trade
-            for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
-            if _trade_filter(trade, symbol, since, include_cancelled)]
+    return [
+        trade.to_dict() if as_dict else trade
+        for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
+        if _trade_filter(trade, symbol, since, include_cancelled)
+    ]
+
+
+def get_completed_pnl_history(exchange_manager, symbol=None, since=None) -> list:
+    return exchange_manager.exchange_personal_data.trades_manager.get_completed_trades_pnl(
+        get_trade_history(exchange_manager, symbol=symbol, since=since, as_dict=False, include_cancelled=False)
+    )
 
 
 def _trade_filter(trade, symbol=None, timestamp=None, include_cancelled=False) -> bool:
