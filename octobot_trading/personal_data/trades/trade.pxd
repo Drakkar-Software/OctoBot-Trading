@@ -33,6 +33,7 @@ cdef class Trade:
     cdef public bint is_closing_order
     cdef public bint reduce_only
     cdef public str tag
+    cdef public list associated_entry_ids
 
     cdef public object origin_price
     cdef public object origin_quantity

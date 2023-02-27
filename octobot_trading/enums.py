@@ -318,6 +318,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
     TAG = "tag"
+    ENTRIES = "entries"
 
 
 class ExchangeConstantsPositionColumns(enum.Enum):

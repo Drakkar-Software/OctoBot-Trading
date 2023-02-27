@@ -48,6 +48,7 @@ cdef class Order(util.Initializable):
     cdef public str order_id
     cdef public str logger_name
     cdef public str tag
+    cdef public list associated_entry_ids
 
     cdef readonly str shared_signal_order_id
 
@@ -137,6 +138,7 @@ cdef class Order(util.Initializable):
     cpdef void clear(self)
     cpdef bint is_to_be_maintained(self)
     cpdef str get_logger_name(self)
+    cpdef void associate_to_entry(self)
     cpdef void add_chained_order(self, object chained_order)
     cpdef bint should_be_created(self)
     cpdef void add_to_order_group(self, object order_group)

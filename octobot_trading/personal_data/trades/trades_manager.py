@@ -21,6 +21,7 @@ import octobot_commons.enums as commons_enums
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.trades.trade_pnl as trade_pnl
 import octobot_trading.util as util
 
 
@@ -83,6 +84,27 @@ class TradesManager(util.Initializable):
             elif trade.status is not enums.OrderStatus.CANCELED:
                 self.logger.warning(f"Trade without any registered fee: {trade.to_dict()}")
         return total_fees
+
+    def get_completed_trades_pnl(self, trades=None) -> list:
+        trades = trades or self.trades
+        trades_by_order_id = {
+            trade.origin_order_id: trade
+            for trade in trades.values()
+        }
+        exits_by_entry_id = {}
+        for trade in trades.values():
+            if trade.status is not enums.OrderStatus.CANCELED:
+                for entry_id in trade.associated_entry_ids:
+                    if entry_id not in exits_by_entry_id:
+                        exits_by_entry_id[entry_id] = []
+                    exits_by_entry_id[entry_id].append(trade)
+        return [
+            trade_pnl.TradePnl(
+                [trades_by_order_id[entry_id]],
+                exit_trade,
+            )
+            for entry_id, exit_trade in exits_by_entry_id.items()
+        ]
 
     def get_trade(self, trade_id):
         return self.trades[trade_id]
