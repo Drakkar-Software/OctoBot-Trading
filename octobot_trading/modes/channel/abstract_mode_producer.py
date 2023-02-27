@@ -429,6 +429,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     async def _apply_exchange_side_config(self, context):
         # can be slow, call in a task if necessary
         if context.exchange_manager.is_future:
-            await util.wait_for_topic_init(self.exchange_manager, self.CONFIG_INIT_TIMEOUT,
-                                           common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
+            if not self._is_ready_to_trade.is_set():
+                await util.wait_for_topic_init(self.exchange_manager, self.CONFIG_INIT_TIMEOUT,
+                                               common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
             await script_keywords.set_leverage(context, await script_keywords.user_select_leverage(context))
