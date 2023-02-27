@@ -57,6 +57,7 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
                 maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE)
             if not contract.is_handled_contract():
                 self.logger.error(f"Unhandled contract {contract}. This contract can't be traded")
+            self.channel.exchange_manager.exchange.set_contract_initialized_event(pair)
 
     def _get_contract_type_or_default(self, pair):
         try:
