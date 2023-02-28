@@ -460,7 +460,7 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
     assert position_inst.fee_to_close == decimal.Decimal("0.4")
 
 
-def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_with_default_linear):
+async def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     set_future_exchange_fees(exchange_manager_inst.exchange.connector, default_contract.pair)
 

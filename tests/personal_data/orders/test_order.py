@@ -126,7 +126,7 @@ async def test_simulated_update(trader_simulator):
     assert order_sim_inst.filled_quantity == order_sim_inst.origin_quantity == 100
 
 
-def test_order_state_creation(trader_simulator):
+async def test_order_state_creation(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
     order_inst = personal_data.Order(trader_inst)
     # errors.InvalidOrderState exception is caught by context manager
@@ -134,7 +134,7 @@ def test_order_state_creation(trader_simulator):
         raise errors.InvalidOrderState()
 
 
-def test_parse_order_type():
+async def test_parse_order_type():
     untyped_raw_order = {
         enums.ExchangeConstantsOrderColumns.SIDE.value: enums.TradeOrderSide.BUY.value,
         enums.ExchangeConstantsOrderColumns.TYPE.value: None,
@@ -164,7 +164,7 @@ def test_parse_order_type():
            (enums.TradeOrderSide.SELL, enums.TraderOrderType.SELL_LIMIT)
 
 
-def test_update_from_raw(trader_simulator):
+async def test_update_from_raw(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
     order_inst = personal_data.Order(trader_inst)
     # binance example market order

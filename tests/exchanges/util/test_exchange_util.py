@@ -22,8 +22,6 @@ import octobot_commons.constants as commons_constants
 import octobot_commons.configuration as commons_configuration
 import octobot_trading.exchanges as exchanges
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def tentacles_setup_config():
@@ -40,6 +38,7 @@ def exchange_config():
     }
 
 
+@pytest.mark.asyncio
 async def test_is_compatible_account_with_checked_exchange(exchange_config, tentacles_setup_config):
     with mock.patch.object(trading_backend.exchanges.Huobi, "is_valid_account",
                            mock.AsyncMock(return_value=(True, None))) as is_valid_account_mock:
@@ -83,6 +82,7 @@ def test_log_time_sync_error():
     assert ".info" in args
 
 
+@pytest.mark.asyncio
 async def test_is_compatible_account_with_unchecked_exchange(exchange_config, tentacles_setup_config):
     compatible, auth, error = await exchanges.is_compatible_account("hitbtc", exchange_config, tentacles_setup_config,
                                                                     False)

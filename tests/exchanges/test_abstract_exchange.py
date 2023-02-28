@@ -20,9 +20,6 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
 import octobot_commons.tests.test_config as test_config
 
-# All test coroutines will be treated as marked.
-pytestmark = pytest.mark.asyncio
-
 
 EXCHANGE_NAME = "binanceus"
 
@@ -32,7 +29,7 @@ def abstract_exchange():
     config = test_config.load_test_config()
     return exchanges.AbstractExchange(config, exchanges.ExchangeManager(config, EXCHANGE_NAME))
 
-
+@pytest.mark.asyncio
 async def test_log_order_creation_error(abstract_exchange):
     logger_mock = mock.Mock()
     abstract_exchange.logger = logger_mock

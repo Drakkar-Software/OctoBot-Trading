@@ -126,7 +126,7 @@ async def test_adapt_amount_to_holdings(null_context):
                                                               "is_stop_order") == decimal.Decimal(1)
 
 
-def test_get_locked_amount_in_stop_orders(mock_context):
+async def test_get_locked_amount_in_stop_orders(mock_context):
     mock_context.exchange_manager = mock.Mock()
     mock_context.exchange_manager.exchange_personal_data = mock.Mock()
     mock_context.exchange_manager.exchange_personal_data.orders_manager = mock.Mock()
