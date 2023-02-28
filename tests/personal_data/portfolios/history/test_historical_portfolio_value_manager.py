@@ -37,7 +37,7 @@ def historical_portfolio_value_manager(backtesting_trader_with_historical_pf_val
     return exchange_manager.exchange_personal_data.portfolio_manager.historical_portfolio_value_manager
 
 
-def test_constructor(historical_portfolio_value_manager):
+async def test_constructor(historical_portfolio_value_manager):
     assert historical_portfolio_value_manager is not None
     assert historical_portfolio_value_manager.portfolio_manager is not None
     assert historical_portfolio_value_manager.saved_time_frames == constants.DEFAULT_SAVED_HISTORICAL_TIMEFRAMES

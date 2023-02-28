@@ -20,8 +20,6 @@ from tests.exchanges import simulated_exchange_manager, simulated_trader
 
 import octobot_trading.personal_data as personal_data
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def trade_manager_and_trader(simulated_trader):
