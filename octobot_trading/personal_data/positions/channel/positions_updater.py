@@ -39,13 +39,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        # Warning, when True, might result in missing contract details after bot startup as not every available
-        # contract will be loaded (only the ones related to configured symbols will be loaded alongside
-        # their position)
-        self.should_use_position_per_symbol = False
-
         # create async jobs
-        self.position_update_job = async_job.AsyncJob(self._positions_fetch_and_push,
+        self.position_update_job = async_job.AsyncJob(self.fetch_and_push_positions,
                                                       execution_interval_delay=self.POSITION_REFRESH_TIME,
                                                       min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
 
@@ -89,17 +84,13 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         try:
             await self.fetch_and_push()
         except NotImplementedError:
-            self.should_use_position_per_symbol = True
-            try:
-                await self.fetch_and_push()
-            except NotImplementedError:
-                self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
-                await self.stop()
+            self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
+            await self.stop()
         except errors.NotSupported:
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.stop()
         except Exception as e:
-            self.logger.error(f"Fail to initialize positions : {e}")
+            self.logger.exception(e, True, f"Fail to initialize positions : {e}")
 
     async def start(self):
         """
@@ -116,43 +107,23 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         """
         Update positions from exchange
         """
-        await self._positions_fetch_and_push()
+        await self.fetch_and_push_positions()
         await asyncio.sleep(self.TIME_BETWEEN_POSITIONS_REFRESH)
-
-    async def _positions_fetch_and_push(self):
-        """
-        Update positions from exchange
-        """
-        if self.should_use_position_per_symbol:
-            await self.fetch_position_per_symbol()
-        else:
-            await self.fetch_positions()
 
     def _should_run(self):
         return self.channel.exchange_manager.is_future
-
-    async def fetch_position_per_symbol(self):
-        positions = []
-        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            fetched_position = await self.channel.exchange_manager.exchange.get_position(symbol=symbol)
-            if fetched_position:
-                positions.append(fetched_position)
-
-        if positions:
-            if exchange_data.update_contracts_from_positions(self.channel.exchange_manager, positions):
-                await self._update_positions_contract_settings(positions)
-            await self._push_positions(positions)
 
     def _is_relevant_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
                in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
-    async def fetch_positions(self):
-        positions = [
-            position
-            for position in await self.channel.exchange_manager.exchange.get_positions()
-        ]
-
+    async def fetch_and_push_positions(self):
+        """
+        Update positions from exchange
+        """
+        symbols = self.channel.exchange_manager.exchange_config.traded_symbol_pairs \
+            if self.channel.exchange_manager.exchange.REQUIRES_SYMBOL_FOR_EMPTY_POSITION else None
+        positions = await self.channel.exchange_manager.exchange.get_positions(symbols=symbols)
         if positions:
             relevant_positions = [
                 position
