@@ -29,7 +29,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
     PRICE_INIT_TIMEOUT = 30
     HISTORY_TABLE = commons_enums.RunDatabases.HISTORICAL_PORTFOLIO_VALUE.value
 
-    async def store_history(self):
+    async def store_history(self, reset=False):
         if not self.enabled:
             return
         portfolio_db = self.get_db()
@@ -45,9 +45,9 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
             cache=False
         )
         await self.trigger_debounced_flush()
-        await self.trigger_debounced_update_auth_data()
+        await self.trigger_debounced_update_auth_data(reset)
 
-    async def _update_auth_data(self):
+    async def _update_auth_data(self, reset):
         hist_portfolio_values_manager = self.exchange_manager.exchange_personal_data. \
             portfolio_manager.historical_portfolio_value_manager
         authenticator = authentication.Authenticator.instance()
@@ -70,10 +70,12 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                 hist_portfolio_values_manager.portfolio_manager.reference_market,
                 hist_portfolio_values_manager.ending_portfolio,
                 {
-                    history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]: history_val[portfolio_history.HistoricalAssetValue.VALUES_KEY]
+                    history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]:
+                        history_val[portfolio_history.HistoricalAssetValue.VALUES_KEY]
                     for history_val in history
                 },
-                hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.current_crypto_currencies_values
+                hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.current_crypto_currencies_values,
+                reset
             )
 
     def get_db(self):

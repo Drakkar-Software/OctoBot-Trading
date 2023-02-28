@@ -104,6 +104,11 @@ class TradesManager(util.Initializable):
             if self.trader.exchange_manager.storage_manager.trades_storage:
                 for trade_dict in await self.trader.exchange_manager.storage_manager.trades_storage.get_history():
                     self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
+                # reset uploaded trades history
+                await self.trader.exchange_manager.storage_manager.trades_storage.trigger_debounced_update_auth_data(
+                    True
+                )
+
         except Exception as err:
             self.logger.exception(err, True, f"Error when loading local trade history {err}")
 

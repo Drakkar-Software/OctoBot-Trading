@@ -29,7 +29,7 @@ class AbstractStorage:
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
     HISTORY_TABLE = None
-    AUTH_UPDATE_DEBOUNCE_DURATION = 10
+    AUTH_UPDATE_DEBOUNCE_DURATION = 1 #tmp
     FLUSH_DEBOUNCE_DURATION = 0.5   # avoid disc spam on multiple quick live updated
     ORIGIN_VALUE_KEY = "origin_value"
 
@@ -94,13 +94,13 @@ class AbstractStorage:
         if self.enabled:
             await self._store_history()
 
-    async def trigger_debounced_update_auth_data(self):
+    async def trigger_debounced_update_auth_data(self, reset: bool):
         if self.exchange_manager.is_backtesting:
             # no interest in backtesting data
             return
         if self._update_task is not None and not self._update_task.done():
             self._update_task.cancel()
-        self._update_task = asyncio.create_task(self._waiting_update_auth_data())
+        self._update_task = asyncio.create_task(self._waiting_update_auth_data(reset))
 
     async def trigger_debounced_flush(self):
         if self.exchange_manager.is_backtesting:
@@ -119,10 +119,10 @@ class AbstractStorage:
             if self.ORIGIN_VALUE_KEY in document
         ]
 
-    async def _waiting_update_auth_data(self):
+    async def _waiting_update_auth_data(self, reset):
         try:
             await asyncio.sleep(self.AUTH_UPDATE_DEBOUNCE_DURATION)
-            await self._update_auth_data()
+            await self._update_auth_data(reset)
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when updating auth data: {err}")
 
@@ -133,7 +133,7 @@ class AbstractStorage:
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when flushing database: {err}")
 
-    async def _update_auth_data(self):
+    async def _update_auth_data(self, reset):
         pass
 
     async def _live_callback(self, *args, **kwargs):

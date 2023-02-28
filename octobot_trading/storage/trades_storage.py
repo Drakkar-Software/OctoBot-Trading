@@ -49,9 +49,9 @@ class TradesStorage(abstract_storage.AbstractStorage):
                 )
             )
             await self.trigger_debounced_flush()
-            await self.trigger_debounced_update_auth_data()
+            await self.trigger_debounced_update_auth_data(False)
 
-    async def _update_auth_data(self):
+    async def _update_auth_data(self, reset):
         authenticator = authentication.Authenticator.instance()
         history = [
             trade
@@ -59,7 +59,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
             if trade.status is not enums.OrderStatus.CANCELED
         ]
         if history and authenticator.is_initialized():
-            await authenticator.update_trades(history)
+            await authenticator.update_trades(history, reset)
 
     async def _store_history(self):
         database = self._get_db()

@@ -83,7 +83,8 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.starting_portfolio = None
         self.ending_portfolio = None
         self.historical_portfolio_value = sortedcontainers.SortedDict()
-        await self.save_historical_portfolio_value()
+        # reset uploaded portfolio history
+        await self.save_historical_portfolio_value(reset=True)
 
     def has_previous_session_portfolio(self):
         return self.historical_ending_portfolio is not None
@@ -199,13 +200,13 @@ class HistoricalPortfolioValueManager(util.Initializable):
                     self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
                 ))
 
-    async def save_historical_portfolio_value(self, update_data=True):
+    async def save_historical_portfolio_value(self, update_data=True, reset=False):
         if update_data:
             self.last_update_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
             self._update_portfolios()
         if not self.portfolio_manager.exchange_manager.is_backtesting:
             # in backtesting, history is stored at the end
-            await self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.store_history()
+            await self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.store_history(reset=reset)
 
     async def _reload_historical_portfolio_value(self):
         db = self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.get_db()
