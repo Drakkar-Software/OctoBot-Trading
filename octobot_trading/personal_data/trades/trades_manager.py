@@ -36,16 +36,16 @@ class TradesManager(util.Initializable):
         self.trades = collections.OrderedDict()
 
     async def initialize_impl(self):
-        await self.reload_history()
+        await self.reload_history(False)
         self.trades_initialized = True
         if self.trader.simulate:
             # force init as there is no trade updater simulator
             for symbol in self.trader.exchange_manager.exchange_config.traded_symbol_pairs:
                 self._set_initialized_event(symbol)
 
-    async def reload_history(self):
+    async def reload_history(self, reset):
         self._reset_trades()
-        await self._load_trades_history()
+        await self._load_trades_history(reset)
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:
@@ -96,7 +96,7 @@ class TradesManager(util.Initializable):
         self.trades_initialized = False
         self.trades = collections.OrderedDict()
 
-    async def _load_trades_history(self):
+    async def _load_trades_history(self, reset):
         if self.trader.exchange_manager.is_backtesting:
             # don't load history on backtesting
             return
@@ -104,11 +104,11 @@ class TradesManager(util.Initializable):
             if self.trader.exchange_manager.storage_manager.trades_storage:
                 for trade_dict in await self.trader.exchange_manager.storage_manager.trades_storage.get_history():
                     self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
-                # reset uploaded trades history
-                await self.trader.exchange_manager.storage_manager.trades_storage.trigger_debounced_update_auth_data(
-                    True
-                )
-
+                if reset:
+                    # reset uploaded trades history
+                    await self.trader.exchange_manager.storage_manager.trades_storage.trigger_debounced_update_auth_data(
+                        True
+                    )
         except Exception as err:
             self.logger.exception(err, True, f"Error when loading local trade history {err}")
 

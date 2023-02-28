@@ -29,7 +29,7 @@ class AbstractStorage:
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
     HISTORY_TABLE = None
-    AUTH_UPDATE_DEBOUNCE_DURATION = 1 #tmp
+    AUTH_UPDATE_DEBOUNCE_DURATION = 1
     FLUSH_DEBOUNCE_DURATION = 0.5   # avoid disc spam on multiple quick live updated
     ORIGIN_VALUE_KEY = "origin_value"
 
@@ -44,6 +44,7 @@ class AbstractStorage:
         self.enabled = True
         self._update_task = None
         self._flush_task = None
+        self._to_update_auth_data_ids_buffer = set()
 
     def should_register_live_consumer(self):
         return self.IS_LIVE_CONSUMER and \
