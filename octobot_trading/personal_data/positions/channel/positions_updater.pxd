@@ -19,8 +19,6 @@ cimport octobot_trading.personal_data.positions.channel.positions as positions_c
 cimport octobot_commons.async_job as async_job
 
 cdef class PositionsUpdater(positions_channel.PositionsProducer):
-    cdef public bint should_use_position_per_symbol
-
     cdef async_job.AsyncJob position_update_job
 
     cdef bint _should_run(self)
