@@ -152,9 +152,9 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
 
     def _should_fetch_on_exchange(self) -> bool:
         return not (
-                self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
-                or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
-                or self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
+            self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
+            or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
+            or self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
         )
 
     def _should_subscribe(self):

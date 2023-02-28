@@ -21,6 +21,7 @@ import octobot_commons.async_job as async_job
 import octobot_commons.constants as common_constants
 
 import octobot_trading.exchange_data.funding.channel.funding as funding_channel
+import octobot_trading.exchanges.exchange_websocket_factory as exchange_websocket_factory
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -68,6 +69,7 @@ class FundingUpdater(funding_channel.FundingProducer):
         Start updater jobs
         """
         if not self._should_run():
+            self.logger.debug("Ignoring updater start as funding can be found in different sources")
             return
 
         await self.initialize()
@@ -138,20 +140,18 @@ class FundingUpdater(funding_channel.FundingProducer):
         """
         if not self.channel.exchange_manager.is_future:
             return False
-        return not (
-                self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
-                or (
-                    (
-                        self.channel.exchange_manager.has_websocket
-                        and self.channel.exchange_manager.exchange.FUNDING_IN_WEBSOCKET_TICKER
-                    )
-                    or
-                    (
-                        not self.channel.exchange_manager.has_websocket
-                        and self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
-                    )
-
-                )
+        # if this is run, it means the funding channel is not directly updated by websockets
+        # therefore, it should run if:
+        # - ticker updater is on (ticker not managed by ws) and FUNDING_IN_TICKER is False
+        # - or ticker updater is off (ticker managed by ws) (as we are here, it means funding is not handled by ws)
+        is_ticker_updater_on = not exchange_websocket_factory.is_exchange_managed_by_websocket(
+            self.channel.exchange_manager, constants.TICKER_CHANNEL
+        )
+        return (
+            (
+                is_ticker_updater_on and not self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
+            )
+            or not is_ticker_updater_on
         )
 
     def _get_time_until_next_funding(self, next_funding_time):

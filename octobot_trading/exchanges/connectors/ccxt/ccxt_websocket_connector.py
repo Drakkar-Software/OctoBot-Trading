@@ -49,7 +49,9 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         # When ticker or future index is available : no need to calculate mark price from recent trades
         Feeds.TRADES: [Feeds.TICKER, Feeds.FUTURES_INDEX],
         # When candles are available : use min timeframe kline to push ticker
-        Feeds.TICKER: [Feeds.KLINE]
+        Feeds.TICKER: [Feeds.KLINE],
+        # When funding can be found in websocket ticker
+        # Feeds.FUNDING: [Feeds.TICKER],
     }
 
     PAIR_INDEPENDENT_CHANNELS = [

@@ -106,6 +106,9 @@ async def _create_producer(exchange_manager, producer) -> channel_producer.Produ
     producer_instance = producer(exchange_channel.get_chan(producer.CHANNEL_NAME, exchange_manager.id))
     if exchanges.is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
         # websocket is handling this channel: initialize data if required
+        exchange_manager.logger.debug(
+            f"{exchange_manager.exchange_name} {producer.CHANNEL_NAME} channel is updated by websocket feed"
+        )
         if exchanges.is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):
             try:
                 producer_instance.trigger_single_update()
@@ -114,7 +117,11 @@ async def _create_producer(exchange_manager, producer) -> channel_producer.Produ
                                                   f"Error when initializing data for {producer.CHANNEL_NAME} "
                                                   f"channel required by websocket: {e}")
     else:
-        # no websocket for this channel: start an producer
+        # no websocket for this channel: start a producer
+        exchange_manager.logger.debug(
+            f"{exchange_manager.exchange_name} {producer.CHANNEL_NAME} channel "
+            f"is updated by {producer_instance.__class__.__name__}"
+        )
         await producer_instance.run()
     return producer_instance
 
