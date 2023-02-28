@@ -20,7 +20,7 @@ async def clear_trades_storage_history(exchange_manager, flush=True):
     if exchange_manager.storage_manager.trades_storage:
         await exchange_manager.storage_manager.trades_storage.clear_history(flush=flush)
     if exchange_manager.exchange_personal_data.trades_manager:
-        await exchange_manager.exchange_personal_data.trades_manager.reload_history()
+        await exchange_manager.exchange_personal_data.trades_manager.reload_history(True)
 
 
 async def clear_orders_storage_history(exchange_manager, flush=True):

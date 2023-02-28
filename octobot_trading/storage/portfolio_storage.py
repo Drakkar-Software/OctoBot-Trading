@@ -38,6 +38,14 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
         metadata = hist_portfolio_values_manager.get_metadata()
         # replace the whole table to ensure consistency
         history = hist_portfolio_values_manager.get_dict_historical_values()
+        existing_history = await portfolio_db.all(self.HISTORY_TABLE)
+        self._to_update_auth_data_ids_buffer.update(
+            (
+                history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]
+                for history_val in history
+                if history_val not in existing_history
+            )
+        )
         await portfolio_db.upsert(commons_enums.RunDatabases.METADATA.value, metadata, None, uuid=1)
         await portfolio_db.replace_all(
             self.HISTORY_TABLE,
@@ -51,8 +59,13 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
         hist_portfolio_values_manager = self.exchange_manager.exchange_personal_data. \
             portfolio_manager.historical_portfolio_value_manager
         authenticator = authentication.Authenticator.instance()
-        history = hist_portfolio_values_manager.get_dict_historical_values()
-        if history and authenticator.is_initialized():
+        full_history = hist_portfolio_values_manager.get_dict_historical_values()
+        history = [
+            history_val
+            for history_val in full_history
+            if history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY] in self._to_update_auth_data_ids_buffer
+        ]
+        if full_history and authenticator.is_initialized():
             if hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.initializing_symbol_prices_pairs:
                 for symbol in hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.initializing_symbol_prices_pairs:
                     await commons_tree.EventProvider.instance().wait_for_event(
@@ -65,8 +78,8 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                         self.PRICE_INIT_TIMEOUT
                     )
             await authenticator.update_portfolio(
-                history[-1][portfolio_history.HistoricalAssetValue.VALUES_KEY],
-                history[0][portfolio_history.HistoricalAssetValue.VALUES_KEY],
+                full_history[-1][portfolio_history.HistoricalAssetValue.VALUES_KEY],
+                full_history[0][portfolio_history.HistoricalAssetValue.VALUES_KEY],
                 hist_portfolio_values_manager.portfolio_manager.reference_market,
                 hist_portfolio_values_manager.ending_portfolio,
                 {
@@ -77,6 +90,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                 hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.current_crypto_currencies_values,
                 reset
             )
+            self._to_update_auth_data_ids_buffer.clear()
 
     def get_db(self):
         return self._get_db()
