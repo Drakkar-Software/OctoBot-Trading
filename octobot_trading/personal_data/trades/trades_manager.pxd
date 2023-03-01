@@ -30,7 +30,7 @@ cdef class TradesManager(util.Initializable):
     cdef void _remove_oldest_trades(self, int nb_to_remove)
 
     cpdef object get_trade(self, str trade_id)
-    cpdef list get_completed_trades_pnl(self)
+    cpdef list get_completed_trades_pnl(self, object trades=*)
     cpdef object upsert_trade(self, str trade_id, dict raw_trade)
     cpdef object upsert_trade_instance(self, object trade)
     cpdef bint has_closing_trade_with_order_id(self, str order_id)

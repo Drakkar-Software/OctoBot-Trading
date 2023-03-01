@@ -17,33 +17,37 @@ import decimal
 
 import octobot_trading.enums
 import octobot_trading.personal_data as personal_data
+import octobot_commons.symbols as commons_symbols
 
 
-def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False, include_cancelled=False) -> list:
+def get_trade_history(
+        exchange_manager, quote=None, symbol=None, since=None, as_dict=False, include_cancelled=False
+) -> list:
     return [
         trade.to_dict() if as_dict else trade
         for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
-        if _trade_filter(trade, symbol, since, include_cancelled)
+        if _trade_filter(trade, quote, symbol, since, include_cancelled)
     ]
 
 
-def get_completed_pnl_history(exchange_manager, symbol=None, since=None) -> list:
+def get_completed_pnl_history(exchange_manager, quote=None, symbol=None, since=None) -> list:
     return exchange_manager.exchange_personal_data.trades_manager.get_completed_trades_pnl(
-        get_trade_history(exchange_manager, symbol=symbol, since=since, as_dict=False, include_cancelled=False)
+        get_trade_history(
+            exchange_manager, quote=quote, symbol=symbol, since=since, as_dict=False, include_cancelled=False
+        )
     )
 
 
-def _trade_filter(trade, symbol=None, timestamp=None, include_cancelled=False) -> bool:
+def _trade_filter(trade, quote=None, symbol=None, timestamp=None, include_cancelled=False) -> bool:
     if trade.status is octobot_trading.enums.OrderStatus.CANCELED and not include_cancelled:
         return False
-    if symbol is None and timestamp is None:
-        return True
-    elif symbol is None and timestamp is not None:
-        return _is_trade_after(trade, timestamp)
-    elif symbol is not None and timestamp is None:
-        return trade.symbol == symbol
-    else:
-        return trade.symbol == symbol and _is_trade_after(trade, timestamp)
+    if timestamp is not None and not _is_trade_after(trade, timestamp):
+        return False
+    if quote is not None and commons_symbols.parse_symbol(trade.symbol).quote != quote:
+        return False
+    elif symbol is not None and trade.symbol != symbol:
+        return False
+    return True
 
 
 def _is_trade_after(trade, timestamp) -> bool:

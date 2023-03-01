@@ -36,6 +36,9 @@ from octobot_trading.personal_data.trades.channel import (
 from octobot_trading.personal_data.trades.trade import (
     Trade,
 )
+from octobot_trading.personal_data.trades.trade_pnl import (
+    TradePnl,
+)
 from octobot_trading.personal_data.trades.trades_util import (
     compute_win_rate,
 )
@@ -50,5 +53,6 @@ __all__ = [
     "create_trade_from_dict",
     "TradesUpdater",
     "Trade",
+    "TradePnl",
     "compute_win_rate",
 ]

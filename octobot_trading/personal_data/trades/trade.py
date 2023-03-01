@@ -101,6 +101,7 @@ class Trade:
     def to_dict(self):
         return {
             enums.ExchangeConstantsOrderColumns.ID.value: self.trade_id,
+            enums.ExchangeConstantsOrderColumns.ORDER_ID.value: self.origin_order_id,
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsOrderColumns.MARKET.value: self.market,
             enums.ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
@@ -122,6 +123,7 @@ class Trade:
     def from_dict(cls, trader, trade_dict):
         trade = cls(trader)
         trade.trade_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ID.value)
+        trade.origin_order_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ORDER_ID.value)
         trade.symbol = trade_dict.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value)
         trade.market = trade_dict.get(enums.ExchangeConstantsOrderColumns.MARKET.value)
         trade.executed_price = decimal.Decimal(str(trade_dict.get(enums.ExchangeConstantsOrderColumns.PRICE.value)))
