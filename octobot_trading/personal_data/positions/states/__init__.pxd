@@ -19,12 +19,18 @@ from octobot_trading.personal_data.positions.states.liquidate_position_state cim
     LiquidatePositionState
 )
 
-from octobot_trading.personal_data.positions.states cimport open_position_state
-from octobot_trading.personal_data.positions.states.open_position_state cimport (
-    OpenPositionState
+from octobot_trading.personal_data.positions.states cimport idle_position_state
+from octobot_trading.personal_data.positions.states.idle_position_state cimport (
+    IdlePositionState
+)
+
+from octobot_trading.personal_data.positions.states cimport active_position_state
+from octobot_trading.personal_data.positions.states.active_position_state cimport (
+    ActivePositionState
 )
 
 __all__ = [
     "LiquidatePositionState",
-    "OpenPositionState",
+    "IdlePositionState",
+    "ActivePositionState",
 ]

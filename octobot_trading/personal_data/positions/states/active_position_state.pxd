@@ -14,13 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.state as state_class
+cimport octobot_trading.personal_data.positions.states.idle_position_state as idle_position_state
 
-cdef class PositionState(state_class.State):
-    cdef public object position   # instance of Position
-    cdef public object _has_state_changed   # asyncio.Event()
-
-    cpdef bint is_active(self)
-    cpdef bint has_to_be_async_synchronized(self)
-    cpdef bint is_liquidated(self)
-    cpdef void set_is_changing_state(self)
+cdef class ActivePositionState(idle_position_state.IdlePositionState):
+    pass

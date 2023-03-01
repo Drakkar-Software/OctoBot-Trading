@@ -20,7 +20,10 @@ import octobot_trading.personal_data.positions.position_state as position_state
 import octobot_trading.personal_data.positions.states.position_state_factory as position_state_factory
 
 
-class OpenPositionState(position_state.PositionState):
+class IdlePositionState(position_state.PositionState):
+    """
+    ActivePositionState is the state of a position that has size of zero
+    """
     def __init__(self, position, is_from_exchange_data):
         super().__init__(position, is_from_exchange_data)
         self.state = enums.States.OPEN if is_from_exchange_data \
@@ -41,6 +44,9 @@ class OpenPositionState(position_state.PositionState):
             self.state = enums.States.OPEN
         return await super().initialize_impl()
 
+    def _is_compatible_size(self):
+        return self.position.is_idle()
+
     async def on_refresh_successful(self):
         """
         Verify the position is properly created and still PositionStatus.OPEN
@@ -50,11 +56,13 @@ class OpenPositionState(position_state.PositionState):
         if self.position is None:
             self.get_logger().warning(f"on_refresh_successful triggered on cleared position: ignoring update.")
         elif self.state is self.position.state.state:
-            if self.position.status is enums.PositionStatus.OPEN:
+            if self.position.status is enums.PositionStatus.OPEN and self._is_compatible_size():
                 self.state = enums.States.OPEN
                 await self.update()
             else:
-                await position_state_factory.create_position_state(self.position, is_from_exchange_data=True)
+                position_state_factory.create_position_state(self.position, is_from_exchange_data=True)
+                if self.position.state.has_to_be_async_synchronized():
+                    await self.position.state.initialize()
         else:
             self.get_logger().debug(f"on_refresh_successful triggered from previous state "
                                     f"after state change on {self.position}")
@@ -63,19 +71,24 @@ class OpenPositionState(position_state.PositionState):
         # Disable open position synchronization for now, let position updater refresh positions
         pass
 
-    async def terminate(self):
+    def sync_terminate(self):
         """
-        Should wait for being replaced by a LiquidatePositionState
+        Should wait for being replaced by an ActivePositionState or LiquidatePositionState
         """
         if not self.has_terminated:
             self.log_event_message(enums.StatesMessages.OPEN)
 
-            # set position mark price
-            self.position.mark_price = decimal.Decimal(
-                self.position.exchange_manager.exchange_symbols_data.
-                    get_exchange_symbol_data(self.position.symbol).prices_manager.mark_price)
+            if not self.position.mark_price:
+                # set position mark price
+                self.position.mark_price = decimal.Decimal(
+                    self.position.exchange_manager.exchange_symbols_data.
+                        get_exchange_symbol_data(self.position.symbol).prices_manager.mark_price
+                )
 
             self.has_terminated = True
+
+    async def terminate(self):
+        self.sync_terminate()
 
     def is_pending(self) -> bool:
         return self.state is enums.States.OPENING

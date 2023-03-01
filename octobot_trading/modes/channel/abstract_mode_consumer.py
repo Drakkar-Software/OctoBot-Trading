@@ -169,16 +169,17 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             symbol,
             side or enums.PositionSide.BOTH
         )
-        if position.is_idle():
-            if position.state is None:
-                self.logger.error(f"Can't wait for active position: position state is unset for position: {position}")
-            else:
+        if position.state is None:
+            self.logger.error(f"Can't wait for active position: position state is unset for position: {position}")
+            return False
+        else:
+            if not position.state.is_active():
                 try:
                     self.logger.debug(f"Waiting for position idle to be active, position: {position}")
-                    await position.state.wait_for_active_position(timeout)
+                    await position.state.wait_for_next_state(timeout)
                 except asyncio.TimeoutError:
                     self.logger.debug(f"Timeout while waiting for idle position to be active, position: {position}")
-        return not position.is_idle()
+        return position.state.is_active()
 
 
 def check_factor(min_val, max_val, factor):

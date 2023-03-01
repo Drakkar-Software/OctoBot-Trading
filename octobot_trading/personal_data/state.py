@@ -81,9 +81,28 @@ class State(util.Initializable):
 
     async def initialize_impl(self) -> None:
         """
-        Default State initialization process
+        Default async State initialization process
         """
         await self.update()
+
+    def sync_initialize(self, forced=False):
+        """
+        Default sync initialization process
+        """
+        if not self.is_initialized or forced:
+            self.sync_update()
+            self.is_initialized = True
+            return True
+        return False
+
+    def sync_update(self):
+        if not self.is_refreshing():
+            if self.is_pending():
+                raise NotImplementedError("can't use sync_update on a pending state")
+            else:
+                self.trigger_sync_terminate()
+        else:
+            self.log_event_message(enums.StatesMessages.ALREADY_SYNCHRONIZING)
 
     async def should_be_updated(self) -> bool:
         """
@@ -111,6 +130,12 @@ class State(util.Initializable):
         try:
             async with self.lock:
                 await self.terminate()
+        finally:
+            self.on_terminate()
+
+    def trigger_sync_terminate(self):
+        try:
+            self.sync_terminate()
         finally:
             self.on_terminate()
 
@@ -174,6 +199,13 @@ class State(util.Initializable):
         Can be portfolio updates, fees request, orders group updates, Trade creation etc...
         """
         raise NotImplementedError("terminate not implemented")
+
+    def sync_terminate(self) -> None:
+        """
+        Implement the state ending process
+        Can be portfolio updates, fees request, orders group updates, Trade creation etc...
+        """
+        raise NotImplementedError("sync_terminate not implemented")
 
     def on_terminate(self) -> None:
         """

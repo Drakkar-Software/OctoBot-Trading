@@ -29,9 +29,16 @@ class PositionState(state_class.State):
         # related position
         self.position = position
 
-        # set when the position is not idle
-        self.is_active = asyncio.Event()
-        self.update_is_active()
+        self._has_state_changed = asyncio.Event()
+
+    def has_to_be_async_synchronized(self):
+        return False
+
+    def is_active(self) -> bool:
+        """
+        :return: True if the Position has a non-zero size
+        """
+        return False
 
     def is_liquidated(self) -> bool:
         """
@@ -63,27 +70,21 @@ class PositionState(state_class.State):
                                               wait_for_refresh=True,
                                               force_job_execution=force_synchronization))
 
-    def set_active(self, active):
-        if active:
-            self.is_active.set()
-        else:
-            self.is_active.clear()
-
-    def update_is_active(self):
-        if self.position is not None:
-            self.set_active(not self.position.is_idle())
+    def set_is_changing_state(self):
+        if not self._has_state_changed.is_set():
+            self._has_state_changed.set()
 
     def __del__(self):
         """
-        Call update_is_active in case this state has not been updated
+        Call set_is_changing_state in case this state has not been updated
         """
-        self.update_is_active()
+        self.set_is_changing_state()
         super().__del__()
 
-    async def wait_for_active_position(self, timeout):
-        if self.is_active.is_set():
+    async def wait_for_next_state(self, timeout) -> None:
+        if self._has_state_changed.is_set():
             return
-        await asyncio.wait_for(self.is_active.wait(), timeout=timeout)
+        await asyncio.wait_for(self._has_state_changed.wait(), timeout=timeout)
 
     def clear(self):
         """

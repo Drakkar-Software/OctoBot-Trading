@@ -31,6 +31,9 @@ class LiquidatePositionState(position_state.PositionState):
             self.state = enums.PositionStates.LIQUIDATED
         return await super().initialize_impl()
 
+    def has_to_be_async_synchronized(self):
+        return True
+
     def is_pending(self) -> bool:
         return self.state is enums.PositionStates.LIQUIDATING
 
