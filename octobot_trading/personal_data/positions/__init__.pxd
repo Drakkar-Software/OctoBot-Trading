@@ -33,7 +33,8 @@ from octobot_trading.personal_data.positions.types cimport (
 from octobot_trading.personal_data.positions cimport states
 from octobot_trading.personal_data.positions.states cimport (
     LiquidatePositionState,
-    OpenPositionState,
+    IdlePositionState,
+    ActivePositionState,
 )
 
 from octobot_trading.personal_data.positions cimport channel
@@ -76,5 +77,6 @@ __all__ = [
     "create_symbol_position",
     "parse_position_status",
     "LiquidatePositionState",
-    "OpenPositionState",
+    "IdlePositionState",
+    "ActivePositionState",
 ]

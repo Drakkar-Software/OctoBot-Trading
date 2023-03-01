@@ -33,7 +33,8 @@ from octobot_trading.personal_data.positions.types import (
 from octobot_trading.personal_data.positions import states
 from octobot_trading.personal_data.positions.states import (
     LiquidatePositionState,
-    OpenPositionState,
+    IdlePositionState,
+    ActivePositionState,
     create_position_state,
 )
 
@@ -77,6 +78,7 @@ __all__ = [
     "create_symbol_position",
     "parse_position_status",
     "LiquidatePositionState",
-    "OpenPositionState",
+    "IdlePositionState",
+    "ActivePositionState",
     "create_position_state",
 ]

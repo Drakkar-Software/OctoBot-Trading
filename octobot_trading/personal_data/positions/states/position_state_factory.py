@@ -16,11 +16,21 @@
 import octobot_trading.enums as enums
 
 
-async def create_position_state(position, is_from_exchange_data=False, ignore_states=None):
+def create_position_state(position, is_from_exchange_data=False, ignore_states=None):
     if ignore_states is None:
         ignore_states = []
-
     if position.status is enums.PositionStatus.OPEN and enums.States.OPEN not in ignore_states:
-        await position.on_open(force_open=False, is_from_exchange_data=is_from_exchange_data)
+        if position.is_idle() and (position.state is None or position.state.is_active()):
+            _pre_change_state(position)
+            position.on_idle(force_open=False, is_from_exchange_data=is_from_exchange_data)
+        elif not position.is_idle() and (position.state is None or not position.state.is_active()):
+            _pre_change_state(position)
+            position.on_active(force_open=False, is_from_exchange_data=is_from_exchange_data)
     elif position.status is enums.PositionStatus.LIQUIDATING and enums.PositionStates.LIQUIDATED not in ignore_states:
-        await position.on_liquidate(force_liquidate=False, is_from_exchange_data=is_from_exchange_data)
+        _pre_change_state(position)
+        position.on_liquidate(force_liquidate=False, is_from_exchange_data=is_from_exchange_data)
+
+
+def _pre_change_state(position):
+    if position.state is not None:
+        position.state.set_is_changing_state()

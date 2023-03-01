@@ -14,3 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+
+cpdef object create_position_state(object position, bint is_from_exchange_data=*, ignore_states=*)
+cdef void _pre_change_state(object position)

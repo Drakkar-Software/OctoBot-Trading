@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,7 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.positions.position_state as position_state
+import octobot_trading.personal_data.positions.states.idle_position_state as idle_position_state
 
-cdef class OpenPositionState(position_state.PositionState):
-    cdef bint has_terminated
+
+class ActivePositionState(idle_position_state.IdlePositionState):
+    """
+    ActivePositionState is the state of a position that has a non-zero size
+    """
+    def is_active(self) -> bool:
+        """
+        :return: True if the Position has a non-zero size
+        """
+        return True
+
+    def _is_compatible_size(self):
+        return not self.position.is_idle()

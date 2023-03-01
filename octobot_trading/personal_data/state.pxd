@@ -24,6 +24,8 @@ cdef class State(util.Initializable):
     cdef public object terminated   # asyncio.Event
     cdef public bint has_already_been_synchronized_once
 
+    cpdef object sync_initialize(self, bint forced=*)
+    cpdef object sync_update(self)
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)
     cpdef bint is_pending(self)
@@ -31,4 +33,6 @@ cdef class State(util.Initializable):
     cpdef void clear(self)
     cpdef object get_logger(self)
     cpdef void log_event_message(self, object state_message, object error=*)
+    cpdef object trigger_sync_terminate(self)
+    cpdef object sync_terminate(self)
     cpdef void on_terminate(self)

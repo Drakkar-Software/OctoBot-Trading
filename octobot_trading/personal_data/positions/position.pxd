@@ -114,7 +114,6 @@ cdef class Position(util.Initializable):
     cpdef void update_liquidation_price(self)
     cpdef void update_cross_liquidation_price(self)
     cpdef void update_isolated_liquidation_price(self)
-    cpdef void change_state(self, object new_state)
     cpdef object get_bankruptcy_price(self, object price, object side, bint with_mark_price=*)
     cpdef object get_maker_fee(self, str symbol)
     cpdef object get_taker_fee(self, str symbol)
@@ -131,6 +130,9 @@ cdef class Position(util.Initializable):
     cpdef bint is_long(self)
     cpdef bint is_short(self)
     cpdef bint is_idle(self)
+    cpdef object on_idle(self, bint force_open=*, bint is_from_exchange_data=*)
+    cpdef object on_active(self, bint force_open=*, bint is_from_exchange_data=*)
+    cpdef object on_liquidate(self, bint force_liquidate=*, bint is_from_exchange_data=*)
     cpdef object get_quantity_to_close(self)
     cpdef object get_unrealized_pnl_percent(self)
     cpdef object on_pnl_update(self)  # needs object to forward exceptions

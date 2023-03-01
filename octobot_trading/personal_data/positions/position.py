@@ -94,30 +94,35 @@ class Position(util.Initializable):
         """
         Initialize position status update tasks
         """
-        await positions_states.create_position_state(self, **kwargs)
+        positions_states.create_position_state(self, **kwargs)
+        if self.state.has_to_be_async_synchronized():
+            await self.state.initialize()
 
-    async def on_open(self, force_open=False, is_from_exchange_data=False):
+    def on_idle(self, force_open=False, is_from_exchange_data=False):
         """
-        Triggers a new position open state
+        Triggers a new position idle state
         :param force_open: if the new state should be forced
         :param is_from_exchange_data: if it's call from exchange data
         """
-        self.change_state(positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data))
-        await self.state.initialize(forced=force_open)
+        self.state = positions_states.IdlePositionState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state.sync_initialize(forced=force_open)
 
-    async def on_liquidate(self, force_liquidate=False, is_from_exchange_data=False):
+    def on_active(self, force_open=False, is_from_exchange_data=False):
+        """
+        Triggers a new position active state
+        :param force_open: if the new state should be forced
+        :param is_from_exchange_data: if it's call from exchange data
+        """
+        self.state = positions_states.ActivePositionState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state.sync_initialize(forced=force_open)
+
+    def on_liquidate(self, force_liquidate=False, is_from_exchange_data=False):
         """
         Triggers a new position liquidation state
         :param force_liquidate: if the new state should be forced
         :param is_from_exchange_data: if it's call from exchange data
         """
-        self.change_state(positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data))
-        await self.state.initialize(forced=force_liquidate)
-
-    def change_state(self, new_state):
-        if self.state is not None:
-            self.state.update_is_active()
-        self.state = new_state
+        self.state = positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data)
 
     def _should_change(self, original_value, new_value):
         if new_value is not None and original_value != new_value:
@@ -679,13 +684,13 @@ class Position(util.Initializable):
         """
         Resets the side related data when a position side changes
         """
-        if self.state is not None:
-            self.state.update_is_active()
         if reset_entry_price:
             self._reset_entry_price()
         self.exit_price = constants.ZERO
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
         logging.get_logger(self.get_logger_name()).info(f"Changed position side: now {self.side.name}")
+        # update position state if necessary
+        positions_states.create_position_state(self)
 
     def _on_size_update(self,
                         size_update,
@@ -701,6 +706,8 @@ class Position(util.Initializable):
                                                             size_update,
                                                             margin_update,
                                                             is_update_increasing_position_size)
+        # update position state if necessary
+        positions_states.create_position_state(self)
 
     async def recreate(self):
         """
@@ -771,7 +778,8 @@ class Position(util.Initializable):
         create liquidation state
         """
         self.status = enums.PositionStatus.LIQUIDATING
-        await positions_states.create_position_state(self)
+        positions_states.create_position_state(self)
+        await self.state.initialize()
 
     def _reset_entry_price(self):
         """
@@ -845,8 +853,7 @@ class Position(util.Initializable):
         self.realised_pnl = constants.ZERO
         self.creation_time = 0
         self.on_pnl_update()  # notify portfolio to reset unrealized PNL
-        if not self.is_open():
-            await self.on_open()
+        positions_states.create_position_state(self)
 
     def clear(self):
         """
