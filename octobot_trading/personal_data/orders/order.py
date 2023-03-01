@@ -130,7 +130,8 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               group=None, tag=None, quantity_currency=None, exchange_creation_params=None) -> bool:
+               group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
+               associated_entry_id=None) -> bool:
         changed: bool = False
         should_update_total_cost = False
 
@@ -260,6 +261,9 @@ class Order(util.Initializable):
 
         if exchange_creation_params is not None:
             self.exchange_creation_params = exchange_creation_params
+
+        if associated_entry_id is not None:
+            self.associate_to_entry(associated_entry_id)
 
         if should_update_total_cost and not total_cost:
             self._update_total_cost()
@@ -411,10 +415,13 @@ class Order(util.Initializable):
         """
         await self._trigger_chained_orders()
 
-    def associate_to_entry(self, entry_order):
+    def associate_to_entry(self, entry_order_id):
         if self.associated_entry_ids is None:
             self.associated_entry_ids = []
-        self.associated_entry_ids.append(entry_order.order_id)
+        if entry_order_id not in self.associated_entry_ids:
+            self.associated_entry_ids.append(entry_order_id)
+            return True
+        return False
 
     async def _trigger_chained_orders(self):
         logger = logging.get_logger(self.get_logger_name())

@@ -86,15 +86,17 @@ class TradesManager(util.Initializable):
         return total_fees
 
     def get_completed_trades_pnl(self, trades=None) -> list:
-        trades = trades or self.trades
+        trades = trades or self.trades.values()
         trades_by_order_id = {
             trade.origin_order_id: trade
-            for trade in trades.values()
+            for trade in trades
         }
         exits_by_entry_id = {}
-        for trade in trades.values():
-            if trade.status is not enums.OrderStatus.CANCELED:
+        for trade in trades:
+            if trade.status is not enums.OrderStatus.CANCELED and trade.associated_entry_ids:
                 for entry_id in trade.associated_entry_ids:
+                    if entry_id not in trades_by_order_id:
+                        continue
                     if entry_id not in exits_by_entry_id:
                         exits_by_entry_id[entry_id] = []
                     exits_by_entry_id[entry_id].append(trade)

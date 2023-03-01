@@ -105,7 +105,8 @@ cdef class Order(util.Initializable):
             object group=*,
             str tag=*,
             str quantity_currency=*,
-            dict exchange_creation_params=*)
+            dict exchange_creation_params=*,
+            object associated_entry_id=*)
     cdef object _update_type_from_raw(self, dict raw_order)  # return object to allow exception raising
     cdef void _update_taker_maker(self)
     cdef object _on_origin_price_change(self, object previous_price, object price_time)
@@ -138,7 +139,7 @@ cdef class Order(util.Initializable):
     cpdef void clear(self)
     cpdef bint is_to_be_maintained(self)
     cpdef str get_logger_name(self)
-    cpdef void associate_to_entry(self)
+    cpdef bint associate_to_entry(self, object entry_order_id)
     cpdef void add_chained_order(self, object chained_order)
     cpdef bint should_be_created(self)
     cpdef void add_to_order_group(self, object order_group)

@@ -293,6 +293,7 @@ class ExchangeConstantsOrderBookTickerColumns(enum.Enum):
 class ExchangeConstantsOrderColumns(enum.Enum):
     INFO = "info"
     ID = "id"
+    ORDER_ID = "order_id"
     TIMESTAMP = "timestamp"
     DATETIME = 'datetime'
     LAST_TRADE_TIMESTAMP = "lastTradeTimestamp"
@@ -507,6 +508,7 @@ class TradingSignalOrdersAttrs(enum.Enum):
     BUNDLED_WITH = "bundled_with"
     CHAINED_TO = "chained_to"
     ADDITIONAL_ORDERS = "additional_orders"
+    ASSOCIATED_ORDER_IDS = "associated_order_ids"
 
 
 class TradingSignalOrdersActions(enum.Enum):

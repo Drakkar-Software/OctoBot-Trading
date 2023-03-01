@@ -164,6 +164,7 @@ from octobot_trading.personal_data.trades import (
     create_trade_from_dict,
     TradesUpdater,
     Trade,
+    TradePnl,
     compute_win_rate,
 )
 from octobot_trading.personal_data import transactions
@@ -354,6 +355,7 @@ __all__ = [
     "create_trade_from_dict",
     "TradesUpdater",
     "Trade",
+    "TradePnl",
     "compute_win_rate",
     "ExchangePersonalData",
     "AUTHENTICATED_UPDATER_PRODUCERS",

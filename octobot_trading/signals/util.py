@@ -59,6 +59,7 @@ def create_order_signal_content(
         trading_enums.TradingSignalOrdersAttrs.GROUP_TYPE.value:
             None if order.order_group is None else order.order_group.__class__.__name__,
         trading_enums.TradingSignalOrdersAttrs.TAG.value: order.tag,
+        trading_enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: order.associated_entry_ids,
         trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value: order.shared_signal_order_id,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
             None if order.triggered_by is None else order.triggered_by.shared_signal_order_id
