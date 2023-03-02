@@ -20,6 +20,8 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
 import octobot_commons.tests.test_config as test_config
 
+from tests import event_loop
+
 
 EXCHANGE_NAME = "binanceus"
 

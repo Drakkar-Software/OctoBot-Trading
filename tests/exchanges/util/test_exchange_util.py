@@ -15,12 +15,13 @@
 #  License along with this library.
 import pytest
 import mock
-import trading_backend.exchanges
 
-from tests import event_loop
+import trading_backend.exchanges
 import octobot_commons.constants as commons_constants
 import octobot_commons.configuration as commons_configuration
 import octobot_trading.exchanges as exchanges
+
+from tests import event_loop
 
 
 @pytest.fixture
