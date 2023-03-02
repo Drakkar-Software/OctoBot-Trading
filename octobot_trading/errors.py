@@ -228,3 +228,9 @@ class UnexpectedAdapterError(Exception):
     """
     Raised when an unexpected error occurs in an adapter
     """
+
+
+class IncompletePNLError(Exception):
+    """
+    Raised when a pnl computation is asked on a invalid pnl
+    """
