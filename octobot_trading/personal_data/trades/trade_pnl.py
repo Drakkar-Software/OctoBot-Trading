@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_commons.symbols as symbols
 
@@ -26,16 +27,22 @@ class TradePnl:
         self.closes = closes
 
     def get_entry_time(self) -> float:
-        return min(
-            entry.executed_time
-            for entry in self.entries
-        )
+        try:
+            return min(
+                entry.executed_time
+                for entry in self.entries
+            )
+        except ValueError as err:
+            raise errors.IncompletePNLError from err
 
     def get_close_time(self) -> float:
-        return max(
-            close.executed_time
-            for close in self.closes
-        )
+        try:
+            return max(
+                close.executed_time
+                for close in self.closes
+            )
+        except ValueError as err:
+            raise errors.IncompletePNLError from err
 
     def get_total_entry_quantity(self) -> decimal.Decimal:
         return sum(
@@ -50,16 +57,22 @@ class TradePnl:
         ) or constants.ZERO
 
     def get_entry_price(self) -> decimal.Decimal:
-        return sum(
-            entry.executed_price
-            for entry in self.entries
-        ) / len(self.entries)
+        try:
+            return sum(
+                entry.executed_price
+                for entry in self.entries
+            ) / len(self.entries)
+        except ZeroDivisionError as err:
+            raise errors.IncompletePNLError from err
 
     def get_close_price(self) -> decimal.Decimal:
-        return sum(
-            close.executed_price
-            for close in self.closes
-        ) / len(self.closes)
+        try:
+            return sum(
+                close.executed_price
+                for close in self.closes
+            ) / len(self.closes)
+        except ZeroDivisionError as err:
+            raise errors.IncompletePNLError from err
 
     def get_closed_entry_value(self) -> decimal.Decimal:
         return self.get_entry_price() * self.get_closed_pnl_quantity()

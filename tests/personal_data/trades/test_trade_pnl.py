@@ -22,6 +22,7 @@ from tests.personal_data.trades import create_executed_trade
 
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 
 
@@ -30,15 +31,15 @@ SYMBOL = "BTC/USDT"
 
 def test_empty():
     pnl = personal_data.TradePnl([], [])
-    with pytest.raises(ValueError):
+    with pytest.raises(errors.IncompletePNLError):
         pnl.get_entry_time()
-    with pytest.raises(ValueError):
+    with pytest.raises(errors.IncompletePNLError):
         pnl.get_close_time()
     assert pnl.get_total_entry_quantity() == constants.ZERO
     assert pnl.get_total_close_quantity() == constants.ZERO
-    with pytest.raises(ZeroDivisionError):
+    with pytest.raises(errors.IncompletePNLError):
         pnl.get_entry_price()
-    with pytest.raises(ZeroDivisionError):
+    with pytest.raises(errors.IncompletePNLError):
         pnl.get_close_price()
     assert pnl.get_total_paid_fees() == constants.ZERO
 
