@@ -221,7 +221,7 @@ class AbstractAdapter:
         return raw
 
     def parse_leverage_tiers(self, fixed, **kwargs):
-        raise NotImplementedError("parse_funding_rate_history is not implemented")
+        raise NotImplementedError("parse_leverage_tiers is not implemented")
 
     def fix_mark_price(self, raw, **kwargs):
         # add generic logic if necessary

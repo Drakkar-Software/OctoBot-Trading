@@ -299,6 +299,48 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard funding_rate_history parsing logic
         return fixed
 
+    def fix_leverage_tiers(self, raw, **kwargs):
+        fixed = super().fix_leverage_tiers(raw, **kwargs)
+        # CCXT standard leverage_tiers fixing logic
+        return fixed
+
+    def parse_leverage_tiers(self, fixed, **kwargs):
+        # CCXT standard leverage_tiers parsing logic
+        
+        # {
+        #   "BTC/USDT": [
+        #       {
+        #           ExchangeConstantsLeverageTiersColumns.TIER.value: 1.0, 
+        #           ExchangeConstantsLeverageTiersColumns.CURRENCY.value: "USDT", 
+        #           ExchangeConstantsLeverageTiersColumns.MIN_NOTIONAL.value: 0.0, 
+        #           ExchangeConstantsLeverageTiersColumns.MAX_NOTIONAL.value: 5000.0,
+        #           ExchangeConstantsLeverageTiersColumns.MAINTENANCE_MARGIN_RATE.value: 0.01, 
+        #           ExchangeConstantsLeverageTiersColumns.MAX_LEVERAGE.value: 50.0, 
+        #           ExchangeConstantsLeverageTiersColumns.INFO.value: {
+        #               'bracket': '1', 'initialLeverage': '50', 'notionalCap': '5000',
+        #               'notionalFloor': '0', 'maintMarginRatio': '0.01', 'cum': '0.0'
+        #           }
+        #       }
+        #   ]
+        # }
+        for symbol, tiers in fixed.items():
+            for tier_index, tier in enumerate(tiers):
+                fixed[symbol][tier_index]= {
+                    enums.ExchangeConstantsLeverageTiersColumns.TIER.value:
+                        tier.get(ccxt_enums.ExchangeLeverageTiersCCXTColumns.TIER.value),
+                    enums.ExchangeConstantsLeverageTiersColumns.CURRENCY.value: 
+                        tier.get(ccxt_enums.ExchangeLeverageTiersCCXTColumns.CURRENCY.value),
+                    enums.ExchangeConstantsLeverageTiersColumns.MIN_NOTIONAL.value:
+                        tier.get(ccxt_enums.ExchangeLeverageTiersCCXTColumns.MIN_NOTIONAL.value),
+                    enums.ExchangeConstantsLeverageTiersColumns.MAX_NOTIONAL.value:
+                        tier.get(ccxt_enums.ExchangeLeverageTiersCCXTColumns.MAX_NOTIONAL.value),
+                    enums.ExchangeConstantsLeverageTiersColumns.MAINTENANCE_MARGIN_RATE.value:
+                        tier.get(ccxt_enums.ExchangeLeverageTiersCCXTColumns.MAINTENANCE_MARGIN_RATE.value),
+                    enums.ExchangeConstantsLeverageTiersColumns.MAX_LEVERAGE.value:
+                        tier.get(ccxt_enums.ExchangeLeverageTiersCCXTColumns.MAX_LEVERAGE.value),
+                }
+        return fixed
+
     def fix_mark_price(self, raw, **kwargs):
         fixed = super().fix_mark_price(raw, **kwargs)
         # CCXT standard mark_price fixing logic
