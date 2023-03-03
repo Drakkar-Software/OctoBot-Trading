@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.24] - 2023-03-03
+### Added
+- [PNL] TradesPNL system
+- [Futures] Margin mode API
+- [Positions] Active positions can now be awaited
+- [Orders] Accurate cancel order error management
+### Updated
+- [Orders] Better order synchronization from exchange 
+- [Community] Optimize auth storage 
+- [CCXT] to ccxt==2.8.4 
+### Fixed
+- [Orders] Cancel order error 
+- [Websocket] Rare on-disconnect crash 
+- [Futures] Funding issues
+
 ## [2.3.23] - 2023-02-17
 ### Fixed
 - [Cython] Header
