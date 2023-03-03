@@ -368,6 +368,16 @@ class ExchangeConstantsLeveragePropertyColumns(enum.Enum):
     RAW = "raw"
 
 
+class ExchangeConstantsLeverageTiersColumns(enum.Enum):
+    TIER = "tier"
+    CURRENCY = "currency"
+    MIN_NOTIONAL = "min_notional"
+    MAX_NOTIONAL = "max_notional"
+    MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
+    MAX_LEVERAGE = "max_leverage"
+    INFO = "info"
+
+
 class FeePropertyColumns(enum.Enum):
     TYPE = "type"  # taker of maker
     CURRENCY = "currency"  # currency the fee is paid in

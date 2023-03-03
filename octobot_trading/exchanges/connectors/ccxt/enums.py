@@ -64,6 +64,16 @@ class ExchangeFundingCCXTColumns(enum.Enum):
     PREVIOUS_FUNDING_RATE = "previousFundingRate"
 
 
+class ExchangeLeverageTiersCCXTColumns(enum.Enum):
+    TIER = "tier"
+    CURRENCY = "currency"
+    MIN_NOTIONAL = "minNotional"
+    MAX_NOTIONAL = "maxNotional"
+    MAINTENANCE_MARGIN_RATE = "maintenanceMarginRate"
+    MAX_LEVERAGE = "maxLeverage"
+    INFO = "info"
+
+
 class ExchangeOrderCCXTColumns(enum.Enum):
     INFO = "info"
     ID = "id"
