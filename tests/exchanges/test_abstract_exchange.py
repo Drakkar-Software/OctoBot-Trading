@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import pytest_asyncio
 import pytest
 import mock
 
@@ -30,6 +31,7 @@ EXCHANGE_NAME = "binanceus"
 def abstract_exchange():
     config = test_config.load_test_config()
     return exchanges.AbstractExchange(config, exchanges.ExchangeManager(config, EXCHANGE_NAME))
+
 
 @pytest.mark.asyncio
 async def test_log_order_creation_error(abstract_exchange):
