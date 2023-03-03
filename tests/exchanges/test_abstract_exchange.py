@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import pytest_asyncio
 import pytest
 import mock
 
@@ -22,6 +21,10 @@ import octobot_trading.enums as enums
 import octobot_commons.tests.test_config as test_config
 
 from tests import event_loop
+
+
+# All test coroutines will be treated as marked.
+pytestmark = pytest.mark.asyncio
 
 
 EXCHANGE_NAME = "binanceus"
@@ -51,7 +54,7 @@ async def test_log_order_creation_error(abstract_exchange):
     logger_mock.reset_mock()
 
 
-def test_supports_bundled_order_on_order_creation(abstract_exchange):
+async def test_supports_bundled_order_on_order_creation(abstract_exchange):
     order_mock = mock.Mock()
     order_mock.order_type = enums.TraderOrderType.SELL_MARKET
     assert abstract_exchange.supports_bundled_order_on_order_creation(order_mock, enums.TraderOrderType.STOP_LOSS) \
@@ -64,10 +67,10 @@ def test_supports_bundled_order_on_order_creation(abstract_exchange):
            is True
 
 
-def test_get_order_additional_params(abstract_exchange):
+async def test_get_order_additional_params(abstract_exchange):
     assert abstract_exchange.get_order_additional_params(None) == {}
 
 
-def test_get_bundled_order_parameters(abstract_exchange):
+async def test_get_bundled_order_parameters(abstract_exchange):
     with pytest.raises(NotImplementedError):
         abstract_exchange.get_bundled_order_parameters(None)
