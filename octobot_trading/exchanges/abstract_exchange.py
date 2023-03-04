@@ -275,6 +275,13 @@ class AbstractExchange(util.Initializable):
         :return: the user trades history list
         """
         raise NotImplementedError("get_my_recent_trades is not implemented")
+        
+    async def get_leverage_tiers(self, symbols: str = None, **kwargs: dict):
+        """
+        :param symbols: the symbols or None
+        :return: the current leverage tiers by symbols
+        """
+        raise NotImplementedError("get_leverage_tiers is not implemented")
 
     async def cancel_order(
             self, order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict

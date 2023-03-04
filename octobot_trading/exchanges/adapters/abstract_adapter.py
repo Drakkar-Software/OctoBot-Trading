@@ -97,6 +97,11 @@ class AbstractAdapter:
         return self.parse_funding_rate(fixed, **kwargs)
 
     @_adapter
+    def adapt_leverage_tiers(self, raw, **kwargs):
+        fixed = self.fix_leverage_tiers(raw, **kwargs)
+        return self.parse_leverage_tiers(fixed, **kwargs) 
+
+    @_adapter
     def adapt_leverage(self, raw, **kwargs):
         fixed = self.fix_leverage(raw, **kwargs)
         return self.parse_leverage(fixed, **kwargs)
@@ -209,6 +214,13 @@ class AbstractAdapter:
         return raw
 
     def parse_funding_rate_history(self, fixed, **kwargs):
+        raise NotImplementedError("parse_funding_rate_history is not implemented")
+
+    def fix_leverage_tiers(self, raw, **kwargs):
+        # add generic logic if necessary
+        return raw
+
+    def parse_leverage_tiers(self, fixed, **kwargs):
         raise NotImplementedError("parse_funding_rate_history is not implemented")
 
     def fix_mark_price(self, raw, **kwargs):
