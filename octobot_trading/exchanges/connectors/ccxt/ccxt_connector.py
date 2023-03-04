@@ -465,6 +465,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
         )
 
+    async def get_leverage_tiers(self, symbols: str = None, **kwargs: dict) -> list:
+        if self.client.has.get("fetchLeverageTiers"):
+            return self.adapter.adapt_leverage_tiers(
+                await self.client.fetch_leverage_tiers(symbols=symbols, params=kwargs)
+            )
+        raise NotImplementedError("get_leverage_tiers is not supported")
+
     def get_contract_size(self, symbol: str):
         return decimal.Decimal(str(ccxt_client_util.get_contract_size(self.client, symbol)))
 
