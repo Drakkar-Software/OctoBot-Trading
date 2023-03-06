@@ -18,6 +18,7 @@ import ccxt
 
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
+import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 
 def create_client(exchange_class, exchange_name, exchange_manager, logger, 
@@ -30,7 +31,9 @@ def create_client(exchange_class, exchange_name, exchange_manager, logger,
     is_authenticated = False
     if not exchange_manager.exchange_only:
         # avoid logging version on temporary exchange_only exchanges
-        logger.info(f"Creating {exchange_class.__name__} exchange with ccxt in version {ccxt.__version__}")
+        exchange_type = exchange_util.get_exchange_type(exchange_manager)
+        logger.info(f"Creating {exchange_class.__name__} {exchange_type.name} "
+                    f"exchange with ccxt in version {ccxt.__version__}")
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_name):
         try:
             key, secret, password = exchange_manager.get_exchange_credentials(exchange_name)

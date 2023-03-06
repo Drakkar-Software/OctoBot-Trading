@@ -26,3 +26,7 @@ def is_perpetual_future_contract(contract_type):
 
 def get_pair_contracts(exchange_manager) -> dict:
     return exchange_manager.exchange.pair_contracts
+
+
+def is_handled_contract(contract) -> bool:
+    return contract.is_handled_contract()
