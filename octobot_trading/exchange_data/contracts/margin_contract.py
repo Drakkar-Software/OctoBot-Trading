@@ -62,3 +62,9 @@ class MarginContract:
         :param is_cross: should be True if the margin type is cross
         """
         self.margin_type = enums.MarginType.ISOLATED if is_isolated and not is_cross else enums.MarginType.CROSS
+
+    def is_handled_contract(self):
+        """
+        :return: False if this contract can't be traded in OctoBot
+        """
+        return True
