@@ -276,7 +276,7 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("get_my_recent_trades is not implemented")
         
-    async def get_leverage_tiers(self, symbols: str = None, **kwargs: dict):
+    async def get_leverage_tiers(self, symbols: list = None, **kwargs: dict)-> dict:
         """
         :param symbols: the symbols or None
         :return: the current leverage tiers by symbols

@@ -637,7 +637,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_symbol_leverage is not implemented")
 
-    async def get_leverage_tiers(self, symbols: str = None, **kwargs: dict):
+    async def get_leverage_tiers(self, symbols: list = None, **kwargs: dict)-> dict:
         """
         :param symbols: the symbols or None
         :return: the current leverage tiers by symbols
