@@ -465,7 +465,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
         )
 
-    async def get_leverage_tiers(self, symbols: str = None, **kwargs: dict) -> list:
+    async def get_leverage_tiers(self, symbols: list = None, **kwargs: dict) -> dict:
         if self.client.has.get("fetchLeverageTiers"):
             return self.adapter.adapt_leverage_tiers(
                 await self.client.fetch_leverage_tiers(symbols=symbols, params=kwargs)
