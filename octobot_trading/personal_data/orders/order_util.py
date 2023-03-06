@@ -184,7 +184,8 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
         )
         # apply MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER in case the total order cost computation
         # is not (yet) accurate on this exchange (default is 1, meaning the calculation is accurate)
-        if exchange_manager.exchange.MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER != constants.ONE:
+        if exchange_manager.exchange.MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER != constants.ONE \
+           and not exchange_manager.is_backtesting:
             max_position_increased_order_quantity *= \
                 exchange_manager.exchange.MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER
         # increasing position: always use the same currency
