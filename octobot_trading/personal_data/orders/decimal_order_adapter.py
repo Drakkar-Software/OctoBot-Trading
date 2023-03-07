@@ -201,20 +201,21 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
                 # valid order that can be handled by the exchange
                 return [(valid_quantity, valid_price)]
 
-        # case 1.2: use only quantity and price
-        elif personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MIN.value):
-            min_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MIN.value, math.nan)))
-            max_price = None
-            # not all symbol data have a max price
-            if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value):
-                max_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MAX.value, math.nan)))
+        # case 1.2: use only quantity and price (if available)
+        else:
+            if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MIN.value):
+                min_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MIN.value, math.nan)))
+                max_price = None
+                # not all symbol data have a max price
+                if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value):
+                    max_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MAX.value, math.nan)))
 
-            if (max_price is not None and (max_price <= valid_price)) or valid_price <= min_price:
-                # invalid order
-                return []
+                if (max_price is not None and (max_price <= valid_price)) or valid_price <= min_price:
+                    # invalid order
+                    return []
 
             # check total_order_price not > max_cost and valid_quantity not > max_quantity
-            elif max_quantity is not None and valid_quantity > max_quantity:
+            if max_quantity is not None and valid_quantity > max_quantity:
                 # split quantity into smaller orders
                 return decimal_adapt_order_quantity_because_quantity(valid_quantity, max_quantity,
                                                                      quantity, valid_price, symbol_market)

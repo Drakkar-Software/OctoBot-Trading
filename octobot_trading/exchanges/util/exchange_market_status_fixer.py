@@ -88,19 +88,13 @@ def calculate_prices(market_limit):
 
     if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]) and \
         Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount:
-        if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]) \
-                and is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]) \
-                and limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value] > 0:
-            limit_price[Ecmsc.LIMITS_PRICE_MAX.value] = limit_cost[Ecmsc.LIMITS_COST_MAX.value] / \
-                                                        limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]
+        if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]):
+            limit_price[Ecmsc.LIMITS_PRICE_MAX.value] = limit_cost[Ecmsc.LIMITS_COST_MAX.value]
 
     if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]) and \
             Ecmsc.LIMITS_COST_MIN.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MIN.value in limit_amount:
-        if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]) \
-                and is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value]) \
-                and limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value] > 0:
-            limit_price[Ecmsc.LIMITS_PRICE_MIN.value] = limit_cost[Ecmsc.LIMITS_COST_MIN.value] / \
-                                                        limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value]
+        if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]):
+            limit_price[Ecmsc.LIMITS_PRICE_MIN.value] = limit_cost[Ecmsc.LIMITS_COST_MIN.value]
 
 
 def fix_market_status_limits_from_current_data(market_limit):
@@ -113,8 +107,8 @@ def fix_market_status_limits_from_current_data(market_limit):
         calculate_amounts(market_limit)
 
     # calculate prices
-    if not (check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
-        calculate_prices(market_limit)
+    # if not (check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
+    #     calculate_prices(market_limit)
 
     if not is_ms_valid(
             market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]):
