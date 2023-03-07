@@ -106,9 +106,9 @@ async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
             and not exchange_manager.is_trader_simulated:
         exchange_manager.logger.debug(await exchange_manager.exchange_backend.initialize())
-        if not exchange_manager.is_future:
-            return
-        try:
+        return
+        # disabled
+        try:    # pylint: disable=W0101
             exchange_manager.is_valid_account = await _is_supporting_octobot()
             if exchange_manager.is_valid_account:
                 return True
