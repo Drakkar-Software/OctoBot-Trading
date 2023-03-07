@@ -204,7 +204,6 @@ def supports_websockets(exchange_name: str, tentacles_setup_config) -> bool:
     return exchanges.supports_websocket(exchange_name, tentacles_setup_config)
 
 
-# TODO remove after ccxt symbols update
 def get_trading_pairs(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbol_pairs
 
