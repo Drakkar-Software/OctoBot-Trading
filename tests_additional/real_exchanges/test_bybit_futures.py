@@ -19,8 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
-import octobot_trading.errors
+from tests_additional.real_exchanges.real_futures_exchange_tester import RealFuturesExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -28,11 +27,11 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestBybitRealExchangeTester(RealExchangeTester):
+class TestBybitRealExchangeTester(RealFuturesExchangeTester):
     EXCHANGE_NAME = "bybit"
-    SYMBOL = "BTC/USDT"
-    SYMBOL_2 = "ETH/BTC"
-    SYMBOL_3 = "XRP/BTC"
+    SYMBOL = "BTC/USDT:USDT"
+    SYMBOL_2 = "ETH/USD:ETH"
+    SYMBOL_3 = "XRP/USD:XRP"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -68,28 +67,28 @@ class TestBybitRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_COST.value))
             # min cost and price can be inferior or equal as we are in /USD futures
             self.check_market_status_limits(market_status,
-                                            expect_invalid_price_limit_values=False)
+                                            low_price_min=0.0001,    # XRP/USD
+                                            low_price_max=0.1,    # XRP/USD
+                                            expect_invalid_price_limit_values=False,
+                                            expect_inferior_or_equal_price_and_cost=True)
 
     async def test_get_symbol_prices(self):
         # without limit
-        with pytest.raises(octobot_trading.errors.FailedRequest):
-            # limit param is required
-            await self.get_symbol_prices()
+        symbol_prices = await self.get_symbol_prices()
+        assert len(symbol_prices) == 200
         # max is 200 on Bybit
-        symbol_prices = await self.get_symbol_prices(limit=1000)
-        assert len(symbol_prices) == 1000
+        symbol_prices = await self.get_symbol_prices(limit=200)
+        assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # can't fetch more than 1000 candles
-        symbol_prices = await self.get_symbol_prices(limit=1500)
-        assert len(symbol_prices) == 1000
-        # check candles order (oldest first)
-        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
-        # check last candle is the current candle
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+        # fetching more than 200 candles is fetching candles from the past
+        symbol_prices = await self.get_symbol_prices(limit=500)
+        assert len(symbol_prices) == 200
+        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] < self.get_time() - self.get_allowed_time_delta() \
+            * 100
 
         # try with candles limit (used in candled updater)
         symbol_prices = await self.get_symbol_prices(limit=200)
@@ -101,8 +100,8 @@ class TestBybitRealExchangeTester(RealExchangeTester):
 
         # try with since and limit (used in data collector)
         assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []
-        # "endTime" param is required: add in tentacle
-        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, endTime=self.get_ms_time())
+        # "end" param is required: add in tentacle
+        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, end=self.get_ms_time())
         assert len(symbol_prices) == 50
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
@@ -140,6 +139,14 @@ class TestBybitRealExchangeTester(RealExchangeTester):
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
 
+    async def test_get_funding_rate(self):
+        funding_rate, ticker_funding_rate = await self.get_funding_rate()
+        # patch FUNDING_RATE and LAST_FUNDING_TIME in tentacle
+        self._check_funding_rate(funding_rate, has_rate=False, has_last_time=False)
+        # missing PREDICTED_FUNDING_RATE, find order info in info (exchange tentacle)
+        self._check_funding_rate(ticker_funding_rate, has_rate=False, has_last_time=False,
+                                 has_next_rate=False, has_next_time=False)
+
     @staticmethod
     def _check_ticker(ticker, symbol, check_content=False):
         assert ticker[Ectc.SYMBOL.value] == symbol
@@ -167,5 +174,5 @@ class TestBybitRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
-            assert ticker[Ectc.TIMESTAMP.value]
-            RealExchangeTester.check_ticker_typing(ticker)
+            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
+            RealFuturesExchangeTester.check_ticker_typing(ticker, check_timestamp=False)
