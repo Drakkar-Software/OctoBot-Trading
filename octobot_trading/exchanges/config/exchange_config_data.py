@@ -180,7 +180,7 @@ class ExchangeConfig(util.Initializable):
     def _set_config_traded_pair(self, cryptocurrency, traded_symbol_pairs_set, existing_pairs):
         try:
             is_enabled = util.is_currency_enabled(self.config, cryptocurrency, True)
-            if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]:
+            if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency].get(constants.CONFIG_CRYPTO_PAIRS, []):
                 if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] != \
                         constants.CONFIG_SYMBOLS_WILDCARD:
                     self._populate_non_wildcard_pairs(cryptocurrency, existing_pairs, is_enabled)
