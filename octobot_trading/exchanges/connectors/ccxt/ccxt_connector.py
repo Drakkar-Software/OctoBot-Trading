@@ -347,22 +347,26 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_market_buy_order(symbol, quantity, params=params), symbol=symbol
+            await self.client.create_market_buy_order(symbol, quantity, params=params),
+            symbol=symbol, quantity=quantity
         )
 
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_limit_buy_order(symbol, quantity, price, params=params), symbol=symbol
+            await self.client.create_limit_buy_order(symbol, quantity, price, params=params),
+            symbol=symbol, quantity=quantity
         )
 
     async def create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_market_sell_order(symbol, quantity, params=params), symbol=symbol
+            await self.client.create_market_sell_order(symbol, quantity, params=params),
+            symbol=symbol, quantity=quantity
         )
 
     async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_limit_sell_order(symbol, quantity, price, params=params), symbol=symbol
+            await self.client.create_limit_sell_order(symbol, quantity, price, params=params),
+            symbol=symbol, quantity=quantity
         )
 
     async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
