@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.25] - 2023-03-09
+### Added
+- [Exchanges] get_leverage_tiers 
+### Updated
+[Market Status] Allow missing price limits
+### Fixed
+- [Funding] Skip funding fetch on spot pairs
+
 ## [2.3.24] - 2023-03-03
 ### Added
 - [PNL] TradesPNL system
