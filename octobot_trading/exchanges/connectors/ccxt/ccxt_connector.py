@@ -286,6 +286,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             except ccxt.NotSupported as e:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 raise octobot_trading.errors.NotSupported from e
+            except ccxt.ExchangeError as e:
+                # something went wrong and ccxt did not expect it
+                raise octobot_trading.errors.FailedRequest from e
         else:
             # When fetch_order is not supported, uses get_open_orders and extract order id
             open_orders = await self.get_open_orders(symbol=symbol)
@@ -410,7 +413,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 # no exception, cancel worked
             try:
                 # make sure order is canceled
-                cancelled_order = await self.get_order(
+                cancelled_order = await self.exchange_manager.exchange.get_order(
                     order_id, symbol=symbol
                 )
                 if cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order):
