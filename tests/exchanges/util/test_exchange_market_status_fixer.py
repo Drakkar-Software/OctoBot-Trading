@@ -107,8 +107,8 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.PRECISION.value: self._get_precision(7, 7, 7),
             Ecmsc.LIMITS.value: self._get_limits(
                 6.37795818470299, 63779581.84702988,
-                0, 1567.8999000000001,
-                0, 99999999999.99997
+                0.0015678999, 1567.8999000000001,
+                0.01, 99999999999.99997
             )
         }
 
@@ -122,8 +122,8 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.PRECISION.value: self._get_precision(5, 5, 5),
             Ecmsc.LIMITS.value: self._get_limits(
                 0.3865097282566056, 3865097.2825660524,
-                0, current_price * 1000,
-                0, 99999999999.99997
+                0.02587257, current_price * 1000,
+                0.010000000000000007, 99999999999.99997
             )
         }
 
@@ -164,7 +164,7 @@ class TestExchangeMarketStatusFixer:
         ).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(None, None, None),
             # replace "plop" and nan with computed numbers
-            Ecmsc.LIMITS.value: self._get_limits(0.05, 1e4, 65.99999999999999, 1111111.1111, 3.3, 11111111111)
+            Ecmsc.LIMITS.value: self._get_limits(0.05, 1e4, None, None, 3.3, 11111111111)
         }
 
         # missing and added keys
@@ -173,7 +173,7 @@ class TestExchangeMarketStatusFixer:
         limits[Ecmsc.LIMITS_AMOUNT.value]["plop"] = "2"
         limits[Ecmsc.LIMITS_AMOUNT.value].pop(Ecmsc.LIMITS_AMOUNT_MIN.value)
 
-        expected_limits = self._get_limits(0.05, 1e4, "plop", 1111111.1111, 3.3, 11111111111)
+        expected_limits = self._get_limits(0.05, 1e4, None, None, 3.3, 11111111111)
         expected_limits[Ecmsc.LIMITS_AMOUNT.value].pop(Ecmsc.LIMITS_AMOUNT_MIN.value)
         expected_limits[Ecmsc.LIMITS_AMOUNT.value]["plop"] = "2"
         expected_limits["plop"] = {"a": "1"}
@@ -205,7 +205,7 @@ class TestExchangeMarketStatusFixer:
 
         assert ExchangeMarketStatusFixer(ms).market_status == {
             Ecmsc.PRECISION.value: self._get_precision(5, 5, 5),
-            Ecmsc.LIMITS.value: self._get_limits(0.01, 1e3, 0.05 / 0.01, 1e5 / 1e3, 0.05, 1e5)
+            Ecmsc.LIMITS.value: self._get_limits(0.01, 1e3, None, None, 0.05, 1e5)
         }
 
     def test_exchange_market_status_fixer_without_price_amount(self):

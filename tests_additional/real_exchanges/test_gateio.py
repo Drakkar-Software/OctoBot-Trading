@@ -61,9 +61,7 @@ class TestGateIORealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             # invalid values (should be much lower for XRP/BTC => remove price limit in tentacle
-            self.check_market_status_limits(market_status,
-                                            expect_invalid_price_limit_values=True,
-                                            enable_price_and_cost_comparison=False)
+            self.check_market_status_limits(market_status, has_price_limits=False,)
 
     async def test_get_symbol_prices(self):
         # without limit

@@ -21,7 +21,7 @@ cdef bint check_market_status_values(market_limit, bint zero_valid=*)
 cdef object get_markets_limit(dict market_limit)
 cdef void calculate_amounts(dict market_limit)
 cdef void calculate_costs(dict market_limit)
-cdef void calculate_prices(dict market_limit)
+cdef void update_prices(dict market_limit)
 cdef void fix_market_status_limits_from_current_data(dict market_limit)
 
 cdef class ExchangeMarketStatusFixer:

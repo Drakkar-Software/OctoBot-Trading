@@ -65,7 +65,7 @@ class TestCoinexRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            self.check_market_status_limits(market_status, expect_invalid_price_limit_values=False)
+            self.check_market_status_limits(market_status, has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit
