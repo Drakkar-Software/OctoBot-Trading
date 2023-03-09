@@ -55,19 +55,40 @@ async def test_set_mark_price(prices_manager):
     assert prices_manager.mark_price == decimal.Decimal(10)
     check_event_is_set(prices_manager)
 
-
+ 
 async def test_set_mark_price_for_exchange_source(prices_manager):
+    prices_manager.set_mark_price(decimal.Decimal(15), MarkPriceSources.TICKER_CLOSE_PRICE.value)
+    assert prices_manager.mark_price == decimal.Decimal(15)
+    check_event_is_set(prices_manager)
+    prices_manager.set_mark_price(decimal.Decimal(30), MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+    assert prices_manager.mark_price == decimal.Decimal(15) # ignore first call
+    check_event_is_set(prices_manager)
+    prices_manager.set_mark_price(decimal.Decimal(30), MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+    assert prices_manager.mark_price == decimal.Decimal(30)    
+    check_event_is_set(prices_manager)
     prices_manager.set_mark_price(decimal.Decimal(10), MarkPriceSources.EXCHANGE_MARK_PRICE.value)
     assert prices_manager.mark_price == decimal.Decimal(10)
     check_event_is_set(prices_manager)
     prices_manager.set_mark_price(decimal.Decimal(25), MarkPriceSources.RECENT_TRADE_AVERAGE.value)
-    assert prices_manager.mark_price == decimal.Decimal(10)  # Drop first RT update
-    prices_manager.set_mark_price(decimal.Decimal(30), MarkPriceSources.RECENT_TRADE_AVERAGE.value)
-    assert prices_manager.mark_price == decimal.Decimal(30)
+    assert prices_manager.mark_price == decimal.Decimal(10) # dont override valid exchange mark price
+    check_event_is_set(prices_manager)
     prices_manager.set_mark_price(decimal.Decimal(20), MarkPriceSources.TICKER_CLOSE_PRICE.value)
-    assert prices_manager.mark_price == decimal.Decimal(30)
+    assert prices_manager.mark_price == decimal.Decimal(10) # dont override valid exchange mark price
+    check_event_is_set(prices_manager)
     prices_manager.set_mark_price(decimal.Decimal(15), MarkPriceSources.EXCHANGE_MARK_PRICE.value)
     assert prices_manager.mark_price == decimal.Decimal(15)
+    check_event_is_set(prices_manager)
+    if not os.getenv('CYTHON_IGNORE'):
+        prices_manager.mark_price_from_sources = {}
+        prices_manager.set_mark_price(decimal.Decimal(10), MarkPriceSources.CANDLE_CLOSE_PRICE.value)
+        assert prices_manager.mark_price == decimal.Decimal(10)
+        check_event_is_set(prices_manager)
+        prices_manager.set_mark_price(decimal.Decimal(22), MarkPriceSources.EXCHANGE_MARK_PRICE.value)
+        assert prices_manager.mark_price == decimal.Decimal(22)
+        check_event_is_set(prices_manager)
+        prices_manager.set_mark_price(decimal.Decimal(15), MarkPriceSources.CANDLE_CLOSE_PRICE.value)
+        assert prices_manager.mark_price == decimal.Decimal(22) # dont override valid exchange mark price
+        check_event_is_set(prices_manager)
 
 
 async def test_set_mark_price_for_ticker_source_only(prices_manager):
