@@ -77,6 +77,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         super().__init__(config, exchange_manager)
         self.connector = self._create_connector(config, exchange_manager, connector_class)
         self.pair_contracts = {}
+        self.update_supported_elements(exchange_manager)
 
     def _create_connector(self, config, exchange_manager, connector_class):
         return (connector_class or self.DEFAULT_CONNECTOR_CLASS)(
@@ -99,6 +100,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
     @classmethod
     def get_name(cls):
         return cls.__name__
+
+    @classmethod
+    def update_supported_elements(cls, exchange_manager):
+        pass
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
