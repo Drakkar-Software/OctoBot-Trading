@@ -290,6 +290,65 @@ async def test_decimal_check_and_adapt_order_details_if_necessary():
                (decimal.Decimal(str(10)), decimal.Decimal(str(4900000)))]
 
 
+async def test_decimal_check_and_adapt_order_details_if_necessary_without_price_limit():
+    # without price limit
+    symbol_market = {
+        Ecmsc.LIMITS.value: {
+            Ecmsc.LIMITS_AMOUNT.value: {
+                Ecmsc.LIMITS_AMOUNT_MIN.value: 0.5,
+                Ecmsc.LIMITS_AMOUNT_MAX.value: 100,
+            },
+            Ecmsc.LIMITS_COST.value: {
+                Ecmsc.LIMITS_COST_MIN.value: 1,
+                Ecmsc.LIMITS_COST_MAX.value: 200
+            },
+            Ecmsc.LIMITS_PRICE.value: {
+                Ecmsc.LIMITS_PRICE_MIN.value: None,
+                Ecmsc.LIMITS_PRICE_MAX.value: None
+            },
+        },
+        Ecmsc.PRECISION.value: {
+            Ecmsc.PRECISION_PRICE.value: 8,
+            Ecmsc.PRECISION_AMOUNT.value: 8
+        }
+    }
+
+    # valid
+    quantity = decimal.Decimal(str(3))
+    price = decimal.Decimal(str(49.9))
+    assert personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == [
+        (quantity, price)
+    ]
+
+    # quantity too low
+    quantity = decimal.Decimal(str(0.4))
+    price = decimal.Decimal(str(49.9))
+    assert personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == []
+
+    # quantity too high
+    quantity = decimal.Decimal(str(250))
+    price = decimal.Decimal(str(1.5))
+    assert personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == [
+        (decimal.Decimal(str(50)), price), (decimal.Decimal(str(100)), price), (decimal.Decimal(str(100)), price)
+    ]
+
+    # cost too low
+    quantity = decimal.Decimal(str(3))
+    price = decimal.Decimal(str(0.01))
+    assert personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == []
+
+    # cost too high
+    quantity = decimal.Decimal(str(3))
+    price = decimal.Decimal(str(300))
+    assert personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == [
+        (decimal.Decimal('0.33333333'), decimal.Decimal('300')),
+        (decimal.Decimal('0.66666666'), decimal.Decimal('300')),
+        (decimal.Decimal('0.66666666'), decimal.Decimal('300')),
+        (decimal.Decimal('0.66666666'), decimal.Decimal('300')),
+        (decimal.Decimal('0.66666666'), decimal.Decimal('300'))
+    ]
+
+
 async def test_split_orders():
     symbol_market = {
         Ecmsc.LIMITS.value: {
