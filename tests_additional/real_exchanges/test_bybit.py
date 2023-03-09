@@ -67,8 +67,7 @@ class TestBybitRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             # min cost and price can be inferior or equal as we are in /USD futures
-            self.check_market_status_limits(market_status,
-                                            expect_invalid_price_limit_values=False)
+            self.check_market_status_limits(market_status, has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit

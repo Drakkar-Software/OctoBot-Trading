@@ -164,9 +164,20 @@ class RealExchangeTester:
                                    low_cost_max=1e-03, low_cost_min=1e-06,
                                    expect_invalid_price_limit_values=False,
                                    expect_inferior_or_equal_price_and_cost=False,
-                                   enable_price_and_cost_comparison=True):
+                                   enable_price_and_cost_comparison=True,
+                                   has_price_limits=True):
         min_price = market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value]
+        max_price = market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value]
         min_cost = market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]
+        has_min_or_max_price = min_price not in (None, 0) or max_price not in (None, 0)
+        if has_min_or_max_price and not has_price_limits:
+            raise AssertionError(
+                f"Expect no price limit values but min or max price limit is set (min: {min_price} max: {max_price})"
+            )
+        if not has_min_or_max_price and has_price_limits:
+            raise AssertionError(
+                f"Expect price limit values but min or max price limit is not set (min: {min_price} max: {max_price})"
+            )
         has_price_limit_value = min_price not in (None, 0)
         has_cost_limit_value = min_cost not in (None, 0)
         has_limit_value = has_price_limit_value and has_cost_limit_value
@@ -177,12 +188,14 @@ class RealExchangeTester:
             # (limits should be much lower for SYMBOL_3 which is the low price pair, ex: XRP/BTC)
             # => set expect_invalid_price_limit_values to True in call and
             # remove price limit in exchange tentacle market status fixer if this is the case
-            assert (not has_price_limit_value) or low_price_max >= min_price >= low_price_min
+            if has_price_limit_value:
+                assert (not has_price_limit_value) or low_price_max >= min_price >= low_price_min
             assert (not has_cost_limit_value) or low_cost_max >= min_cost >= low_cost_min
         else:
-            assert (not has_price_limit_value) or normal_price_max >= min_price >= normal_price_min
+            if has_price_limit_value:
+                assert (not has_price_limit_value) or normal_price_max >= min_price >= normal_price_min
             assert (not has_cost_limit_value) or normal_cost_max >= min_cost >= normal_cost_min
-        if enable_price_and_cost_comparison and has_limit_value:
+        if has_price_limits and enable_price_and_cost_comparison and has_limit_value:
             # Consistency here is not required by OctoBot. Fix in tentacles if consistency
             # in price/cost comparison becomes required and min_price <= min_cost is false without a good reason
             if expect_inferior_or_equal_price_and_cost:

@@ -83,18 +83,14 @@ def calculate_costs(market_limit):
                                                       limit_price[Ecmsc.LIMITS_PRICE_MIN.value]
 
 
-def calculate_prices(market_limit):
-    limit_cost, limit_price, limit_amount = get_markets_limit(market_limit)
+def update_prices(market_limit):
+    _, limit_price, _ = get_markets_limit(market_limit)
 
-    if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]) and \
-        Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount:
-        if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]):
-            limit_price[Ecmsc.LIMITS_PRICE_MAX.value] = limit_cost[Ecmsc.LIMITS_COST_MAX.value]
+    if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]):
+        limit_price[Ecmsc.LIMITS_PRICE_MAX.value] = None
 
-    if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]) and \
-            Ecmsc.LIMITS_COST_MIN.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MIN.value in limit_amount:
-        if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]):
-            limit_price[Ecmsc.LIMITS_PRICE_MIN.value] = limit_cost[Ecmsc.LIMITS_COST_MIN.value]
+    if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]):
+        limit_price[Ecmsc.LIMITS_PRICE_MIN.value] = None
 
 
 def fix_market_status_limits_from_current_data(market_limit):
@@ -106,9 +102,9 @@ def fix_market_status_limits_from_current_data(market_limit):
     if not (check_market_status_values(market_limit[Ecmsc.LIMITS_AMOUNT.value].values())):
         calculate_amounts(market_limit)
 
-    # calculate prices
-    # if not (check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
-    #     calculate_prices(market_limit)
+    # set price to None if missing
+    if not (check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
+        update_prices(market_limit)
 
     if not is_ms_valid(
             market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]):

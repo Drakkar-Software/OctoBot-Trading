@@ -28,7 +28,7 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestBinanceRealExchangeTester(RealExchangeTester):
+class TestBitsoRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "bitso"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
@@ -61,10 +61,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            self.check_market_status_limits(market_status,
-                                            low_price_max=1e-06,
-                                            expect_invalid_price_limit_values=False,
-                                            enable_price_and_cost_comparison=False)
+            self.check_market_status_limits(market_status, has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit

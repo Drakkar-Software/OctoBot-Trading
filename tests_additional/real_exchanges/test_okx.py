@@ -65,7 +65,7 @@ class TestOkxRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(market_status,
-                                            normal_cost_min=1e-08,
+                                            normal_cost_min=1e-09,
                                             low_cost_min=1e-08,
                                             expect_invalid_price_limit_values=False,
                                             enable_price_and_cost_comparison=False)

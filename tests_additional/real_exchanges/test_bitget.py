@@ -68,9 +68,9 @@ class TestBitgetRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            # wtf value, to fix in tentacle
             for val in (Ecmsc.LIMITS_PRICE_MIN.value, Ecmsc.LIMITS_PRICE_MAX.value):
-                assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][val] in (None, 50000)
+                assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][val] is None
+            # wtf value, to fix in tentacle
             for val in (Ecmsc.LIMITS_COST_MIN.value, Ecmsc.LIMITS_COST_MAX.value):
                 assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][val] in (None, 0, 5)
             # can't use normal checker
