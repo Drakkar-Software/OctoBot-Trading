@@ -325,6 +325,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
     TAG = "tag"
+    SELF_MANAGED = "self-managed"
     ENTRIES = "entries"
 
 
@@ -532,3 +533,15 @@ class TradingSignalOrdersActions(enum.Enum):
     ADD_TO_GROUP = "add_to_group"
     EDIT = "edit"
     CANCEL = "cancel"
+
+
+class PersistedOrdersAttr(enum.Enum):
+    GROUP = "gr"
+    GROUP_ID = "gi"
+    GROUP_TYPE = "gt"
+    CHAINED_ORDERS = "co"
+    EXCHANGE_CREATION_PARAMS = "ecp"
+    TRADER_CREATION_KWARGS = "tck"
+    SHARED_SIGNAL_ORDER_ID = "ssoi"
+    HAS_BEEN_BUNDLED = "hbb"
+    ENTRIES = "en"

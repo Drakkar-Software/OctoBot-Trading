@@ -21,6 +21,7 @@ import octobot_commons.errors as commons_errors
 
 import octobot_trading.util as util
 import octobot_trading.storage.trades_storage as trades_storage
+import octobot_trading.storage.orders_storage as orders_storage
 import octobot_trading.storage.transactions_storage as transactions_storage
 import octobot_trading.storage.candles_storage as candles_storage
 import octobot_trading.storage.portfolio_storage as portfolio_storage
@@ -71,6 +72,7 @@ class StorageManager(util.Initializable):
     def _storages(self, create_missing):
         return (
             self.trades_storage or self._trade_storage_factory() if create_missing else self.trades_storage,
+            self.orders_storage or self._order_storage_factory() if create_missing else self.orders_storage,
             self.transactions_storage or self._transaction_storage_factory() if create_missing else self.transactions_storage,
             self.candles_storage or self._candles_storage_factory() if create_missing else self.candles_storage,
             self.portfolio_storage or self._portfolio_storage_factory() if create_missing else self.portfolio_storage,
@@ -87,6 +89,18 @@ class StorageManager(util.Initializable):
             )
         )
         return self.trades_storage
+
+    def _order_storage_factory(self):
+        self.orders_storage = orders_storage.OrdersStorage(
+            self.exchange_manager,
+            commons_display.PlotSettings(
+                chart=commons_enums.PlotCharts.MAIN_CHART.value,
+                x_multiplier=1000,
+                mode="markers",
+                kind="scattergl",
+            )
+        )
+        return self.orders_storage
 
     def _transaction_storage_factory(self):
         self.transactions_storage = transactions_storage.TransactionsStorage(

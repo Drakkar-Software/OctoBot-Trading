@@ -38,53 +38,81 @@ def create_order_from_type(trader, order_type, side=None):
     return personal_data.TraderOrderTypeClasses[order_type](trader, side=side)
 
 
-def create_order_instance(trader,
-                          order_type,
-                          symbol,
-                          current_price,
-                          quantity,
-                          price=constants.ZERO,
-                          stop_price=constants.ZERO,
-                          status=enums.OrderStatus.OPEN,
-                          order_id=None,
-                          filled_price=constants.ZERO,
-                          average_price=constants.ZERO,
-                          quantity_filled=constants.ZERO,
-                          total_cost=constants.ZERO,
-                          timestamp=0,
-                          side=None,
-                          fees_currency_side=None,
-                          group=None,
-                          tag=None,
-                          reduce_only=None,
-                          quantity_currency=None,
-                          close_position=False,
-                          exchange_creation_params=None,
-                          associated_entry_id=None):
+def create_order_instance(
+    trader,
+    order_type,
+    symbol,
+    current_price,
+    quantity,
+    price=constants.ZERO,
+    stop_price=constants.ZERO,
+    status=enums.OrderStatus.OPEN,
+    order_id=None,
+    filled_price=constants.ZERO,
+    average_price=constants.ZERO,
+    quantity_filled=constants.ZERO,
+    total_cost=constants.ZERO,
+    timestamp=0,
+    side=None,
+    fees_currency_side=None,
+    group=None,
+    tag=None,
+    reduce_only=None,
+    quantity_currency=None,
+    close_position=False,
+    exchange_creation_params=None,
+    associated_entry_id=None
+):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
                                    side=side)
-    order.update(order_type=order_type,
-                 symbol=symbol,
-                 current_price=current_price,
-                 quantity=quantity,
-                 price=price,
-                 stop_price=stop_price,
-                 order_id=trader.parse_order_id(order_id),
-                 timestamp=timestamp,
-                 status=status,
-                 filled_price=filled_price,
-                 average_price=average_price,
-                 quantity_filled=quantity_filled,
-                 fee=None,
-                 total_cost=total_cost,
-                 fees_currency_side=fees_currency_side,
-                 group=group,
-                 tag=tag,
-                 reduce_only=reduce_only,
-                 quantity_currency=quantity_currency,
-                 close_position=close_position,
-                 exchange_creation_params=exchange_creation_params,
-                 associated_entry_id=associated_entry_id)
+    order.update(
+        order_type=order_type,
+        symbol=symbol,
+        current_price=current_price,
+        quantity=quantity,
+        price=price,
+        stop_price=stop_price,
+        order_id=trader.parse_order_id(order_id),
+        timestamp=timestamp,
+        status=status,
+        filled_price=filled_price,
+        average_price=average_price,
+        quantity_filled=quantity_filled,
+        fee=None,
+        total_cost=total_cost,
+        fees_currency_side=fees_currency_side,
+        group=group,
+        tag=tag,
+        reduce_only=reduce_only,
+        quantity_currency=quantity_currency,
+        close_position=close_position,
+        exchange_creation_params=exchange_creation_params,
+        associated_entry_id=associated_entry_id
+    )
     order.ensure_order_id()
     return order
+
+
+def create_order_from_dict(trader, order_dict):
+    """
+    :param trader: the trader to associate the order to
+    :param order_dict: a dict formatted as from order.to_dict()
+    :return: the created order instance
+    """
+    _, order_type = personal_data.parse_order_type(order_dict)
+    return create_order_instance(
+        trader,
+        order_type,
+        order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
+        constants.ZERO,
+        order_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value],
+        price=order_dict[enums.ExchangeConstantsOrderColumns.PRICE.value],
+        status=enums.OrderStatus(order_dict[enums.ExchangeConstantsOrderColumns.STATUS.value]),
+        order_id=order_dict[enums.ExchangeConstantsOrderColumns.ID.value],
+        quantity_filled=order_dict[enums.ExchangeConstantsOrderColumns.FILLED.value],
+        timestamp=order_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
+        side=enums.TradeOrderSide(order_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]),
+        tag=order_dict[enums.ExchangeConstantsOrderColumns.TAG.value],
+        reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
+    )

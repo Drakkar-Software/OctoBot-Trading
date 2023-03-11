@@ -19,6 +19,7 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.personal_data.orders.order_util as order_util
 
 
 class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
@@ -31,6 +32,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             has_new_order = False
             waiting_complete_init_orders = []
             symbols = set()
+            pending_groups = {}
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order)
@@ -48,7 +50,9 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                     await self._handle_close_order_update(order_id, order)
                 else:
                     try:
-                        await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
+                        await self._handle_open_order_update(
+                            symbol, order, order_id, is_from_bot, is_new_order, pending_groups
+                        )
                     except errors.PortfolioNegativeValueError:
                         # Special case for new orders: their order init does not finish properly when this happens
                         if is_new_order and self.channel.exchange_manager.exchange_personal_data.orders_manager. \
@@ -63,6 +67,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                             # order was not even added to orders_manager: another issue happened, raise
                             raise
             if not are_closed:
+                if pending_groups:
+                    await self._complete_pending_groups_from_storage(pending_groups)
                 await self.handle_post_open_orders_update(
                     symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
                 )
@@ -72,7 +78,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def _handle_open_order_update(self, symbol, order, order_id, is_from_bot, is_new_order):
+    async def _handle_open_order_update(self, symbol, order, order_id, is_from_bot, is_new_order, pending_groups):
         """
         Create or update an open Order from exchange data
         :param symbol: the order symbol
@@ -80,9 +86,21 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         :param order_id: the order id
         :param is_from_bot: If the order was created by OctoBot
         :param is_new_order: True if this open order has been created
+        :param pending_groups: dict of groups to be created
         """
         if (await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                 order_id, order, is_new_order=is_new_order, should_notify=False)):
+            if is_new_order and \
+                    not self.channel.exchange_manager.exchange_personal_data.orders_manager.\
+                    are_exchange_orders_initialized:
+                try:
+                    # when fetching initial orders, complete them with storage data when possible
+                    await self.channel.exchange_manager.exchange_personal_data.update_order_from_stored_data(
+                        order_id,
+                        pending_groups,
+                    )
+                except Exception as err:
+                    self.logger.exception(err, True, f"Error when completing order with stored data: {err}")
             await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
                             get_pair_cryptocurrency(symbol),
                             symbol=symbol, order=order,
@@ -140,6 +158,38 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 f"Completing order init after portfolio sync for {len(waiting_complete_init_orders)} orders"
             )
             await self._complete_open_order_init(waiting_complete_init_orders, is_from_bot)
+
+    async def _complete_pending_groups_from_storage(self, pending_groups):
+        # create order groups and their associated self-managed orders if any
+        # use copy.copy(pending_groups) as new groups might be added from new orders,
+        # in this case, also create the associated new orders
+        to_complete_groups = list(pending_groups.keys())
+        completed_groups = set()
+        max_allowed_nested_chained_orders_groups = 100
+        for _ in range(max_allowed_nested_chained_orders_groups):
+            for pending_group_id in to_complete_groups:
+                try:
+                    to_create_orders = self.channel.exchange_manager.storage_manager.orders_storage\
+                        .get_self_startup_managed_orders_details_from_group(pending_group_id)
+                    for order_desc in to_create_orders:
+                        created_order = await order_util.create_order_from_order_storage_details(
+                            order_desc, self.channel.exchange_manager, pending_groups
+                        )
+                        await created_order.initialize()
+                except Exception as err:
+                    self.logger.exception(err, True, f"Error when completing pending group with stored data: {err}")
+            completed_groups = completed_groups.union(set(to_complete_groups))
+            to_complete_groups = [
+                group_id
+                for group_id in pending_groups.keys()
+                if group_id not in completed_groups
+            ]
+            if not to_complete_groups:
+                return
+        # if we arrived here, it means that after 100 iterations, still not every order group is complete,
+        # there is an issue.
+        self.logger.error(f"Error when completing order groups: {len(to_complete_groups)} remaining order "
+                          f"groups to complete after maximum iterations.")
 
     async def update_order_from_exchange(self, order,
                                          should_notify=False,
