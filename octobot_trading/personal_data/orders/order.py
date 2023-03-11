@@ -685,7 +685,8 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
-            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
+            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
+            enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
         }
 
     def clear(self):

@@ -25,6 +25,12 @@ from octobot_trading.storage.trades_storage import (
     TradesStorage,
 )
 
+from octobot_trading.storage import orders_storage
+from octobot_trading.storage.orders_storage import (
+    OrdersStorage,
+    create_order_from_storage_details,
+)
+
 from octobot_trading.storage import portfolio_storage
 from octobot_trading.storage.portfolio_storage import (
     PortfolioStorage,
@@ -55,6 +61,8 @@ from octobot_trading.storage.util import (
 __all__ = [
     "AbstractStorage",
     "TradesStorage",
+    "OrdersStorage",
+    "create_order_from_storage_details",
     "PortfolioStorage",
     "CandlesStorage",
     "TransactionsStorage",

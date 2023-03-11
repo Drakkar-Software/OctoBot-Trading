@@ -16,6 +16,7 @@
 import asyncio
 import copy
 import decimal
+import types
 
 import octobot_commons.display as commons_display
 import octobot_commons.logging as logging
@@ -165,4 +166,6 @@ class AbstractStorage:
                 sanitized[key] = float(val)
             elif isinstance(val, dict):
                 sanitized[key] = cls.sanitize_for_storage(val)
+            elif isinstance(val, types.FunctionType):
+                raise ValueError(f"{val.__name__} is a function, it can't be serialized")
         return sanitized

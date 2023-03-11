@@ -26,6 +26,7 @@ from octobot_trading.personal_data.orders import groups
 from octobot_trading.personal_data.orders.groups import (
     BalancedTakeProfitAndStopOrderGroup,
     OneCancelsTheOtherOrderGroup,
+    get_group_type,
 )
 from octobot_trading.personal_data.orders import order
 from octobot_trading.personal_data.orders.order import (
@@ -96,6 +97,8 @@ from octobot_trading.personal_data.orders.order_util import (
     get_order_quantity_currency,
     get_order_size_portfolio_percent,
     generate_order_id,
+    update_from_order_storage,
+    create_order_from_order_storage_details,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -149,12 +152,15 @@ __all__ = [
     "get_order_quantity_currency",
     "get_order_size_portfolio_percent",
     "generate_order_id",
+    "update_from_order_storage",
+    "create_order_from_order_storage_details",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
     "OrderState",
     "OrderGroup",
     "BalancedTakeProfitAndStopOrderGroup",
     "OneCancelsTheOtherOrderGroup",
+    "get_group_type",
     "OrdersUpdater",
     "adapt_price",
     "get_minimal_order_amount",
