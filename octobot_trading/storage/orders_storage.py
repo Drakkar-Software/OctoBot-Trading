@@ -114,13 +114,13 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         ]
 
 
-def _get_group_dict(order, exchange_manager):
+def _get_group_dict(order):
     if not order.order_group:
         return {}
     try:
         return {
             enums.PersistedOrdersAttr.GROUP_ID.value: order.order_group.name,
-            enums.PersistedOrdersAttr.GROUP_TYPE.value:order.order_group.__class__.__name__
+            enums.PersistedOrdersAttr.GROUP_TYPE.value: order.order_group.__class__.__name__,
         }
     except KeyError:
         return {}
@@ -150,14 +150,14 @@ def _format_order(order, exchange_manager, chart, x_multiplier, kind, mode):
             enums.PersistedOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: order.shared_signal_order_id,
             enums.PersistedOrdersAttr.HAS_BEEN_BUNDLED.value: order.has_been_bundled,
             enums.PersistedOrdersAttr.ENTRIES.value: order.associated_entry_ids,
-            enums.PersistedOrdersAttr.GROUP.value: _get_group_dict(order, exchange_manager),
+            enums.PersistedOrdersAttr.GROUP.value: _get_group_dict(order),
             enums.PersistedOrdersAttr.CHAINED_ORDERS.value:
                 _get_chained_orders(order, exchange_manager, chart, x_multiplier, kind, mode),
             "x": order.creation_time * x_multiplier,
             "text": f"{order.order_type.name} {order.origin_quantity} {order.currency} at {order.origin_price}",
             "id": order.order_id,
             "symbol": order.symbol,
-            "trading_mode": exchange_manager.trading_modes[0].get_name(),
+            "trading_mode": exchange_manager.trading_modes[0].get_name() if exchange_manager.trading_modes else None,
             "type": order.order_type.name if order.order_type is not None else enums.TraderOrderType.UNKNOWN.value,
             "volume": float(order.origin_quantity),
             "y": float(order.created_last_price),

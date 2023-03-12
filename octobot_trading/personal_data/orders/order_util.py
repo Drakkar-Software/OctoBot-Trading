@@ -449,18 +449,18 @@ async def update_from_order_storage(order, exchange_manager, pending_groups):
         await _update_from_order_details(order, order_details, exchange_manager, pending_groups)
 
 
-async def create_order_from_order_storage_details(chained_order_from_storage, exchange_manager, pending_groups):
+async def create_order_from_order_storage_details(order_storage_details, exchange_manager, pending_groups):
     order = orders_storage.create_order_from_storage_details(
         exchange_manager.trader,
-        chained_order_from_storage
+        order_storage_details
     )
-    await _update_from_order_details(order, chained_order_from_storage, exchange_manager, pending_groups)
+    await _update_from_order_details(order, order_storage_details, exchange_manager, pending_groups)
     return order
 
 
 async def _update_from_order_details(order, order_details, exchange_manager, pending_groups):
     # rebind order attributes that are not stored on exchange
-    order_dict = order_details[exchange_manager.storage_manager.orders_storage.ORIGIN_VALUE_KEY]
+    order_dict = order_details[orders_storage.OrdersStorage.ORIGIN_VALUE_KEY]
     order.tag = order_dict[enums.ExchangeConstantsOrderColumns.TAG.value]
     order.trader_creation_kwargs = order_details[enums.PersistedOrdersAttr.TRADER_CREATION_KWARGS.value]
     order.exchange_creation_params = order_details[enums.PersistedOrdersAttr.EXCHANGE_CREATION_PARAMS.value]
@@ -471,9 +471,9 @@ async def _update_from_order_details(order, order_details, exchange_manager, pen
     if group:
         group_name = group[enums.PersistedOrdersAttr.GROUP_ID.value]
         if group_name not in pending_groups:
-            pending_groups[group_name] = exchange_manager.exchange_personal_data.orders_manager.create_group(
-                group_type=group_util.get_group_type(group[enums.PersistedOrdersAttr.GROUP_TYPE.value]),
-                group_name=group_name,
+            pending_groups[group_name] = exchange_manager.exchange_personal_data.orders_manager.get_or_create_group(
+                group_util.get_group_type(group[enums.PersistedOrdersAttr.GROUP_TYPE.value]),
+                group_name,
             )
         order.order_group = pending_groups[group_name]
     chained_orders = order_details[enums.PersistedOrdersAttr.CHAINED_ORDERS.value]

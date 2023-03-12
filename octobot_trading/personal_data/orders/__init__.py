@@ -128,6 +128,7 @@ from octobot_trading.personal_data.orders.order_factory import (
     create_order_instance_from_raw,
     create_order_from_type,
     create_order_instance,
+    create_order_from_dict,
 )
 
 __all__ = [
@@ -183,6 +184,7 @@ __all__ = [
     "create_order_instance_from_raw",
     "create_order_from_type",
     "create_order_instance",
+    "create_order_from_dict",
     "OrdersProducer",
     "OrdersChannel",
     "OrdersManager",

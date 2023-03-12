@@ -13,12 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data.orders.order_group as order_group
-import octobot_commons.tentacles_management as tentacles_management
+import pytest
+
+import octobot_trading.personal_data as personal_data
 
 
-def get_group_type(group_type_str: str):
-    for group_type in tentacles_management.get_all_classes_from_parent(order_group.OrderGroup):
-        if group_type_str == group_type.__name__:
-            return group_type
-    raise KeyError(group_type_str)
+def test_get_group_type():
+    with pytest.raises(KeyError):
+        personal_data.get_group_type("")
+    with pytest.raises(KeyError):
+        personal_data.get_group_type("hello")
+    assert personal_data.get_group_type(personal_data.OneCancelsTheOtherOrderGroup.__name__) is \
+           personal_data.OneCancelsTheOtherOrderGroup
+    assert personal_data.get_group_type(personal_data.BalancedTakeProfitAndStopOrderGroup.__name__) is \
+           personal_data.BalancedTakeProfitAndStopOrderGroup
