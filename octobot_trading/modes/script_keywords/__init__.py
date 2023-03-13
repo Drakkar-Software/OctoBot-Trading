@@ -41,7 +41,6 @@ from octobot_trading.modes.script_keywords.basic_keywords import (
     account_holdings,
     get_order_size_portfolio_percent,
     set_plot_orders,
-    store_orders,
 )
 
 from octobot_trading.modes.script_keywords import context_management
@@ -74,7 +73,6 @@ __all__ = [
     "account_holdings",
     "get_order_size_portfolio_percent",
     "set_plot_orders",
-    "store_orders",
     "get_base_context",
     "get_full_context",
     "Context",

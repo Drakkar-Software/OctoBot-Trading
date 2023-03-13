@@ -16,7 +16,6 @@
 
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
-import octobot_trading.enums as trading_enums
 
 
 def set_plot_orders(ctx, value):
@@ -27,36 +26,6 @@ async def disable_candles_plot(ctx, exchange_manager=None):
     storage = (exchange_manager or ctx.exchange_manager).storage_manager.candles_storage
     await storage.enable(False)
     await storage.clear_history()
-
-
-async def store_orders(ctx, orders, exchange_manager,
-                       chart=commons_enums.PlotCharts.MAIN_CHART.value,
-                       x_multiplier=1000,
-                       mode="markers",
-                       kind="scattergl"):
-    order_data = [
-        {
-            "x": order.creation_time * x_multiplier,
-            "text": f"{order.order_type.name} {order.origin_quantity} {order.currency} at {order.origin_price}",
-            "id": order.order_id,
-            "symbol": order.symbol,
-            "trading_mode": exchange_manager.trading_modes[0].get_name(),
-            "type": order.order_type.name if order.order_type is not None else 'Unknown',
-            "volume": float(order.origin_quantity),
-            "y": float(order.created_last_price),
-            "cost": float(order.total_cost),
-            "state": order.state.state.value if order.state is not None else 'Unknown',
-            "chart": chart,
-            "kind": kind,
-            "side": order.side.value,
-            "mode": mode,
-            "color": "red" if order.side is trading_enums.TradeOrderSide.SELL else "blue",
-            "size": "10",
-            "shape": "arrow-bar-left" if order.side is trading_enums.TradeOrderSide.SELL else "arrow-bar-right"
-        }
-        for order in orders
-    ]
-    await ctx.orders_writer.log_many(commons_enums.DBTables.ORDERS.value, order_data)
 
 
 async def clear_orders_cache(writer):
