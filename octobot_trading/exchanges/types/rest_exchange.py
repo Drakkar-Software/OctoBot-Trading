@@ -250,6 +250,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         created_order = None
         float_quantity = float(quantity)
         float_price = float(price)
+        float_stop_price = float(stop_price)
         float_current_price = float(current_price)
         side = None if side is None else side.value
         params = {} if params is None else params
@@ -272,7 +273,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                                                       params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
             created_order = await self._create_limit_stop_loss_order(symbol, float_quantity, price=float_price,
-                                                                     side=side, stop_price=stop_price, params=params)
+                                                                     side=side, stop_price=float_stop_price, params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT:
             created_order = await self._create_market_take_profit_order(symbol, float_quantity, price=float_price,
                                                                         side=side, params=params)
