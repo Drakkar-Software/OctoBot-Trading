@@ -91,15 +91,7 @@ class StorageManager(util.Initializable):
         return self.trades_storage
 
     def _order_storage_factory(self):
-        self.orders_storage = orders_storage.OrdersStorage(
-            self.exchange_manager,
-            commons_display.PlotSettings(
-                chart=commons_enums.PlotCharts.MAIN_CHART.value,
-                x_multiplier=1000,
-                mode="markers",
-                kind="scattergl",
-            )
-        )
+        self.orders_storage = orders_storage.OrdersStorage(self.exchange_manager)
         return self.orders_storage
 
     def _transaction_storage_factory(self):

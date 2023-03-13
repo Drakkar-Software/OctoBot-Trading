@@ -28,10 +28,12 @@ from octobot_trading.personal_data.orders.groups.one_cancels_the_other_order_gro
 from octobot_trading.personal_data.orders.groups import group_util
 from octobot_trading.personal_data.orders.groups.group_util import (
     get_group_class,
+    get_or_create_order_group_from_storage_order_details,
 )
 
 __all__ = [
     "BalancedTakeProfitAndStopOrderGroup",
     "OneCancelsTheOtherOrderGroup",
     "get_group_class",
+    "get_or_create_order_group_from_storage_order_details",
 ]

@@ -32,7 +32,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             has_new_order = False
             waiting_complete_init_orders = []
             symbols = set()
-            pending_groups = {}
+            pending_groups = {}  # Used when restoring orders from order storage:
+            # a dict of order groups for which to check if associated self-managed orders are to be created
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order)
@@ -50,6 +51,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                     await self._handle_close_order_update(order_id, order)
                 else:
                     try:
+                        # will add a group to pending_groups if a group is restored from orders storage
                         await self._handle_open_order_update(
                             symbol, order, order_id, is_from_bot, is_new_order, pending_groups
                         )

@@ -27,6 +27,7 @@ from octobot_trading.personal_data.orders.groups import (
     BalancedTakeProfitAndStopOrderGroup,
     OneCancelsTheOtherOrderGroup,
     get_group_class,
+    get_or_create_order_group_from_storage_order_details,
 )
 from octobot_trading.personal_data.orders import order
 from octobot_trading.personal_data.orders.order import (
@@ -98,6 +99,7 @@ from octobot_trading.personal_data.orders.order_util import (
     get_order_size_portfolio_percent,
     generate_order_id,
     apply_order_storage_details_if_any,
+    create_orders_storage_related_elements,
     create_missing_self_managed_orders_from_storage_order_groups,
 )
 from octobot_trading.personal_data.orders import order_adapter
@@ -163,6 +165,7 @@ __all__ = [
     "BalancedTakeProfitAndStopOrderGroup",
     "OneCancelsTheOtherOrderGroup",
     "get_group_class",
+    "get_or_create_order_group_from_storage_order_details",
     "OrdersUpdater",
     "adapt_price",
     "get_minimal_order_amount",

@@ -115,6 +115,7 @@ class TestOrderFactory:
         # associated_entry_ids are not copied
         assert created_from_dict.associated_entry_ids is None
         assert limit_order.associated_entry_ids == ["1"]
+        await self.stop(exchange_manager)
 
     async def test_create_order_from_order_storage_details_with_simple_order(self):
         _, exchange_manager, trader_inst = await self.init_default()    
@@ -141,6 +142,7 @@ class TestOrderFactory:
         # associated_entry_ids are added from order_storage_details but not in original order
         assert created_order.associated_entry_ids == ["11111"]
         assert order.associated_entry_ids is None
+        await self.stop(exchange_manager)
     
     async def test_create_order_from_order_storage_details_with_groups(self):
         _, exchange_manager, trader_inst = await self.init_default()  
@@ -163,6 +165,7 @@ class TestOrderFactory:
         )
         assert created_order.order_group is group
         assert pending_groups == {group.name: group}
+        await self.stop(exchange_manager)
 
     async def test_create_order_from_order_storage_details_with_chained_orders_with_group(self):
         _, exchange_manager, trader_inst = await self.init_default()
@@ -223,3 +226,4 @@ class TestOrderFactory:
         assert second_level_chained_orders[0].triggered_by is chained_orders[0]
         assert second_level_chained_orders[0].has_been_bundled is False
         assert second_level_chained_orders[0].exchange_creation_params == {}
+        await self.stop(exchange_manager)
