@@ -125,7 +125,7 @@ class TestOrderFactory:
                      current_price=decimal.Decimal("70"),
                      quantity=decimal.Decimal("10"),
                      price=decimal.Decimal("70"))
-        order_storage_details = orders_storage._format_order(order, exchange_manager, "", 1, "", "")
+        order_storage_details = orders_storage._format_order(order, exchange_manager)
         order_storage_details[StoredOrdersAttr.ENTRIES.value] = ["11111"]
     
         pending_groups = {}
@@ -155,7 +155,7 @@ class TestOrderFactory:
                      quantity=decimal.Decimal("10"),
                      price=decimal.Decimal("70"),
                      group=group)
-        order_storage_details = orders_storage._format_order(order, exchange_manager, "", 1, "", "")
+        order_storage_details = orders_storage._format_order(order, exchange_manager)
     
         pending_groups = {}
         created_order = await personal_data.create_order_from_order_storage_details(
@@ -194,7 +194,7 @@ class TestOrderFactory:
         order.add_chained_order(chained_order_2)
         await chained_order_3.set_as_chained_order(chained_order_1, False, {})
         chained_order_1.add_chained_order(chained_order_3)
-        order_storage_details = orders_storage._format_order(order, exchange_manager, "", 1, "", "")
+        order_storage_details = orders_storage._format_order(order, exchange_manager)
     
         pending_groups = {}
         created_order = await personal_data.create_order_from_order_storage_details(

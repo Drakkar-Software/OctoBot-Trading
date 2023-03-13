@@ -66,14 +66,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         await self._get_db().replace_all(
             self.HISTORY_TABLE,
             [
-                _format_order(
-                    order,
-                    self.exchange_manager,
-                    self.plot_settings.chart,
-                    self.plot_settings.x_multiplier,
-                    self.plot_settings.kind,
-                    self.plot_settings.mode
-                )
+                _format_order(order, self.exchange_manager)
                 for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
             ],
             cache=False,
@@ -126,16 +119,16 @@ def _get_group_dict(order):
         return {}
 
 
-def _get_chained_orders(order, exchange_manager, chart, x_multiplier, kind, mode):
+def _get_chained_orders(order, exchange_manager):
     if not order.chained_orders:
         return []
     return [
-        _format_order(chained_order, exchange_manager, chart, x_multiplier, kind, mode)
+        _format_order(chained_order, exchange_manager)
         for chained_order in order.chained_orders
     ]
 
 
-def _format_order(order, exchange_manager, chart, x_multiplier, kind, mode):
+def _format_order(order, exchange_manager):
     try:
         return {
             OrdersStorage.ORIGIN_VALUE_KEY: OrdersStorage.sanitize_for_storage(order.to_dict()),
@@ -148,24 +141,7 @@ def _format_order(order, exchange_manager, chart, x_multiplier, kind, mode):
             enums.StoredOrdersAttr.ENTRIES.value: order.associated_entry_ids,
             enums.StoredOrdersAttr.GROUP.value: _get_group_dict(order),
             enums.StoredOrdersAttr.CHAINED_ORDERS.value:
-                _get_chained_orders(order, exchange_manager, chart, x_multiplier, kind, mode),
-            commons_enums.DisplayedElementTypes.CHART.value: chart,
-            commons_enums.DBRows.SYMBOL.value: order.symbol,
-            commons_enums.DBRows.ID.value: order.order_id,
-            commons_enums.DBRows.TRADING_MODE.value: exchange_manager.trading_modes[0].get_name() if exchange_manager.trading_modes else None,
-            commons_enums.PlotAttributes.X.value: order.creation_time * x_multiplier,
-            commons_enums.PlotAttributes.TEXT.value: f"{order.order_type.name} {order.origin_quantity} {order.currency} at {order.origin_price}",
-            commons_enums.PlotAttributes.TYPE.value: order.order_type.name if order.order_type is not None else enums.TraderOrderType.UNKNOWN.value,
-            commons_enums.PlotAttributes.VOLUME.value: float(order.origin_quantity),
-            commons_enums.PlotAttributes.Y.value: float(order.created_last_price),
-            commons_enums.PlotAttributes.KIND.value: kind,
-            commons_enums.PlotAttributes.SIDE.value: order.side.value,
-            commons_enums.PlotAttributes.MODE.value: mode,
-            commons_enums.PlotAttributes.COLOR.value: "red" if order.side is enums.TradeOrderSide.SELL else "blue",
-            commons_enums.PlotAttributes.SIZE.value: "10",
-            commons_enums.PlotAttributes.SHAPE.value: "arrow-bar-left" if order.side is enums.TradeOrderSide.SELL else "arrow-bar-right",
-            "cost": float(order.total_cost),
-            "state": order.state.state.value if order.state is not None else enums.States.UNKNOWN.value,
+                _get_chained_orders(order, exchange_manager),
         }
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(err, True, f"Error when formatting order: {err}")

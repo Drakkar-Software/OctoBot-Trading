@@ -53,7 +53,6 @@ from octobot_trading.modes.script_keywords.basic_keywords.trading_signals import
 from octobot_trading.modes.script_keywords.basic_keywords.run_persistence import (
     disable_candles_plot,
     set_plot_orders,
-    store_orders,
     clear_orders_cache,
     clear_symbol_plot_cache,
 )
@@ -79,7 +78,6 @@ __all__ = [
     "get_order_size_portfolio_percent",
     "disable_candles_plot",
     "set_plot_orders",
-    "store_orders",
     "clear_orders_cache",
     "clear_symbol_plot_cache",
 ]
