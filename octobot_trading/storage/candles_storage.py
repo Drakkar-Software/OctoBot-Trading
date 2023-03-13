@@ -63,19 +63,19 @@ class CandlesStorage(abstract_storage.AbstractStorage):
 
     async def _store_candles_if_necessary(self, symbol, time_frame, symbol_db):
         candles_data = {
-            "time_frame": time_frame,
-            "value": backtesting_api.get_data_file_from_importers(
+            commons_enums.DBRows.TIME_FRAME.value: time_frame,
+            commons_enums.DBRows.VALUE.value: backtesting_api.get_data_file_from_importers(
                 self.exchange_manager.exchange.connector.exchange_importers, symbol,
                 commons_enums.TimeFrames(time_frame)
             )
             if self.exchange_manager.is_backtesting else commons_constants.LOCAL_BOT_DATA,
-            "chart": self.plot_settings.chart
+            commons_enums.DisplayedElementTypes.CHART.value: self.plot_settings.chart
         }
         if (not await symbol_db.contains_row(
                 self.HISTORY_TABLE,
                 {
-                    "time_frame": time_frame,
-                    "value": candles_data["value"],
+                    commons_enums.DBRows.TIME_FRAME.value: time_frame,
+                    commons_enums.DBRows.VALUE.value: candles_data[commons_enums.DBRows.VALUE.value],
                 })):
             await symbol_db.log(self.HISTORY_TABLE, candles_data)
 

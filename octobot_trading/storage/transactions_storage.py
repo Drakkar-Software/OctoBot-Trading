@@ -58,10 +58,15 @@ class TransactionsStorage(abstract_storage.AbstractStorage):
 
 def _format_transaction(transaction, exchange_manager, chart, x_multiplier, kind, mode, y_data):
     return {
-        "x": transaction.creation_time * x_multiplier,
-        "type": transaction.transaction_type.value,
+        commons_enums.DisplayedElementTypes.CHART.value: chart,
+        commons_enums.DBRows.SYMBOL.value: transaction.symbol,
+        commons_enums.PlotAttributes.X.value: transaction.creation_time * x_multiplier,
+        commons_enums.PlotAttributes.TYPE.value: transaction.transaction_type.value,
+        commons_enums.PlotAttributes.SIDE.value: transaction.side.value if hasattr(transaction, "side") else None,
+        commons_enums.PlotAttributes.Y.value: y_data,
+        commons_enums.PlotAttributes.KIND.value: kind,
+        commons_enums.PlotAttributes.MODE.value: mode,
         "id": transaction.transaction_id,
-        "symbol": transaction.symbol,
         "trading_mode": exchange_manager.trading_modes[0].get_name(),
         "currency": transaction.currency,
         "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
@@ -82,9 +87,4 @@ def _format_transaction(transaction, exchange_manager, chart, x_multiplier, kind
         if hasattr(transaction, "order_exit_price") else None,
         "leverage": float(transaction.leverage) if hasattr(transaction, "leverage") else None,
         "trigger_source": transaction.trigger_source.value if hasattr(transaction, "trigger_source") else None,
-        "side": transaction.side.value if hasattr(transaction, "side") else None,
-        "y": y_data,
-        "chart": chart,
-        "kind": kind,
-        "mode": mode
     }
