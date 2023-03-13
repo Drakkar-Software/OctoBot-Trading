@@ -25,8 +25,7 @@ import octobot_commons.timestamp_util as timestamp_util
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-import octobot_trading.personal_data.orders.groups.group_util as group_util
-import octobot_trading.storage.orders_storage as orders_storage
+import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
@@ -439,53 +438,51 @@ def generate_order_id():
     return str(uuid.uuid4())
 
 
-async def update_from_order_storage(order, exchange_manager, pending_groups):
+async def apply_order_storage_details_if_any(order, exchange_manager, pending_groups):
     # only real orders can be updated by stored orders
-    if exchange_manager.is_trader_simulated or exchange_manager.is_backtesting \
-            or not exchange_manager.storage_manager.orders_storage:
+    if not exchange_manager.storage_manager.orders_storage \
+            or not exchange_manager.storage_manager.orders_storage.should_store_date():
         return
     order_details = await exchange_manager.storage_manager.orders_storage.get_startup_order_details(order.order_id)
     if order_details:
-        await _update_from_order_details(order, order_details, exchange_manager, pending_groups)
+        await order.restore_missing_data_from_storage_details(order_details, exchange_manager, pending_groups)
 
 
-async def create_order_from_order_storage_details(order_storage_details, exchange_manager, pending_groups):
-    order = orders_storage.create_order_from_storage_details(
-        exchange_manager.trader,
-        order_storage_details
+async def create_missing_self_managed_orders_from_storage_order_groups(pending_groups, exchange_manager):
+    # create order groups' associated self-managed orders if any
+    to_complete_groups = list(pending_groups.keys())
+    completed_groups = set()
+    max_allowed_nested_chained_orders_groups = 100
+    # Loop as created self_managed orders might carry chained orders
+    # themselves linked to a group with self-managed orders.
+    # This would be seen after each iteration only
+    # However only loop a max amount of time as a huge looping amount would indicate an error.
+    for _ in range(max_allowed_nested_chained_orders_groups):
+        for pending_group_id in to_complete_groups:
+            try:
+                to_create_orders = exchange_manager.storage_manager.orders_storage\
+                    .get_startup_self_managed_orders_details_from_group(pending_group_id)
+                for order_desc in to_create_orders:
+                    created_order = await order_factory.create_order_from_order_storage_details(
+                        order_desc, exchange_manager, pending_groups
+                    )
+                    await created_order.initialize()
+            except Exception as err:
+                logging.get_logger(LOGGER_NAME).exception(
+                    err, True, f"Error when completing pending group with stored data: {err}"
+                )
+        # do not process the same group twice
+        completed_groups = completed_groups.union(set(to_complete_groups))
+        to_complete_groups = [
+            group_id
+            for group_id in pending_groups.keys()
+            if group_id not in completed_groups
+        ]
+        if not to_complete_groups:
+            return
+    # if we arrived here, it means that after 100 iterations, still not every order group is complete,
+    # there is an issue.
+    logging.get_logger(LOGGER_NAME).error(
+        f"Error when completing order groups: {len(to_complete_groups)} remaining order "
+        f"groups to complete after maximum iterations."
     )
-    await _update_from_order_details(order, order_storage_details, exchange_manager, pending_groups)
-    return order
-
-
-async def _update_from_order_details(order, order_details, exchange_manager, pending_groups):
-    # rebind order attributes that are not stored on exchange
-    order_dict = order_details[orders_storage.OrdersStorage.ORIGIN_VALUE_KEY]
-    order.tag = order_dict[enums.ExchangeConstantsOrderColumns.TAG.value]
-    order.trader_creation_kwargs = order_details[enums.PersistedOrdersAttr.TRADER_CREATION_KWARGS.value]
-    order.exchange_creation_params = order_details[enums.PersistedOrdersAttr.EXCHANGE_CREATION_PARAMS.value]
-    order.set_shared_signal_order_id(order_details[enums.PersistedOrdersAttr.SHARED_SIGNAL_ORDER_ID.value])
-    order.has_been_bundled = order_details[enums.PersistedOrdersAttr.HAS_BEEN_BUNDLED.value]
-    order.associated_entry_ids = order_details[enums.PersistedOrdersAttr.ENTRIES.value]
-    group = order_details[enums.PersistedOrdersAttr.GROUP.value]
-    if group:
-        group_name = group[enums.PersistedOrdersAttr.GROUP_ID.value]
-        if group_name not in pending_groups:
-            pending_groups[group_name] = exchange_manager.exchange_personal_data.orders_manager.get_or_create_group(
-                group_util.get_group_type(group[enums.PersistedOrdersAttr.GROUP_TYPE.value]),
-                group_name,
-            )
-        order.order_group = pending_groups[group_name]
-    chained_orders = order_details[enums.PersistedOrdersAttr.CHAINED_ORDERS.value]
-    if chained_orders:
-        for chained_order in chained_orders:
-            chained_order_inst = await create_order_from_order_storage_details(
-                chained_order, exchange_manager, pending_groups
-            )
-            await chained_order_inst.set_as_chained_order(
-                order,
-                chained_order[enums.PersistedOrdersAttr.HAS_BEEN_BUNDLED.value],
-                chained_order[enums.PersistedOrdersAttr.EXCHANGE_CREATION_PARAMS.value],
-                **chained_order[enums.PersistedOrdersAttr.TRADER_CREATION_KWARGS.value],
-            )
-            order.add_chained_order(chained_order_inst)

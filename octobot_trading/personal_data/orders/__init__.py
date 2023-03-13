@@ -26,7 +26,7 @@ from octobot_trading.personal_data.orders import groups
 from octobot_trading.personal_data.orders.groups import (
     BalancedTakeProfitAndStopOrderGroup,
     OneCancelsTheOtherOrderGroup,
-    get_group_type,
+    get_group_class,
 )
 from octobot_trading.personal_data.orders import order
 from octobot_trading.personal_data.orders.order import (
@@ -97,8 +97,8 @@ from octobot_trading.personal_data.orders.order_util import (
     get_order_quantity_currency,
     get_order_size_portfolio_percent,
     generate_order_id,
-    update_from_order_storage,
-    create_order_from_order_storage_details,
+    apply_order_storage_details_if_any,
+    create_missing_self_managed_orders_from_storage_order_groups,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -129,6 +129,7 @@ from octobot_trading.personal_data.orders.order_factory import (
     create_order_from_type,
     create_order_instance,
     create_order_from_dict,
+    create_order_from_order_storage_details,
 )
 
 __all__ = [
@@ -153,15 +154,15 @@ __all__ = [
     "get_order_quantity_currency",
     "get_order_size_portfolio_percent",
     "generate_order_id",
-    "update_from_order_storage",
-    "create_order_from_order_storage_details",
+    "apply_order_storage_details_if_any",
+    "create_missing_self_managed_orders_from_storage_order_groups",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
     "OrderState",
     "OrderGroup",
     "BalancedTakeProfitAndStopOrderGroup",
     "OneCancelsTheOtherOrderGroup",
-    "get_group_type",
+    "get_group_class",
     "OrdersUpdater",
     "adapt_price",
     "get_minimal_order_amount",
@@ -185,6 +186,7 @@ __all__ = [
     "create_order_from_type",
     "create_order_instance",
     "create_order_from_dict",
+    "create_order_from_order_storage_details",
     "OrdersProducer",
     "OrdersChannel",
     "OrdersManager",

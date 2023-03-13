@@ -17,8 +17,8 @@ import octobot_trading.personal_data.orders.order_group as order_group
 import octobot_commons.tentacles_management as tentacles_management
 
 
-def get_group_type(group_type_str: str):
-    for group_type in tentacles_management.get_all_classes_from_parent(order_group.OrderGroup):
-        if group_type_str == group_type.__name__:
-            return group_type
+def get_group_class(group_type_str: str):
+    for group_class in tentacles_management.get_all_classes_from_parent(order_group.OrderGroup):
+        if group_type_str == group_class.__name__:
+            return group_class
     raise KeyError(group_type_str)

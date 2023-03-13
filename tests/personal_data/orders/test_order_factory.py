@@ -20,7 +20,8 @@ from octobot_commons.tests.test_config import load_test_config
 
 from tests import event_loop
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType
+import octobot_trading.storage.orders_storage as orders_storage
+from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType, StoredOrdersAttr
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
@@ -114,3 +115,111 @@ class TestOrderFactory:
         # associated_entry_ids are not copied
         assert created_from_dict.associated_entry_ids is None
         assert limit_order.associated_entry_ids == ["1"]
+
+    async def test_create_order_from_order_storage_details_with_simple_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()    
+        
+        order = personal_data.BuyLimitOrder(trader_inst)
+        order.update(order_type=TraderOrderType.BUY_LIMIT,
+                     symbol="BTC/USDT",
+                     current_price=decimal.Decimal("70"),
+                     quantity=decimal.Decimal("10"),
+                     price=decimal.Decimal("70"))
+        order_storage_details = orders_storage._format_order(order, exchange_manager, "", 1, "", "")
+        order_storage_details[StoredOrdersAttr.ENTRIES.value] = ["11111"]
+    
+        pending_groups = {}
+        created_order = await personal_data.create_order_from_order_storage_details(
+            order_storage_details, exchange_manager, pending_groups
+        )
+        assert pending_groups == {}
+    
+        assert created_order.exchange_manager is exchange_manager
+        assert created_order.origin_quantity == order.origin_quantity
+        assert created_order.origin_price == order.origin_price
+        assert created_order.__class__ is order.__class__
+        # associated_entry_ids are added from order_storage_details but not in original order
+        assert created_order.associated_entry_ids == ["11111"]
+        assert order.associated_entry_ids is None
+    
+    async def test_create_order_from_order_storage_details_with_groups(self):
+        _, exchange_manager, trader_inst = await self.init_default()  
+        
+        order = personal_data.BuyLimitOrder(trader_inst)
+        group = exchange_manager.exchange_personal_data.orders_manager.create_group(
+            personal_data.OneCancelsTheOtherOrderGroup
+        )
+        order.update(order_type=TraderOrderType.BUY_LIMIT,
+                     symbol="BTC/USDT",
+                     current_price=decimal.Decimal("70"),
+                     quantity=decimal.Decimal("10"),
+                     price=decimal.Decimal("70"),
+                     group=group)
+        order_storage_details = orders_storage._format_order(order, exchange_manager, "", 1, "", "")
+    
+        pending_groups = {}
+        created_order = await personal_data.create_order_from_order_storage_details(
+            order_storage_details, exchange_manager, pending_groups
+        )
+        assert created_order.order_group is group
+        assert pending_groups == {group.name: group}
+
+    async def test_create_order_from_order_storage_details_with_chained_orders_with_group(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+    
+        order = personal_data.BuyLimitOrder(trader_inst)
+        group_1 = exchange_manager.exchange_personal_data.orders_manager.create_group(
+            personal_data.OneCancelsTheOtherOrderGroup
+        )
+        group_2 = exchange_manager.exchange_personal_data.orders_manager.create_group(
+            personal_data.OneCancelsTheOtherOrderGroup
+        )
+        chained_order_1 = personal_data.BuyLimitOrder(trader_inst)
+        chained_order_2 = personal_data.SellLimitOrder(trader_inst)
+        chained_order_3 = personal_data.SellLimitOrder(trader_inst)
+        for to_update_order in (order, chained_order_1, chained_order_2, chained_order_3):
+            to_update_order.update(
+                order_type=TraderOrderType.BUY_LIMIT,
+                symbol="BTC/USDT",
+                current_price=decimal.Decimal("70"),
+                quantity=decimal.Decimal("10"),
+                price=decimal.Decimal("70")
+            )
+        chained_order_1.add_to_order_group(group_1)
+        chained_order_2.add_to_order_group(group_1)
+        chained_order_3.add_to_order_group(group_2)
+        await chained_order_1.set_as_chained_order(order, False, {})
+        await chained_order_2.set_as_chained_order(order, True, {"plop_1": True, "plop_2": {"hi": 1}})
+        order.add_chained_order(chained_order_1)
+        order.add_chained_order(chained_order_2)
+        await chained_order_3.set_as_chained_order(chained_order_1, False, {})
+        chained_order_1.add_chained_order(chained_order_3)
+        order_storage_details = orders_storage._format_order(order, exchange_manager, "", 1, "", "")
+    
+        pending_groups = {}
+        created_order = await personal_data.create_order_from_order_storage_details(
+            order_storage_details, exchange_manager, pending_groups
+        )
+        assert pending_groups == {
+            group_1.name: group_1,
+            group_2.name: group_2,
+        }
+        chained_orders = created_order.chained_orders
+        assert len(chained_orders) == 2
+        for chained_order in chained_orders:
+            assert chained_order.order_group is group_1
+    
+        assert chained_orders[0].triggered_by is created_order
+        assert chained_orders[0].has_been_bundled is False
+        assert chained_orders[0].exchange_creation_params == {}
+        assert chained_orders[1].triggered_by is created_order
+        assert chained_orders[1].has_been_bundled is True
+        assert chained_orders[1].exchange_creation_params == {"plop_1": True, "plop_2": {"hi": 1}}
+        assert chained_orders[1].chained_orders == []
+        second_level_chained_orders = chained_orders[0].chained_orders
+        assert len(second_level_chained_orders) == 1
+        assert second_level_chained_orders[0].order_group is group_2
+        assert second_level_chained_orders[0].chained_orders == []
+        assert second_level_chained_orders[0].triggered_by is chained_orders[0]
+        assert second_level_chained_orders[0].has_been_bundled is False
+        assert second_level_chained_orders[0].exchange_creation_params == {}
