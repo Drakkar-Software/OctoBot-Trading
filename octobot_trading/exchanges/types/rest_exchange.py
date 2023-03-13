@@ -129,7 +129,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
                            params: dict = None) -> typing.Optional[dict]:
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             created_order = await self._create_order_with_retry(order_type, symbol, quantity,
-                                                                price, side, current_price, params)
+                                                                price, stop_price, side,
+                                                                current_price, params)
             self.logger.debug(f"Created order: {created_order}")
             return await self._verify_order(created_order, order_type, symbol, price, side)
         return None
@@ -213,10 +214,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return created_order
 
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
-                                       price: decimal.Decimal, side: enums.TradeOrderSide,
+                                       price: decimal.Decimal, stop_price: decimal.Decimal, 
+                                       side: enums.TradeOrderSide,
                                        current_price: decimal.Decimal, params) -> dict:
         try:
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+            return await self._create_specific_order(order_type, symbol, quantity, price=price,
+                                                     stop_price=stop_price, side=side,
                                                      current_price=current_price, params=params)
         except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
             # can be raised when exchange precision/limits rules change
@@ -224,7 +227,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
             await self.connector.load_symbol_markets(reload=True)
             # retry order creation with updated markets (ccxt will use the updated market values)
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, 
+                                                     stop_price=stop_price, side=side,
                                                      current_price=current_price, params=params)
 
     def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
@@ -237,8 +241,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             all(order[key] for key in order_non_empty_fields)
 
     async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
-                                     side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                                     params=None) -> dict:
+                                     side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None, 
+                                     stop_price: decimal.Decimal = None, params=None) -> dict:
         created_order = None
         float_quantity = float(quantity)
         float_price = float(price)
@@ -264,7 +268,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                                                       params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
             created_order = await self._create_limit_stop_loss_order(symbol, float_quantity, price=float_price,
-                                                                     side=side, params=params)
+                                                                     side=side, stop_price=stop_price, params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT:
             created_order = await self._create_market_take_profit_order(symbol, float_quantity, price=float_price,
                                                                         side=side, params=params)
