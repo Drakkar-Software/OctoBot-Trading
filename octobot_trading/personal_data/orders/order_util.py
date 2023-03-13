@@ -26,6 +26,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order_factory as order_factory
+import octobot_trading.personal_data.orders.groups.group_util as group_util
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
@@ -445,7 +446,33 @@ async def apply_order_storage_details_if_any(order, exchange_manager, pending_gr
         return
     order_details = await exchange_manager.storage_manager.orders_storage.get_startup_order_details(order.order_id)
     if order_details:
-        await order.restore_missing_data_from_storage_details(order_details, exchange_manager, pending_groups)
+        order.update_from_storage_order_details(order_details)
+        await create_orders_storage_related_elements(order, order_details, exchange_manager, pending_groups)
+
+
+async def create_orders_storage_related_elements(order, order_storage_details, exchange_manager, pending_groups):
+    group = group_util.get_or_create_order_group_from_storage_order_details(order_storage_details, exchange_manager)
+    if group:
+        order.add_to_order_group(group)
+        pending_groups[group.name] = group
+    await order_factory.restore_chained_orders_from_storage_order_details(
+        order, order_storage_details, exchange_manager, pending_groups
+    )
+
+
+async def _create_storage_self_managed_orders_from_group(pending_group_id, exchange_manager, pending_groups):
+    try:
+        to_create_orders = exchange_manager.storage_manager.orders_storage \
+            .get_startup_self_managed_orders_details_from_group(pending_group_id)
+        for order_desc in to_create_orders:
+            created_order = await order_factory.create_order_from_order_storage_details(
+                order_desc, exchange_manager, pending_groups
+            )
+            await created_order.initialize()
+    except Exception as err:
+        logging.get_logger(LOGGER_NAME).exception(
+            err, True, f"Error when creating {pending_group_id} group self-managed orders with stored data: {err}"
+        )
 
 
 async def create_missing_self_managed_orders_from_storage_order_groups(pending_groups, exchange_manager):
@@ -459,18 +486,7 @@ async def create_missing_self_managed_orders_from_storage_order_groups(pending_g
     # However only loop a max amount of time as a huge looping amount would indicate an error.
     for _ in range(max_allowed_nested_chained_orders_groups):
         for pending_group_id in to_complete_groups:
-            try:
-                to_create_orders = exchange_manager.storage_manager.orders_storage\
-                    .get_startup_self_managed_orders_details_from_group(pending_group_id)
-                for order_desc in to_create_orders:
-                    created_order = await order_factory.create_order_from_order_storage_details(
-                        order_desc, exchange_manager, pending_groups
-                    )
-                    await created_order.initialize()
-            except Exception as err:
-                logging.get_logger(LOGGER_NAME).exception(
-                    err, True, f"Error when completing pending group with stored data: {err}"
-                )
+            await _create_storage_self_managed_orders_from_group(pending_group_id, exchange_manager, pending_groups)
         # do not process the same group twice
         completed_groups = completed_groups.union(set(to_complete_groups))
         to_complete_groups = [

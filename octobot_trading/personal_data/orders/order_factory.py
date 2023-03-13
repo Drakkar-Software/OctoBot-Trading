@@ -124,5 +124,24 @@ async def create_order_from_order_storage_details(order_storage_details, exchang
         exchange_manager.trader,
         order_storage_details[orders_storage.OrdersStorage.ORIGIN_VALUE_KEY]
     )
-    await order.restore_missing_data_from_storage_details(order_storage_details, exchange_manager, pending_groups)
+    order.update_from_storage_order_details(order_storage_details)
+    await personal_data.create_orders_storage_related_elements(
+        order, order_storage_details, exchange_manager, pending_groups
+    )
     return order
+
+
+async def restore_chained_orders_from_storage_order_details(order, order_details, exchange_manager, pending_groups):
+    chained_orders = order_details.get(enums.StoredOrdersAttr.CHAINED_ORDERS.value, None)
+    if chained_orders:
+        for chained_order in chained_orders:
+            chained_order_inst = await create_order_from_order_storage_details(
+                chained_order, exchange_manager, pending_groups
+            )
+            await chained_order_inst.set_as_chained_order(
+                order,
+                chained_order.get(enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value, False),
+                chained_order.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value, {}),
+                **chained_order.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value, {}),
+            )
+            order.add_chained_order(chained_order_inst)

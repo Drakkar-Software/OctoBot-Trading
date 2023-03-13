@@ -25,9 +25,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
-import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
-import octobot_trading.personal_data.orders.groups.group_util as group_util
 import octobot_trading.util as util
 import octobot_trading.storage.orders_storage as orders_storage
 
@@ -609,12 +607,7 @@ class Order(util.Initializable):
         if other_order.state is not None:
             await other_order.state.replace_order(self)
 
-    async def restore_missing_data_from_storage_details(self, order_details, exchange_manager, pending_groups):
-        self._update_from_storage_order_details(order_details)
-        self._restore_order_group_from_storage_order_details(order_details, exchange_manager, pending_groups)
-        await self._restore_chained_orders_from_storage_order_details(order_details, exchange_manager, pending_groups)
-
-    def _update_from_storage_order_details(self, order_details):
+    def update_from_storage_order_details(self, order_details):
         # rebind order attributes that are not stored on exchange
         order_dict = order_details.get(orders_storage.OrdersStorage.ORIGIN_VALUE_KEY, {})
         self.tag = order_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value, self.tag)
@@ -628,36 +621,6 @@ class Order(util.Initializable):
                                                   self.has_been_bundled)
         self.associated_entry_ids = order_details.get(enums.StoredOrdersAttr.ENTRIES.value,
                                                       self.associated_entry_ids)
-
-    def _restore_order_group_from_storage_order_details(self, order_details, exchange_manager, pending_groups):
-        group = order_details.get(enums.StoredOrdersAttr.GROUP.value, None)
-        if group:
-            try:
-                group_name = group.get(enums.StoredOrdersAttr.GROUP_ID.value, None)
-                if group_name and group_name not in pending_groups:
-                    pending_groups[group_name] = \
-                        exchange_manager.exchange_personal_data.orders_manager.get_or_create_group(
-                            group_util.get_group_class(group[enums.StoredOrdersAttr.GROUP_TYPE.value]),
-                            group_name,
-                        )
-                self.order_group = pending_groups[group_name]
-            except KeyError as err:
-                logging.get_logger(self.get_logger_name()).error(f"Unhandled group type: {err}")
-
-    async def _restore_chained_orders_from_storage_order_details(self, order_details, exchange_manager, pending_groups):
-        chained_orders = order_details.get(enums.StoredOrdersAttr.CHAINED_ORDERS.value, None)
-        if chained_orders:
-            for chained_order in chained_orders:
-                chained_order_inst = await order_factory.create_order_from_order_storage_details(
-                    chained_order, exchange_manager, pending_groups
-                )
-                await chained_order_inst.set_as_chained_order(
-                    self,
-                    chained_order.get(enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value, False),
-                    chained_order.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value, {}),
-                    **chained_order.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value, {}),
-                )
-                self.add_chained_order(chained_order_inst)
 
     def consider_as_filled(self):
         self.status = enums.OrderStatus.FILLED

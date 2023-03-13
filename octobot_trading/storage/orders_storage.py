@@ -18,7 +18,6 @@ import copy
 import octobot_commons.channels_name as channels_name
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
-import octobot_commons.display as commons_display
 import octobot_commons.logging as commons_logging
 
 import octobot_trading.enums as enums
@@ -31,9 +30,8 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     HISTORY_TABLE = commons_enums.DBTables.ORDERS.value
     IS_HISTORICAL = False
 
-    def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
-                 use_live_consumer_in_backtesting=None, is_historical=None):
-        super().__init__(exchange_manager, plot_settings=plot_settings,
+    def __init__(self, exchange_manager, use_live_consumer_in_backtesting=None, is_historical=None):
+        super().__init__(exchange_manager, plot_settings=None,
                          use_live_consumer_in_backtesting=use_live_consumer_in_backtesting, is_historical=is_historical)
         self.startup_orders = {}
 
