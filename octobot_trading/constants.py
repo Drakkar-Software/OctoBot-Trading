@@ -73,7 +73,6 @@ FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 TESTED_EXCHANGES = [
     "binance",
-    "binanceusdm",
     "okx",
     "gateio",
     "huobi",
