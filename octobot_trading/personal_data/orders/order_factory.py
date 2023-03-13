@@ -16,6 +16,7 @@
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.storage.orders_storage as orders_storage
 
 
 def create_order_from_raw(trader, raw_order):
@@ -116,3 +117,12 @@ def create_order_from_dict(trader, order_dict):
         tag=order_dict[enums.ExchangeConstantsOrderColumns.TAG.value],
         reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
     )
+
+
+async def create_order_from_order_storage_details(order_storage_details, exchange_manager, pending_groups):
+    order = create_order_from_dict(
+        exchange_manager.trader,
+        order_storage_details[orders_storage.OrdersStorage.ORIGIN_VALUE_KEY]
+    )
+    await order.restore_missing_data_from_storage_details(order_storage_details, exchange_manager, pending_groups)
+    return order

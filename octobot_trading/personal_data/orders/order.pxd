@@ -144,6 +144,10 @@ cdef class Order(util.Initializable):
     cpdef bint should_be_created(self)
     cpdef void add_to_order_group(self, object order_group)
     cpdef object ensure_order_id(self)
+    cpdef object _update_from_storage_order_details(self, dict order_details)
+    cpdef object _restore_order_group_from_storage_order_details(
+            self, dict order_details, object exchange_manager, dict pending_groups
+    )
     cdef void _update_total_cost(self)
 
 cdef object _get_sell_and_buy_types(object order_type)

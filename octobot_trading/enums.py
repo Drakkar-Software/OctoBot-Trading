@@ -535,7 +535,7 @@ class TradingSignalOrdersActions(enum.Enum):
     CANCEL = "cancel"
 
 
-class PersistedOrdersAttr(enum.Enum):
+class StoredOrdersAttr(enum.Enum):
     GROUP = "gr"
     GROUP_ID = "gi"
     GROUP_TYPE = "gt"

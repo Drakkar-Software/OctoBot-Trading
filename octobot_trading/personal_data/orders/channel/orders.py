@@ -68,7 +68,9 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                             raise
             if not are_closed:
                 if pending_groups:
-                    await self._complete_pending_groups_from_storage(pending_groups)
+                    await order_util.create_missing_self_managed_orders_from_storage_order_groups(
+                        pending_groups, self.channel.exchange_manager
+                    )
                 await self.handle_post_open_orders_update(
                     symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
                 )
@@ -158,38 +160,6 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 f"Completing order init after portfolio sync for {len(waiting_complete_init_orders)} orders"
             )
             await self._complete_open_order_init(waiting_complete_init_orders, is_from_bot)
-
-    async def _complete_pending_groups_from_storage(self, pending_groups):
-        # create order groups and their associated self-managed orders if any
-        # use copy.copy(pending_groups) as new groups might be added from new orders,
-        # in this case, also create the associated new orders
-        to_complete_groups = list(pending_groups.keys())
-        completed_groups = set()
-        max_allowed_nested_chained_orders_groups = 100
-        for _ in range(max_allowed_nested_chained_orders_groups):
-            for pending_group_id in to_complete_groups:
-                try:
-                    to_create_orders = self.channel.exchange_manager.storage_manager.orders_storage\
-                        .get_self_startup_managed_orders_details_from_group(pending_group_id)
-                    for order_desc in to_create_orders:
-                        created_order = await order_util.create_order_from_order_storage_details(
-                            order_desc, self.channel.exchange_manager, pending_groups
-                        )
-                        await created_order.initialize()
-                except Exception as err:
-                    self.logger.exception(err, True, f"Error when completing pending group with stored data: {err}")
-            completed_groups = completed_groups.union(set(to_complete_groups))
-            to_complete_groups = [
-                group_id
-                for group_id in pending_groups.keys()
-                if group_id not in completed_groups
-            ]
-            if not to_complete_groups:
-                return
-        # if we arrived here, it means that after 100 iterations, still not every order group is complete,
-        # there is an issue.
-        self.logger.error(f"Error when completing order groups: {len(to_complete_groups)} remaining order "
-                          f"groups to complete after maximum iterations.")
 
     async def update_order_from_exchange(self, order,
                                          should_notify=False,

@@ -18,12 +18,12 @@ import pytest
 import octobot_trading.personal_data as personal_data
 
 
-def test_get_group_type():
+def test_get_group_class():
     with pytest.raises(KeyError):
-        personal_data.get_group_type("")
+        personal_data.get_group_class("")
     with pytest.raises(KeyError):
-        personal_data.get_group_type("hello")
-    assert personal_data.get_group_type(personal_data.OneCancelsTheOtherOrderGroup.__name__) is \
+        personal_data.get_group_class("hello")
+    assert personal_data.get_group_class(personal_data.OneCancelsTheOtherOrderGroup.__name__) is \
            personal_data.OneCancelsTheOtherOrderGroup
-    assert personal_data.get_group_type(personal_data.BalancedTakeProfitAndStopOrderGroup.__name__) is \
+    assert personal_data.get_group_class(personal_data.BalancedTakeProfitAndStopOrderGroup.__name__) is \
            personal_data.BalancedTakeProfitAndStopOrderGroup

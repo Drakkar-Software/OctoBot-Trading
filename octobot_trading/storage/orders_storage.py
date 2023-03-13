@@ -24,7 +24,6 @@ import octobot_commons.logging as commons_logging
 import octobot_trading.enums as enums
 import octobot_trading.storage.abstract_storage as abstract_storage
 import octobot_trading.storage.util as storage_util
-import octobot_trading.personal_data.orders.order_factory as order_factory
 
 
 class OrdersStorage(abstract_storage.AbstractStorage):
@@ -40,9 +39,9 @@ class OrdersStorage(abstract_storage.AbstractStorage):
 
     def should_register_live_consumer(self):
         # live orders should only be stored on real trading
-        return self._should_store_date()
+        return self.should_store_date()
 
-    def _should_store_date(self):
+    def should_store_date(self):
         return not self.exchange_manager.is_trader_simulated \
             and not self.exchange_manager.is_backtesting
 
@@ -95,7 +94,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         return self.startup_orders.get(order_id, None)
 
     async def _load_startup_orders(self):
-        if self._should_store_date():
+        if self.should_store_date():
             self.startup_orders = {
                 order["id"]: order
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))
@@ -104,13 +103,14 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         else:
             self.startup_orders = {}
 
-    def get_self_startup_managed_orders_details_from_group(self, group_id):
+    def get_startup_self_managed_orders_details_from_group(self, group_id):
         return [
             order
             for order in self.startup_orders.values()
-            if order[enums.PersistedOrdersAttr.GROUP.value].get(enums.PersistedOrdersAttr.GROUP_ID.value, None)
+            if order.get(enums.StoredOrdersAttr.GROUP.value, {}).get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             == group_id
-            and order[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value]
+            and order.get(OrdersStorage.ORIGIN_VALUE_KEY, {})
+            .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
         ]
 
 
@@ -119,8 +119,8 @@ def _get_group_dict(order):
         return {}
     try:
         return {
-            enums.PersistedOrdersAttr.GROUP_ID.value: order.order_group.name,
-            enums.PersistedOrdersAttr.GROUP_TYPE.value: order.order_group.__class__.__name__,
+            enums.StoredOrdersAttr.GROUP_ID.value: order.order_group.name,
+            enums.StoredOrdersAttr.GROUP_TYPE.value: order.order_group.__class__.__name__,
         }
     except KeyError:
         return {}
@@ -135,23 +135,19 @@ def _get_chained_orders(order, exchange_manager, chart, x_multiplier, kind, mode
     ]
 
 
-def create_order_from_storage_details(trader, order_details):
-    return order_factory.create_order_from_dict(trader, order_details[OrdersStorage.ORIGIN_VALUE_KEY])
-
-
 def _format_order(order, exchange_manager, chart, x_multiplier, kind, mode):
     try:
         return {
             OrdersStorage.ORIGIN_VALUE_KEY: OrdersStorage.sanitize_for_storage(order.to_dict()),
-            enums.PersistedOrdersAttr.EXCHANGE_CREATION_PARAMS.value:
+            enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value:
                 OrdersStorage.sanitize_for_storage(order.exchange_creation_params),
-            enums.PersistedOrdersAttr.TRADER_CREATION_KWARGS.value:
+            enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value:
                 OrdersStorage.sanitize_for_storage(order.trader_creation_kwargs),
-            enums.PersistedOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: order.shared_signal_order_id,
-            enums.PersistedOrdersAttr.HAS_BEEN_BUNDLED.value: order.has_been_bundled,
-            enums.PersistedOrdersAttr.ENTRIES.value: order.associated_entry_ids,
-            enums.PersistedOrdersAttr.GROUP.value: _get_group_dict(order),
-            enums.PersistedOrdersAttr.CHAINED_ORDERS.value:
+            enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: order.shared_signal_order_id,
+            enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: order.has_been_bundled,
+            enums.StoredOrdersAttr.ENTRIES.value: order.associated_entry_ids,
+            enums.StoredOrdersAttr.GROUP.value: _get_group_dict(order),
+            enums.StoredOrdersAttr.CHAINED_ORDERS.value:
                 _get_chained_orders(order, exchange_manager, chart, x_multiplier, kind, mode),
             "x": order.creation_time * x_multiplier,
             "text": f"{order.order_type.name} {order.origin_quantity} {order.currency} at {order.origin_price}",

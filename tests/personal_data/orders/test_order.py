@@ -15,6 +15,7 @@
 #  License along with this library.
 import mock
 import pytest
+import pytest_asyncio
 import decimal
 
 import octobot_trading.errors as errors
@@ -31,6 +32,16 @@ from tests.test_utils.random_numbers import random_price
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
+
+
+@pytest_asyncio.fixture
+def initialized_mocked_order_storage(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    mocked_order_storage = mock.Mock(
+        stop=mock.AsyncMock(),
+    )
+    exchange_manager_inst.storage_manager.orders_storage = mocked_order_storage
+    yield mocked_order_storage, exchange_manager_inst, trader_inst
 
 
 async def test_get_profitability(trader_simulator):
@@ -344,3 +355,28 @@ async def test_update_from_order(trader_simulator):
     assert base_order_1.filled_price == decimal.Decimal("4")
     assert base_order_1.state is state_2
     assert base_order_1.state.order is base_order_1
+
+
+async def test_update_from_order_storage(initialized_mocked_order_storage):
+    mocked_order_storage, exchange_manager_inst, trader_inst = initialized_mocked_order_storage
+    mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={})
+    mocked_order_storage.should_store_date = mock.Mock(return_value=False)
+
+    order = personal_data.BuyLimitOrder(trader_inst)
+    order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                 symbol="BTC/USDT",
+                 current_price=decimal.Decimal("70"),
+                 quantity=decimal.Decimal("10"),
+                 price=decimal.Decimal("70"))
+    await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
+    # disabled in trader simulator
+    mocked_order_storage.get_startup_order_details.assert_not_awaited()
+
+    mocked_order_storage.should_store_date = mock.Mock(return_value=True)
+    await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
+    mocked_order_storage.get_startup_order_details.assert_awaited_once()
+
+    # ensure no crash with not well formatted order_details
+    mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={"hello": "hi there"})
+    await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
+    mocked_order_storage.get_startup_order_details.assert_awaited_once()
