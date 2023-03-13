@@ -142,28 +142,28 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
                      fee and fee[enums.FeePropertyColumns.COST.value] else 0)
     return {
         TradesStorage.ORIGIN_VALUE_KEY: TradesStorage.sanitize_for_storage(trade_dict),
-        "x": trade_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
-        "text": f"{tag}{trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value]} "
+        commons_enums.DisplayedElementTypes.CHART.value: chart,
+        commons_enums.DBRows.SYMBOL.value: trade_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
+        commons_enums.DBRows.FEES_AMOUNT.value: fee_cost,
+        commons_enums.DBRows.FEES_CURRENCY.value: fee[enums.FeePropertyColumns.CURRENCY.value]
+        if trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value] else "",
+        commons_enums.DBRows.ID.value: trade_dict[enums.ExchangeConstantsOrderColumns.ID.value],
+        commons_enums.DBRows.TRADING_MODE.value: exchange_manager.trading_modes[0].get_name(),
+        commons_enums.PlotAttributes.X.value: trade_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
+        commons_enums.PlotAttributes.TEXT.value: f"{tag}{trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value]} "
                 f"{trade_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]} "
                 f"{trade_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value]} "
                 f"{trade_dict[enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value]} "
                 f"at {trade_dict[enums.ExchangeConstantsOrderColumns.PRICE.value]}",
-        "id": trade_dict[enums.ExchangeConstantsOrderColumns.ID.value],
-        "symbol": trade_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
-        "trading_mode": exchange_manager.trading_modes[0].get_name(),
-        "type": trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value],
-        "volume": float(trade_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value]),
-        "y": float(trade_dict[enums.ExchangeConstantsOrderColumns.PRICE.value]),
+        commons_enums.PlotAttributes.TYPE.value: trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value],
+        commons_enums.PlotAttributes.VOLUME.value: float(trade_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value]),
+        commons_enums.PlotAttributes.Y.value: float(trade_dict[enums.ExchangeConstantsOrderColumns.PRICE.value]),
+        commons_enums.PlotAttributes.KIND.value: kind,
+        commons_enums.PlotAttributes.SIDE.value: trade_dict[enums.ExchangeConstantsOrderColumns.SIDE.value],
+        commons_enums.PlotAttributes.MODE.value: mode,
+        commons_enums.PlotAttributes.SHAPE.value: shape,
+        commons_enums.PlotAttributes.COLOR.value: color,
+        commons_enums.PlotAttributes.SIZE.value: "10",
         "cost": float(trade_dict[enums.ExchangeConstantsOrderColumns.COST.value]),
         "state": trade_dict[enums.ExchangeConstantsOrderColumns.STATUS.value],
-        "chart": chart,
-        "kind": kind,
-        "side": trade_dict[enums.ExchangeConstantsOrderColumns.SIDE.value],
-        "mode": mode,
-        "shape": shape,
-        "color": color,
-        "size": "10",
-        "fees_amount": fee_cost,
-        "fees_currency": fee[enums.FeePropertyColumns.CURRENCY.value]
-        if trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }
