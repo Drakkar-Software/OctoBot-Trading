@@ -19,6 +19,7 @@ import copy
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order as order_import
+import octobot_commons.symbols as commons_symbols
 
 
 class Trade:
@@ -125,6 +126,7 @@ class Trade:
         trade.trade_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ID.value)
         trade.origin_order_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ORDER_ID.value)
         trade.symbol = trade_dict.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value)
+        trade.currency, trade.market = commons_symbols.parse_symbol(trade.symbol).base_and_quote()
         trade.market = trade_dict.get(enums.ExchangeConstantsOrderColumns.MARKET.value)
         trade.executed_price = decimal.Decimal(str(trade_dict.get(enums.ExchangeConstantsOrderColumns.PRICE.value)))
         trade.status = enums.OrderStatus(trade_dict.get(enums.ExchangeConstantsOrderColumns.STATUS.value,

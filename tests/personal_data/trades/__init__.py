@@ -24,11 +24,12 @@ def create_trade(trader, trade_id, is_closing_order, origin_order_id):
     return trade
 
 
-def create_executed_trade(trader, executed_time, executed_quantity, executed_price, symbol, fee):
+def create_executed_trade(trader, side, executed_time, executed_quantity, executed_price, symbol, fee):
     trade = personal_data.Trade(trader)
     trade.executed_time = executed_time
     trade.executed_quantity = executed_quantity
     trade.executed_price = executed_price
     trade.symbol = symbol
     trade.fee = fee
+    trade.side = side
     return trade
