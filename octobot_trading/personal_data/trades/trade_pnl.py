@@ -17,6 +17,7 @@ import decimal
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_commons.symbols as symbols
 
@@ -74,14 +75,39 @@ class TradePnl:
         except ZeroDivisionError as err:
             raise errors.IncompletePNLError from err
 
+    def get_entry_total_cost(self):
+        return self.get_entry_price() * self.get_total_entry_quantity()
+
+    def get_close_total_cost(self):
+        return self.get_close_price() * self.get_total_close_quantity()
+
+    def get_close_ratio(self):
+        try:
+            if self.entries[0].side is enums.TradeOrderSide.BUY:
+                return min(self.get_total_close_quantity() / self.get_total_entry_quantity(), constants.ONE)
+            return min(self.get_close_total_cost() / self.get_entry_total_cost(), constants.ONE)
+        except IndexError as err:
+            raise errors.IncompletePNLError from err
+
     def get_closed_entry_value(self) -> decimal.Decimal:
-        return self.get_entry_price() * self.get_closed_pnl_quantity()
+        return self.get_entry_price() * self.get_total_entry_quantity()
 
     def get_closed_close_value(self) -> decimal.Decimal:
         return self.get_close_price() * self.get_closed_pnl_quantity()
 
     def get_closed_pnl_quantity(self):
-        return min(self.get_total_close_quantity(), self.get_total_entry_quantity())
+        try:
+            if self.entries[0].side is enums.TradeOrderSide.BUY:
+                # entry is a buy, exit is a sell: take exit size capped at the entry size
+                # (can't account in pnl for more than what has been bought)
+                return min(self.get_total_close_quantity(), self.get_total_entry_quantity())
+            # entry is a sell, exit is a buy: take closing size capped at the equivalent entry cost
+            # (can't account in pnl for more than what has been sold for entry)
+            entry_cost = self.get_entry_price() * self.get_total_entry_quantity()
+            max_close_quantity = entry_cost / self.get_close_price()
+            return min(self.get_total_close_quantity(), max_close_quantity)
+        except IndexError as err:
+            raise errors.IncompletePNLError from err
 
     def _get_fees(self, trade) -> decimal.Decimal:
         if not trade.fee:
@@ -91,6 +117,13 @@ class TradePnl:
         fees = order_util.get_fees_for_currency(trade.fee, symbol.quote)
         return fees \
             + order_util.get_fees_for_currency(trade.fee, symbol.base) * trade.executed_price
+
+    def get_fees_currencies(self) -> set:
+        return set(
+            trade.fee[enums.FeePropertyColumns.CURRENCY.value]
+            for trade in self.entries + self.closes
+            if trade.fee
+        )
 
     def get_total_paid_fees(self) -> decimal.Decimal:
         return sum(
@@ -103,7 +136,7 @@ class TradePnl:
         :return: the pnl profits as flat value and percent
         """
         close_holdings = self.get_closed_close_value() - self.get_total_paid_fees()
-        entry_holdings = self.get_closed_entry_value()
+        entry_holdings = self.get_closed_entry_value() * self.get_close_ratio()
         return (
             close_holdings - entry_holdings,
             (close_holdings * constants.ONE_HUNDRED / entry_holdings) - constants.ONE_HUNDRED
