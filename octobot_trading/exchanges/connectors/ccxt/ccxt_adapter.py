@@ -174,8 +174,6 @@ class CCXTAdapter(adapters.AbstractAdapter):
 
     def parse_trades(self, fixed, **kwargs):
         # CCXT standard trades parsing logic
-        for trade in fixed:
-            trade.pop(ecoc.INFO.value, None)
         return fixed
 
     def fix_position(self, raw, **kwargs):
