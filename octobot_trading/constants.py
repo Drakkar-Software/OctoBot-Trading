@@ -82,13 +82,14 @@ TESTED_EXCHANGES = [
     "kucoin",
     # "coinbasepro",  # waiting for ccxt update on coinbase advanced
     "bybit",
+    "cryptocom",
     "phemex",
     "hollaex"
 ]
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 SIMULATOR_TESTED_EXCHANGES = ["bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
-                              "wavesexchange", "cryptocom"]
+                              "wavesexchange"]
 
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0

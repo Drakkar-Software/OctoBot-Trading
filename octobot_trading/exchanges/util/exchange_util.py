@@ -236,3 +236,70 @@ def get_supported_exchange_types(exchange_name):
         # default
         return [enums.ExchangeTypes.SPOT]
     return exchange_class.get_supported_exchange_types()
+
+
+def update_raw_order_from_raw_trade(order_to_update, raw_trade):
+    order_to_update[enums.ExchangeConstantsOrderColumns.INFO.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.INFO.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.ID.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.ORDER.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.SYMBOL.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.SYMBOL.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.TYPE.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.TYPE.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.DATETIME.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.DATETIME.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.SIDE.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.SIDE.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.PRICE.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.PRICE.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] = order_to_update.get(
+        enums.ExchangeConstantsOrderColumns.TIMESTAMP.value,
+        raw_trade[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
+    order_to_update[enums.ExchangeConstantsOrderColumns.STATUS.value] = enums.OrderStatus.FILLED.value
+    order_to_update[enums.ExchangeConstantsOrderColumns.FILLED.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.COST.value] = raw_trade[
+        enums.ExchangeConstantsOrderColumns.COST.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.REMAINING.value] = 0
+    order_to_update[
+        enums.ExchangeConstantsOrderColumns.FEE.value
+    ] = raw_trade[enums.ExchangeConstantsOrderColumns.FEE.value]
+    return order_to_update
+
+
+def is_missing_trading_fees(raw_order):
+    try:
+        return (
+            raw_order is not None
+            and raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value] in (
+                    enums.OrderStatus.CLOSED.value,
+                    enums.OrderStatus.FILLED.value,
+            )
+            and (
+                raw_order[enums.ExchangeConstantsOrderColumns.FEE.value] is None
+                or raw_order[enums.ExchangeConstantsOrderColumns.FEE.value][
+                    enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value
+                ] is None
+            )
+        )
+    except KeyError:
+        return True
+
+
+def apply_trades_fees(raw_order, raw_trades_by_order_id):
+    order_id = raw_order[enums.ExchangeConstantsOrderColumns.ID.value]
+    if order_id in raw_trades_by_order_id and raw_trades_by_order_id[order_id]:
+        order_fee = raw_trades_by_order_id[order_id][0][enums.ExchangeConstantsOrderColumns.FEE.value]
+        # add each order's trades fee
+        for trade in raw_trades_by_order_id[order_id][1:]:
+            order_fee[enums.FeePropertyColumns.COST.value] += \
+                trade[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
+            order_fee[enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value] += \
+                trade[enums.ExchangeConstantsOrderColumns.FEE.value][
+                    enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value]
+        raw_order[enums.ExchangeConstantsOrderColumns.FEE.value] = order_fee

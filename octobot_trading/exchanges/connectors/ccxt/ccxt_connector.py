@@ -321,14 +321,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def get_closed_orders(self, symbol: str = None, since: int = None,
                                 limit: int = None, **kwargs: dict) -> list:
-        if self.client.has['fetchClosedOrders']:
+        try:
             with self.error_describer():
                 return self.adapter.adapt_orders(
                     await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
                     symbol=symbol
                 )
-        else:
-            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedOrders")
+        except ccxt.NotSupported as e:
+            # fetch_closed_orders is not supported
+            raise octobot_trading.errors.NotSupported from e
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:

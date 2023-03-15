@@ -28,6 +28,10 @@ cpdef object get_exchange_class_from_name(object exchange_parent_class,
                                           object tentacles_setup_config,
                                           bint enable_default,
                                           bint strict_name_matching=*)
+cpdef dict update_raw_order_from_raw_trade(dict order_to_update, dict order_to_update)
+cpdef bint is_missing_trading_fees(dict raw_order)
+cpdef dict apply_trades_fees(dict raw_order, dict raw_trades_by_order_id)
+
 
 cdef object search_exchange_class_from_exchange_name(object exchange_class,
                                                      str exchange_name,

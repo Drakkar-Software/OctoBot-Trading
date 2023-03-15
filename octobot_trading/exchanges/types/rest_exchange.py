@@ -43,6 +43,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     PRINT_DEBUG_LOGS = False
+    REQUIRE_ORDER_FEES_FROM_TRADES = False  # set True when get_order is not giving fees on closed orders and fees
+    # should be fetched using recent trades.
+    REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES = False  # set True when get_closed_orders is not supported
     ALLOW_TRADES_FROM_CLOSED_ORDERS = False  # set True when get_my_recent_trades should use get_closed_orders
     DUMP_INCOMPLETE_LAST_CANDLE = False  # set True in tentacle when the exchange can return incomplete last candles
     # Set True when exchange is not returning empty position details when fetching a position with a specified symbol
@@ -440,7 +443,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
     async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
-        return await self.connector.get_order(symbol=symbol, order_id=order_id, **kwargs)
+        return await self._ensure_order_completeness(
+            await self.connector.get_order(order_id, symbol=symbol, **kwargs),
+            symbol, **kwargs
+        )
 
     async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         for order in await self.get_open_orders(symbol, **kwargs):
@@ -457,33 +463,77 @@ class RestExchange(abstract_exchange.AbstractExchange):
         # usually the right trade is within the last ones
         for trade in trades[::-1]:
             if trade[ecoc.ORDER.value] == order_id:
-                order_to_update[ecoc.INFO.value] = trade[ecoc.INFO.value]
-                order_to_update[ecoc.ID.value] = order_id
-                order_to_update[ecoc.SYMBOL.value] = symbol
-                order_to_update[ecoc.TYPE.value] = trade[ecoc.TYPE.value]
-                order_to_update[ecoc.AMOUNT.value] = trade[ecoc.AMOUNT.value]
-                order_to_update[ecoc.DATETIME.value] = trade[ecoc.DATETIME.value]
-                order_to_update[ecoc.SIDE.value] = trade[ecoc.SIDE.value]
-                order_to_update[ecoc.TAKER_OR_MAKER.value] = trade[ecoc.TAKER_OR_MAKER.value]
-                order_to_update[ecoc.PRICE.value] = trade[ecoc.PRICE.value]
-                order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
-                                                                            trade[ecoc.TIMESTAMP.value])
-                order_to_update[ecoc.STATUS.value] = enums.OrderStatus.FILLED.value
-                order_to_update[ecoc.FILLED.value] = trade[ecoc.AMOUNT.value]
-                order_to_update[ecoc.COST.value] = trade[ecoc.COST.value]
-                order_to_update[ecoc.REMAINING.value] = 0
-                order_to_update[ecoc.FEE.value] = trade[ecoc.FEE.value]
-                return order_to_update
+                return exchanges_util.update_raw_order_from_raw_trade(order_to_update, trade)
         return None  #OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+        return await self._ensure_orders_completeness(
+            await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs),
+            symbol, since=since, limit=limit, **kwargs
+        )
 
     async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+        return await self._ensure_orders_completeness(
+            await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, **kwargs),
+            symbol, since=since, limit=limit, **kwargs
+        )
 
     async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+        try:
+            return await self._ensure_orders_completeness(
+                await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs),
+                symbol, since=since, limit=limit, **kwargs
+            )
+        except errors.NotSupported:
+            if self.REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES:
+                return await self._get_closed_orders_from_my_recent_trades(
+                    symbol=symbol, since=since, limit=limit, **kwargs
+                )
+            raise
+
+    async def _get_closed_orders_from_my_recent_trades(
+        self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict
+    ) -> list:
+        trades = await self.get_my_recent_trades(symbol, since=since, limit=limit, **kwargs)
+        return [
+            exchanges_util.update_raw_order_from_raw_trade({}, trade)
+            for trade in trades
+        ]
+
+    async def _ensure_orders_completeness(
+        self, raw_orders, symbol, since=None, limit=None, trades_by_order_id=None, **kwargs
+    ):
+        if not self.REQUIRE_ORDER_FEES_FROM_TRADES \
+                or not any(exchanges_util.is_missing_trading_fees(order) for order in raw_orders):
+            return raw_orders
+        trades_by_order_id = trades_by_order_id or await self._get_trades_by_order_id(
+            symbol=symbol, since=since, limit=limit, **kwargs
+        )
+        return [
+            await self._ensure_order_completeness(order, symbol, trades_by_order_id=trades_by_order_id, **kwargs)
+            for order in raw_orders
+        ]
+
+    async def _ensure_order_completeness(
+        self, raw_order, symbol, since=None, limit=None, trades_by_order_id=None, **kwargs
+    ):
+        if not self.REQUIRE_ORDER_FEES_FROM_TRADES or not exchanges_util.is_missing_trading_fees(raw_order):
+            return raw_order
+        trades_by_order_id = trades_by_order_id or await self._get_trades_by_order_id(
+            symbol=symbol, since=since, limit=limit, **kwargs
+        )
+        exchanges_util.apply_trades_fees(raw_order, trades_by_order_id)
+        return raw_order
+
+    async def _get_trades_by_order_id(self, symbol=None, since=None, limit=None, **kwargs):
+        trades_by_order_id = {}
+        for trade in await self.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs):
+            order_id = trade[enums.ExchangeConstantsOrderColumns.ORDER.value]
+            if order_id in trades_by_order_id:
+                trades_by_order_id[order_id].append(trade)
+            else:
+                trades_by_order_id[order_id] = [trade]
+        return trades_by_order_id
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)

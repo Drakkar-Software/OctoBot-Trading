@@ -31,6 +31,9 @@ from octobot_trading.exchanges.util.exchange_util import (
     get_exchange_type,
     get_default_exchange_type,
     get_supported_exchange_types,
+    update_raw_order_from_raw_trade,
+    is_missing_trading_fees,
+    apply_trades_fees,
     get_exchange_class_from_name,
 )
 from octobot_trading.exchanges.util import websockets_util
@@ -54,6 +57,9 @@ __all__ = [
     "get_exchange_type",
     "get_default_exchange_type",
     "get_supported_exchange_types",
+    "update_raw_order_from_raw_trade",
+    "is_missing_trading_fees",
+    "apply_trades_fees",
     "get_exchange_class_from_name",
     "force_disable_web_socket",
     "check_web_socket_config",

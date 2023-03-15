@@ -26,6 +26,9 @@ from octobot_trading.exchanges.util.exchange_util cimport (
     get_exchange_type,
     get_default_exchange_type,
     get_supported_exchange_types,
+    update_raw_order_from_raw_trade,
+    is_missing_trading_fees,
+    apply_trades_fees,
     get_exchange_class_from_name,
     get_enabled_exchanges,
 )
@@ -47,6 +50,9 @@ __all__ = [
     "get_exchange_type",
     "get_default_exchange_type",
     "get_supported_exchange_types",
+    "update_raw_order_from_raw_trade",
+    "is_missing_trading_fees",
+    "apply_trades_fees",
     "get_exchange_class_from_name",
     "get_enabled_exchanges",
 ]
