@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.26] - 2023-03-15
+### Added
+- [Orders] storage system to keep track of groups, chained orders, entries and tags
+- [Exchanges] support for crypto.com
+### Updated
+- [Exchanges] fees checking to ensure closed order fees availability
+### Fixed
+- [PNL] PNL when entry is a sell order
+
 ## [2.3.25] - 2023-03-09
 ### Added
 - [Exchanges] get_leverage_tiers 
