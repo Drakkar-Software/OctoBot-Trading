@@ -87,7 +87,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     async def _load_startup_orders(self):
         if self.should_store_date():
             self.startup_orders = {
-                order["id"]: order
+                order[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.ID.value]: order
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))
                 if order    # skip empty order details (error when serializing)
             }

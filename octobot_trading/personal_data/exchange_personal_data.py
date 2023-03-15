@@ -25,7 +25,7 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
-import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 import octobot_trading.personal_data.trades.trades_manager as trades_manager
 import octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
@@ -201,7 +201,7 @@ class ExchangePersonalData(util.Initializable):
 
     async def update_order_from_stored_data(self, order_id, pending_groups):
         order = self.orders_manager.get_order(order_id)
-        await order_util.apply_order_storage_details_if_any(order, self.exchange_manager, pending_groups)
+        await orders_storage_operations.apply_order_storage_details_if_any(order, self.exchange_manager, pending_groups)
 
     async def on_order_refresh_success(self, order, should_notify, is_new_order):
         if order.state is not None:

@@ -19,7 +19,7 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
-import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 
 
 class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
@@ -70,7 +70,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                             raise
             if not are_closed:
                 if pending_groups:
-                    await order_util.create_missing_self_managed_orders_from_storage_order_groups(
+                    await orders_storage_operations.create_missing_self_managed_orders_from_storage_order_groups(
                         pending_groups, self.channel.exchange_manager
                     )
                 await self.handle_post_open_orders_update(

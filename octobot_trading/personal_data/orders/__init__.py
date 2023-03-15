@@ -98,6 +98,9 @@ from octobot_trading.personal_data.orders.order_util import (
     get_order_quantity_currency,
     get_order_size_portfolio_percent,
     generate_order_id,
+)
+from octobot_trading.personal_data.orders import orders_storage_operations
+from octobot_trading.personal_data.orders.orders_storage_operations import (
     apply_order_storage_details_if_any,
     create_orders_storage_related_elements,
     create_missing_self_managed_orders_from_storage_order_groups,

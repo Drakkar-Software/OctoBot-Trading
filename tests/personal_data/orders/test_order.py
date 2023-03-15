@@ -15,7 +15,6 @@
 #  License along with this library.
 import mock
 import pytest
-import pytest_asyncio
 import decimal
 
 import octobot_trading.errors as errors
@@ -23,6 +22,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.storage.orders_storage as orders_storage
 
 from tests import event_loop
 from tests.exchanges import exchange_manager, simulated_exchange_manager
@@ -32,16 +32,6 @@ from tests.test_utils.random_numbers import random_price
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
-
-
-@pytest_asyncio.fixture
-def initialized_mocked_order_storage(trader_simulator):
-    config, exchange_manager_inst, trader_inst = trader_simulator
-    mocked_order_storage = mock.Mock(
-        stop=mock.AsyncMock(),
-    )
-    exchange_manager_inst.storage_manager.orders_storage = mocked_order_storage
-    yield mocked_order_storage, exchange_manager_inst, trader_inst
 
 
 async def test_get_profitability(trader_simulator):
@@ -357,10 +347,8 @@ async def test_update_from_order(trader_simulator):
     assert base_order_1.state.order is base_order_1
 
 
-async def test_update_from_order_storage(initialized_mocked_order_storage):
-    mocked_order_storage, exchange_manager_inst, trader_inst = initialized_mocked_order_storage
-    mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={})
-    mocked_order_storage.should_store_date = mock.Mock(return_value=False)
+async def test_update_from_order_storage(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
 
     order = personal_data.BuyLimitOrder(trader_inst)
     order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
@@ -368,15 +356,48 @@ async def test_update_from_order_storage(initialized_mocked_order_storage):
                  current_price=decimal.Decimal("70"),
                  quantity=decimal.Decimal("10"),
                  price=decimal.Decimal("70"))
-    await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
-    # disabled in trader simulator
-    mocked_order_storage.get_startup_order_details.assert_not_awaited()
+    origin_tag = order.tag
+    origin_trader_creation_kwargs = order.trader_creation_kwargs
+    origin_exchange_creation_params = order.exchange_creation_params
+    origin_shared_signal_order_id = order.shared_signal_order_id
+    origin_has_been_bundled = order.has_been_bundled
+    origin_associated_entry_ids = order.associated_entry_ids
 
-    mocked_order_storage.should_store_date = mock.Mock(return_value=True)
-    await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
-    mocked_order_storage.get_startup_order_details.assert_awaited_once()
+    # wrong format
+    order.update_from_storage_order_details({"hello": "hi there"})
+    assert order.tag is origin_tag
+    assert order.trader_creation_kwargs is origin_trader_creation_kwargs
+    assert order.exchange_creation_params is origin_exchange_creation_params
+    assert order.shared_signal_order_id is origin_shared_signal_order_id
+    assert order.has_been_bundled is origin_has_been_bundled
+    assert order.associated_entry_ids is origin_associated_entry_ids
 
-    # ensure no crash with not well formatted order_details
-    mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={"hello": "hi there"})
-    await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
-    mocked_order_storage.get_startup_order_details.assert_awaited_once()
+    # partial update
+    order.update_from_storage_order_details({
+        enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop": 1},
+        enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: "11"
+    })
+    assert order.tag is origin_tag
+    assert order.trader_creation_kwargs == {"plop": 1} != origin_trader_creation_kwargs
+    assert order.exchange_creation_params is origin_exchange_creation_params
+    assert order.shared_signal_order_id == "11" != origin_shared_signal_order_id
+    assert order.has_been_bundled is origin_has_been_bundled
+    assert order.associated_entry_ids is origin_associated_entry_ids
+
+    # full update
+    order.update_from_storage_order_details({
+        orders_storage.OrdersStorage.ORIGIN_VALUE_KEY: {
+            enums.ExchangeConstantsOrderColumns.TAG.value: "t1",
+        },
+        enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop2": 1},
+        enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value: {"ex": 2, "gg": "yesyes"},
+        enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: "11a",
+        enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: True,
+        enums.StoredOrdersAttr.ENTRIES.value: ["ABC", "2"],
+    })
+    assert order.tag == "t1" != origin_tag
+    assert order.trader_creation_kwargs == {"plop2": 1} != origin_trader_creation_kwargs
+    assert order.exchange_creation_params == {"ex": 2, "gg": "yesyes"} != origin_exchange_creation_params
+    assert order.shared_signal_order_id == "11a" != origin_shared_signal_order_id
+    assert order.has_been_bundled is True is not origin_has_been_bundled
+    assert order.associated_entry_ids == ["ABC", "2"] != origin_associated_entry_ids
