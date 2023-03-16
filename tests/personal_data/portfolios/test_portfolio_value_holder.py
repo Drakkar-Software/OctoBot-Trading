@@ -194,7 +194,53 @@ async def test_update_origin_crypto_currencies_values(backtesting_trader):
     assert portfolio_value_holder.update_origin_crypto_currencies_values("ETH/BTC", decimal.Decimal(str(0.1))) is True
     assert portfolio_value_holder.origin_crypto_currencies_values["ETH"] == decimal.Decimal(str(0.1))
     assert portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] == decimal.Decimal(str(0.1))
+    # ETH is now priced and BTC is the reference market
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("ETH/BTC", decimal.Decimal(str(0.1))) is False
 
     assert portfolio_value_holder.update_origin_crypto_currencies_values("BTC/USDT", decimal.Decimal(str(100))) is True
-    assert portfolio_value_holder.origin_crypto_currencies_values["USDT"] == decimal.Decimal(constants.ONE / decimal.Decimal(100))
+    assert portfolio_value_holder.origin_crypto_currencies_values["USDT"] == \
+           decimal.Decimal(constants.ONE / decimal.Decimal(100))
     assert portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] == decimal.Decimal(str(100))
+    # USDT is now priced and BTC is the reference market
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("BTC/USDT", decimal.Decimal(str(100))) is False
+
+    # with bridge pair (DOT/ETH -> ETH/BTC to compute DOT/BTC)
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("DOT/ETH", decimal.Decimal(str(0.015))) is True
+    assert portfolio_value_holder.origin_crypto_currencies_values["DOT"] == \
+           decimal.Decimal(str(0.015)) * decimal.Decimal(str(0.1))
+    assert portfolio_value_holder.last_prices_by_trading_pair["DOT/ETH"] == decimal.Decimal(str(0.015))
+    # USDT is now priced and BTC is the reference market
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("DOT/ETH", decimal.Decimal(str(0.015))) is False
+
+
+def test_try_convert_currency_value_using_multiple_pairs(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+
+    # try_convert_currency_value_using_multiple_pairs uses last_prices_by_trading_pair
+    # try without last_prices_by_trading_pair
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ETH", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("BTC", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("USDT", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("DOT", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", constants.ONE) is None
+
+    # 1 ETH = 0.5 BTC
+    portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] = decimal.Decimal("0.5")
+    # 1 DOT = 0.2 ETH
+    portfolio_value_holder.last_prices_by_trading_pair["DOT/ETH"] = decimal.Decimal("0.2")
+    # therefore 1 DOT = 0.2 ETH = 0.5 * 0.2 BTC = 0.1 BTC
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("DOT", decimal.Decimal("2")) \
+        == decimal.Decimal("0.2")
+
+    # with reversed pair in bridge
+    portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] = decimal.Decimal("10000")
+    portfolio_value_holder.last_prices_by_trading_pair["ADA/USDT"] = decimal.Decimal("2")
+    # 1 ADA = 2 USDT == 2/10000 BTC
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", decimal.Decimal(1)) \
+        == decimal.Decimal(2) / decimal.Decimal(10000)
+
+    # without enough data
+    portfolio_value_holder.last_prices_by_trading_pair["CRO/PLOP"] = decimal.Decimal("2")
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", constants.ONE) is None

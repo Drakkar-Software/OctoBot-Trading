@@ -179,7 +179,8 @@ class PortfolioValueHolder:
         values = currencies_values
         if values is None or fill_currencies_values:
             self.current_crypto_currencies_values.update(
-                self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio))
+                self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio)
+            )
             if fill_currencies_values:
                 self._fill_currencies_values(currencies_values)
             values = self.current_crypto_currencies_values
@@ -325,7 +326,7 @@ class PortfolioValueHolder:
         # look into available symbols to find pair bridges
         part_1_base = currency
         part_2_quote = self.portfolio_manager.reference_market
-        for bridge_part_1_symbol, price in self.last_prices_by_trading_pair.items():
+        for bridge_part_1_symbol in self.last_prices_by_trading_pair:
             parsed_bridge_part_1_symbol = symbol_util.parse_symbol(bridge_part_1_symbol)
             # part 1: check if bridge_part_1_symbol can be used as part 1 of the bridge
             if part_1_base != parsed_bridge_part_1_symbol.base:
@@ -343,9 +344,6 @@ class PortfolioValueHolder:
             if not bridge_part_1_value:
                 continue
             # part 2: bridge part 1 is found and valued, try to get a compatible second part
-            bridge_symbol_part_2_symbol = symbol_util.merge_currencies(part_1_quote, part_2_quote)
-            if not self.portfolio_manager.exchange_manager.symbol_exists(bridge_symbol_part_2_symbol):
-                continue
             try:
                 bridge_part_2_value = self.convert_currency_value_using_last_prices(
                     constants.ONE,
@@ -357,9 +355,9 @@ class PortfolioValueHolder:
                         self.missing_currency_data_in_exchange.remove(currency)
                     return bridge_part_1_value * bridge_part_2_value
             except errors.MissingPriceDataError:
-                # conversion pairs might not be initialized
-                # or is not available at all
-                pass  # continue trying with reversed pair
+                # conversion pairs might not be initialized or is not available at all
+                pass  # continue with other pairs
+        # no bridge found
         return None
 
     def _has_price_data(self, symbol):
@@ -395,7 +393,7 @@ class PortfolioValueHolder:
             s
             for s in symbols_to_add
             if s not in self.initializing_symbol_prices_pairs
-            and s not in self.portfolio_manager.exchange_manager.traded_symbols.traded_symbol_pairs
+            and s not in self.portfolio_manager.exchange_manager.exchange_config.traded_symbol_pairs
         ]
         if new_symbols_to_add:
             self.logger.debug(f"Fetching price for {new_symbols_to_add} to compute all the "
