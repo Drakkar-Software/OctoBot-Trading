@@ -19,6 +19,7 @@ import decimal
 
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
+import octobot_commons.asyncio_tools as asyncio_tools
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -54,6 +55,7 @@ class PortfolioValueHolder:
 
         # internal price conversion elements
         self._price_bridge_by_currency = {}
+        self._bot_main_loop = asyncio.get_event_loop()
 
     def reset_portfolio_values(self):
         self.portfolio_origin_value = constants.ZERO
@@ -97,11 +99,14 @@ class PortfolioValueHolder:
             elif currency == self.portfolio_manager.reference_market:
                 self.origin_crypto_currencies_values[market] = constants.ONE / mark_price
             else:
-                converted_value = self.try_convert_currency_value_using_multiple_pairs(
-                    currency, self.portfolio_manager.reference_market, constants.ONE, []
-                )
-                if converted_value is not None:
-                    self.origin_crypto_currencies_values[currency] = converted_value
+                try:
+                    converted_value = self.try_convert_currency_value_using_multiple_pairs(
+                        currency, self.portfolio_manager.reference_market, constants.ONE, []
+                    )
+                    if converted_value is not None:
+                        self.origin_crypto_currencies_values[currency] = converted_value
+                except (errors.MissingPriceDataError, errors.PendingPriceDataError):
+                    pass
         return origin_currencies_should_be_updated
 
     def get_current_crypto_currencies_values(self):
@@ -498,10 +503,15 @@ class PortfolioValueHolder:
         Synchronously call TICKER_CHANNEL producer to add a list of new symbols to its watch list
         :param symbols_to_add: the list of symbol to add to the TICKER_CHANNEL producer watch list
         """
-        asyncio.run_coroutine_threadsafe(
-            self.portfolio_manager.exchange_manager.exchange_config.add_watched_symbols(symbols_to_add),
-            asyncio.get_running_loop()
-        )
+        if self._bot_main_loop is asyncio.get_event_loop():
+            asyncio.create_task(
+                self.portfolio_manager.exchange_manager.exchange_config.add_watched_symbols(symbols_to_add)
+            )
+        else:
+            asyncio_tools.run_coroutine_in_asyncio_loop(
+                self.portfolio_manager.exchange_manager.exchange_config.add_watched_symbols(symbols_to_add),
+                self._bot_main_loop
+            )
 
     def _inform_no_matching_symbol(self, currency):
         """

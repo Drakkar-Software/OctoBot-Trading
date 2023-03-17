@@ -42,6 +42,7 @@ cdef class PortfolioValueHolder:
     cdef portfolio_manager.PortfolioManager portfolio_manager
 
     cdef dict _price_bridge_by_currency
+    cdef object _bot_main_loop
 
     cpdef bint update_origin_crypto_currencies_values(self, str symbol, object mark_price)
     cpdef dict get_current_crypto_currencies_values(self)
