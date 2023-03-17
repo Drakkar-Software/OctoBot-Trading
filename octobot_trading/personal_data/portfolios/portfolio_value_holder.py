@@ -51,6 +51,9 @@ class PortfolioValueHolder:
         # set of currencies for which the current exchange is not providing any suitable price data
         self.missing_currency_data_in_exchange = set()
 
+        # internal price conversion elements
+        self._price_bridge_by_currency = {}
+
     def reset_portfolio_values(self):
         self.portfolio_origin_value = constants.ZERO
         self.portfolio_current_value = constants.ZERO
@@ -324,6 +327,11 @@ class PortfolioValueHolder:
         #               | bridge part 1     | bridge part 2
 
         # look into available symbols to find pair bridges
+        try:
+            return self._convert_currency_value_from_saved_price_bridges(currency, quantity)
+        except errors.MissingPriceDataError:
+            # try to find a bridge
+            pass
         part_1_base = currency
         part_2_quote = self.portfolio_manager.reference_market
         for bridge_part_1_symbol in self.last_prices_by_trading_pair:
@@ -351,14 +359,32 @@ class PortfolioValueHolder:
                     part_2_quote,
                 )
                 if bridge_part_2_value:
-                    if currency in self.missing_currency_data_in_exchange:
-                        self.missing_currency_data_in_exchange.remove(currency)
+                    self._remove_from_missing_currency_data(currency)
+                    bridge = [(part_1_base, part_1_quote), (part_1_quote, part_2_quote)]
+                    self._save_price_bridge(currency, bridge)
                     return bridge_part_1_value * bridge_part_2_value
             except errors.MissingPriceDataError:
                 # conversion pairs might not be initialized or is not available at all
                 pass  # continue with other pairs
         # no bridge found
         return None
+
+    def _save_price_bridge(self, currency, bridge):
+        self._price_bridge_by_currency[currency] = bridge
+
+    def _convert_currency_value_from_saved_price_bridges(self, currency, quantity) -> decimal.Decimal:
+        try:
+            bridge = self._price_bridge_by_currency[currency]
+            converted_value = quantity
+            for base, quote in bridge:
+                converted_value = self.convert_currency_value_using_last_prices(converted_value, base, quote)
+            return converted_value
+        except KeyError as err:
+            raise errors.MissingPriceDataError from err
+
+    def _remove_from_missing_currency_data(self, currency):
+        if currency in self.missing_currency_data_in_exchange:
+            self.missing_currency_data_in_exchange.remove(currency)
 
     def _has_price_data(self, symbol):
         return self._get_last_price_data(symbol) is not constants.ZERO
@@ -389,6 +415,9 @@ class PortfolioValueHolder:
         elif self.portfolio_manager.exchange_manager.symbol_exists(reversed_symbol):
             symbols_to_add = [reversed_symbol]
 
+        # Add new symbols to watched currencies.
+        # Skip initializing_symbol_prices_pairs as they already have been added
+        # Skip exchange_config.traded_symbol_pairs as they are already added to regular price feeds
         new_symbols_to_add = [
             s
             for s in symbols_to_add
