@@ -45,9 +45,6 @@ class ExchangeConfig(util.Initializable):
         # Same as traded_symbol_pairs but with parsed symbols
         self.traded_symbols = []
 
-        # list of exchange supported pairs from self.config (used to initialize evaluators and more)
-        self.all_config_symbol_pairs = []
-
         # list of exchange supported pairs on which we want to collect data through updaters or websocket
         self.watched_pairs = []
 
@@ -172,7 +169,6 @@ class ExchangeConfig(util.Initializable):
             octobot_commons.symbols.parse_symbol(symbol)
             for symbol in traded_symbol_pairs_set
         ]
-        self.all_config_symbol_pairs = list(existing_pairs)
 
         # only add self.traded_symbol_pairs to watched pairs as not every existing_pairs are being collected
         self.watched_pairs = copy.deepcopy(self.traded_symbol_pairs)

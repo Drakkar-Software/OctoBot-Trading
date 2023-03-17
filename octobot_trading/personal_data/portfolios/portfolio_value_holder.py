@@ -275,6 +275,9 @@ class PortfolioValueHolder:
                         return value
                 except errors.MissingPriceDataError:
                     pass
+                except errors.PendingPriceDataError:
+                    # price should be available in a few seconds
+                    return constants.ZERO
             symbol = symbol_util.merge_currencies(
                 currency, self.portfolio_manager.reference_market, settlement_asset=settlement_asset
             )
@@ -326,7 +329,6 @@ class PortfolioValueHolder:
         # first convert ETH -> BTC and then BTC -> USDT
         #               | bridge part 1     | bridge part 2
 
-        # look into available symbols to find pair bridges
         try:
             return self._convert_currency_value_from_saved_price_bridges(currency, quantity)
         except errors.MissingPriceDataError:
@@ -334,7 +336,8 @@ class PortfolioValueHolder:
             pass
         part_1_base = currency
         part_2_quote = self.portfolio_manager.reference_market
-        for bridge_part_1_symbol in self.last_prices_by_trading_pair:
+        # look into available symbols to find pair bridges
+        for bridge_part_1_symbol in self._get_priced_pairs():
             parsed_bridge_part_1_symbol = symbol_util.parse_symbol(bridge_part_1_symbol)
             # part 1: check if bridge_part_1_symbol can be used as part 1 of the bridge
             if part_1_base != parsed_bridge_part_1_symbol.base:
@@ -344,12 +347,14 @@ class PortfolioValueHolder:
                 bridge_part_1_value = self.convert_currency_value_using_last_prices(
                     quantity, part_1_base, part_1_quote
                 )
+                # check that bridge_part_1_value is really set
+                if not bridge_part_1_value:
+                    continue
             except errors.MissingPriceDataError:
                 # first pair might not be initialized or is not available at all
-                # can't be used as a bridge part 1, try with other pairs
-                continue
-            # check that bridge_part_1_value is really set
-            if not bridge_part_1_value:
+                # make sure it's not just initializing
+                self._ensure_no_pending_symbol_price(symbol_util.merge_currencies(part_1_base, part_1_quote))
+                # try with other pairs
                 continue
             # part 2: bridge part 1 is found and valued, try to get a compatible second part
             try:
@@ -365,9 +370,29 @@ class PortfolioValueHolder:
                     return bridge_part_1_value * bridge_part_2_value
             except errors.MissingPriceDataError:
                 # conversion pairs might not be initialized or is not available at all
-                pass  # continue with other pairs
+                bridge_part_symbol = symbol_util.merge_currencies(part_1_quote, part_2_quote)
+                self._ensure_no_pending_symbol_price(bridge_part_symbol)
+                # otherwise continue with other pairs
         # no bridge found
         return None
+
+    def _get_priced_pairs(self):
+        for pair in self.last_prices_by_trading_pair:
+            # first look into pairs with price
+            yield pair
+        for pair in self.portfolio_manager.exchange_manager.exchange_config.traded_symbol_pairs:
+            # then into pairs from config
+            if pair not in self.last_prices_by_trading_pair:
+                yield pair
+        if self.initializing_symbol_prices:
+            for pair in self.initializing_symbol_prices_pairs:
+                # finally into initializing pairs
+                yield pair
+
+    def _ensure_no_pending_symbol_price(self, symbol):
+        if symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbol_pairs \
+                or symbol in self.initializing_symbol_prices_pairs:
+            raise errors.PendingPriceDataError
 
     def _save_price_bridge(self, currency, bridge):
         self._price_bridge_by_currency[currency] = bridge
@@ -473,15 +498,13 @@ class PortfolioValueHolder:
     def _evaluate_config_currencies_values(self, evaluated_pair_values, evaluated_currencies, missing_tickers):
         """
         Evaluate config currencies values
-        TODO do not use config[CONFIG_CRYPTO_CURRENCIES]
         :param evaluated_pair_values: the list of evaluated pairs
         :param evaluated_currencies: the list of evaluated currencies
         :param missing_tickers: the list of missing currencies
         """
-        if self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs:
-            currency, market = symbol_util.parse_symbol(
-                self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs[0]
-            ).base_and_quote()
+        if self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
+            currency, market = \
+                self.portfolio_manager.exchange_manager.exchange_config.traded_symbols[0].base_and_quote()
             currency_to_evaluate = currency
             try:
                 if currency not in evaluated_currencies:

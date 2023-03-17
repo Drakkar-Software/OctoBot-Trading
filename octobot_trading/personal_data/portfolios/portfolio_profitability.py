@@ -137,9 +137,9 @@ class PortfolioProfitability:
     def _init_traded_currencies_without_market_specific(self):
         """
         Initialize traded currencies without market specific set
-        Use exchange_config.all_config_symbol_pairs to take every config pair into account including disabled ones
+        Use exchange_config.traded_symbols to take every config pair into account except disabled ones
         """
         self.traded_currencies_without_market_specific = set(
             symbol_util.parse_symbol(pair).base
-            for pair in self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs
+            for pair in self.portfolio_manager.exchange_manager.exchange_config.traded_symbol_pairs
         )
