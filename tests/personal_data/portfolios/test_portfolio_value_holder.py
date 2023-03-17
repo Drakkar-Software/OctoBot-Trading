@@ -260,3 +260,15 @@ def test_try_convert_currency_value_using_multiple_pairs(backtesting_trader):
             portfolio_value_holder._convert_currency_value_from_saved_price_bridges("CRO", constants.ONE)
         with pytest.raises(errors.MissingPriceDataError):
             portfolio_value_holder._convert_currency_value_from_saved_price_bridges("PLOP", constants.ONE)
+
+    exchange_manager.exchange_config.traded_symbol_pairs.append("NANO/BTC")
+    # 1 part of bridge data that has not been update but are in exchange config therefore will be available
+    with pytest.raises(errors.PendingPriceDataError):
+        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("NANO", constants.ONE)
+
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", constants.ONE) is None
+    # provide first part of the bridge
+    exchange_manager.exchange_config.traded_symbol_pairs.append("XRP/USDT")
+    with pytest.raises(errors.PendingPriceDataError):
+        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", constants.ONE)
+

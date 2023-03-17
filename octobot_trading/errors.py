@@ -200,6 +200,12 @@ class MissingPriceDataError(Exception):
     """
 
 
+class PendingPriceDataError(Exception):
+    """
+    Raised when a price info is waiting to be updated
+    """
+
+
 class UnreachableExchange(Exception):
     """
     Raised when an exchange cant be reached (likely when it's offline)

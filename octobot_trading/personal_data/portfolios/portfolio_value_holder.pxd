@@ -80,6 +80,7 @@ cdef class PortfolioValueHolder:
                                                     bint ignore_missing_currency_data)
     cdef object _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
     cdef bint _should_currency_be_considered(self, str currency, dict portfolio, bint ignore_missing_currency_data)
+    cdef object _ensure_no_pending_symbol_price(self, str symbol)
     cdef void _save_price_bridge(self, str currency, list bridge)
     cdef object _convert_currency_value_from_saved_price_bridges(self, str currency, object quantity)
     # cdef object _evaluate_value(self, str currency, object quantity, bint raise_error=*)

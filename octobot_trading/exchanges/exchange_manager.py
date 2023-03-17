@@ -297,7 +297,7 @@ class ExchangeManager(util.Initializable):
             "trading_modes": str([tm.get_name() for tm in self.trading_modes]),
             "traded_time_frames": str(self.exchange_config.traded_time_frames),
             "watched_pairs": str(self.exchange_config.watched_pairs),
-            "all_config_symbol_pairs": str(self.exchange_config.all_config_symbol_pairs),
+            "traded_symbol_pairs": str(self.exchange_config.traded_symbol_pairs),
         }
 
     def __str__(self):

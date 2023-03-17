@@ -62,7 +62,6 @@ class TestExchangeConfig:
         all_pairs = sorted(["AVAX/BTC", "ETH/USDT", "UNI/BTC"])
         all_enabled_pairs = sorted(["AVAX/BTC", "ETH/USDT"])
         assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == all_enabled_pairs
-        assert sorted(exchange_manager.exchange_config.all_config_symbol_pairs) == all_pairs
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
@@ -90,7 +89,6 @@ class TestExchangeConfig:
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "ETH/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
 
         # disabled
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
@@ -117,8 +115,6 @@ class TestExchangeConfig:
 
         assert "TRX/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
         assert "ADA/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "BNB/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
-        assert "ADA/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
         assert "Bitcoin" in exchange_manager.exchange_config.traded_cryptocurrencies
 
         # invalid ETH wildcard config
@@ -155,13 +151,11 @@ class TestExchangeConfig:
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "BTC/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
 
         # disabled
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
         assert "ADA/ETH" not in exchange_manager.exchange_config.traded_symbol_pairs
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "ETH/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
@@ -201,7 +195,6 @@ class TestExchangeConfig:
 
         sorted_pairs_without_redundancy = sorted(["BNB/USDT", "BNB/BUSD", "BNB/BTC"])
         assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == sorted_pairs_without_redundancy
-        assert sorted(exchange_manager.exchange_config.all_config_symbol_pairs) == sorted_pairs_without_redundancy
 
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
