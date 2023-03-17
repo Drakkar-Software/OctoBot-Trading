@@ -16,9 +16,6 @@
 #  License along with this library.
 
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
 cimport octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 cimport octobot_trading.personal_data.portfolios.portfolio_value_holder as portfolio_value_holder
 

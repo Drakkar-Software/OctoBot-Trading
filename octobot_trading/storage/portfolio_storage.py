@@ -66,8 +66,10 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
             if history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY] in self._to_update_auth_data_ids_buffer
         ]
         if full_history and authenticator.is_initialized():
-            if hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.initializing_symbol_prices_pairs:
-                for symbol in hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.initializing_symbol_prices_pairs:
+            initializing_prices = hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.\
+                value_converter.initializing_symbol_prices_pairs
+            if initializing_prices:
+                for symbol in initializing_prices:
                     await commons_tree.EventProvider.instance().wait_for_event(
                         self.exchange_manager.bot_id,
                         commons_tree.get_exchange_path(

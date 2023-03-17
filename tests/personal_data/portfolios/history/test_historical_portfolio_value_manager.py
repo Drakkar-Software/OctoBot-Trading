@@ -505,7 +505,7 @@ async def test_get_historical_values(historical_portfolio_value_manager):
     # add 1h missing value to convertable pairs
     convertable_pair = "BTC/USD"
     price = 3000
-    historical_portfolio_value_manager.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair[
+    historical_portfolio_value_manager.portfolio_manager.portfolio_value_holder.value_converter.last_prices_by_trading_pair[
         convertable_pair] = price
     assert historical_portfolio_value_manager.get_historical_values("BTC", commons_enums.TimeFrames.ONE_HOUR) == \
         {friday_timestamp: 1.1, saturday_timestamp: 1.3, sunday_timestamp: 3 / price,

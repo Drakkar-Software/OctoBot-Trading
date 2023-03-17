@@ -16,9 +16,5 @@
 #  License along with this library.
 
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-
 cdef class Initializable:
     cdef public bint is_initialized

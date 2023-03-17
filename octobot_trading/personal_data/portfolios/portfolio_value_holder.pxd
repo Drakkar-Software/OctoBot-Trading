@@ -16,11 +16,9 @@
 #  License along with this library.
 
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
 cimport octobot_trading.personal_data.portfolios.portfolio as portfolio
 cimport octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
+cimport octobot_trading.personal_data.portfolios.value_converter as value_converter
 
 cdef class PortfolioValueHolder:
     cdef object logger
@@ -28,21 +26,14 @@ cdef class PortfolioValueHolder:
 
     cdef public object portfolio_origin_value
     cdef public object portfolio_current_value
+    cdef public value_converter.ValueConverter value_converter
 
-    cdef public dict last_prices_by_trading_pair
     cdef public dict origin_crypto_currencies_values
     cdef public dict current_crypto_currencies_values
-    cdef public set initializing_symbol_prices
-    cdef public set initializing_symbol_prices_pairs
 
     cdef public portfolio.Portfolio origin_portfolio
 
-    cdef set missing_currency_data_in_exchange
-
-    cdef portfolio_manager.PortfolioManager portfolio_manager
-
-    cdef dict _price_bridge_by_currency
-    cdef object _bot_main_loop
+    cdef public portfolio_manager.PortfolioManager portfolio_manager
 
     cpdef bint update_origin_crypto_currencies_values(self, str symbol, object mark_price)
     cpdef dict get_current_crypto_currencies_values(self)
@@ -50,24 +41,14 @@ cdef class PortfolioValueHolder:
     cpdef void reset_portfolio_values(self)
     cpdef object get_origin_portfolio_current_value(self, bint refresh_values=*)
     cpdef object handle_profitability_recalculation(self, bint force_recompute_origin_portfolio)
-    cpdef object convert_currency_value_using_last_prices(self, object quantity, str current_currency, str target_currency, str settlement_asset=*)
-    cpdef object try_convert_currency_value_using_multiple_pairs(self, str currency, str target, object quantity, list base_bridge)
-    cpdef list get_saved_price_conversion_bridge(self, str currency, str target)
-    cpdef object convert_currency_value_from_saved_price_bridges(self, str currency, str target, object quantity)
-    # cpdef object get_currency_holding_ratio(self, str currency)
+    cpdef void clear(self)
 
     cdef object _init_portfolio_values_if_necessary(self, bint force_recompute_origin_portfolio)
     cdef object _init_origin_portfolio_and_currencies_value(self)
     cdef object _update_portfolio_current_value(self, dict portfolio, dict currencies_values=*, bint fill_currencies_values=*)
     cdef void _fill_currencies_values(self, dict currencies_values)
     cdef dict _update_portfolio_and_currencies_current_value(self)
-    cdef object _check_currency_initialization(self, str currency, object currency_value)
     cdef void _recompute_origin_portfolio_initial_value(self)
-    cdef void _try_to_ask_ticker_missing_symbol_data(self, str currency, str symbol, str reversed_symbol)
-    cdef void _ask_ticker_data_for_currency(self, list symbols_to_add)
-    cdef void _inform_no_matching_symbol(self, str currency)
-    cdef void _remove_from_missing_currency_data(self, str currency)
-    cdef object _has_price_data(self, str symbol) # return object to propagate exceptions
     cdef object _evaluate_config_crypto_currencies_and_portfolio_values(self,
                                                                 dict portfolio,
                                                                 bint ignore_missing_currency_data=*)
@@ -83,8 +64,3 @@ cdef class PortfolioValueHolder:
                                                     bint ignore_missing_currency_data)
     cdef object _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
     cdef bint _should_currency_be_considered(self, str currency, dict portfolio, bint ignore_missing_currency_data)
-    cdef object _ensure_no_pending_symbol_price(self, str base, str quote)
-    cdef void _save_price_bridge(self, str currency, str target, list bridge)
-    # cdef object _evaluate_value(self, str currency, object quantity, bint raise_error=*)
-    # cdef object _try_get_value_of_currency(self, str currency, object quantity, bint raise_error)
-    # cdef object _get_currency_value(self, dict portfolio, str currency, dict currencies_values=*, bint raise_error=*)

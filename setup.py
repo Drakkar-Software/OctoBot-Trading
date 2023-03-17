@@ -123,6 +123,7 @@ packages_list = [
     "octobot_trading.personal_data.orders.channel.orders_updater_simulator",
     "octobot_trading.personal_data.orders.channel.orders",
     "octobot_trading.personal_data.orders.channel.orders_updater",
+    "octobot_trading.personal_data.portfolios.value_converter",
     "octobot_trading.personal_data.portfolios.portfolio_value_holder",
     "octobot_trading.personal_data.portfolios.portfolio_manager",
     "octobot_trading.personal_data.portfolios.sub_portfolio",

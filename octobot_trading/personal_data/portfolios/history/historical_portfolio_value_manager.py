@@ -299,17 +299,19 @@ class HistoricalPortfolioValueManager(util.Initializable):
         for currency in historical_value.get_currencies():
             quantity = historical_value.get(currency)
             # 1. try from pairs with price
-            for pair in self.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair:
+            for pair in self.portfolio_manager.portfolio_value_holder.value_converter.last_prices_by_trading_pair:
                 base_and_quote = symbol_util.parse_symbol(pair).base_and_quote()
                 if currency in base_and_quote and target_currency in base_and_quote:
-                    return self.portfolio_manager.portfolio_value_holder.convert_currency_value_using_last_prices(
-                        historical_value.get(currency), currency, target_currency
-                    )
+                    return self.portfolio_manager.portfolio_value_holder.value_converter\
+                        .convert_currency_value_using_last_prices(
+                            historical_value.get(currency), currency, target_currency
+                        )
             # 2. try from existing indirect pairs
             try:
-                value = self.portfolio_manager.portfolio_value_holder.try_convert_currency_value_using_multiple_pairs(
-                    currency, target_currency, quantity, []
-                )
+                value = self.portfolio_manager.portfolio_value_holder.value_converter.\
+                    try_convert_currency_value_using_multiple_pairs(
+                        currency, target_currency, quantity, []
+                    )
                 if value is not None:
                     return value
             except (errors.MissingPriceDataError, errors.PendingPriceDataError):
