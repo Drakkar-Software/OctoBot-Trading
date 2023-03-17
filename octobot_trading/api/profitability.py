@@ -45,7 +45,7 @@ def get_current_crypto_currency_value(exchange_manager, currency) -> decimal.Dec
         try:
             # try using last prices by trading pair
             return exchange_manager.exchange_personal_data.portfolio_manager. \
-                portfolio_value_holder.convert_currency_value_using_last_prices(
+                portfolio_value_holder.value_converter.convert_currency_value_using_last_prices(
                     constants.ONE,
                     currency,
                     exchange_manager.exchange_personal_data.portfolio_manager.reference_market
@@ -65,4 +65,5 @@ def get_reference_market(config) -> str:
 
 def get_initializing_currencies_prices(exchange_manager) -> set:
     return set() if exchange_manager.exchange_personal_data.portfolio_manager is None else \
-        exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.initializing_symbol_prices
+        exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        value_converter.initializing_symbol_prices

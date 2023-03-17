@@ -44,6 +44,14 @@ from octobot_trading.personal_data.portfolios cimport portfolio_manager
 from octobot_trading.personal_data.portfolios.portfolio_manager cimport (
     PortfolioManager,
 )
+from octobot_trading.personal_data.portfolios cimport value_converter
+from octobot_trading.personal_data.portfolios.value_converter cimport (
+    ValueConverter,
+)
+from octobot_trading.personal_data.portfolios cimport portfolio_value_holder
+from octobot_trading.personal_data.portfolios.portfolio_value_holder cimport (
+    PortfolioValueHolder,
+)
 from octobot_trading.personal_data.portfolios cimport types
 from octobot_trading.personal_data.portfolios.types cimport (
     FuturePortfolio,
@@ -82,6 +90,8 @@ __all__ = [
     "BalanceProfitabilityChannel",
     "SubPortfolio",
     "PortfolioManager",
+    "ValueConverter",
+    "PortfolioValueHolder",
     "FuturePortfolio",
     "MarginPortfolio",
     "SpotPortfolio",

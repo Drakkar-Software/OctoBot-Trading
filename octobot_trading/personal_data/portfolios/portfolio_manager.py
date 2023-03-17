@@ -154,7 +154,7 @@ class PortfolioManager(util.Initializable):
     async def update_historical_portfolio_values(self):
         if self.historical_portfolio_value_manager is None or \
            not self.portfolio_value_holder.current_crypto_currencies_values or \
-           self.portfolio_value_holder.initializing_symbol_prices:
+           self.portfolio_value_holder.value_converter.initializing_symbol_prices:
             # initializing symbol prices, impossible to get an accurate portfolio value for now
             return
         try:
@@ -310,5 +310,6 @@ class PortfolioManager(util.Initializable):
         Clear portfolio manager objects
         """
         self.portfolio_profitability = None
+        self.portfolio_value_holder.clear()
         self.portfolio_value_holder = None
         self.historical_portfolio_value_manager = None

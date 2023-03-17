@@ -38,6 +38,7 @@ from octobot_trading.personal_data.portfolios import portfolio_factory
 from octobot_trading.personal_data.portfolios import portfolio_profitability
 from octobot_trading.personal_data.portfolios import sub_portfolio
 from octobot_trading.personal_data.portfolios import portfolio_manager
+from octobot_trading.personal_data.portfolios import value_converter
 from octobot_trading.personal_data.portfolios import portfolio_value_holder
 from octobot_trading.personal_data.portfolios import types
 from octobot_trading.personal_data.portfolios import portfolio_util
@@ -55,6 +56,9 @@ from octobot_trading.personal_data.portfolios.sub_portfolio import (
 )
 from octobot_trading.personal_data.portfolios.portfolio_manager import (
     PortfolioManager,
+)
+from octobot_trading.personal_data.portfolios.value_converter import (
+    ValueConverter,
 )
 from octobot_trading.personal_data.portfolios.portfolio_value_holder import (
     PortfolioValueHolder,
@@ -98,6 +102,7 @@ __all__ = [
     "BalanceProfitabilityChannel",
     "SubPortfolio",
     "PortfolioManager",
+    "ValueConverter",
     "PortfolioValueHolder",
     "FuturePortfolio",
     "MarginPortfolio",
