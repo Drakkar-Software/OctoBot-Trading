@@ -33,7 +33,8 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
 
-    assert portfolio_value_holder.get_current_crypto_currencies_values() == {'BTC': constants.ONE, 'USDT': constants.ZERO}
+    assert portfolio_value_holder.get_current_crypto_currencies_values() == \
+           {'BTC': constants.ONE, 'USDT': constants.ZERO}
     portfolio_manager.portfolio.update_portfolio_from_balance({
         'BTC': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'ETH': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
@@ -211,64 +212,131 @@ async def test_update_origin_crypto_currencies_values(backtesting_trader):
            decimal.Decimal(str(0.015)) * decimal.Decimal(str(0.1))
     assert portfolio_value_holder.last_prices_by_trading_pair["DOT/ETH"] == decimal.Decimal(str(0.015))
     # USDT is now priced and BTC is the reference market
-    assert portfolio_value_holder.update_origin_crypto_currencies_values("DOT/ETH", decimal.Decimal(str(0.015))) is False
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("DOT/ETH", decimal.Decimal(str(0.015))) \
+           is False
 
 
-def test_try_convert_currency_value_using_multiple_pairs(backtesting_trader):
+async def test_try_convert_currency_value_using_multiple_pairs(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
 
     # try_convert_currency_value_using_multiple_pairs uses last_prices_by_trading_pair
     # try without last_prices_by_trading_pair
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ETH", constants.ONE) is None
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("BTC", constants.ONE) is None
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("USDT", constants.ONE) is None
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("DOT", constants.ONE) is None
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ETH", "BTC", constants.ONE, []) \
+           is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("BTC", "BTC", constants.ONE, []) \
+           is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("USDT", "BTC", constants.ONE, []) \
+           is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("DOT", "BTC", constants.ONE, []) \
+           is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "BTC", constants.ONE, []) \
+           is None
 
     # 1 ETH = 0.5 BTC
     portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] = decimal.Decimal("0.5")
     # 1 DOT = 0.2 ETH
     portfolio_value_holder.last_prices_by_trading_pair["DOT/ETH"] = decimal.Decimal("0.2")
     # therefore 1 DOT = 0.2 ETH = 0.5 * 0.2 BTC = 0.1 BTC
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("DOT", decimal.Decimal("2")) \
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("DOT", "BTC", decimal.Decimal("2"), []) \
         == decimal.Decimal("0.2")
 
     # with reversed pair in bridge
     portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] = decimal.Decimal("10000")
     portfolio_value_holder.last_prices_by_trading_pair["ADA/USDT"] = decimal.Decimal("2")
     # 1 ADA = 2 USDT == 2/10000 BTC
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", decimal.Decimal(1)) \
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "BTC", decimal.Decimal(1), []) \
         == decimal.Decimal(2) / decimal.Decimal(10000)
     # now using bridges cache
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", decimal.Decimal(2)) \
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "BTC", decimal.Decimal(2), []) \
         == decimal.Decimal(4) / decimal.Decimal(10000)
     # bridge is saved
-    if not os.getenv('CYTHON_IGNORE'):
-        assert portfolio_value_holder._price_bridge_by_currency["ADA"] == [("ADA", "USDT"), ("USDT", "BTC")]
-        assert portfolio_value_holder._convert_currency_value_from_saved_price_bridges("ADA", decimal.Decimal(10)) \
-               == decimal.Decimal(20) / decimal.Decimal(10000)
+    assert portfolio_value_holder.get_saved_price_conversion_bridge("ADA", "BTC") == [
+        ("ADA", "USDT"), ("USDT", "BTC")
+    ]
+    assert portfolio_value_holder.convert_currency_value_from_saved_price_bridges(
+        "ADA", "BTC", decimal.Decimal(10)
+    ) == decimal.Decimal(20) / decimal.Decimal(10000)
     # without enough data
     portfolio_value_holder.last_prices_by_trading_pair["CRO/PLOP"] = decimal.Decimal("2")
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", "BTC", constants.ONE, []) \
+           is None
     # second time to make sure bridge cache is not creating issues
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", constants.ONE) is None
-    if not os.getenv('CYTHON_IGNORE'):
-        assert "CRO" not in portfolio_value_holder._price_bridge_by_currency
-        with pytest.raises(errors.MissingPriceDataError):
-            portfolio_value_holder._convert_currency_value_from_saved_price_bridges("CRO", constants.ONE)
-        with pytest.raises(errors.MissingPriceDataError):
-            portfolio_value_holder._convert_currency_value_from_saved_price_bridges("PLOP", constants.ONE)
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", "BTC", constants.ONE, []) \
+           is None
+    with pytest.raises(KeyError):
+        # no bridge saved as value is not available
+        portfolio_value_holder.get_saved_price_conversion_bridge("CRO", "BTC")
+    with pytest.raises(errors.MissingPriceDataError):
+        portfolio_value_holder.convert_currency_value_from_saved_price_bridges(
+            "CRO", "BTC", constants.ONE
+        )
+    with pytest.raises(errors.MissingPriceDataError):
+        portfolio_value_holder.convert_currency_value_from_saved_price_bridges(
+            "PLOP", "BTC", constants.ONE
+        )
 
     exchange_manager.exchange_config.traded_symbol_pairs.append("NANO/BTC")
-    # 1 part of bridge data that has not been update but are in exchange config therefore will be available
+    # part 1 of bridge data that has not been update but are in exchange config therefore will be available
     with pytest.raises(errors.PendingPriceDataError):
-        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("NANO", constants.ONE)
+        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("NANO", "BTC", constants.ONE, [])
 
-    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", constants.ONE) is None
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", "BTC", constants.ONE, []) \
+           is None
     # provide first part of the bridge
     exchange_manager.exchange_config.traded_symbol_pairs.append("XRP/USDT")
     with pytest.raises(errors.PendingPriceDataError):
-        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", constants.ONE)
+        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", "BTC", constants.ONE, [])
 
+
+async def test_try_convert_currency_value_using_multiple_pairs_with_nested_bridges(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("XRP", "BTC", constants.ONE, []) \
+           is None
+    # provide first part 1 of the bridge
+    portfolio_value_holder.last_prices_by_trading_pair["ADA/USDT"] = decimal.Decimal("2")
+    exchange_manager.exchange_config.traded_symbol_pairs.append("BTC/USDT")
+    with pytest.raises(errors.PendingPriceDataError):
+        # missing part 2 price
+        portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "BTC", constants.ONE, [])
+    portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] = decimal.Decimal("100")
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "BTC", constants.ONE, []) == \
+           decimal.Decimal(2) / decimal.Decimal(100)
+    assert portfolio_value_holder.get_saved_price_conversion_bridge("ADA", "BTC") == [
+        ("ADA", "USDT"), ("USDT", "BTC")
+    ]
+
+    # need to go through BTC to get ETH price
+    portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] = decimal.Decimal("0.1")
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "ETH", constants.ONE, []) == \
+           decimal.Decimal(2) / decimal.Decimal(100) / decimal.Decimal("0.1")
+    assert portfolio_value_holder.get_saved_price_conversion_bridge("ADA", "ETH") == [
+        ("ADA", "USDT"), ("USDT", "BTC"), ("BTC", "ETH")
+    ]
+    assert portfolio_value_holder.convert_currency_value_from_saved_price_bridges("ADA", "ETH", decimal.Decimal("1.2")) \
+        == decimal.Decimal("1.2") * decimal.Decimal("2") / decimal.Decimal("100") / decimal.Decimal("0.1")
+    # also saved intermediary bridges
+    assert portfolio_value_holder.get_saved_price_conversion_bridge("USDT", "ETH") == [
+        ("USDT", "BTC"), ("BTC", "ETH")
+    ]
+    assert portfolio_value_holder.convert_currency_value_from_saved_price_bridges("USDT", "ETH", constants.ONE) \
+        == constants.ONE / decimal.Decimal("100") / decimal.Decimal("0.1")
+
+    # need to go through BTC and ETH to get ETH XRP price
+    portfolio_value_holder.last_prices_by_trading_pair["XRP/ETH"] = decimal.Decimal("0.0000001")
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "XRP", constants.ONE, []) == \
+           decimal.Decimal(2) / decimal.Decimal(100) / decimal.Decimal("0.1") / decimal.Decimal("0.0000001")
+    assert portfolio_value_holder.get_saved_price_conversion_bridge("ADA", "XRP") == [
+        ("ADA", "USDT"), ("USDT", "BTC"), ("BTC", "ETH"), ("ETH", "XRP")
+    ]
+    # now use bridges cache
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", "XRP", constants.ONE, []) == \
+           decimal.Decimal(2) / decimal.Decimal(100) / decimal.Decimal("0.1") / decimal.Decimal("0.0000001")
+    assert portfolio_value_holder.convert_currency_value_from_saved_price_bridges(
+        "ADA", "XRP", decimal.Decimal("0.0001")
+    ) == decimal.Decimal("0.0001") * decimal.Decimal(2) / decimal.Decimal(100) / \
+        decimal.Decimal("0.1") / decimal.Decimal("0.0000001")
