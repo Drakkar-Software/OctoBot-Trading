@@ -41,6 +41,8 @@ cdef class PortfolioValueHolder:
 
     cdef portfolio_manager.PortfolioManager portfolio_manager
 
+    cdef dict _price_bridge_by_currency
+
     cpdef bint update_origin_crypto_currencies_values(self, str symbol, object mark_price)
     cpdef dict get_current_crypto_currencies_values(self)
     cpdef dict get_current_holdings_values(self)
@@ -61,6 +63,7 @@ cdef class PortfolioValueHolder:
     cdef void _try_to_ask_ticker_missing_symbol_data(self, str currency, str symbol, str reversed_symbol)
     cdef void _ask_ticker_data_for_currency(self, list symbols_to_add)
     cdef void _inform_no_matching_symbol(self, str currency)
+    cdef void _remove_from_missing_currency_data(self, str currency)
     cdef object _has_price_data(self, str symbol) # return object to propagate exceptions
     cdef object _evaluate_config_crypto_currencies_and_portfolio_values(self,
                                                                 dict portfolio,
@@ -77,6 +80,8 @@ cdef class PortfolioValueHolder:
                                                     bint ignore_missing_currency_data)
     cdef object _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
     cdef bint _should_currency_be_considered(self, str currency, dict portfolio, bint ignore_missing_currency_data)
+    cdef void _save_price_bridge(self, str currency, list bridge)
+    cdef object _convert_currency_value_from_saved_price_bridges(self, str currency, object quantity)
     # cdef object _evaluate_value(self, str currency, object quantity, bint raise_error=*)
     # cdef object _try_get_value_of_currency(self, str currency, object quantity, bint raise_error)
     # cdef object _get_currency_value(self, dict portfolio, str currency, dict currencies_values=*, bint raise_error=*)

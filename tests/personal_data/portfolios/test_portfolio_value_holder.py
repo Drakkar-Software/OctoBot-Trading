@@ -18,6 +18,7 @@ import os
 import pytest
 
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 from tests.test_utils.random_numbers import decimal_random_quantity, decimal_random_price, random_price
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
@@ -240,7 +241,22 @@ def test_try_convert_currency_value_using_multiple_pairs(backtesting_trader):
     # 1 ADA = 2 USDT == 2/10000 BTC
     assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", decimal.Decimal(1)) \
         == decimal.Decimal(2) / decimal.Decimal(10000)
-
+    # now using bridges cache
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("ADA", decimal.Decimal(2)) \
+        == decimal.Decimal(4) / decimal.Decimal(10000)
+    # bridge is saved
+    if not os.getenv('CYTHON_IGNORE'):
+        assert portfolio_value_holder._price_bridge_by_currency["ADA"] == [("ADA", "USDT"), ("USDT", "BTC")]
+        assert portfolio_value_holder._convert_currency_value_from_saved_price_bridges("ADA", decimal.Decimal(10)) \
+               == decimal.Decimal(20) / decimal.Decimal(10000)
     # without enough data
     portfolio_value_holder.last_prices_by_trading_pair["CRO/PLOP"] = decimal.Decimal("2")
     assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", constants.ONE) is None
+    # second time to make sure bridge cache is not creating issues
+    assert portfolio_value_holder.try_convert_currency_value_using_multiple_pairs("CRO", constants.ONE) is None
+    if not os.getenv('CYTHON_IGNORE'):
+        assert "CRO" not in portfolio_value_holder._price_bridge_by_currency
+        with pytest.raises(errors.MissingPriceDataError):
+            portfolio_value_holder._convert_currency_value_from_saved_price_bridges("CRO", constants.ONE)
+        with pytest.raises(errors.MissingPriceDataError):
+            portfolio_value_holder._convert_currency_value_from_saved_price_bridges("PLOP", constants.ONE)
