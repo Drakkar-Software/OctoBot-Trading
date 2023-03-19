@@ -103,11 +103,8 @@ class ValueConverter:
                     )
                     if value is not None:
                         return value
-                except errors.MissingPriceDataError:
+                except (errors.MissingPriceDataError, errors.PendingPriceDataError):
                     pass
-                except errors.PendingPriceDataError:
-                    # price should be available in a few seconds
-                    return constants.ZERO
             symbol = symbol_util.merge_currencies(
                 currency, self.portfolio_manager.reference_market, settlement_asset=settlement_asset
             )
