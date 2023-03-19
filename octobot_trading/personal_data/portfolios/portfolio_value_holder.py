@@ -142,9 +142,11 @@ class PortfolioValueHolder:
         """
         if refresh_values:
             self.current_crypto_currencies_values.update(
-                self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio))
-        return self._update_portfolio_current_value(self.origin_portfolio.portfolio,
-                                                    currencies_values=self.current_crypto_currencies_values)
+                self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio)
+            )
+        return self._update_portfolio_current_value(
+            self.origin_portfolio.portfolio, currencies_values=self.current_crypto_currencies_values
+        )
 
     def _init_portfolio_values_if_necessary(self, force_recompute_origin_portfolio):
         """
@@ -163,8 +165,11 @@ class PortfolioValueHolder:
         """
         self.origin_portfolio = self.origin_portfolio or copy.copy(self.portfolio_manager.portfolio)
         self.origin_crypto_currencies_values.update(
-            self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio,
-                                                                         ignore_missing_currency_data=True))
+            self._evaluate_config_crypto_currencies_and_portfolio_values(
+                self.origin_portfolio.portfolio,
+                ignore_missing_currency_data=True
+            )
+        )
         self._recompute_origin_portfolio_initial_value()
 
     def _update_portfolio_current_value(self, portfolio, currencies_values=None, fill_currencies_values=False):
@@ -217,10 +222,11 @@ class PortfolioValueHolder:
             if value is not None:
                 self.portfolio_origin_value = value
                 return
-        self.portfolio_origin_value = \
-            self._update_portfolio_current_value(self.origin_portfolio.portfolio,
-                                                 currencies_values=self.origin_crypto_currencies_values,
-                                                 fill_currencies_values=True)
+        self.portfolio_origin_value = self._update_portfolio_current_value(
+            self.origin_portfolio.portfolio,
+            currencies_values=self.origin_crypto_currencies_values,
+            fill_currencies_values=True
+        )
 
     def _evaluate_config_crypto_currencies_and_portfolio_values(self,
                                                                 portfolio,
@@ -279,7 +285,8 @@ class PortfolioValueHolder:
         for currency in portfolio:
             try:
                 if currency not in evaluated_currencies and self._should_currency_be_considered(
-                        currency, portfolio, ignore_missing_currency_data):
+                        currency, portfolio, ignore_missing_currency_data
+                ):
                     evaluated_pair_values[currency] = self.value_converter.evaluate_value(currency, constants.ONE)
                     evaluated_currencies.add(currency)
             except errors.MissingPriceDataError:
