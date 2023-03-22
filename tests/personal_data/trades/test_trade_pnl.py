@@ -41,7 +41,8 @@ def test_empty():
         pnl.get_entry_price()
     with pytest.raises(errors.IncompletePNLError):
         pnl.get_close_price()
-    assert pnl.get_total_paid_fees() == constants.ZERO
+    assert pnl.get_paid_regular_fees_in_quote() == constants.ZERO
+    assert pnl.get_paid_special_fees_by_currency() == {}
 
 
 def test_simple_buy_entry_and_sell_close(simulated_trader):
@@ -61,7 +62,8 @@ def test_simple_buy_entry_and_sell_close(simulated_trader):
     assert pnl.get_closed_close_value() == decimal.Decimal(15) * decimal.Decimal(1)
     assert pnl.get_close_ratio() == decimal.Decimal("1")
     assert pnl.get_closed_pnl_quantity() == decimal.Decimal(1)
-    assert pnl.get_total_paid_fees() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(10)
+    assert pnl.get_paid_regular_fees_in_quote() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(10)
+    assert pnl.get_paid_special_fees_by_currency() == {}
     # started with 10, closed with 15, paid 2 in fees: end value: 13
     assert pnl.get_profits() == (
         decimal.Decimal(15) - decimal.Decimal(10) - decimal.Decimal(2),  # close - entry - fees
@@ -86,7 +88,8 @@ def test_simple_sell_entry_and_buy_close(simulated_trader):
     assert pnl.get_closed_close_value() == decimal.Decimal(10) * decimal.Decimal("1.5")
     assert pnl.get_close_ratio() == decimal.Decimal("1")
     assert pnl.get_closed_pnl_quantity() == decimal.Decimal("1.5")
-    assert pnl.get_total_paid_fees() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(15)
+    assert pnl.get_paid_regular_fees_in_quote() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(15)
+    assert pnl.get_paid_special_fees_by_currency() == {}
     # started with 15, closed with 15, paid 2.5 in fees: end value: 12.5
     assert pnl.get_profits() == (
         decimal.Decimal(15) - decimal.Decimal(15) - decimal.Decimal("2.5"),  # close - entry - fees
@@ -112,7 +115,8 @@ def test_simple_sell_entry_and_buy_close_with_more_funds(simulated_trader):
     assert pnl.get_closed_close_value() == decimal.Decimal(10) * decimal.Decimal("1.5")
     assert pnl.get_close_ratio() == decimal.Decimal("1")
     assert pnl.get_closed_pnl_quantity() == decimal.Decimal("1.5")
-    assert pnl.get_total_paid_fees() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(15)
+    assert pnl.get_paid_regular_fees_in_quote() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(15)
+    assert pnl.get_paid_special_fees_by_currency() == {}
     # started with 15, closed with 20 (-5 to align with entry), paid 2.5 in fees: end value: 12.5
     assert pnl.get_profits() == (
         decimal.Decimal(15) - decimal.Decimal(15) - decimal.Decimal("2.5"),  # close - entry - fees
@@ -137,7 +141,7 @@ def test_simple_sell_entry_and_buy_close_with_less_funds(simulated_trader):
     assert pnl.get_closed_close_value() == decimal.Decimal(10) * decimal.Decimal(1)
     assert pnl.get_close_ratio() == decimal.Decimal("0.6666666666666666666666666667")
     assert pnl.get_closed_pnl_quantity() == decimal.Decimal(1)
-    assert pnl.get_total_paid_fees() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(15)
+    assert pnl.get_paid_regular_fees_in_quote() == decimal.Decimal(1) + decimal.Decimal("0.1") * decimal.Decimal(15)
     # started with 15(-5 because of close cost), closed with 10, paid 2.5 in fees: end value: 7.5
     assert pnl.get_profits() == (
         decimal.Decimal(10) - decimal.Decimal(10) - decimal.Decimal("2.5"),  # close - entry - fees
@@ -163,7 +167,7 @@ def test_simple_entry_and_double_close(simulated_trader):
     assert pnl.get_closed_close_value() == decimal.Decimal("15.5") * decimal.Decimal(1)  # 1 as entry is 1
     assert pnl.get_close_ratio() == decimal.Decimal(1)
     assert pnl.get_closed_pnl_quantity() == decimal.Decimal(1)  # 1 as entry is 1
-    assert pnl.get_total_paid_fees() == decimal.Decimal(1) + decimal.Decimal("0.5") + \
+    assert pnl.get_paid_regular_fees_in_quote() == decimal.Decimal(1) + decimal.Decimal("0.5") + \
            decimal.Decimal("0.1") * decimal.Decimal(10)
     # started with 10, closed with 15.5, paid 2.5 in fees: end value: 13
     assert pnl.get_profits() == (
@@ -191,13 +195,37 @@ def test_double_simple_entry_and_double_close(simulated_trader):
     assert pnl.get_closed_close_value() == decimal.Decimal("15.5") * decimal.Decimal("1.4")  # 1.4 as close is 1.4
     assert pnl.get_close_ratio() == decimal.Decimal("1.4") / decimal.Decimal("1.5")
     assert pnl.get_closed_pnl_quantity() == decimal.Decimal("1.4")  # 1.4 as close is 1.4
-    assert pnl.get_total_paid_fees() == decimal.Decimal(1) + decimal.Decimal("0.5") + \
+    assert pnl.get_paid_regular_fees_in_quote() == decimal.Decimal(1) + decimal.Decimal("0.5") + \
            decimal.Decimal("0.1") * decimal.Decimal(10) + decimal.Decimal("0.1") * decimal.Decimal(9)
+    assert pnl.get_paid_special_fees_by_currency() == {}
     # started with 1.4*9.5=13.3, closed with 1.4*15.5=21.7, paid 3.4 in fees: end value: 5.1
     assert pnl.get_profits() == (
         decimal.Decimal("5"),
         decimal.Decimal("37.5939849624060150375939850")
     )
+
+
+def test_get_paid_special_fees_by_currency(simulated_trader):
+    _, _, trader = simulated_trader
+    pnl = personal_data.TradePnl([
+        create_executed_trade(trader, enums.TradeOrderSide.BUY, 12, decimal.Decimal(1), decimal.Decimal(10), SYMBOL, _get_fees("BNB", 0.1)),
+    ], [
+        create_executed_trade(trader, enums.TradeOrderSide.SELL, 15, decimal.Decimal("0.4"), decimal.Decimal(15), SYMBOL, _get_fees("USDT", 0.5)),
+    ])
+    assert pnl.get_paid_special_fees_by_currency() == {"BNB": decimal.Decimal(str(0.1))}
+    pnl = personal_data.TradePnl([
+        create_executed_trade(trader, enums.TradeOrderSide.BUY, 12, decimal.Decimal(1), decimal.Decimal(10), SYMBOL, _get_fees("BNB", 0.1)),
+    ], [
+        create_executed_trade(trader, enums.TradeOrderSide.SELL, 15, decimal.Decimal("0.4"), decimal.Decimal(15), SYMBOL, _get_fees("PLOP", 0.5)),
+    ])
+    assert pnl.get_paid_special_fees_by_currency() == {"BNB": decimal.Decimal(str(0.1)), "PLOP": decimal.Decimal(str(0.5))}
+    pnl = personal_data.TradePnl([
+        create_executed_trade(trader, enums.TradeOrderSide.BUY, 12, decimal.Decimal(1), decimal.Decimal(10), SYMBOL, _get_fees("BNB", 0.1)),
+        create_executed_trade(trader, enums.TradeOrderSide.BUY, 12, decimal.Decimal(1), decimal.Decimal(10), SYMBOL, _get_fees("PLOP", 0.1)),
+    ], [
+        create_executed_trade(trader, enums.TradeOrderSide.SELL, 15, decimal.Decimal("0.4"), decimal.Decimal(15), SYMBOL, _get_fees("PLOP", 0.5)),
+    ])
+    assert pnl.get_paid_special_fees_by_currency() == {"BNB": decimal.Decimal(str(0.1)), "PLOP": decimal.Decimal(str(0.6))}
 
 
 def _get_fees(currency, value):

@@ -118,14 +118,34 @@ class TradePnl:
         return fees \
             + order_util.get_fees_for_currency(trade.fee, symbol.base) * trade.executed_price
 
-    def get_fees_currencies(self) -> set:
-        return set(
-            trade.fee[enums.FeePropertyColumns.CURRENCY.value]
-            for trade in self.entries + self.closes
-            if trade.fee
-        )
+    def get_paid_special_fees_by_currency(self) -> dict:
+        """
+        :return: a dict containing fees paid in currencies different from the base or quote of the trades pair
+        values are not converted into base currency of the trading pair
+        """
+        if not self.entries:
+            return {}
+        try:
+            fees = {}
+            base_and_quote = symbols.parse_symbol(self.entries[0].symbol).base_and_quote()
+            for trade in (*self.entries, *self.closes):
+                if trade.fee:
+                    currency = trade.fee[enums.FeePropertyColumns.CURRENCY.value]
+                    if currency in base_and_quote:
+                        # not a special fee
+                        continue
+                    if currency in fees:
+                        fees[currency] += order_util.get_fees_for_currency(trade.fee, currency)
+                    else:
+                        fees[currency] = order_util.get_fees_for_currency(trade.fee, currency)
+            return fees
+        except IndexError as err:
+            raise errors.IncompletePNLError from err
 
-    def get_total_paid_fees(self) -> decimal.Decimal:
+    def get_paid_regular_fees_in_quote(self) -> decimal.Decimal:
+        """
+        :return: the total value (in quote) of paid fees when paid in base or quote of the trades pair
+        """
         return sum(
             self._get_fees(trade)
             for trade in (*self.entries, *self.closes)
@@ -135,7 +155,7 @@ class TradePnl:
         """
         :return: the pnl profits as flat value and percent
         """
-        close_holdings = self.get_closed_close_value() - self.get_total_paid_fees()
+        close_holdings = self.get_closed_close_value() - self.get_paid_regular_fees_in_quote()
         entry_holdings = self.get_closed_entry_value() * self.get_close_ratio()
         return (
             close_holdings - entry_holdings,
