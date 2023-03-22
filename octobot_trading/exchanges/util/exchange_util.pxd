@@ -17,7 +17,7 @@
 
 cpdef object get_rest_exchange_class(str exchange_name, object tentacles_setup_config)
 cpdef str get_order_side(object order_type)
-cpdef void log_time_sync_error(object logger, str exchange_name, object error, str details)
+cpdef void log_time_sync_error(object logger, str exchange_name, object error, str caller_name)
 cpdef str get_partners_explanation_message()
 cpdef object get_exchange_type(object exchange_manager_instance)
 cpdef str get_default_exchange_type(str exchange_name)
@@ -43,5 +43,5 @@ cdef bint _is_exchange_candidate_matching(object exchange_candidate,
                                           bint enable_default=*)
 cdef str _get_docs_url()
 cdef str _get_exchanges_docs_url()
-cdef str _get_time_sync_error_message(str exchange_name, str details)
+cdef str _get_time_sync_error_message(str exchange_name, str caller_name)
 cdef dict _get_minimal_exchange_config(str exchange_name, dict exchange_config)
