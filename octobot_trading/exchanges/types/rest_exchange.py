@@ -251,10 +251,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                      side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None, 
                                      stop_price: decimal.Decimal = None, reduce_only: bool = False, params=None) -> dict:
         created_order = None
-        float_quantity = float(quantity)
-        float_price = float(price)
-        float_stop_price = float(stop_price)
-        float_current_price = float(current_price)
+        float_quantity = float(quantity) if quantity else None
+        float_price = float(price) if price else None
+        float_stop_price = float(stop_price) if stop_price else None
+        float_current_price = float(current_price) if current_price else None
         side = None if side is None else side.value
         params = {} if params is None else params
         params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
