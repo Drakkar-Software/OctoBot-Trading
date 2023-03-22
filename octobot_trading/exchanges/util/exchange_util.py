@@ -84,9 +84,9 @@ def get_order_side(order_type):
         else enums.TradeOrderSide.SELL.value
 
 
-def log_time_sync_error(logger, exchange_name, error, details):
+def log_time_sync_error(logger, exchange_name, error, caller_name):
     logger.error(
-        f"{_get_time_sync_error_message(exchange_name, details)} Error: {error}")
+        f"{_get_time_sync_error_message(exchange_name, caller_name)} Error: {error}")
 
 
 def _get_docs_url():
@@ -105,8 +105,8 @@ def _get_exchanges_docs_url():
         return "https://exchanges.octobot.info"
 
 
-def _get_time_sync_error_message(exchange_name, details):
-    return f"Time synchronization error when loading your {exchange_name.capitalize()} {details}. " \
+def _get_time_sync_error_message(exchange_name, caller_name):
+    return f"Time synchronization error when calling {caller_name} on {exchange_name.capitalize()}. " \
         f"To fix this, please synchronize your computer's clock. See " \
         f"{_get_docs_url()}/installation/installation-troubleshoot#time-synchronization"
 
@@ -173,7 +173,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
             # auth didn't fail, spot trading is always allowed
             return True, True, None
     except trading_backend.TimeSyncError:
-        return False, False, _get_time_sync_error_message(exchange_name, "account details")
+        return False, False, _get_time_sync_error_message(exchange_name, "backend.is_valid_account")
     except trading_backend.ExchangeAuthError:
         return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
     except (AttributeError, Exception) as e:

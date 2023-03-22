@@ -75,11 +75,11 @@ def test_get_partners_explanation_message():
 
 def test_log_time_sync_error():
     logger = mock.Mock()
-    exchanges.log_time_sync_error(logger, "exchange_name", "error", "details")
+    exchanges.log_time_sync_error(logger, "exchange_name", "error", "hello call")
     args = logger.error.call_args[0][0]
     assert "exchange_name".capitalize() in args
     assert "error" in args
-    assert "details" in args
+    assert "hello call" in args
     assert ".info" in args
 
 

@@ -18,6 +18,7 @@ import contextlib
 import decimal
 import ccxt.async_support as ccxt
 import typing
+import inspect
 
 import octobot_commons.enums
 import octobot_commons.symbols as commons_symbols
@@ -183,10 +184,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return self.adapter.adapt_balance(
                     await self.client.fetch_balance(params=kwargs)
                 )
-
-        except ccxt.InvalidNonce as err:
-            exchanges.log_time_sync_error(self.logger, self.name, err, "real trader portfolio")
-            raise err
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
 
@@ -745,5 +742,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             if self.exchange_manager.exchange.should_log_on_ddos_exception(e):
                 self.log_ddos_error(e)
             raise
+        except ccxt.InvalidNonce as err:
+            # use 2 index to get the caller of the context manager
+            caller_function_name = inspect.stack()[2].function
+            exchanges.log_time_sync_error(self.logger, self.name, err, caller_function_name)
+            raise octobot_trading.errors.FailedRequest from err
         except ccxt.RequestTimeout as e:
             raise octobot_trading.errors.FailedRequest(f"Request timeout: {e}") from e

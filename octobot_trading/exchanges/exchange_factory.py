@@ -121,7 +121,7 @@ async def _initialize_exchange_backend(exchange_manager):
                     f"the project. {exchanges.get_partners_explanation_message()}")
         except trading_backend.TimeSyncError as err:
             exchanges.log_time_sync_error(exchange_manager.logger, exchange_manager.exchange.name,
-                                          err, "account details")
+                                          err, "exchange_backend.is_valid_account")
             exchange_manager.is_valid_account = False
             exchange_manager.init_error = err
         except Exception as err:
