@@ -446,7 +446,7 @@ async def test_ensure_orders_relevancy_with_positions(future_trader_simulator_wi
         position.side = "other_other_side"
     trader_mock.cancel_order.assert_not_called()
     # with a non-0 quantity position
-    position.quantity = decimal.Decimal("2")
+    position.size = decimal.Decimal("2")
     # with position parameter
     async with personal_data.ensure_orders_relevancy(position=position):
         # changing side

@@ -155,24 +155,24 @@ async def test_update_entry_price_when_switching_side_on_one_way(btc_usdt_future
 async def test_update_update_quantity(btc_usdt_future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_linear
 
-    assert position_inst.quantity == constants.ZERO
+    assert position_inst.size == constants.ZERO
 
     quantity = decimal_random_quantity(1)
     await position_inst.update(update_size=quantity)
-    assert position_inst.quantity == quantity
+    assert position_inst.size == quantity
 
 
 async def test_invalid_update(btc_usdt_future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_linear
     portfolio = exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio("BTC")
 
-    assert position_inst.quantity == constants.ZERO
+    assert position_inst.size == constants.ZERO
 
     async def _ensure_no_position_change(mark_price, update_size):
         with pytest.raises(errors.PortfolioNegativeValueError):
             await position_inst.update(mark_price=mark_price, update_size=update_size)
         # Did not affect position or portfolio data
-        assert position_inst.quantity == position_inst.entry_price == position_inst.mark_price == position_inst.size == \
+        assert position_inst.size == position_inst.entry_price == position_inst.mark_price == position_inst.size == \
                constants.ZERO
         assert portfolio.available == decimal.Decimal('10')
         assert portfolio.total == decimal.Decimal('10')
