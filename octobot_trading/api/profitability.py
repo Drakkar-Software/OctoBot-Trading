@@ -54,6 +54,14 @@ def get_current_crypto_currency_value(exchange_manager, currency) -> decimal.Dec
             raise KeyError from err
 
 
+def get_currency_ref_market_value(exchange_manager, currency):
+    try:
+        return exchange_manager.exchange_personal_data.portfolio_manager. \
+            portfolio_value_holder.value_converter.evaluate_value(currency, constants.ONE) or None
+    except errors.MissingPriceDataError:
+        return None
+
+
 def get_current_holdings_values(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.portfolio_manager.\
         portfolio_value_holder.get_current_holdings_values()
