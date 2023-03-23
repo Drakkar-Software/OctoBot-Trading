@@ -62,7 +62,6 @@ cdef class AbstractExchange(util.Initializable):
     cpdef object parse_timestamp(self, dict data_dict, str timestamp_key, object default_value=*, bint ms=*)
     cpdef str parse_currency(self, str currency)
     cpdef str parse_order_id(self, dict order)
-    cpdef object parse_status(self, str status)
     cpdef object parse_side(self, str side)
     cpdef object parse_account(self, str account)
 
