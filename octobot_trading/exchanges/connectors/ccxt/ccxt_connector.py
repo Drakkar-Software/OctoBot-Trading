@@ -703,9 +703,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def parse_order_symbol(self, order):
         return order.get(ecoc.SYMBOL.value, None)
 
-    def parse_status(self, status):
-        return enums.OrderStatus(self.client.parse_order_status(status))
-
     def parse_side(self, side):
         return enums.TradeOrderSide.BUY if side == self.BUY_STR else enums.TradeOrderSide.SELL
 

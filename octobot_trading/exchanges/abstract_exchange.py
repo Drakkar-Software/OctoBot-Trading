@@ -529,13 +529,6 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("parse_order_symbol is not implemented")
 
-    def parse_status(self, status):
-        """
-        :param status: the raw status
-        :return: the OrderStatus instance related to the row status
-        """
-        raise NotImplementedError("parse_status is not implemented")
-
     def parse_side(self, side):
         """
         :param side: the raw side

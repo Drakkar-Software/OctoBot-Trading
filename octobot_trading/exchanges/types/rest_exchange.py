@@ -838,9 +838,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def parse_order_symbol(self, order):
         return self.connector.parse_order_symbol(order)
 
-    def parse_status(self, status):
-        return self.connector.parse_status(status)
-
     def parse_funding(self, funding_dict, from_ticker=False) -> dict:
         """
         :param from_ticker: when True, the funding dict is extracted from ticker data
