@@ -111,8 +111,10 @@ class PortfolioValueHolder:
         :return: the holdings ratio dictionary
         """
         holdings = self.get_current_crypto_currencies_values()
-        return {currency: self._get_currency_value(self.portfolio_manager.portfolio.portfolio, currency, holdings)
-                for currency in holdings.keys()}
+        return {
+            currency: self._get_currency_value(self.portfolio_manager.portfolio.portfolio, currency, holdings)
+            for currency in holdings.keys()
+        }
 
     def get_currency_holding_ratio(self, currency):
         """
@@ -182,9 +184,11 @@ class PortfolioValueHolder:
         """
         values = currencies_values
         if values is None or fill_currencies_values:
-            self.current_crypto_currencies_values.update(
-                self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio)
-            )
+            value_update = self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio)
+            self.current_crypto_currencies_values.update(value_update)
+            if len(self.current_crypto_currencies_values) > len(self.origin_crypto_currencies_values):
+                # add any missing value to origin_crypto_currencies_values (can happen with indirect valuations)
+                self._fill_currencies_values(self.origin_crypto_currencies_values)
             if fill_currencies_values:
                 self._fill_currencies_values(currencies_values)
             values = self.current_crypto_currencies_values

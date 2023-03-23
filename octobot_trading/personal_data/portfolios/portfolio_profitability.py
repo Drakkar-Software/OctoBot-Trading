@@ -70,7 +70,6 @@ class PortfolioProfitability:
             self._update_profitability_calculation()
             return self.profitability_diff != constants.ZERO
         except KeyError as missing_data_exception:
-            self.logger.warning(f"Missing ticker data to calculate profitability")
             self.logger.warning(f"Missing {missing_data_exception} ticker data to calculate profitability")
         except Exception as missing_data_exception:
             self.logger.exception(missing_data_exception, True, str(missing_data_exception))
@@ -114,25 +113,29 @@ class PortfolioProfitability:
         Calculate the average of all the watched cryptocurrencies between bot's start time and now
         :return: the calculation result
         """
-        origin_values = [value / self.value_manager.origin_crypto_currencies_values[currency]
-                         for currency, value
-                         in self._only_symbol_currency_filter(self.value_manager.
-                                                              current_crypto_currencies_values).items()
-                         if self.value_manager.origin_crypto_currencies_values[currency] > constants.ZERO]
-
+        origin_values = [
+            value / self.value_manager.origin_crypto_currencies_values[currency]
+            for currency, value in self._get_trading_currencies_values(
+                self.value_manager.current_crypto_currencies_values
+            ).items()
+            if self.value_manager.origin_crypto_currencies_values[currency] > constants.ZERO
+        ]
         return sum(origin_values) / len(origin_values) * constants.ONE_HUNDRED - constants.ONE_HUNDRED \
             if origin_values else constants.ZERO
 
-    def _only_symbol_currency_filter(self, currency_dict):
+    def _get_trading_currencies_values(self, currency_dict):
         """
-        Return the dict of traded currencies with their portfolio value
-        :param currency_dict: the currency dictionary to be filtered
+        Return the dict of traded currencies with their portfolio value.
+        :param currency_dict: the value by currency dictionary
         :return: the currency portfolio value filtered
         """
         if not self.traded_currencies_without_market_specific:
             self._init_traded_currencies_without_market_specific()
-        return {currency: v for currency, v in currency_dict.items()
-                if currency in self.traded_currencies_without_market_specific}
+        return {
+            currency: v
+            for currency, v in currency_dict.items()
+            if currency in self.traded_currencies_without_market_specific
+        }
 
     def _init_traded_currencies_without_market_specific(self):
         """
