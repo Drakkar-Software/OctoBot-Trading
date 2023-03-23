@@ -258,20 +258,20 @@ class CCXTAdapter(adapters.AbstractAdapter):
         fixed.update({
             enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value:
                 self.safe_decimal(
-                    fixed, ccxt_enums.ExchangeFundingCCXTColumns.PREVIOUS_FUNDING_RATE.value, constants.NaN
+                    fixed, ccxt_enums.ExchangeFundingCCXTColumns.FUNDING_RATE.value, constants.NaN
                 ),
             enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value:
                 self.get_uniformized_timestamp(
-                    fixed.get(ccxt_enums.ExchangeFundingCCXTColumns.PREVIOUS_FUNDING_TIMESTAMP.value, 0)
+                    fixed.get(ccxt_enums.ExchangeFundingCCXTColumns.LAST_FUNDING_TIME.value, 0)
                     or constants.ZERO
                 ),
             enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value:
                 self.safe_decimal(
-                    fixed, ccxt_enums.ExchangeFundingCCXTColumns.FUNDING_RATE.value, constants.NaN
+                    fixed, ccxt_enums.ExchangeFundingCCXTColumns.PREDICTED_FUNDING_RATE.value, constants.NaN
                 ),
             enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value:
                 self.get_uniformized_timestamp(
-                    fixed.get(ccxt_enums.ExchangeFundingCCXTColumns.FUNDING_TIMESTAMP.value, 0) or constants.ZERO
+                    fixed.get(ccxt_enums.ExchangeFundingCCXTColumns.NEXT_FUNDING_TIME.value, 0) or constants.ZERO
                 ),
         })
         return fixed
