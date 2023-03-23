@@ -45,6 +45,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         self.tasks = []
         self.is_initialized = False
         self.initialized_candles_by_tf_by_symbol = {}
+        self._logged_historical_candles_incompatibility = False
 
     async def start(self):
         """
@@ -90,12 +91,13 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         if self.channel.exchange_manager.exchange_config.required_historical_candles_count > 0:
             if self.channel.exchange_manager.exchange_name in constants.FULL_CANDLE_HISTORY_EXCHANGES:
                 return self.channel.exchange_manager.exchange_config.required_historical_candles_count
-            else:
+            if not self._logged_historical_candles_incompatibility:
                 self.logger.warning(f"Can't initialize the required "
                                     f"{self.channel.exchange_manager.exchange_config.required_historical_candles_count}"
                                     f" historical candles: {self.channel.exchange_manager.exchange_name} is not "
                                     f"supporting large candles history. Using the {self.OHLCV_OLD_LIMIT} "
                                     f"latest candles instead.")
+                self._logged_historical_candles_incompatibility = True
         return self.OHLCV_OLD_LIMIT
 
     async def _get_init_candles(self, time_frame, pair):
