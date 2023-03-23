@@ -22,6 +22,7 @@ cdef class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
     cdef bint is_initialized
     cdef dict initialized_candles_by_tf_by_symbol
+    cdef bint _logged_historical_candles_incompatibility
 
     cdef list _get_traded_pairs(self)
     cdef list _get_time_frames(self)
