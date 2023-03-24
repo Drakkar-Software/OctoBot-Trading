@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 import copy
+import decimal
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.enums as commons_enums
@@ -87,7 +88,8 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     async def _load_startup_orders(self):
         if self.should_store_date():
             self.startup_orders = {
-                order[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.ID.value]: dict(order)
+                order[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.ID.value]:
+                    self._from_order_document(order)
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))
                 if order    # skip empty order details (error when serializing)
             }
@@ -103,6 +105,28 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             and order.get(OrdersStorage.ORIGIN_VALUE_KEY, {})
             .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
         ]
+
+    def _from_order_document(self, order_document):
+        order_dict = dict(order_document)
+        try:
+            origin_val = order_dict[OrdersStorage.ORIGIN_VALUE_KEY]
+            origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = \
+                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
+            origin_val[enums.ExchangeConstantsOrderColumns.COST.value] = \
+                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.COST.value]))
+            origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value] = \
+                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value]))
+            if origin_val[enums.ExchangeConstantsOrderColumns.FEE.value] and \
+                    enums.FeePropertyColumns.COST.value in origin_val[enums.ExchangeConstantsOrderColumns.FEE.value]:
+                origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value] = \
+                    decimal.Decimal(str(
+                        origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
+                    ))
+        except Exception as err:
+            commons_logging.get_logger(OrdersStorage.__name__).exception(
+                err, True, f"Error when reading: {err} order: {order_document}"
+            )
+        return order_dict
 
 
 def _get_group_dict(order):
