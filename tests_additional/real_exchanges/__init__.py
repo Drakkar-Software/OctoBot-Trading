@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import dotenv
+import os
 
 import octobot_commons.constants as commons_constants
 import octobot_commons.asyncio_tools as asyncio_tools
@@ -24,11 +26,18 @@ import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 
 
+LOADED_EXCHANGE_CREDS_ENV_VARIABLES = False
+
+
 @contextlib.asynccontextmanager
-async def get_exchange_manager(exchange_name, config=None):
+async def get_exchange_manager(exchange_name, config=None, authenticated=False):
     config = {**test_config.load_test_config(), **config} if config else test_config.load_test_config()
     if exchange_name not in config[commons_constants.CONFIG_EXCHANGES]:
         config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {}
+    if authenticated:
+        config[commons_constants.CONFIG_EXCHANGES][exchange_name].update(_get_exchange_auth_details(
+            exchange_name
+        ))
     exchange_manager_instance = exchanges.ExchangeManager(config, exchange_name)
     if config[commons_constants.CONFIG_EXCHANGES][exchange_name]. \
        get(commons_constants.CONFIG_EXCHANGE_TYPE, enums.ExchangeTypes.SPOT.value) == enums.ExchangeTypes.FUTURE.value:
@@ -45,3 +54,31 @@ async def get_exchange_manager(exchange_name, config=None):
         api.cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await asyncio_tools.wait_asyncio_next_cycle()
+
+
+def _load_exchange_creds_env_variables_if_necessary():
+    global LOADED_EXCHANGE_CREDS_ENV_VARIABLES
+    if not LOADED_EXCHANGE_CREDS_ENV_VARIABLES:
+        # load environment variables from .env file if exists
+        dotenv_path = os.getenv("EXCHANGE_TESTS_DOTENV_PATH", os.path.dirname(os.path.abspath(__file__)))
+        dotenv.load_dotenv(os.path.join(dotenv_path, ".env"), verbose=False)
+        LOADED_EXCHANGE_CREDS_ENV_VARIABLES = True
+
+
+def _get_exchange_auth_details(exchange_name):
+    _load_exchange_creds_env_variables_if_necessary()
+    return {
+        commons_constants.CONFIG_EXCHANGE_KEY:
+            _get_exchange_credential_from_env(exchange_name, commons_constants.CONFIG_EXCHANGE_KEY),
+        commons_constants.CONFIG_EXCHANGE_SECRET:
+            _get_exchange_credential_from_env(exchange_name, commons_constants.CONFIG_EXCHANGE_SECRET),
+        commons_constants.CONFIG_EXCHANGE_PASSWORD:
+            _get_exchange_credential_from_env(exchange_name, commons_constants.CONFIG_EXCHANGE_PASSWORD),
+    }
+
+
+def _get_exchange_credential_from_env(exchange_name, cred_suffix):
+    # for bybit api key: get BYBIT_KEY (as encrypted value)
+    # for bybit api password: get BYBIT_PASSWORD (as encrypted value)
+    # for bybit api secret: get BYBIT_SECRET (as encrypted value)
+    return os.getenv(f"{exchange_name}_{cred_suffix.split('-')[-1]}".upper(), None)

@@ -33,8 +33,9 @@ class RealExchangeTester:
     # default is 1h, change if necessary
     TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
-    CANDLE_SINCE = 1325376000000    # 1 January 2012 00:00:00
+    CANDLE_SINCE = 1325376000000  # 1 January 2012 00:00:00
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
+    REQUIRES_AUTH = False  # set True when even normally public apis require authentication
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -90,7 +91,7 @@ class RealExchangeTester:
     #
     # async def test_create_order(self):
     #     pass
-    
+
     def get_config(self):
         return {
             constants.CONFIG_EXCHANGES: {
@@ -101,46 +102,54 @@ class RealExchangeTester:
         }
 
     async def time_frames(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return exchange_manager.exchange.time_frames
 
     async def get_market_statuses(self):
         # return 2 different market status with different traded pairs to reduce possible
         # side effects using only one pair.
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return exchange_manager.exchange.get_market_status(self.SYMBOL), \
-                   exchange_manager.exchange.get_market_status(self.SYMBOL_2), \
-                   exchange_manager.exchange.get_market_status(self.SYMBOL_3)
+                exchange_manager.exchange.get_market_status(self.SYMBOL_2), \
+                exchange_manager.exchange.get_market_status(self.SYMBOL_3)
 
     async def get_symbol_prices(self, limit=None, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME,
                                                                      limit=limit, **kwargs)
 
     async def get_kline_price(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return await exchange_manager.exchange.get_kline_price(self.SYMBOL, self.TIME_FRAME, **kwargs)
 
     async def get_order_book(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return await exchange_manager.exchange.get_order_book(self.SYMBOL, **kwargs)
 
     async def get_recent_trades(self, limit=50):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return await exchange_manager.exchange.get_recent_trades(self.SYMBOL, limit=limit)
 
     async def get_price_ticker(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return await exchange_manager.exchange.get_price_ticker(self.SYMBOL)
 
     async def get_all_currencies_price_ticker(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
             return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
 
     def get_allowed_time_delta(self):
         return (self.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1) * \
-               commons_enums.TimeFramesMinutes[self.TIME_FRAME] * \
-               constants.MINUTE_TO_SECONDS * 1.3
+            commons_enums.TimeFramesMinutes[self.TIME_FRAME] * \
+            constants.MINUTE_TO_SECONDS * 1.3
 
     @staticmethod
     def get_time():

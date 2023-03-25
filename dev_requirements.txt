@@ -18,5 +18,6 @@ wheel
 pur
 
 aiohttp
+python-dotenv
 
 pylint<2.15.2   # bug with pylint 2.15.2
