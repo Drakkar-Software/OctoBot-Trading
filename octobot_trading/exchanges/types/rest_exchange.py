@@ -252,9 +252,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                      stop_price: decimal.Decimal = None, reduce_only: bool = False, params=None) -> dict:
         created_order = None
         float_quantity = float(quantity)
-        float_price = float(price)
-        float_stop_price = float(stop_price)
-        float_current_price = float(current_price)
+        float_price = price if price is None else float(price)
+        float_stop_price = stop_price if stop_price is None else float(stop_price)
+        float_current_price = current_price if current_price is None else float(current_price)
         side = None if side is None else side.value
         params = {} if params is None else params
         params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
