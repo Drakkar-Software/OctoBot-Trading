@@ -79,7 +79,7 @@ TESTED_EXCHANGES = [
     "bitget",
     "ascendex",
     "kucoin",
-    # "coinbasepro",  # waiting for ccxt update on coinbase advanced
+    "coinbase",
     "bybit",
     "cryptocom",
     "phemex",
