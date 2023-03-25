@@ -18,7 +18,7 @@ import pytest
 import octobot_trading.errors
 from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
-    ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
+    ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
@@ -28,11 +28,14 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestCoinbaseProRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "coinbasepro"
+class TestCoinbaseRealExchangeTester(RealExchangeTester):
+    # ALL require authentication ?
+    # https://github.com/ccxt/ccxt/issues/16719
+    EXCHANGE_NAME = "coinbase"
     SYMBOL = "BTC/USD"
     SYMBOL_2 = "ETH/BTC"
-    SYMBOL_3 = "XRP/BTC"
+    SYMBOL_3 = "ADA/BTC"
+    REQUIRES_AUTH = True    # set True when even normally public apis require authentication
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -51,34 +54,46 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in coinbasepro tentacle
+                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in coinbase tentacle
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in coinbasepro tentacle
+                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in coinbase tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(market_status, has_price_limits=False)
 
+    def _get_ohlcv_params(self, limit):
+        # to be added in tentacle
+        to_time = self.get_ms_time()
+        return {
+            "since": to_time - (self.get_timeframe_seconds() * limit * 1000),
+            "limit": limit,
+        }
+
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 300
+        assert len(symbol_prices) == 5
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=100)
-        assert len(symbol_prices) == 100
+        # max value is 299
+        with pytest.raises(octobot_trading.errors.FailedRequest):
+            await self.get_symbol_prices(**self._get_ohlcv_params(300))
+        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(299))
+        assert len(symbol_prices) == 299
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with since and limit (used in data collector)
-        assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
+        with pytest.raises(octobot_trading.errors.FailedRequest):
+            await self.get_symbol_prices(since=self.CANDLE_SINCE)    # not supported
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
@@ -89,11 +104,8 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) > 50
-        assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) >= 50
-        assert len(order_book[Ecobic.BIDS.value][0]) == 2
+        with pytest.raises(octobot_trading.errors.NotSupported):
+            await self.get_order_book()
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()
@@ -128,14 +140,17 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
         if check_content:
             assert ticker[Ectc.HIGH.value] is None
             assert ticker[Ectc.LOW.value] is None
-            assert ticker[Ectc.BID.value]
+            assert ticker[Ectc.BID.value] is None
             assert ticker[Ectc.BID_VOLUME.value] is None
-            assert ticker[Ectc.ASK.value]
+            assert ticker[Ectc.ASK.value] is None
             assert ticker[Ectc.ASK_VOLUME.value] is None
             assert ticker[Ectc.OPEN.value] is None
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value]
-            assert ticker[Ectc.TIMESTAMP.value]
-            RealExchangeTester.check_ticker_typing(ticker, check_open=False, check_high=False, check_low=False)
+            assert ticker[Ectc.BASE_VOLUME.value] is None
+            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
+            RealExchangeTester.check_ticker_typing(
+                ticker,
+                check_open=False, check_high=False, check_low=False, check_timestamp=False, check_base_volume=False
+            )
