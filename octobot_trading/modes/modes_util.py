@@ -42,7 +42,6 @@ async def clear_plotting_cache(trading_mode):
     await basic_keywords.clear_symbol_plot_cache(
         databases.RunDatabasesProvider.instance().get_symbol_db(
             trading_mode.bot_id,
-            storage.get_account_type_suffix_from_exchange_manager(trading_mode.exchange_manager),
             trading_mode.exchange_manager.exchange_name, trading_mode.symbol
         )
     )
