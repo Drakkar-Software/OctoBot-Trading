@@ -348,7 +348,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_market_buy_order(symbol, quantity, params=params),
+            # use create_order instead of create_market_buy_order to pass the price argument
+            await self.client.create_order(
+                symbol, enums.TradeOrderType.MARKET.value, enums.TradeOrderSide.BUY.value, quantity,
+                price=price, params=params
+            ),
             symbol=symbol, quantity=quantity
         )
 
@@ -360,7 +364,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     async def create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
-            await self.client.create_market_sell_order(symbol, quantity, params=params),
+            # use create_order instead of create_market_sell_order to pass the price argument
+            await self.client.create_order(
+                symbol, enums.TradeOrderType.MARKET.value, enums.TradeOrderSide.SELL.value, quantity,
+                price=price, params=params
+            ),
             symbol=symbol, quantity=quantity
         )
 
