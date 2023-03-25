@@ -15,3 +15,4 @@
 #  License along with this library.
 
 CCXT_INFO = "info"
+CCXT_OPTIONS = "options"

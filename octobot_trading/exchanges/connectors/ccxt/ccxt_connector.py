@@ -32,6 +32,7 @@ import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
+import octobot_trading.exchanges.connectors.ccxt.constants as ccxt_constants
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
@@ -62,6 +63,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.add_options(
             ccxt_client_util.get_ccxt_client_login_options(self.exchange_manager)
         )
+        # add specific options
+        if self.additional_config:
+            specific_options = self.additional_config.pop(ccxt_constants.CCXT_OPTIONS, None)
+            if specific_options:
+                self.add_options(specific_options)
 
         self._create_exchange_type()
         self._create_client()
