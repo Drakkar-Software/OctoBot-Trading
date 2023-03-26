@@ -23,8 +23,6 @@ import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
 import octobot_commons.configuration as configuration
 
-import octobot_tentacles_manager.api as octobot_tentacles_manager_api
-
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
@@ -643,34 +641,11 @@ class AbstractExchange(util.Initializable):
 
     @classmethod
     def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
-        logger = logging.get_logger(cls.get_name())
-        inputs = {}
-        try:
-            tentacle_config.update(
-                octobot_tentacles_manager_api.get_tentacle_config(
-                    tentacles_setup_config, cls
-                )
-            )
-        except NotImplementedError:
-            # get_name not implemented, no tentacle config
-            return inputs
-        try:
-            with cls.UI.local_factory(cls, lambda: tentacle_config):
-                cls.init_user_inputs(inputs)
-        except Exception as e:
-            logger.exception(e, True, f"Error when initializing user inputs: {e}")
-        if tentacle_config:
-            logger.debug(f"Using config: {tentacle_config}")
-        return inputs
+        return configuration.load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config)
 
     @classmethod
-    async def get_raw_config_and_user_inputs(
-            cls, _, tentacles_setup_config, __
-    ):
-        # use user inputs from init_user_inputs
-        tentacle_config = octobot_tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls)
-        user_inputs = cls.load_user_inputs(tentacles_setup_config, tentacle_config)
-        return tentacle_config, list(user_input.to_dict() for user_input in user_inputs.values())
+    async def get_raw_config_and_user_inputs(cls, _, tentacles_setup_config, __):
+        return configuration.get_raw_config_and_user_inputs_from_class(cls, tentacles_setup_config)
 
     @classmethod
     def init_user_inputs(cls, inputs: dict) -> None:
