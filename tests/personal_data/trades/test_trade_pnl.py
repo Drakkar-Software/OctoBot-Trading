@@ -45,6 +45,29 @@ def test_empty():
     assert pnl.get_paid_special_fees_by_currency() == {}
 
 
+def test_with_invalid_values(simulated_trader):
+    _, _, trader = simulated_trader
+    pnl = personal_data.TradePnl([
+        create_executed_trade(trader, enums.TradeOrderSide.BUY, 12, decimal.Decimal(0), decimal.Decimal(10), SYMBOL, _get_fees("BTC", 0.1)),
+    ], [
+        create_executed_trade(trader, enums.TradeOrderSide.SELL, 15, decimal.Decimal(1), decimal.Decimal(15), SYMBOL, _get_fees("USDT", 1)),
+    ])
+    with pytest.raises(errors.IncompletePNLError):
+        pnl.get_close_ratio()
+    with pytest.raises(errors.IncompletePNLError):
+        pnl.get_profits()
+    pnl = personal_data.TradePnl([
+        create_executed_trade(trader, enums.TradeOrderSide.BUY, 12, decimal.Decimal(1), decimal.Decimal(0), SYMBOL, _get_fees("BTC", 0.1)),
+    ], [
+        create_executed_trade(trader, enums.TradeOrderSide.SELL, 15, decimal.Decimal(1), decimal.Decimal(15), SYMBOL, _get_fees("USDT", 1)),
+    ])
+    assert pnl.get_close_ratio() == constants.ONE
+    assert pnl.get_profits() == (
+        decimal.Decimal("14"),  # 15 - fees
+        constants.ZERO
+    )
+
+
 def test_simple_buy_entry_and_sell_close(simulated_trader):
     _, _, trader = simulated_trader
     pnl = personal_data.TradePnl([
