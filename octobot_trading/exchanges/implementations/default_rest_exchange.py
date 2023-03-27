@@ -35,6 +35,6 @@ class DefaultRestExchange(rest_exchange.RestExchange):
         pass
 
     @classmethod
-    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+    def load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config):
         # default exchange can't be configured
         return {}

@@ -14,17 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.util as util
+cimport octobot_commons.tentacles_management as tentacles_management
 
 
-cdef class AbstractExchange(util.Initializable):
+cdef class AbstractExchange(tentacles_management.AbstractTentacle):
     cdef public dict config
 
-    cdef public object logger
     cdef public object current_account
     cdef public object trader
     cdef public object exchange_manager
     cdef public object connector
+    cdef public bint is_initialized
     cdef public dict tentacle_config
 
     cdef public set symbols

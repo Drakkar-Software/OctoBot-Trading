@@ -98,7 +98,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         return adapter_class or ccxt_adapter.CCXTAdapter
 
     @classmethod
-    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+    def load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config):
         # no user input in connector
         pass
 
