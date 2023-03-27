@@ -21,18 +21,15 @@ import octobot_commons.constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
-import octobot_commons.configuration as configuration
+import octobot_commons.tentacles_management as tentacles_management
 
 import octobot_trading.constants
 import octobot_trading.enums as enums
-import octobot_trading.util as util
 import octobot_trading.errors as errors
 
 
-class AbstractExchange(util.Initializable):
-    UI: configuration.UserInputFactory = configuration.UserInputFactory(
-        common_enums.UserInputTentacleTypes.EXCHANGE
-    )
+class AbstractExchange(tentacles_management.AbstractTentacle):
+    USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.EXCHANGE
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
 
@@ -60,6 +57,7 @@ class AbstractExchange(util.Initializable):
         self.config = config
         self.exchange_manager = exchange_manager
         self.connector = None
+        self.is_initialized = False
 
         self.tentacle_config = {}
 
@@ -78,7 +76,14 @@ class AbstractExchange(util.Initializable):
         self.is_unreachable = False
 
         if self.exchange_manager.tentacles_setup_config is not None:
-            self.load_user_inputs(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
+            self.load_user_inputs_from_class(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
+
+    async def initialize(self, force=False, **kwargs):
+        if not self.is_initialized or force:
+            await self.initialize_impl(**kwargs)
+            self.is_initialized = True
+            return True
+        return False
 
     async def initialize_impl(self):
         """
@@ -638,17 +643,3 @@ class AbstractExchange(util.Initializable):
     def handle_token_error(self, error):
         self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
                           f"({error.__class__.__name__}: {error})")
-
-    @classmethod
-    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
-        return configuration.load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config)
-
-    @classmethod
-    async def get_raw_config_and_user_inputs(cls, _, tentacles_setup_config, __):
-        return configuration.get_raw_config_and_user_inputs_from_class(cls, tentacles_setup_config)
-
-    @classmethod
-    def init_user_inputs(cls, inputs: dict) -> None:
-        """
-        Called at constructor, should define all the exchange's user inputs.
-        """
