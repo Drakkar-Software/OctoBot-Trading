@@ -208,7 +208,7 @@ class ExchangePersonalData(util.Initializable):
             asyncio.create_task(order.state.on_refresh_successful())
 
         if should_notify:
-            await self.handle_order_update_notification(order, is_new_order)
+            await self.handle_order_update_notification(order, is_new_order, enums.OrderUpdateType.STATE_CHANGE)
         return order.state is not None
 
     def _is_out_of_sync_order(self, order_id) -> bool:
@@ -225,10 +225,11 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
-    async def handle_order_update_notification(self, order, is_new_order):
+    async def handle_order_update_notification(self, order, is_new_order, update_type: enums.OrderUpdateType):
         """
         Notify Orders channel for Order update
         :param order: the updated order
+        :param update_type: the type of update as enums.OrderUpdateType
         :param is_new_order: True if the order was created during update
         """
         try:
@@ -237,10 +238,11 @@ class ExchangePersonalData(util.Initializable):
                 # avoid other computations if no consumer
                 return
             await orders_chan.get_internal_producer().send(
-                cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
-                symbol=order.symbol,
-                order=order.to_dict(),
+                self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                order.symbol,
+                order.to_dict(),
                 is_from_bot=order.is_from_this_octobot,
+                update_type=update_type,
                 is_new=is_new_order,
                 is_closed=order.is_closed()
             )

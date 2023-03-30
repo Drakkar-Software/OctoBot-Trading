@@ -110,7 +110,8 @@ class FillOrderState(order_state.OrderState):
 
                 # notify order filled
                 await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
-                    self.order, False)
+                    self.order, False, enums.OrderUpdateType.STATE_CHANGE
+                )
 
                 # call order on_filled callback
                 await self.order.on_filled()

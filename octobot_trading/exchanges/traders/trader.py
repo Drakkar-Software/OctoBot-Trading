@@ -215,6 +215,10 @@ class Trader(util.Initializable):
                     self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
                         order, is_new_order=True
                     )
+                # push order edit into orders channel as edit update
+                await self.exchange_manager.exchange_personal_data.handle_order_update_notification(
+                    order, False, enums.OrderUpdateType.EDIT
+                )
                 self.logger.info(f"Edited order: {order}")
             return changed
         finally:
