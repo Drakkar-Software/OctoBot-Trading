@@ -103,8 +103,9 @@ class CancelOrderState(order_state.OrderState):
                                                                                                             False)
 
             # notify order cancelled
-            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order,
-                                                                                                      False)
+            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
+                self.order, False, enums.OrderUpdateType.STATE_CHANGE
+            )
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?

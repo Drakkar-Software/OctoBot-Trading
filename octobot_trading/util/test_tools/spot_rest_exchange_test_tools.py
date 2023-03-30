@@ -130,6 +130,7 @@ class SpotRestExchangeTests:
             cryptocurrency: str,
             symbol: str,
             order: dict,
+            update_type: str,
             is_new: bool,
             is_from_bot: bool,
     ):

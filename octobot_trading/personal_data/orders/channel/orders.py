@@ -19,6 +19,7 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 
 
@@ -105,10 +106,11 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                     )
                 except Exception as err:
                     self.logger.exception(err, True, f"Error when completing order with stored data: {err}")
-            await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
-                            get_pair_cryptocurrency(symbol),
-                            symbol=symbol, order=order,
+            await self.send(self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                            symbol,
+                            order,
                             is_from_bot=is_from_bot,
+                            update_type=enums.OrderUpdateType.STATE_CHANGE,
                             is_new=is_new_order,
                             is_closed=False)
 
@@ -119,10 +121,11 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         for order in orders:
             self.logger.debug(f"Completing order init for order: {order}")
             await self.channel.exchange_manager.exchange_personal_data.on_order_refresh_success(order, False, False)
-            await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
-                            get_pair_cryptocurrency(order.symbol),
-                            symbol=order.symbol, order=order.to_dict(),
+            await self.send(self.channel.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                            order.symbol,
+                            order.to_dict(),
                             is_from_bot=is_from_bot,
+                            update_type=enums.OrderUpdateType.STATE_CHANGE,
                             is_new=True,
                             is_closed=False)
 
@@ -230,7 +233,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                     self.logger.error(f"Order with id {missing_order_id} could not be synchronized")
             await asyncio.gather(*synchronize_tasks)
 
-    async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_new=False, is_closed=False):
+    async def send(self, cryptocurrency, symbol, order, is_from_bot=True,
+                   update_type=enums.OrderUpdateType.STATE_CHANGE, is_new=False, is_closed=False):
         if is_closed:
             # do not push closed orders
             return
@@ -241,6 +245,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "order": order,
+                "update_type": update_type.value,
                 "is_new": is_new,
                 "is_from_bot": is_from_bot
             })

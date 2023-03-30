@@ -545,3 +545,8 @@ class StoredOrdersAttr(enum.Enum):
     SHARED_SIGNAL_ORDER_ID = "ssoi"
     HAS_BEEN_BUNDLED = "hbb"
     ENTRIES = "en"
+
+
+class OrderUpdateType(enum.Enum):
+    STATE_CHANGE = "state_transition"
+    EDIT = "edit"

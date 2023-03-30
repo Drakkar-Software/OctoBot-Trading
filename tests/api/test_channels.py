@@ -40,7 +40,7 @@ async def trades_callback(exchange: str, exchange_id: str, cryptocurrency: str, 
     pass
 
 
-async def order_callback(self, exchange, exchange_id, cryptocurrency, symbol, order, is_new, is_from_bot):
+async def order_callback(self, exchange, exchange_id, cryptocurrency, symbol, order, update_type, is_new, is_from_bot):
     pass
 
 
