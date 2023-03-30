@@ -15,6 +15,7 @@
 #  License along with this library
 import copy
 import decimal
+import time
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.enums as commons_enums
@@ -22,6 +23,7 @@ import octobot_commons.databases as commons_databases
 import octobot_commons.logging as commons_logging
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.storage.abstract_storage as abstract_storage
 import octobot_trading.storage.util as storage_util
 
@@ -29,7 +31,9 @@ import octobot_trading.storage.util as storage_util
 class OrdersStorage(abstract_storage.AbstractStorage):
     LIVE_CHANNEL = channels_name.OctoBotTradingChannelsName.ORDERS_CHANNEL.value
     HISTORY_TABLE = commons_enums.DBTables.ORDERS.value
+    HISTORICAL_OPEN_ORDERS_TABLE = commons_enums.DBTables.HISTORICAL_ORDERS_UPDATES.value
     IS_HISTORICAL = False
+    ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE = constants.ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE
 
     def __init__(self, exchange_manager, use_live_consumer_in_backtesting=None, is_historical=None):
         super().__init__(exchange_manager, plot_settings=None,
@@ -59,6 +63,8 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     ):
         # only store the current snapshot of open orders when order updates are received
         await self._update_history()
+        if self.ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE:
+            await self._add_historical_open_orders(order, update_type)
         await self.trigger_debounced_flush()
 
     async def _update_history(self):
@@ -68,6 +74,14 @@ class OrdersStorage(abstract_storage.AbstractStorage):
                 _format_order(order, self.exchange_manager)
                 for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
             ],
+            cache=False,
+        )
+
+    async def _add_historical_open_orders(self, order_dict: dict, update_type: str):
+        update_time = time.time()
+        await self._get_db().log(
+            self.HISTORICAL_OPEN_ORDERS_TABLE,
+            _format_order_update(self.exchange_manager, order_dict, update_type, update_time),
             cache=False,
         )
 
@@ -81,6 +95,9 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             storage_util.get_account_type_suffix_from_exchange_manager(self.exchange_manager),
             self.exchange_manager.exchange_name,
         )
+
+    async def get_historical_orders_updates(self):
+        return copy.deepcopy(await self._get_db().all(self.HISTORICAL_OPEN_ORDERS_TABLE))
 
     async def get_startup_order_details(self, order_id):
         return self.startup_orders.get(order_id, None)
@@ -128,6 +145,14 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             )
         return order_dict
 
+    @classmethod
+    async def clear_database_history(cls, database, flush=True):
+        await super().clear_database_history(database, flush=False)
+        if cls.ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE:
+            await database.delete(cls.HISTORICAL_OPEN_ORDERS_TABLE, None)
+        if flush:
+            await database.flush()
+
 
 def _get_group_dict(order):
     if not order.order_group:
@@ -168,3 +193,31 @@ def _format_order(order, exchange_manager):
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(err, True, f"Error when formatting order: {err}")
     return {}
+
+
+def _format_order_update(exchange_manager, order_dict, update_type, update_time):
+    order_id = order_dict[enums.ExchangeConstantsOrderColumns.ID.value]
+    status = order_dict[enums.ExchangeConstantsOrderColumns.STATUS.value]
+    order_update = {
+        enums.StoredOrdersAttr.ORDER_ID.value: order_id,
+        enums.StoredOrdersAttr.ORDER_STATUS.value: status,
+        enums.StoredOrdersAttr.UPDATE_TIME.value: update_time,
+        enums.StoredOrdersAttr.UPDATE_TYPE.value: update_type,
+    }
+    details = None
+    try:
+        details = _format_order(
+            exchange_manager.exchange_personal_data.orders_manager.get_order(
+                order_dict[enums.ExchangeConstantsOrderColumns.ID.value]
+            ),
+            exchange_manager
+        )
+    except KeyError:
+        if status == enums.OrderStatus.OPEN.value:
+            # ensure order details are present in open orders
+            details = {
+                OrdersStorage.ORIGIN_VALUE_KEY: OrdersStorage.sanitize_for_storage(order_dict),
+            }
+    order_update[enums.StoredOrdersAttr.ORDER_DETAILS.value] = details
+    return order_update
+
