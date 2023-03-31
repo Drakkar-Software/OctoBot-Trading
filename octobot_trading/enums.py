@@ -548,5 +548,7 @@ class StoredOrdersAttr(enum.Enum):
 
 
 class OrderUpdateType(enum.Enum):
-    STATE_CHANGE = "state_transition"
+    NEW = "new"
+    CLOSED = "closed"
     EDIT = "edit"
+    STATE_CHANGE = "state_transition"

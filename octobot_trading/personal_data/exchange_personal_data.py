@@ -208,7 +208,8 @@ class ExchangePersonalData(util.Initializable):
             asyncio.create_task(order.state.on_refresh_successful())
 
         if should_notify:
-            await self.handle_order_update_notification(order, is_new_order, enums.OrderUpdateType.STATE_CHANGE)
+            update_type = enums.OrderUpdateType.NEW if is_new_order else enums.OrderUpdateType.STATE_CHANGE
+            await self.handle_order_update_notification(order, update_type)
         return order.state is not None
 
     def _is_out_of_sync_order(self, order_id) -> bool:
@@ -225,12 +226,11 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
-    async def handle_order_update_notification(self, order, is_new_order, update_type: enums.OrderUpdateType):
+    async def handle_order_update_notification(self, order, update_type: enums.OrderUpdateType):
         """
         Notify Orders channel for Order update
         :param order: the updated order
         :param update_type: the type of update as enums.OrderUpdateType
-        :param is_new_order: True if the order was created during update
         """
         try:
             orders_chan = exchange_channel.get_chan(constants.ORDERS_CHANNEL, self.exchange_manager.id)
@@ -243,7 +243,6 @@ class ExchangePersonalData(util.Initializable):
                 order.to_dict(),
                 is_from_bot=order.is_from_this_octobot,
                 update_type=update_type,
-                is_new=is_new_order,
                 is_closed=order.is_closed()
             )
         except ValueError as e:

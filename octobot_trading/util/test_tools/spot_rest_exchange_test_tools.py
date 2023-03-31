@@ -131,7 +131,6 @@ class SpotRestExchangeTests:
             symbol: str,
             order: dict,
             update_type: str,
-            is_new: bool,
             is_from_bot: bool,
     ):
         self.channel_callbacks_triggered[channels_name.OctoBotTradingChannelsName.ORDERS_CHANNEL.value] = True

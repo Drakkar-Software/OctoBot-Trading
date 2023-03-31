@@ -217,7 +217,7 @@ class Trader(util.Initializable):
                     )
                 # push order edit into orders channel as edit update
                 await self.exchange_manager.exchange_personal_data.handle_order_update_notification(
-                    order, False, enums.OrderUpdateType.EDIT
+                    order, enums.OrderUpdateType.EDIT
                 )
                 self.logger.info(f"Edited order: {order}")
             return changed
