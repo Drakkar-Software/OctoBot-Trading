@@ -55,7 +55,6 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         symbol: str,
         order: dict,
         update_type: str,
-        is_new: bool,
         is_from_bot: bool,
     ):
         # only store the current snapshot of open orders when order updates are received

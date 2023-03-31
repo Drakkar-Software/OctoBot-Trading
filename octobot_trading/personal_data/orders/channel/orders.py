@@ -106,13 +106,14 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                     )
                 except Exception as err:
                     self.logger.exception(err, True, f"Error when completing order with stored data: {err}")
-            await self.send(self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                            symbol,
-                            order,
-                            is_from_bot=is_from_bot,
-                            update_type=enums.OrderUpdateType.STATE_CHANGE,
-                            is_new=is_new_order,
-                            is_closed=False)
+            await self.send(
+                self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                symbol,
+                order,
+                is_from_bot=is_from_bot,
+                update_type=enums.OrderUpdateType.NEW if is_new_order else enums.OrderUpdateType.STATE_CHANGE,
+                is_closed=False
+            )
 
     async def _complete_open_order_init(self, orders, is_from_bot):
         """
@@ -121,13 +122,14 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         for order in orders:
             self.logger.debug(f"Completing order init for order: {order}")
             await self.channel.exchange_manager.exchange_personal_data.on_order_refresh_success(order, False, False)
-            await self.send(self.channel.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
-                            order.symbol,
-                            order.to_dict(),
-                            is_from_bot=is_from_bot,
-                            update_type=enums.OrderUpdateType.STATE_CHANGE,
-                            is_new=True,
-                            is_closed=False)
+            await self.send(
+                self.channel.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                order.symbol,
+                order.to_dict(),
+                is_from_bot=is_from_bot,
+                update_type=enums.OrderUpdateType.NEW,
+                is_closed=False
+            )
 
     async def _handle_close_order_update(self, order_id, order):
         """
@@ -234,8 +236,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             await asyncio.gather(*synchronize_tasks)
 
     async def send(self, cryptocurrency, symbol, order, is_from_bot=True,
-                   update_type=enums.OrderUpdateType.STATE_CHANGE, is_new=False, is_closed=False):
-        if is_closed:
+                   update_type=enums.OrderUpdateType.STATE_CHANGE, is_closed=False):
+        if is_closed or update_type is enums.OrderUpdateType.CLOSED:
             # do not push closed orders
             return
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
@@ -246,7 +248,6 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 "symbol": symbol,
                 "order": order,
                 "update_type": update_type.value,
-                "is_new": is_new,
                 "is_from_bot": is_from_bot
             })
 
