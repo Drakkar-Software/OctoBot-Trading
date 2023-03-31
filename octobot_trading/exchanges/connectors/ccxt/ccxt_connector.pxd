@@ -25,17 +25,17 @@ cdef class CCXTConnector(abstract_exchange.AbstractExchange):
     cdef public bint is_authenticated
     cdef public str rest_name
 
+    cdef public dict saved_data
+
     cdef object additional_config
     cdef dict options
     cdef dict headers
 
 
-    # private
-    cdef object _create_client(self)
-
     # @staticmethod waiting for a future version of cython
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
+    cpdef object _create_client(self)  # public to call and override in non cython subclasses
     cpdef object get_adapter_class(self, object adapter_class)
     cpdef void add_headers(self, dict headers_dict)
     cpdef void add_options(self, dict options_dict)
@@ -45,3 +45,6 @@ cdef class CCXTConnector(abstract_exchange.AbstractExchange):
     cpdef object unauthenticated_exchange_fallback(self, object err)
 
     cdef bint _should_authenticate(self)
+
+    cpdef object get_saved_data(self, object key)
+    cpdef object set_saved_data(self, object key, object value)

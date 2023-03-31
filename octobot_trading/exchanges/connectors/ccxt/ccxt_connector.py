@@ -56,6 +56,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.is_authenticated = False
         self.rest_name = rest_name or self.exchange_manager.exchange_class_string
 
+        # used to save exchange local elements in subclasses
+        self.saved_data = {}
+
         self.additional_config = additional_config
         self.headers = {}
         self.options = {}
@@ -678,6 +681,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.client.safe_value(self.client.markets, pair, {}), property_name, def_value
         )
 
+    def get_saved_data(self, key):
+        return self.saved_data[key]
+
+    def set_saved_data(self, key, value):
+        self.saved_data[key] = value
 
     """
     Parsers todo: remove all parsers
