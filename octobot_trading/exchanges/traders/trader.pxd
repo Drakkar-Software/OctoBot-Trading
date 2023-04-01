@@ -40,4 +40,5 @@ cdef class Trader(util.Initializable):
     cpdef object set_risk(self, object risk)
     cpdef object convert_order_to_trade(self, object order)
 
-    cdef bint _has_open_position(self, str symbol)
+    # any() cant be cythonized
+    # cdef bool _has_open_position(self, str symbol)
