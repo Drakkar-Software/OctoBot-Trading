@@ -33,6 +33,7 @@ cdef class PricesManager(util.Initializable):
     cdef void _reset_prices(self)
     cdef void _ensure_price_validity(self)
     cdef bint _are_other_sources_valid(self, str mark_price_source)
+    cdef bint _is_exchange_mark_price_valid(self)
     cdef int _compute_mark_price_validity_timeout(self)
 
     cpdef bint set_mark_price(self, object mark_price, str mark_price_source)

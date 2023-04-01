@@ -68,14 +68,15 @@ class PricesManager(util.Initializable):
             self._set_mark_price_value(mark_price)
             is_mark_price_updated = True
 
-        # set mark price value if MarkPriceSources.RECENT_TRADE_AVERAGE.value has already been updated
+        # set mark price value if RECENT_TRADE_AVERAGE has already been updated and no EXCHANGE_MARK_PRICE 
         elif mark_price_source == enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value:
-            if self.mark_price_from_sources.get(enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value, None) is not None:
-                self._set_mark_price_value(mark_price)
-                is_mark_price_updated = True
-            else:
-                # set time at 0 to ensure invalid price but keep track of initialization
-                self.mark_price_from_sources[mark_price_source] = (mark_price, 0)
+            if not self._is_exchange_mark_price_valid():
+                if self.mark_price_from_sources.get(enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value, None) is not None:
+                    self._set_mark_price_value(mark_price)
+                    is_mark_price_updated = True
+                else:
+                    # set time at 0 to ensure invalid price but keep track of initialization
+                    self.mark_price_from_sources[mark_price_source] = (mark_price, 0)
 
         # set mark price value if other sources have expired
         elif mark_price_source in (enums.MarkPriceSources.TICKER_CLOSE_PRICE.value,
@@ -130,7 +131,13 @@ class PricesManager(util.Initializable):
                     self._is_mark_price_valid(source_mark_price[1]):
                 return True
         return False
-
+    
+    def _is_exchange_mark_price_valid(self):
+        if enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value in self.mark_price_from_sources:
+            return self._is_mark_price_valid(
+                self.mark_price_from_sources[
+                    enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value][1])
+            
     def _ensure_price_validity(self):
         """
         Clear the event price validity event if the mark price has expired
