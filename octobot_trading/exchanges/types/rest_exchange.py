@@ -47,6 +47,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # should be fetched using recent trades.
     REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES = False  # set True when get_closed_orders is not supported
     ALLOW_TRADES_FROM_CLOSED_ORDERS = False  # set True when get_my_recent_trades should use get_closed_orders
+    SUPPORTS_ORDER_EDITING = True  # set True if the exchange supports editing orders by api
     DUMP_INCOMPLETE_LAST_CANDLE = False  # set True in tentacle when the exchange can return incomplete last candles
     # Set True when exchange is not returning empty position details when fetching a position with a specified symbol
     # Exchange will then fallback to self.get_mocked_empty_position when having get_position returning None
@@ -154,9 +155,15 @@ class RestExchange(abstract_exchange.AbstractExchange):
             side = None if side is None else side.value
             params = {} if params is None else params
             params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
-            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
-                                                  price=float_price, stop_price=float_stop_price, side=side,
-                                                  current_price=float_current_price, params=params)
+            if self.SUPPORTS_ORDER_EDITING:
+                edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
+                                                    price=float_price, stop_price=float_stop_price, side=side,
+                                                    current_price=float_current_price, params=params)
+            else:
+                # use edit order by replacing instead
+                edited_order = await self._edit_order_by_replacing(order_id, order_type, symbol, quantity=float_quantity,
+                                                    price=float_price, stop_price=float_stop_price, side=side,
+                                                    current_price=float_current_price)
             order = await self._verify_order(edited_order, order_type, symbol, price, side)
             return order
         return None
@@ -167,6 +174,47 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return await self.connector.edit_order(order_id, order_type, symbol,
                                                quantity, price, stop_price, side,
                                                current_price, params)
+
+    async def _edit_order_by_replacing(
+        self,
+        order_id: str,
+        order_type: enums.TraderOrderType,
+        symbol: str,
+        quantity: decimal.Decimal,
+        price: decimal.Decimal,
+        stop_price: decimal.Decimal = None,
+        side: enums.TradeOrderSide = None,
+        current_price: float = None,
+    ):
+        # Can be used if api doesnt have an endpoint to edit orders
+        # see binance USD m as an example
+        order_to_cancel = (
+            self.exchange_manager.exchange_personal_data.orders_manager.get_order(
+                order_id
+            )
+        )
+        await self.cancel_order(order_id=order_id, symbol=symbol)
+        await order_to_cancel.state.wait_for_terminate(
+            constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+            )
+        replaced_order = await self.create_order(
+            order_type,
+            symbol,
+            quantity,
+            price=stop_price or price,
+            stop_price=stop_price,
+            side=side,
+            current_price=current_price,
+            reduce_only=order_to_cancel.reduce_only,
+        )
+        if replaced_order:
+            return replaced_order
+        raise RuntimeError(
+                "Not able to edit a order by replacing. The new order was not created, "
+                f"while the original order got already cancelled. ({order_id} - "
+                f"{order_type} - {symbol} - quantity: {quantity} - "
+                f"price: {price} - {side})"
+            )
 
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):

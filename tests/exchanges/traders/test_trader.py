@@ -865,6 +865,15 @@ class TestTrader:
 
     async def test_edit_order(self):
         _, exchange_manager, trader_inst = await self.init_default()
+        await self._test_edit_order(exchange_manager, trader_inst)
+        
+    async def test_edit_order_by_replacing(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        exchange_manager.exchange.SUPPORTS_ORDER_EDITING = False
+        # TODO test on real exchange
+        await self._test_edit_order(exchange_manager, trader_inst)
+        
+    async def _test_edit_order(self, exchange_manager, trader_inst):
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
         currency, market = commons_symbols.parse_symbol(self.DEFAULT_SYMBOL).base_and_quote()
         assert portfolio_manager.portfolio.portfolio[currency].available == decimal.Decimal(10)
