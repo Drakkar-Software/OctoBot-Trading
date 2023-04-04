@@ -109,6 +109,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.min_timeframe = None
         self._previous_open_candles = {}
         self._subsequent_unordered_candles_count = {}   # dict values: tuple(candle_count, candle_time)
+        self._errors_count = {}
         self._start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
         self.websocket_name = websocket_name or self.get_name()
 
@@ -552,6 +553,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
         ws_des = f"{watch_func.__name__} {g_kwargs}"
         just_got_disconnected = True
+        spamming_logs_warning_interval = 5000
+        spamming_logs_debug_interval = 1000
         while not self.should_stop:
             try:
                 update_data = await watch_func(*g_args, **g_kwargs)
@@ -586,11 +589,15 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 )
                 return
             except Exception as err:
-                self.logger.exception(
-                    err,
-                    True,
-                    f"Unexpected error when handling {watch_func.__name__} feed: {err}"
-                )
+                error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
+                error_message = f"Unexpected error when handling {watch_func.__name__} feed with {g_kwargs}: {err} " \
+                                f"({error_count} times)"
+                if error_count == 1:
+                    self.logger.exception(err, True, error_message)
+                elif error_count % spamming_logs_warning_interval == 0:
+                    self.logger.warning(err)
+                elif error_count % spamming_logs_debug_interval == 0:
+                    self.logger.debug(error_message)
                 await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
                 just_got_disconnected = False  # wait for a longer time before the next reconnect
                 # self.client might have changed
@@ -990,3 +997,13 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             return self._subsequent_unordered_candles_count[time_frame][symbol][0]
         except KeyError:
             return 0
+
+    def _increment_error_counter(self, time_frame, error):
+        error_key = error.__class__.__name__
+        try:
+            self._errors_count[time_frame][error_key] += 1
+        except KeyError:
+            if time_frame not in self._errors_count:
+                self._errors_count[time_frame] = {}
+            self._errors_count[time_frame][error_key] = 1
+        return self._errors_count[time_frame][error_key]

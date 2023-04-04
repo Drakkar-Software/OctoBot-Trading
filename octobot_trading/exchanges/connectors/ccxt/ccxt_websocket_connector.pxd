@@ -22,6 +22,7 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef public object min_timeframe
     cdef dict _previous_open_candles
     cdef dict _subsequent_unordered_candles_count
+    cdef dict _errors_count
     cdef object _start_time_millis
     cdef str websocket_name
 
@@ -75,3 +76,4 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef list _get_previous_open_candle(self, str time_frame, str symbol)
     cdef void _register_subsequent_unordered_candle(self, str time_frame, str symbol, object parsed_timeframe, double current_candle_time)
     cdef int _get_subsequent_unordered_candles_count(self, str time_frame, str symbol)
+    cdef int _increment_error_counter(self, object time_frame, object error)
