@@ -553,6 +553,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
         ws_des = f"{watch_func.__name__} {g_kwargs}"
         just_got_disconnected = True
+        already_got_feed_stopping_error = False
         spamming_logs_warning_interval = 5000
         spamming_logs_debug_interval = 1000
         while not self.should_stop:
@@ -580,6 +581,20 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 watch_func = self._get_feed_generator_by_feed()[feed]
                 self.logger.debug(f"Reconnecting to {ws_des}")
                 just_got_disconnected = False  # wait for a longer time before the next reconnect
+            except ccxt.BadRequest as err:
+                message = f"Impossible to start {ws_des} feed due to exchange refusing the connection request: {err}."
+                self.logger.exception(
+                    err,
+                    True,
+                    f"{message} {'Will retry once' if not already_got_feed_stopping_error else 'Now stopping'}."
+                )
+                if already_got_feed_stopping_error:
+                    # there is a real issue when connecting to the feed. Don't loop
+                    return
+                already_got_feed_stopping_error = True
+                await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
+                # self.client might have changed
+                watch_func = self._get_feed_generator_by_feed()[feed]
             except ccxt.NotSupported as err:
                 self.logger.exception(
                     err,
@@ -590,8 +605,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 return
             except Exception as err:
                 error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
-                error_message = f"Unexpected error when handling {watch_func.__name__} feed with {g_kwargs}: {err} " \
-                                f"({error_count} times)"
+                error_message = f"Unexpected error when handling {ws_des} feed: {err} ({error_count} times)"
                 if error_count == 1:
                     self.logger.exception(err, True, error_message)
                 elif error_count % spamming_logs_warning_interval == 0:
