@@ -103,12 +103,15 @@ async def _create_producer(exchange_manager, producer) -> channel_producer.Produ
     :param producer: the producer to create
     :return: the producer instance created
     """
+    should_start_producer = True
     producer_instance = producer(exchange_channel.get_chan(producer.CHANNEL_NAME, exchange_manager.id))
-    if exchanges.is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
+    if exchanges.is_channel_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
         # websocket is handling this channel: initialize data if required
         exchange_manager.logger.debug(
             f"{exchange_manager.exchange_name} {producer.CHANNEL_NAME} channel is updated by websocket feed"
         )
+        should_start_producer = \
+            not exchanges.is_channel_fully_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME)
         if exchanges.is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):
             try:
                 producer_instance.trigger_single_update()
@@ -116,8 +119,8 @@ async def _create_producer(exchange_manager, producer) -> channel_producer.Produ
                 exchange_manager.logger.exception(e, True,
                                                   f"Error when initializing data for {producer.CHANNEL_NAME} "
                                                   f"channel required by websocket: {e}")
-    else:
-        # no websocket for this channel: start a producer
+    if should_start_producer:
+        # no websocket for this channel (or channel is not fully managed by ws): start a producer
         exchange_manager.logger.debug(
             f"{exchange_manager.exchange_name} {producer.CHANNEL_NAME} channel "
             f"is updated by {producer_instance.__class__.__name__}"
@@ -165,4 +168,4 @@ def requires_refresh_trigger(exchange_manager, channel):
     :param channel: name of the channel
     :return: True if it should be refreshed via a manual trigger to be exactly up to date
     """
-    return not exchanges.is_exchange_managed_by_websocket(exchange_manager, channel)
+    return not exchanges.is_channel_managed_by_websocket(exchange_manager, channel)

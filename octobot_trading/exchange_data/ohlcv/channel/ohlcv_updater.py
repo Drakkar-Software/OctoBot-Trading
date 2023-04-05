@@ -51,6 +51,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         """
         Creates OHLCV refresh tasks
         """
+        if self.single_update_task and not self.single_update_task.done():
+            await asyncio.wait_for(self.single_update_task, self.OHLCV_INITIALIZATION_TIMEOUT)
         if not self.is_initialized:
             await self._initialize(False)
         if self.channel is not None:
@@ -58,9 +60,10 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 await self.pause()
             else:
                 self.tasks = [
-                    asyncio.create_task(self._candle_callback(time_frame, pair))
+                    asyncio.create_task(self._candle_update_loop(time_frame, pair))
                     for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
                     for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+                    if self._should_maintain_candle(time_frame, pair)
                 ]
 
     def _get_traded_pairs(self):
@@ -68,6 +71,12 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
     def _get_time_frames(self):
         return self.channel.exchange_manager.exchange_config.traded_time_frames
+
+    def _should_maintain_candle(self, time_frame, pair):
+        return not (
+            exchanges.is_channel_managed_by_websocket(self.channel.exchange_manager, self.CHANNEL_NAME)
+            and self.channel.exchange_manager.exchange_web_socket.is_time_frame_supported(time_frame)
+        )
 
     async def fetch_and_push(self):
         return await self._initialize(True)
@@ -178,7 +187,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         if init_coroutines:
             await asyncio.gather(*init_coroutines)
 
-    async def _candle_callback(self, time_frame, pair):
+    async def _candle_update_loop(self, time_frame, pair):
+        self.logger.debug(f"Starting ohlcv updater loop for {pair} on {time_frame}")
         time_frame_seconds: int = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
         time_frame_sleep: int = time_frame_seconds
         last_candle_timestamp: float = 0

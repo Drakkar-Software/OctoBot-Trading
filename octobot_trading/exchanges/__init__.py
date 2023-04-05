@@ -83,7 +83,8 @@ from octobot_trading.exchanges.util import (
 )
 from octobot_trading.exchanges import exchange_websocket_factory
 from octobot_trading.exchanges.exchange_websocket_factory import (
-    is_exchange_managed_by_websocket,
+    is_channel_managed_by_websocket,
+    is_channel_fully_managed_by_websocket,
     is_websocket_feed_requiring_init,
     search_and_create_websocket,
 )
@@ -151,7 +152,8 @@ __all__ = [
     "apply_trades_fees",
     "get_exchange_class_from_name",
     "AbstractExchange",
-    "is_exchange_managed_by_websocket",
+    "is_channel_managed_by_websocket",
+    "is_channel_fully_managed_by_websocket",
     "is_websocket_feed_requiring_init",
     "search_and_create_websocket",
     "requires_refresh_trigger",

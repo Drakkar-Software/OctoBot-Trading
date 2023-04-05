@@ -34,6 +34,8 @@ cdef class ExchangeChannelConsumer(consumers.Consumer):
     pass
 
 cdef class ExchangeChannelProducer(producers.Producer):
+    cdef public object single_update_task
+
     cpdef void trigger_single_update(self)
 
 cdef class ExchangeChannelInternalConsumer(consumers.InternalConsumer):

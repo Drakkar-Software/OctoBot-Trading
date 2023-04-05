@@ -38,6 +38,11 @@ class AbstractWebsocketExchange:
 
     SUPPORTS_LIVE_PAIR_ADDITION = False
 
+    TIME_FRAME_RELATED_FEEDS = [
+        octobot_trading.enums.WebsocketFeeds.CANDLE,
+        octobot_trading.enums.WebsocketFeeds.KLINE,
+    ]
+
     def __init__(self, config, exchange_manager):
         self.config = config
 
@@ -62,7 +67,11 @@ class AbstractWebsocketExchange:
         self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
         # inner list required for cythonization
         self.channels = list(set([self.feed_to_exchange(channel) for channel in channels])) if channels else []
-        self.time_frames = time_frames if time_frames is not None else []
+        self.time_frames = [
+            time_frame
+            for time_frame in time_frames
+            if self.is_time_frame_supported(time_frame)
+        ] if time_frames is not None else []
         self.currencies = currencies if currencies else []
 
     @classmethod
@@ -70,6 +79,12 @@ class AbstractWebsocketExchange:
         """
         Called before exchange instantiation, should be used to patch cls.EXCHANGE_FEEDS if necessary
         """
+
+    def is_time_frame_related_feed(self, feed):
+        return feed in self.TIME_FRAME_RELATED_FEEDS
+
+    def is_time_frame_supported(self, time_frame):
+        raise NotImplementedError("is_time_frame_supported is not implemented")
 
     def get_exchange_credentials(self):
         """

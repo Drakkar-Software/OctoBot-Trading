@@ -35,6 +35,8 @@ cdef class AbstractWebsocketExchange:
     cdef public object logger
     cdef public object bot_mainloop
 
+    cpdef bint is_time_frame_related_feed(self, object feed)
+    cpdef object is_time_frame_supported(self, object time_frame)
     cpdef object get_exchange_credentials(self)
     cpdef object get_book_instance(self, str symbol)
 

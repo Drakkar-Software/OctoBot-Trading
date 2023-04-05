@@ -53,12 +53,13 @@ class ExchangeChannelProducer(producers.Producer):
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{channel.exchange_manager.exchange_name}]")
+        self.single_update_task = None
 
     async def fetch_and_push(self):
         self.logger.error("self.fetch_and_push() is not implemented")
 
     def trigger_single_update(self):
-        asyncio.create_task(self.fetch_and_push())
+        self.single_update_task = asyncio.create_task(self.fetch_and_push())
 
     async def wait_for_dependencies(self, paths, timeout):
         for path in paths:

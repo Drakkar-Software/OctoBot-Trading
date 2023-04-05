@@ -120,6 +120,15 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def has_name(cls, exchange_manager: object) -> bool:  # pylint: disable=arguments-renamed
         return cls.get_exchange_connector_class(exchange_manager) is not None
 
+    def is_time_frame_related_feed(self, feed):
+        return self.websocket_connectors[0].is_time_frame_related_feed(feed)
+
+    def is_time_frame_supported(self, time_frame):
+        return all([
+            connector.is_time_frame_supported(time_frame)
+            for connector in self.websocket_connectors
+        ])
+
     async def start_sockets(self):
         if any(self.handled_feeds.values() and self.websocket_connectors):
             try:

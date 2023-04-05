@@ -151,7 +151,7 @@ class FundingUpdater(funding_channel.FundingProducer):
         # therefore, it should run if:
         # - ticker updater is on (ticker not managed by ws) and FUNDING_IN_TICKER is False
         # - or ticker updater is off (ticker managed by ws) (as we are here, it means funding is not handled by ws)
-        is_ticker_updater_on = not exchange_websocket_factory.is_exchange_managed_by_websocket(
+        is_ticker_updater_on = not exchange_websocket_factory.is_channel_managed_by_websocket(
             self.channel.exchange_manager, constants.TICKER_CHANNEL
         )
         return (
