@@ -69,7 +69,6 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef object _init_exchange_time_frames(self)
     cdef bint _should_run_candle_feed(self)
     cdef bint _is_supported_pair(self, str pair)
-    cdef bint _is_supported_time_frame(self, object time_frame)
     cdef bint _is_pair_independent_feed(self, object feed)
     cdef list _convert_book_prices_to_orders(self, object book_prices_and_volumes, str book_side)
     cdef void _register_previous_open_candle(self, str time_frame, str symbol, list candle)

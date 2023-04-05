@@ -17,16 +17,30 @@ import octobot_trading.constants
 import octobot_trading.exchanges as exchanges
 
 
-def is_exchange_managed_by_websocket(exchange_manager, channel):
-    """
-    # TODO improve checker
-    """
-    return not exchange_manager.rest_only \
-        and exchange_manager.has_websocket \
-        and not exchange_manager.is_backtesting \
-        and channel in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS \
-        and any([exchange_manager.exchange_web_socket.is_feed_available(feed)
-                 for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
+def is_channel_managed_by_websocket(exchange_manager, channel):
+    return (
+        not exchange_manager.rest_only
+        and exchange_manager.has_websocket
+        and not exchange_manager.is_backtesting
+        and channel in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
+        and any([
+            exchange_manager.exchange_web_socket.is_feed_available(feed)
+            for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]
+        ])
+    )
+
+
+def is_channel_fully_managed_by_websocket(exchange_manager, channel):
+    return (
+        not any([
+            exchange_manager.exchange_web_socket.is_time_frame_related_feed(feed)
+            for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]
+        ])
+        or all([
+            exchange_manager.exchange_web_socket.is_time_frame_supported(time_frame)
+            for time_frame in exchange_manager.exchange_config.traded_time_frames
+        ])
+    )
 
 
 def is_websocket_feed_requiring_init(exchange_manager, channel):

@@ -15,7 +15,9 @@
 #  License along with this library.
 import logging
 import ccxt
+import ccxt.pro as ccxt_pro
 
+import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.util.exchange_util as exchange_util
@@ -123,6 +125,18 @@ def get_symbols(client):
 
 def get_time_frames(client):
     try:
+        if isinstance(client, ccxt_pro.Exchange):
+            # ccxt pro exchanges might have different timeframes in options
+            options_time_frames = client.safe_value(client.options, 'timeframes')
+            if options_time_frames:
+                values = set([
+                    time_frame
+                    for time_frame in options_time_frames
+                    if time_frame_manager.is_time_frame(time_frame)
+                ])
+                if values:
+                    return values
+        # use normal client timeframes (values of rest exchange)
         return set(client.timeframes)
     except (AttributeError, TypeError):
         # ccxt exchange describe() is invalid

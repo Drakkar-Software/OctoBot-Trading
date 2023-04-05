@@ -68,10 +68,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         Feeds.TICKER,
         Feeds.CANDLE,
     ]
-    TIME_FRAME_PAIR_CHANNELS = [
-        Feeds.CANDLE,
-        Feeds.KLINE,
-    ]
     CURRENT_TIME_FILTERED_CHANNELS = [
         Feeds.TRADES,
         Feeds.ORDERS,
@@ -224,6 +220,9 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return cls.get_name() == exchange_candidate_name
+
+    def is_time_frame_supported(self, time_frame):
+        return time_frame.value in ccxt_client_util.get_time_frames(self.client)
 
     def get_pair_from_exchange(self, pair):
         """
@@ -507,7 +506,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             return
         added_subscriptions = []
         has_added_feed = False
-        if feed in self.TIME_FRAME_PAIR_CHANNELS and time_frame is None:
+        if feed in self.TIME_FRAME_RELATED_FEEDS and time_frame is None:
             time_frame = self.min_timeframe.value
         kwargs = copy.copy(self._get_feed_default_kwargs())
         if time_frame is not None:
@@ -718,7 +717,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         Add a time frame to filtered_timeframes if supported
         :param time_frame: the time frame to add
         """
-        if self._is_supported_time_frame(time_frame):
+        if self.is_time_frame_supported(time_frame):
             filtered_timeframes.append(time_frame)
         elif log_on_error:
             self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
@@ -741,9 +740,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
 
     def _is_supported_pair(self, pair):
         return pair in ccxt_client_util.get_symbols(self.client)
-
-    def _is_supported_time_frame(self, time_frame):
-        return time_frame.value in ccxt_client_util.get_time_frames(self.client)
 
     def _is_pair_independent_feed(self, feed):
         return feed in self.PAIR_INDEPENDENT_CHANNELS
