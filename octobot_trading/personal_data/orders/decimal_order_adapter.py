@@ -210,7 +210,7 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
                 if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value):
                     max_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MAX.value, math.nan)))
 
-                if (max_price is not None and (max_price <= valid_price)) or valid_price <= min_price:
+                if (max_price is not None and (valid_price > max_price)) or valid_price < min_price:
                     # invalid order
                     return []
 
