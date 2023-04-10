@@ -117,7 +117,7 @@ class Context(databases.CacheClient):
                 account_type = storage_util.get_account_type_suffix_from_run_metadata(self.run_data_writer)
             self.symbol_writer = databases.RunDatabasesProvider.instance().get_symbol_db(
                 bot_id, self.exchange_name, self.symbol
-            )
+            ) if self.symbol else None
             if account_type is not None:
                 self.orders_writer = databases.RunDatabasesProvider.instance().get_orders_db(
                     bot_id, account_type, self.exchange_name
