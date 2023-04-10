@@ -50,9 +50,11 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         try:
             await self.create_order_if_possible(symbol, final_note, state, data=data)
         except errors.MissingMinimalExchangeTradeVolume:
+            market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
             self.logger.info(f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
                              f"{self.exchange_manager.exchange_name} exchange minimal order "
-                             f"volume has not been reached.")
+                             f"volume has not been reached. "
+                             f"Exchanges requirements are: {market_status.get(Ecmsc.LIMITS.value)}")
         except errors.UnhandledContractError as err:
             self.logger.error(f"Unhandled contract error on {self.exchange_manager.exchange_name}: {err}. "
                               f"Please make sure that {symbol} is the full futures contract symbol. "
