@@ -99,9 +99,9 @@ async def test_on_new_value(historical_portfolio_value_manager):
     _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[0],
                             day_timestamp, value_by_currency_2)
 
-    # change currency value, same time
+    # change currency value (minor value change), same time
     value_by_currency_3 = {
-        "BTC": 1.5,
+        "BTC": 1,
         "USD": 3001,
         "HELLO": 666
     }
@@ -111,7 +111,21 @@ async def test_on_new_value(historical_portfolio_value_manager):
     assert list(historical_portfolio_value_manager.historical_portfolio_value.keys()) == [day_timestamp]
     _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[0],
                             day_timestamp, value_by_currency_2)
-    # force update: actual change
+
+    # change currency value (major value change), same time
+    value_by_currency_major_change = {
+        "BTC": 2.5,
+        "USD": 3001,
+        "HELLO": 666
+    }
+    # major change, no force update: change even if no force
+    assert await historical_portfolio_value_manager.on_new_value(
+        timestamp, value_by_currency_major_change, save_changes=False) is True
+    assert list(historical_portfolio_value_manager.historical_portfolio_value.keys()) == [day_timestamp]
+    _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[0],
+                            day_timestamp, value_by_currency_major_change)
+
+    # force update: actual forced change
     assert await historical_portfolio_value_manager.on_new_value(timestamp, value_by_currency_3,
                                                                  save_changes=False, force_update=True) is True
     assert list(historical_portfolio_value_manager.historical_portfolio_value.keys()) == [day_timestamp]
@@ -377,9 +391,16 @@ async def test_on_new_values(historical_portfolio_value_manager):
     # same call, no new timestamp value
     assert await historical_portfolio_value_manager.on_new_values(value_by_currency_by_timestamp,
                                                                   save_changes=False) is False
-    sunday_value_by_currency["USD"] = 999
+    # no major change
+    sunday_value_by_currency["USD"] = 3.1
     assert await historical_portfolio_value_manager.on_new_values(value_by_currency_by_timestamp,
                                                                   save_changes=False) is False
+    # major change
+    sunday_value_by_currency["USD"] = 999
+    assert await historical_portfolio_value_manager.on_new_values(value_by_currency_by_timestamp,
+                                                                  save_changes=False) is True
+    # forced minor change
+    sunday_value_by_currency["USD"] = 999.1
     assert await historical_portfolio_value_manager.on_new_values(value_by_currency_by_timestamp,
                                                                   save_changes=False, force_update=True) is True
     assert list(historical_portfolio_value_manager.historical_portfolio_value.keys()) == [

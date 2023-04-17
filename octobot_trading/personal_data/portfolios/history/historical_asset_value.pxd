@@ -24,4 +24,5 @@ cdef class HistoricalAssetValue:
     cpdef bint update(self, dict value_by_currency)
     cpdef object get_currencies(self)
     cpdef double get_timestamp(self)
+    cpdef object is_significant_change(self, str currency, object value)
     cpdef dict to_dict(self)
