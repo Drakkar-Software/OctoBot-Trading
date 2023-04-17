@@ -119,8 +119,9 @@ class HistoricalPortfolioValueManager(util.Initializable):
         :return: True if something changed
         """
         # TODO replace by := when cython will support it
-        relevant_timestamps = self._get_relevant_timestamps(timestamp, value_by_currency.keys(),
-                                                            self.saved_time_frames, force_update, include_past_data)
+        relevant_timestamps = self._get_relevant_timestamps(
+            timestamp, value_by_currency, self.saved_time_frames, force_update, include_past_data
+        )
         if relevant_timestamps:
             return await self._upsert_value(relevant_timestamps, value_by_currency, save_changes)
         return False
@@ -168,7 +169,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         changed = False
         for timestamp in timestamps:
             try:
-                changed |= self.get_historical_value(timestamp).update(value_by_currency)
+                changed = self.get_historical_value(timestamp).update(value_by_currency) or changed
             except KeyError:
                 self._add_historical_portfolio_value(timestamp, value_by_currency)
                 changed = True
@@ -257,7 +258,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
         ))
 
-    def _get_relevant_timestamps(self, timestamp, currencies, time_frames, force_update, include_past_data):
+    def _get_relevant_timestamps(self, timestamp, value_by_currency, time_frames, force_update, include_past_data):
         relevant_timestamps = set()
         current_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
         for time_frame in time_frames:
@@ -265,9 +266,9 @@ class HistoricalPortfolioValueManager(util.Initializable):
             time_frame_allowed_window_start = self.convert_to_historical_timestamp(
                 timestamp if include_past_data else current_time,
                 time_frame)
-            if self._should_update_timestamp(currencies, time_frame_allowed_window_start, force_update):
+            if self._should_update_timestamp(value_by_currency, time_frame_allowed_window_start, force_update):
                 # allow time window if time_frame_allowed_window_start not in self.historical_portfolio_value
-                # or when force_update
+                # or when value changes are significant or when force_update
                 time_frame_seconds = commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
                 time_frame_allowed_window_end = time_frame_allowed_window_start + \
                     max(time_frame_seconds * self.TIME_FRAME_RELEVANCY_TIME_RATIO,
@@ -276,12 +277,13 @@ class HistoricalPortfolioValueManager(util.Initializable):
                     relevant_timestamps.add(time_frame_allowed_window_start)
         return relevant_timestamps
 
-    def _should_update_timestamp(self, currencies, time_frame_allowed_window_start, force_update):
+    def _should_update_timestamp(self, value_by_currency, time_frame_allowed_window_start, force_update):
         if force_update:
             return True
         try:
-            for currency in currencies:
-                self.get_historical_value(time_frame_allowed_window_start).get(currency)
+            for currency, value in value_by_currency.items():
+                if self.get_historical_value(time_frame_allowed_window_start).is_significant_change(currency, value):
+                    return True
         except KeyError:
             return True
         return False

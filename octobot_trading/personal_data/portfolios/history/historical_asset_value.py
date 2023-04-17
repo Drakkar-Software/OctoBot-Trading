@@ -22,6 +22,7 @@ class HistoricalAssetValue:
     """
     TIMESTAMP_KEY = "t"
     VALUES_KEY = "v"
+    SIGNIFICANT_VALUE_CHANGE_THRESHOLD = 0.1    # 10%
 
     def __init__(self, timestamp, value_by_currency):
         self._timestamp = timestamp
@@ -52,6 +53,10 @@ class HistoricalAssetValue:
 
     def get_timestamp(self):
         return self._timestamp
+
+    def is_significant_change(self, currency, value):
+        stored_value = self.get(currency)
+        return abs(stored_value - value) / stored_value >= self.SIGNIFICANT_VALUE_CHANGE_THRESHOLD
 
     def to_dict(self):
         return {
