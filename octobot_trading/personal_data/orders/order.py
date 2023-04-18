@@ -308,7 +308,7 @@ class Order(util.Initializable):
         raise NotImplementedError("Update_order_status not implemented")
 
     def add_to_order_group(self, order_group):
-        if not self.is_open():
+        if not self.is_open() and not self.is_waiting_for_chained_trigger:
             logging.get_logger(self.get_logger_name()).warning(f"Adding order to group however order is not open.")
         self.order_group = order_group
 
