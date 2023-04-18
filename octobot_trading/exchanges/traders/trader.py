@@ -306,11 +306,17 @@ class Trader(util.Initializable):
                                               enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     order,
-                    stop_loss_price=None,
+                    stop_loss_price=None,   # required for cython
                     take_profit_price=chained_order.origin_price
                 ))
+            if params:
+                self.logger.debug(
+                    f"Including {chained_order.order_type} chained order into order "
+                    f"parameters to handle it directly on exchange."
+                )
         await chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
         order.add_chained_order(chained_order)
+        self.logger.debug(f"Added chained order [{chained_order}] to [{order}] order.")
         return params
 
     async def cancel_order(self, order, ignored_order=None,
