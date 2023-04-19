@@ -271,8 +271,13 @@ def is_valid_account(exchange_manager) -> bool:
     return exchange_manager.is_valid_account
 
 
-def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time):
-    return exchanges.get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time)
+def get_historical_ohlcv(
+        exchange_manager, symbol, time_frame, start_time, end_time,
+        request_retry_timeout=octobot_trading.constants.HISTORICAL_CANDLES_FETCH_DEFAULT_TIMEOUT
+):
+    return exchanges.get_historical_ohlcv(
+        exchange_manager, symbol, time_frame, start_time, end_time, request_retry_timeout=request_retry_timeout
+    )
 
 
 def get_bot_id(exchange_manager):
