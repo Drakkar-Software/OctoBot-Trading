@@ -188,16 +188,24 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         logger.disable(False)
 
 
-async def get_historical_ohlcv(local_exchange_manager, symbol, time_frame, start_time, end_time):
+async def get_historical_ohlcv(
+    local_exchange_manager, symbol, time_frame, start_time, end_time,
+        request_retry_timeout=constants.HISTORICAL_CANDLES_FETCH_DEFAULT_TIMEOUT
+):
     """
     Async generator, use as follows:
         async for candles in get_historical_ohlcv(exchange_manager, pair, time_frame, start_time, end_time):
             # candles stuff
     WARNING: start_time and end_time should be milliseconds timestamps
+    request_retry_timeout is a timer in seconds to keep retrying to fetch failed candle requests before giving up
     """
     reached_max = False
     while start_time < end_time and not reached_max:
-        candles = await local_exchange_manager.exchange.get_symbol_prices(symbol, time_frame, since=int(start_time))
+        candles = await local_exchange_manager.exchange.retry_till_success(
+            request_retry_timeout,
+            local_exchange_manager.exchange.get_symbol_prices,
+            symbol, time_frame, since=int(start_time)
+        )
         if candles:
             while candles and candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000 > end_time:
                 candles.pop(-1)
