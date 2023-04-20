@@ -318,6 +318,9 @@ class Order(util.Initializable):
     def is_created(self):
         return self.state is None or self.state.is_created()
 
+    def is_pending_creation(self):
+        return isinstance(self.state, orders_states.PendingCreationOrderState)
+
     def is_open(self):
         # also check is_initialized to avoid considering uncreated orders as open
         return self.state is None or self.state.is_open()
@@ -385,7 +388,7 @@ class Order(util.Initializable):
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         logging.get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
-        if self.is_open() and not self.is_refreshing():
+        if (self.is_open() and not self.is_refreshing()) or self.is_pending_creation():
             with self.order_state_creation():
                 self.state = orders_states.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
                 await self.state.initialize(forced=force_fill)

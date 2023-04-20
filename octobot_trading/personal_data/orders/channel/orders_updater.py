@@ -195,6 +195,8 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                 order.order_id, raw_order, should_notify=should_notify
             )
+        else:
+            self.logger.debug(f"Can't received update for {order} on {exchange_name}: received order is None")
 
     async def stop(self) -> None:
         """
