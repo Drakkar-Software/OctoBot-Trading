@@ -121,7 +121,7 @@ class Trader(util.Initializable):
             # forward errors that require actions to fix the situation
             raise
         except Exception as e:
-            self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
+            self.logger.exception(e, True, f"Unexpected error when creating order: {e}. Order: {order}")
             return None
 
         return created_order
@@ -239,15 +239,17 @@ class Trader(util.Initializable):
             order_params = self.exchange_manager.exchange.get_order_additional_params(new_order)
             order_params.update(new_order.exchange_creation_params)
             order_params.update(params)
-            created_order = await self.exchange_manager.exchange.create_order(order_type=new_order.order_type,
-                                                                              symbol=new_order.symbol,
-                                                                              quantity=new_order.origin_quantity,
-                                                                              price=new_order.origin_price,
-                                                                              stop_price=new_order.origin_stop_price,
-                                                                              side=new_order.side,
-                                                                              current_price=new_order.created_last_price,
-                                                                              reduce_only=new_order.reduce_only,
-                                                                              params=order_params)
+            created_order = await self.exchange_manager.exchange.create_order(
+                order_type=new_order.order_type,
+                symbol=new_order.symbol,
+                quantity=new_order.origin_quantity,
+                price=new_order.origin_price,
+                stop_price=new_order.origin_stop_price,
+                side=new_order.side,
+                current_price=new_order.created_last_price,
+                reduce_only=new_order.reduce_only,
+                params=order_params
+            )
             if created_order is None:
                 return None
             self.logger.debug(f"Successfully created order on {self.exchange_manager.exchange_name}: {created_order}")

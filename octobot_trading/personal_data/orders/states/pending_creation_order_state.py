@@ -13,7 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import time
+import asyncio
+
+import octobot_trading.constants
 import octobot_trading.enums as enums
+import octobot_trading.errors
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.personal_data.orders.order_state as order_state
 
 
@@ -22,6 +28,48 @@ class PendingCreationOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.States.PENDING_CREATION
+
+    async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
+        """
+        Ask OrdersChannel Internal producer to refresh the order from the exchange
+        :param force_synchronization: When True, for the update of the order from the exchange
+        :return: the result of OrdersProducer.update_order_from_exchange()
+        """
+        try:
+            t0 = time.time()
+            iteration = 0
+            # Retries might be necessary if the order is being filled while requesting and the 1st refresh
+            # is not updating the state.
+            # Loop here until we get a clear answer as the order is not yet open and therefore not in orders manager.
+            # If it turns out to be instantly closed, OctoBot will miss it as is will never be fetched with
+            # open orders refresh.
+            self.ensure_not_cleared(self.order)
+            while self.order.is_pending_creation() \
+                    and time.time() - t0 < octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT:
+                iteration += 1
+                await exchange_channel.get_chan(
+                    octobot_trading.constants.ORDERS_CHANNEL,
+                    self.order.exchange_manager.id
+                ).get_internal_producer().update_order_from_exchange(
+                    order=self.order,
+                    wait_for_refresh=True,
+                    force_job_execution=force_synchronization,
+                )
+                if self.order.is_pending_creation():
+                    self.get_logger().debug(f"Failed to receive an order update ({iteration} attempts). "
+                                            f"Retrying in {self.PENDING_REFRESH_INTERVAL} seconds")
+                    await asyncio.sleep(self.PENDING_REFRESH_INTERVAL)
+                    self.ensure_not_cleared(self.order)
+            if self.order.is_pending_creation():
+                self.get_logger().error(
+                    f"Order state is still pending after {octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT}s and "
+                    f"{iteration} retries. Something is wrong."
+                )
+            else:
+                if iteration > 1:
+                    self.get_logger().debug(f"Received pending order state update after {iteration} iterations")
+        except octobot_trading.errors.InvalidOrderState:
+            self.get_logger().debug(f"Skipping exchange synchronisation as order has already been closed.")
 
     def is_created(self) -> bool:
         """
