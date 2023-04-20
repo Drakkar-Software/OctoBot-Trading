@@ -73,6 +73,6 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef list _convert_book_prices_to_orders(self, object book_prices_and_volumes, str book_side)
     cdef void _register_previous_open_candle(self, str time_frame, str symbol, list candle)
     cdef list _get_previous_open_candle(self, str time_frame, str symbol)
-    cdef void _register_subsequent_unordered_candle(self, str time_frame, str symbol, object parsed_timeframe, double current_candle_time)
+    cdef bint _register_subsequent_unordered_candle(self, str time_frame, str symbol, object parsed_timeframe, double current_candle_time)
     cdef int _get_subsequent_unordered_candles_count(self, str time_frame, str symbol)
     cdef int _increment_error_counter(self, object time_frame, object error)

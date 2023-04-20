@@ -39,7 +39,6 @@ from octobot_trading.enums import WebsocketFeeds as Feeds
 
 class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchange):
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
-    MAX_ALLOWED_SUBSEQUENT_UNORDERED_CANDLES = 2
     SUPPORTS_LIVE_PAIR_ADDITION = True
     FEED_INITIALIZATION_TIMEOUT = 15 * commons_constants.MINUTE_TO_SECONDS
     MIN_CONNECTION_CLOSE_INTERVAL = 2 * commons_constants.MINUTE_TO_SECONDS
@@ -840,15 +839,18 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                         # update internal candle store to still keep track of the most up to date candle
                         await self.exchange_manager.get_symbol_data(symbol) \
                             .handle_candles_update(time_frame, candle, replace_all=False, partial=False, upsert=True)
-                        self._register_subsequent_unordered_candle(timeframe, symbol, time_frame, current_candle_time)
+                        is_new_unordered_candle = self._register_subsequent_unordered_candle(
+                            timeframe, symbol, time_frame, current_candle_time
+                        )
                         subsequent_unordered_candles = self._get_subsequent_unordered_candles_count(timeframe, symbol)
                         error_message = f"Ignored unexpected candle for {symbol} on {timeframe}: " \
                                         f"candle time {current_candle_time}, " \
                                         f"previous candle time: {previous_candle_time} " \
                                         f"({subsequent_unordered_candles} unordered candles in a row)."
-                        if subsequent_unordered_candles == self.MAX_ALLOWED_SUBSEQUENT_UNORDERED_CANDLES:
+                        if is_new_unordered_candle:
                             self.logger.warning(error_message)
-                        else:
+                        # prevent spamming
+                        elif subsequent_unordered_candles < 3 or (subsequent_unordered_candles % 1000 == 0):
                             self.logger.debug(error_message)
                         if candle is last_candle:
                             # last candle in loop: don't go any further
@@ -997,10 +999,12 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 # candle is not subsequent from the previous one: reset count
                 count = 0
             self._subsequent_unordered_candles_count[time_frame][symbol] = (count + 1, current_candle_time)
+            return False
         except KeyError:
             if time_frame not in self._subsequent_unordered_candles_count:
                 self._subsequent_unordered_candles_count[time_frame] = {}
             self._subsequent_unordered_candles_count[time_frame][symbol] = (1, current_candle_time)
+            return True
 
     def _get_subsequent_unordered_candles_count(self, time_frame, symbol):
         try:
