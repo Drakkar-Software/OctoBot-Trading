@@ -47,7 +47,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     Never returns row ccxt data or throw ccxt errors
     """
 
-    def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None):
+    def __init__(
+            self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None, force_auth=False
+    ):
         super().__init__(config, exchange_manager)
         self.client = None
         self.exchange_type = None
@@ -55,6 +57,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
         self.rest_name = rest_name or self.exchange_manager.exchange_class_string
+        self.force_authentication = force_auth
 
         # used to save exchange local elements in subclasses
         self.saved_data = {}
@@ -81,7 +84,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 ccxt_client_util.set_sandbox_mode(
                     self, self.exchange_manager.is_sandboxed)
                 
-            if self._should_authenticate() and not self.exchange_manager.exchange_only:
+            if self.force_authentication or (
+                self._should_authenticate() and not self.exchange_manager.exchange_only
+            ):
                 await self._ensure_auth()
 
             if self.exchange_manager.is_loading_markets:
@@ -160,8 +165,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         )
 
     def _should_authenticate(self):
-        return not (self.exchange_manager.is_simulated or
-                    self.exchange_manager.is_backtesting)
+        return self.force_authentication or not (
+            self.exchange_manager.is_simulated or
+            self.exchange_manager.is_backtesting
+        )
 
     def unauthenticated_exchange_fallback(self, err):
         self.handle_token_error(err)

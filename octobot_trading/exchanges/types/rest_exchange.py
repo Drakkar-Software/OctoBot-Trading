@@ -56,6 +56,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     SUPPORTS_SET_MARGIN_TYPE = True  # set False when there is no API to switch between cross and isolated margin types
     EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
     # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
+    REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -90,7 +91,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             exchange_manager,
             adapter_class=self.get_adapter_class(),
             additional_config=self.get_additional_connector_config(),
-            rest_name=self.get_rest_name()
+            rest_name=self.get_rest_name(),
+            force_auth=self.REQUIRES_AUTHENTICATION,
         )
 
     async def initialize_impl(self):
