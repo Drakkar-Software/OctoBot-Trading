@@ -632,6 +632,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         is_initialized_func = None
         if feed is Feeds.CANDLE:
             def candle_is_initialized_func():
+                if self.exchange_manager is None:
+                    return False
                 try:
                     return self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
                         g_kwargs["symbol"], allow_creation=False
