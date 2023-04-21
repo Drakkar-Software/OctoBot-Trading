@@ -54,8 +54,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # set True when get_positions() is not returning empty positions and should use get_position() instead
     REQUIRES_SYMBOL_FOR_EMPTY_POSITION = False
     SUPPORTS_SET_MARGIN_TYPE = True  # set False when there is no API to switch between cross and isolated margin types
-    EXPECT_POSSIBLE_ORDER_NOT_FOUND_ON_INSTANTLY_FILLED_ORDERS = False  # set True when get_order() can return None
-    # (order not found) when orders are instantly filled on exchange and are not fully processed on the exchange side.
+    EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
+    # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
