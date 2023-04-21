@@ -53,11 +53,19 @@ class PendingCreationOrderState(order_state.OrderState):
                 ).get_internal_producer().update_order_from_exchange(
                     order=self.order,
                     wait_for_refresh=True,
-                    force_job_execution=force_synchronization,
+                    force_job_execution=True,
                 )
                 if self.order.is_pending_creation():
-                    self.get_logger().debug(f"Failed to receive an order update ({iteration} attempts). "
-                                            f"Retrying in {self.PENDING_REFRESH_INTERVAL} seconds")
+                    message = f"Failed to receive an order update ({iteration} attempts). " \
+                      f"Retrying in {self.PENDING_REFRESH_INTERVAL} seconds."
+                    self.ensure_not_cleared(self.order)
+                    if self.order.exchange_manager.exchange.EXPECT_POSSIBLE_ORDER_NOT_FOUND_ON_INSTANTLY_FILLED_ORDERS:
+                        self.get_logger().debug(message)
+                    else:
+                        self.get_logger().error(
+                            f"{message} This works but is unexpected on {self.order.exchange_manager.exchange_name}. "
+                            f"Please report it if you see it."
+                        )
                     await asyncio.sleep(self.PENDING_REFRESH_INTERVAL)
                     self.ensure_not_cleared(self.order)
             if self.order.is_pending_creation():
