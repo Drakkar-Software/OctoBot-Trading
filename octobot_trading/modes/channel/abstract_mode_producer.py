@@ -45,7 +45,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         common_enums.ActivationTopics.EVALUATION_CYCLE.value:
             channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
     }
-    CONFIG_INIT_TIMEOUT = 30
+    CONFIG_INIT_TIMEOUT = 1 * common_constants.MINUTE_TO_SECONDS    # let time for orders to be fetched before
+    # declaring timeout at first trigger
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
@@ -123,6 +124,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         try:
             await self.inner_start()
         finally:
+            self.logger.debug("Ready to trade")
             self._is_ready_to_trade.set()
 
     async def inner_start(self) -> None:
@@ -296,12 +298,20 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Called by finalize and MANUAL_TRIGGER user command. Override if necessary
         """
-        async with self.trading_mode_trigger(), self.trading_mode.remote_signal_publisher(symbol):
-            await self.set_final_eval(matrix_id=matrix_id,
-                                      cryptocurrency=cryptocurrency,
-                                      symbol=symbol,
-                                      time_frame=time_frame,
-                                      trigger_source=trigger_source)
+        try:
+            async with self.trading_mode_trigger(), self.trading_mode.remote_signal_publisher(symbol):
+                await self.set_final_eval(matrix_id=matrix_id,
+                                          cryptocurrency=cryptocurrency,
+                                          symbol=symbol,
+                                          time_frame=time_frame,
+                                          trigger_source=trigger_source)
+        except errors.InitializingError as e:
+            self.logger.exception(
+                e,
+                True,
+                f"Ignored signal: "
+                f"Trading mode is not yet ready to trade, OctoBot is still initializing and fetching required data."
+            )
 
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
@@ -310,9 +320,14 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 if self.exchange_manager.is_backtesting:
                     raise asyncio.TimeoutError(f"Trading mode producer has to be started in backtesting")
                 self.logger.debug("Waiting for orders initialization to proceed")
-                await asyncio.wait_for(self._is_ready_to_trade.wait(), self.CONFIG_INIT_TIMEOUT)
+                try:
+                    await asyncio.wait_for(self._is_ready_to_trade.wait(), self.CONFIG_INIT_TIMEOUT)
+                except asyncio.TimeoutError as e:
+                    raise errors.InitializingError() from e
                 self.logger.debug("Order initialized")
             yield
+        except errors.InitializingError:
+            raise
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")
         except AttributeError:
@@ -395,8 +410,10 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     async def _wait_for_bot_init(self, timeout) -> bool:
         try:
+            self.logger.debug("Trading mode start complete. Now waiting for orders full initialisation.")
             await util.wait_for_topic_init(self.exchange_manager, timeout,
                                            common_enums.InitializationEventExchangeTopics.ORDERS.value)
+            self.logger.debug("Trading mode start complete. Orders initialisation completed.")
             return True
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Initialization took more than {timeout} seconds")

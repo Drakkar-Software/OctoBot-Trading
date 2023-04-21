@@ -240,3 +240,9 @@ class IncompletePNLError(Exception):
     """
     Raised when a pnl computation is asked on a invalid pnl
     """
+
+
+class InitializingError(Exception):
+    """
+    Raised when OctoBot is still in initialization
+    """
