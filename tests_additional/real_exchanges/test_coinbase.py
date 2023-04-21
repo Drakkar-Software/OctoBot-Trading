@@ -140,9 +140,9 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
         if check_content:
             assert ticker[Ectc.HIGH.value] is None
             assert ticker[Ectc.LOW.value] is None
-            assert ticker[Ectc.BID.value] is None
+            assert ticker[Ectc.BID.value]
             assert ticker[Ectc.BID_VOLUME.value] is None
-            assert ticker[Ectc.ASK.value] is None
+            assert ticker[Ectc.ASK.value]
             assert ticker[Ectc.ASK_VOLUME.value] is None
             assert ticker[Ectc.OPEN.value] is None
             assert ticker[Ectc.CLOSE.value]

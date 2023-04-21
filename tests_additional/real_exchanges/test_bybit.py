@@ -71,20 +71,16 @@ class TestBybitRealExchangeTester(RealExchangeTester):
 
     async def test_get_symbol_prices(self):
         # without limit
-        with pytest.raises(octobot_trading.errors.FailedRequest):
-            # limit param is required
-            await self.get_symbol_prices()
-        # max is 200 on Bybit
-        symbol_prices = await self.get_symbol_prices(limit=1000)
-        assert len(symbol_prices) == 1000
+        symbol_prices = await self.get_symbol_prices()
+        assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # can't fetch more than 1000 candles
+        # can't fetch more than 200 candles
         symbol_prices = await self.get_symbol_prices(limit=1500)
-        assert len(symbol_prices) == 1000
+        assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -100,8 +96,8 @@ class TestBybitRealExchangeTester(RealExchangeTester):
 
         # try with since and limit (used in data collector)
         assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []
-        # "endTime" param is required: add in tentacle
-        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, endTime=self.get_ms_time())
+        # "end" param is required: add in tentacle
+        symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, end=self.get_ms_time())
         assert len(symbol_prices) == 50
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
@@ -158,13 +154,13 @@ class TestBybitRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.HIGH.value]
             assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value]
-            assert ticker[Ectc.BID_VOLUME.value] is None
+            assert ticker[Ectc.BID_VOLUME.value]
             assert ticker[Ectc.ASK.value]
-            assert ticker[Ectc.ASK_VOLUME.value] is None
+            assert ticker[Ectc.ASK_VOLUME.value]
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
-            assert ticker[Ectc.TIMESTAMP.value]
-            RealExchangeTester.check_ticker_typing(ticker)
+            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
+            RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)

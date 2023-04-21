@@ -32,7 +32,7 @@ class TestBitsoRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "bitso"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
-    SYMBOL_3 = "XRP/BTC"
+    SYMBOL_3 = "TUSD/BTC"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -61,7 +61,12 @@ class TestBitsoRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            self.check_market_status_limits(market_status, has_price_limits=False)
+            self.check_market_status_limits(
+                market_status,
+                has_price_limits=True,
+                enable_price_and_cost_comparison=False,
+                low_price_max=1e-05,
+            )
 
     async def test_get_symbol_prices(self):
         # without limit
