@@ -87,8 +87,10 @@ class TestBybitRealExchangeTester(RealFuturesExchangeTester):
         # fetching more than 200 candles is fetching candles from the past
         symbol_prices = await self.get_symbol_prices(limit=500)
         assert len(symbol_prices) == 200
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] < self.get_time() - self.get_allowed_time_delta() \
-            * 100
+        # check candles order (oldest first)
+        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        # check last candle is the current candle
+        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
         symbol_prices = await self.get_symbol_prices(limit=200)
@@ -99,8 +101,9 @@ class TestBybitRealExchangeTester(RealFuturesExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with since and limit (used in data collector)
-        assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []
-        # "end" param is required: add in tentacle
+        # seems to work without "end" param but add it anyway as it's the case in SPOT API
+        assert len(await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50)) == 50
+        # "end" param: add in tentacle
         symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50, end=self.get_ms_time())
         assert len(symbol_prices) == 50
         # check candles order (oldest first)
@@ -166,9 +169,9 @@ class TestBybitRealExchangeTester(RealFuturesExchangeTester):
             assert ticker[Ectc.HIGH.value]
             assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value]
-            assert ticker[Ectc.BID_VOLUME.value] is None
+            assert ticker[Ectc.BID_VOLUME.value]
             assert ticker[Ectc.ASK.value]
-            assert ticker[Ectc.ASK_VOLUME.value] is None
+            assert ticker[Ectc.ASK_VOLUME.value]
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]

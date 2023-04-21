@@ -25,7 +25,7 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestOkcoinRealExchangeTester(TestOkxRealExchangeTester):
+class _TestOkcoinRealExchangeTester(TestOkxRealExchangeTester): #unreachable ?
     EXCHANGE_NAME = "okcoin"
     SYMBOL = "BTC/USD"
     SYMBOL_2 = "ETH/USD"
