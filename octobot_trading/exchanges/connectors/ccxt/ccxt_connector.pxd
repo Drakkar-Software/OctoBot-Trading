@@ -24,6 +24,7 @@ cdef class CCXTConnector(abstract_exchange.AbstractExchange):
     cdef public object adapter
     cdef public bint is_authenticated
     cdef public str rest_name
+    cdef public bint force_authentication
 
     cdef public dict saved_data
 
