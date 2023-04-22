@@ -633,6 +633,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         if feed is Feeds.CANDLE:
             def candle_is_initialized_func():
                 if self.exchange_manager is None:
+                    # Should only happen in tests / unusual environments. Or there is a real issue.
+                    self.logger.error(f"No exchange manager when starting websocket connector.")
                     return False
                 try:
                     return self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(

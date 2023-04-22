@@ -23,6 +23,7 @@ def is_channel_managed_by_websocket(exchange_manager, channel):
         and exchange_manager.has_websocket
         and not exchange_manager.is_backtesting
         and channel in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
+        and exchange_manager.exchange_web_socket is not None
         and any([
             exchange_manager.exchange_web_socket.is_feed_available(feed)
             for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]
