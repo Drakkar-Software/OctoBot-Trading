@@ -56,6 +56,8 @@ class HistoricalAssetValue:
 
     def is_significant_change(self, currency, value):
         stored_value = self.get(currency)
+        if not stored_value:
+            return bool(value)
         return abs(stored_value - value) / stored_value >= self.SIGNIFICANT_VALUE_CHANGE_THRESHOLD
 
     def to_dict(self):
