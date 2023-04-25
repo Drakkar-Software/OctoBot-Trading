@@ -573,7 +573,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     if just_got_disconnected:
                         self.logger.debug(message)
                     else:
-                        self.logger.error(f"Multiple disconnections if a row. {message}")
+                        self.logger.error(f"Multiple disconnections if a row for {ws_des}. {message}")
                 await asyncio.sleep(reconnect_delay)
                 # self.client might have changed
                 watch_func = self._get_feed_generator_by_feed()[feed]
