@@ -124,7 +124,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         )
         self.client = None  # ccxt.pro exchange: a ccxt.async_support exchange with websocket capabilities
         self.feed_tasks = {}
-        self._reconnect_task = None
         self._last_close_time = 0
         self.throttled_ws_updates = trading_constants.THROTTLED_WS_UPDATES
 
@@ -171,8 +170,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
 
     async def _inner_stop(self):
         self.should_stop = True
-        if self._reconnect_task is not None and not self._reconnect_task.done():
-            self._reconnect_task.cancel()
         try:
             if self.client is not None:
                 await self.client.close()
@@ -279,38 +276,20 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             await self.client.load_markets()
             self._filter_exchange_pairs_and_timeframes()
             self._subscribe_feeds()
-            if self.EXCHANGE_RECONNECT_INTERVAL is not None:
-                self._start_reconnect_task()
         except Exception as e:
             self.logger.exception(e, True, f"Failed to subscribe when creating websocket feed : {e}")
         finally:
             self.initialized_event.set()
 
-    async def _reconnect_loop(self):
-        while not self.should_stop:
-            try:
-                await asyncio.sleep(self.EXCHANGE_RECONNECT_INTERVAL)
-                self.logger.debug(f"Trigger exchange connection closing to force reconnection after "
-                                  f"{self.EXCHANGE_RECONNECT_INTERVAL / commons_constants.HOURS_TO_SECONDS} hours.")
-                await self._close_exchange_to_force_reconnect()
-            except Exception as err:
-                self.logger.exception(err, True, f"Error when trigger exchange auto-reconnect: {err}")
-
     async def _close_exchange_to_force_reconnect(self):
         if time.time() - self._last_close_time > self.MIN_CONNECTION_CLOSE_INTERVAL and not self.should_stop:
             # Close client to force connections re-open. The next watch_xyz will recreate the connection
             self.logger.debug(f"Closing exchange connection.")
-            await ccxt_client_util.close_client(self.client)
-            # Recreate self.client as close() is not enough to completely close the websocket connection to the exchange
-            # at least up to ccxt 2.6.33
-            self._create_client()
+            await self.client.close()
             self.logger.debug("Exchange connection closed. The next watch-xyz will re-open it.")
             self._last_close_time = time.time()
             return True
         return False
-
-    def _start_reconnect_task(self):
-        self._reconnect_task = asyncio.create_task(self._reconnect_loop())
 
     def _subscribe_feeds(self):
         """
@@ -550,14 +529,14 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             return
         enable_throttling = feed in self.THROTTLED_CHANNELS and self.throttled_ws_updates != 0.0
         ws_des = f"{watch_func.__name__} {g_kwargs}"
-        just_got_disconnected = True
+        subsequent_disconnections = 0
         already_got_feed_stopping_error = False
         spamming_logs_warning_interval = 5000
         spamming_logs_debug_interval = 1000
         while not self.should_stop:
             try:
                 update_data = await watch_func(*g_args, **g_kwargs)
-                just_got_disconnected = True
+                subsequent_disconnections = 0
                 if update_data:
                     await callback(update_data, **g_kwargs)
                 if enable_throttling:
@@ -565,20 +544,23 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
                     await asyncio.sleep(self.throttled_ws_updates)
             except ccxt.NetworkError as err:
-                reconnect_delay = self.SHORT_RECONNECT_DELAY if just_got_disconnected else self.LONG_RECONNECT_DELAY
+                # short reconnect on ping pong timeout or 1st reconnect
+                reconnect_delay = self.SHORT_RECONNECT_DELAY \
+                    if (subsequent_disconnections == 0 or isinstance(err, ccxt.RequestTimeout)) \
+                    else self.LONG_RECONNECT_DELAY
                 self.logger.debug(f"Can't connect to exchange {ws_des} websocket: {err}. "
                                   f"Retrying in {reconnect_delay} seconds")
                 if await self._close_exchange_to_force_reconnect():
                     message = f"Closed exchange connection to force reconnect. Error: {err}"
-                    if just_got_disconnected:
-                        self.logger.debug(message)
+                    if subsequent_disconnections > 1 and subsequent_disconnections % 10 == 0:
+                        self.logger.error(
+                            f"Multiple disconnections if a row [{subsequent_disconnections}]for {ws_des}. {message}"
+                        )
                     else:
-                        self.logger.error(f"Multiple disconnections if a row for {ws_des}. {message}")
+                        self.logger.debug(message)
                 await asyncio.sleep(reconnect_delay)
-                # self.client might have changed
-                watch_func = self._get_feed_generator_by_feed()[feed]
                 self.logger.debug(f"Reconnecting to {ws_des}")
-                just_got_disconnected = False  # wait for a longer time before the next reconnect
+                subsequent_disconnections += 1  # wait for a longer time before the next reconnect
             except ccxt.BadRequest as err:
                 message = f"Impossible to start {ws_des} feed due to exchange refusing the connection request: {err}."
                 self.logger.exception(
@@ -591,8 +573,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     return
                 already_got_feed_stopping_error = True
                 await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
-                # self.client might have changed
-                watch_func = self._get_feed_generator_by_feed()[feed]
             except ccxt.NotSupported as err:
                 self.logger.exception(
                     err,
@@ -611,9 +591,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 elif error_count % spamming_logs_debug_interval == 0:
                     self.logger.debug(error_message)
                 await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
-                just_got_disconnected = False  # wait for a longer time before the next reconnect
-                # self.client might have changed
-                watch_func = self._get_feed_generator_by_feed()[feed]
+                subsequent_disconnections += 1  # wait for a longer time before the next reconnect
 
     def _create_task_if_necessary(self, feed, feed_callback, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
@@ -822,6 +800,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         :param timeframe: the feed timeframe
         :param kwargs: the feed kwargs
         """
+        self.logger.debug(f"candle {symbol}: {candles}")
         time_frame = commons_enums.TimeFrames(timeframe)
         kline = self.adapter.adapt_kline([copy.deepcopy(candles[-1])])[0]
         adapted = self.adapter.adapt_ohlcv(candles, time_frame=time_frame)

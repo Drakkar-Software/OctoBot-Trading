@@ -35,7 +35,6 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef public dict headers
     cdef public dict options
     cdef public dict feed_tasks
-    cdef public object _reconnect_task
     cdef public double _last_close_time
     cdef public double throttled_ws_updates
 
