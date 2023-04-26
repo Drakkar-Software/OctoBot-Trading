@@ -42,6 +42,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     SUPPORTS_LIVE_PAIR_ADDITION = True
     FEED_INITIALIZATION_TIMEOUT = 15 * commons_constants.MINUTE_TO_SECONDS
     MIN_CONNECTION_CLOSE_INTERVAL = 2 * commons_constants.MINUTE_TO_SECONDS
+    NO_MESSAGE_DISCONNECTED_TIMEOUT = 4 * commons_constants.MINUTE_TO_SECONDS
     EXCHANGE_RECONNECT_INTERVAL = None
 
     IGNORED_FEED_PAIRS = {
@@ -125,6 +126,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.client = None  # ccxt.pro exchange: a ccxt.async_support exchange with websocket capabilities
         self.feed_tasks = {}
         self._last_close_time = 0
+        self._last_message_time = 0
         self.throttled_ws_updates = trading_constants.THROTTLED_WS_UPDATES
 
         self._create_client()
@@ -536,6 +538,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         while not self.should_stop:
             try:
                 update_data = await watch_func(*g_args, **g_kwargs)
+                self._last_message_time = time.time()
                 subsequent_disconnections = 0
                 if update_data:
                     await callback(update_data, **g_kwargs)
@@ -545,14 +548,19 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     await asyncio.sleep(self.throttled_ws_updates)
             except ccxt.NetworkError as err:
                 # short reconnect on ping pong timeout or 1st reconnect
+                is_ping_pong_error = isinstance(err, ccxt.RequestTimeout)
+                if is_ping_pong_error and time.time() - self._last_message_time < self.NO_MESSAGE_DISCONNECTED_TIMEOUT:
+                    # last message not received long ago: the websocket is probably not disconnected, it's just a
+                    # pong timeout, which can happen: there is no issue, instantly reconnect feed
+                    continue
                 reconnect_delay = self.SHORT_RECONNECT_DELAY \
-                    if (subsequent_disconnections == 0 or isinstance(err, ccxt.RequestTimeout)) \
+                    if (subsequent_disconnections == 0 or is_ping_pong_error) \
                     else self.LONG_RECONNECT_DELAY
                 self.logger.debug(f"Can't connect to exchange {ws_des} websocket: {err}. "
                                   f"Retrying in {reconnect_delay} seconds")
                 if await self._close_exchange_to_force_reconnect():
                     message = f"Closed exchange connection to force reconnect. Error: {err}"
-                    if subsequent_disconnections > 1 and subsequent_disconnections % 10 == 0:
+                    if subsequent_disconnections > 1 and subsequent_disconnections % 5 == 0:
                         self.logger.error(
                             f"Multiple disconnections if a row [{subsequent_disconnections}]for {ws_des}. {message}"
                         )
@@ -800,7 +808,6 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         :param timeframe: the feed timeframe
         :param kwargs: the feed kwargs
         """
-        self.logger.debug(f"candle {symbol}: {candles}")
         time_frame = commons_enums.TimeFrames(timeframe)
         kline = self.adapter.adapt_kline([copy.deepcopy(candles[-1])])[0]
         adapted = self.adapter.adapt_ohlcv(candles, time_frame=time_frame)
