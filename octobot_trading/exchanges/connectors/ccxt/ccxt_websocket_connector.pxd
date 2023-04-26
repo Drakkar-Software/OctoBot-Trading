@@ -36,6 +36,7 @@ cdef class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketE
     cdef public dict options
     cdef public dict feed_tasks
     cdef public double _last_close_time
+    cdef public double _last_message_time
     cdef public double throttled_ws_updates
 
     # return object when an exception might be thrown
