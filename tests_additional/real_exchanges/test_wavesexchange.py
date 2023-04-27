@@ -92,9 +92,30 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
             # check last candle is the current candle
             assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-            with pytest.raises(errors.UnexpectedAdapterError):
-                # try with since and limit (used in data collector)
-                assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=50) == []    # not supported
+        finally:
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = previous_DUMP_INCOMPLETE_LAST_CANDLE_value
+
+    async def test_get_historical_symbol_prices(self):
+        previous_DUMP_INCOMPLETE_LAST_CANDLE_value = exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE
+        try:
+            # todo set RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True in exchange tentacle
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True
+            # without limit
+            # broken because last X candles have None prices (raising TypeError)
+            # try with since and limit (used in data collector)
+            for limit in (50, None):
+                with pytest.raises(errors.UnexpectedAdapterError):
+                    symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
+            return
+
+            assert len(symbol_prices) == 50
+            # check candles order (oldest first)
+            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            # check that fetched candles are historical candles
+            max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
+            assert max_candle_time <= self.get_time()
+            for candle in symbol_prices:
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
         finally:
             exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = previous_DUMP_INCOMPLETE_LAST_CANDLE_value
 

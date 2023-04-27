@@ -96,8 +96,9 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # try with since and limit (used in data collector)
-        assert len(await self.get_symbol_prices(since=self.CANDLE_SINCE_SEC, limit=100)) == 5    # not supported
+    async def test_get_historical_symbol_prices(self):
+        for limit in (100, None):
+            assert len(await self.get_symbol_prices(since=self.CANDLE_SINCE_SEC, limit=limit)) == 5    # not supported
 
     async def test_get_kline_price(self):
         # todo add param in tentacle

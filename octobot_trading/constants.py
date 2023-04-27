@@ -68,8 +68,22 @@ ONE = decimal.Decimal(1)
 ONE_HUNDRED = decimal.Decimal(100)
 NaN = decimal.Decimal("nan")
 
-FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
-                                 "bitfinex", "bitfinex2", "bitmex", "idex", "bybit", "bitget"]
+# exchanges where test_get_historical_symbol_prices is successful can be listed here
+FULL_CANDLE_HISTORY_EXCHANGES = [
+    "ascendex",
+    "bitfinex2",
+    "bitstamp",
+    "bittrex",
+    "bybit",
+    "gateio",
+    "hitbtc",
+    "hollaex",
+    "huobi",
+    "huobipro",
+    "kucoin",
+    "okcoin",
+    "okx",
+]
 
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 TESTED_EXCHANGES = [
@@ -84,7 +98,7 @@ TESTED_EXCHANGES = [
     "bybit",
     "cryptocom",
     "phemex",
-    "hollaex"
+    "hollaex",
 ]
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 SIMULATOR_TESTED_EXCHANGES = ["bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",

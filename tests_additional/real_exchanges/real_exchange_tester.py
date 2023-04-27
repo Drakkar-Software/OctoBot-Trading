@@ -33,7 +33,7 @@ class RealExchangeTester:
     # default is 1h, change if necessary
     TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
-    CANDLE_SINCE = 1325376000000  # 1 January 2012 00:00:00
+    CANDLE_SINCE = 1661990400000  # 1 September 2022 00:00:00
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
     REQUIRES_AUTH = False  # set True when even normally public apis require authentication
 
@@ -49,6 +49,9 @@ class RealExchangeTester:
         pass
 
     async def test_get_symbol_prices(self):
+        pass
+
+    async def test_get_historical_symbol_prices(self):
         pass
 
     async def test_get_kline_price(self):
@@ -161,6 +164,9 @@ class RealExchangeTester:
 
     def get_timeframe_seconds(self):
         return commons_enums.TimeFramesMinutes[self.TIME_FRAME] * constants.MINUTE_TO_SECONDS
+
+    def get_time_after_time_frames(self, start, time_frames_count):
+        return start + self.get_timeframe_seconds() * time_frames_count
 
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
