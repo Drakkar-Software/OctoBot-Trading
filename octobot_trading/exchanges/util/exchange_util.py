@@ -196,7 +196,7 @@ async def get_historical_ohlcv(
     Async generator, use as follows:
         async for candles in get_historical_ohlcv(exchange_manager, pair, time_frame, start_time, end_time):
             # candles stuff
-    WARNING: start_time and end_time should be milliseconds timestamps
+    WARNING: start_time and end_time are inclusive boundaries and should be milliseconds timestamps
     request_retry_timeout is a timer in seconds to keep retrying to fetch failed candle requests before giving up
     """
     reached_max = False
