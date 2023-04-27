@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import typing
 import decimal
 import time
@@ -434,8 +435,10 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
 
     async def retry_till_success(self, timeout, request_func, *args, **kwargs):
         t0 = time.time()
+        minimal_interval = 0.1
         attempt = 1
         while time.time() - t0 < timeout:
+            last_request_time = time.time()
             try:
                 result = await request_func(*args, **kwargs)
                 if attempt > 1:
@@ -443,8 +446,10 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                 return result
             except errors.FailedRequest:
                 self.logger.debug(f"Request retrier failed for {request_func.__name__} (attempt {attempt})")
+                if time.time() - last_request_time < minimal_interval:
+                    await asyncio.sleep(minimal_interval)
                 attempt += 1
-        raise errors.FailedRequest(f"Failed to successfully run request {request_func.__name__} after {attempt} "
+        raise errors.FailedRequest(f"Failed to successfully run {request_func.__name__} request after {attempt} "
                                    f"attempts.")
 
     """
