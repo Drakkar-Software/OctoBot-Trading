@@ -552,6 +552,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 if is_ping_pong_error and time.time() - self._last_message_time < self.NO_MESSAGE_DISCONNECTED_TIMEOUT:
                     # last message not received long ago: the websocket is probably not disconnected, it's just a
                     # pong timeout, which can happen: there is no issue, instantly reconnect feed
+                    self.logger.debug(f"Instantly reconnecting {ws_des} feed after ping-pong timeout.")
                     continue
                 reconnect_delay = self.SHORT_RECONNECT_DELAY \
                     if (subsequent_disconnections == 0 or is_ping_pong_error) \
