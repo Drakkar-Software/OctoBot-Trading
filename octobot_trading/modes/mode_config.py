@@ -66,7 +66,7 @@ def should_emit_trading_signals_user_input(trading_mode, inputs: dict):
             inputs,
             title="Name of the strategy to send signals on.",
             order=commons_configuration.UserInput.MAX_ORDER - 1,
-            other_schema_values={"minLength": 0}
+            other_schema_values={"minLength": 0},
         )
 
 
@@ -89,16 +89,21 @@ def _get_order_amount_title(side):
         f"Leave empty to auto-compute the amount."
 
 
-def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, include_sell=True):
+def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, include_sell=True,
+                             buy_dependencies=None, sell_dependencies=None):
     if include_buy:
         trading_mode.UI.user_input(
-                constants.CONFIG_BUY_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
-                title=_get_order_amount_title("buy"), other_schema_values={"minLength": 0}
+            constants.CONFIG_BUY_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
+            title=_get_order_amount_title("buy"),
+            other_schema_values={"minLength": 0},
+            editor_options={"dependencies": buy_dependencies} if buy_dependencies else None,
         )
     if include_sell:
         trading_mode.UI.user_input(
-                constants.CONFIG_SELL_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
-                title=_get_order_amount_title("sell"), other_schema_values={"minLength": 0}
+            constants.CONFIG_SELL_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
+            title=_get_order_amount_title("sell"),
+            other_schema_values={"minLength": 0},
+            editor_options={"dependencies": sell_dependencies} if sell_dependencies else None,
         )
 
 
