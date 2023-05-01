@@ -142,6 +142,7 @@ async def restore_chained_orders_from_storage_order_details(order, order_details
                 order,
                 chained_order.get(enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value, False),
                 chained_order.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value, {}),
+                chained_order.get(enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value, False),
                 **chained_order.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value, {}),
             )
             order.add_chained_order(chained_order_inst)

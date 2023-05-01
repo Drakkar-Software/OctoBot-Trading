@@ -284,13 +284,17 @@ class Trader(util.Initializable):
             await updated_order.state.wait_for_terminate(creation_timeout)
         return updated_order
 
-    async def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
+    async def bundle_chained_order_with_uncreated_order(
+        self, order, chained_order, update_with_triggering_order_fees, **kwargs
+    ):
         """
         Creates and bundles an order as a chained order to the given order.
         When supported and in real trading, return the stop loss parameters to be given when
         pushing the initial order on exchange
         :param order: the order to create a chained order from after fill
         :param chained_order: the chained order to create when the 1st order is filled
+        :param update_with_triggering_order_fees: if the chained order quantity should
+        be updated with triggering order fees
         :return: parameters with chained order details if supported
         """
         params = {}
@@ -316,7 +320,7 @@ class Trader(util.Initializable):
                     f"Including {chained_order.order_type} chained order into order "
                     f"parameters to handle it directly on exchange."
                 )
-        await chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
+        await chained_order.set_as_chained_order(order, is_bundled, {}, update_with_triggering_order_fees, **kwargs)
         order.add_chained_order(chained_order)
         self.logger.debug(f"Added chained order [{chained_order}] to [{order}] order.")
         return params

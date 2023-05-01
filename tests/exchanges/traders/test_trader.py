@@ -923,12 +923,13 @@ class TestTrader:
         assert base_order.is_created()
 
         # without bundle support
-        assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
+        assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, True, kw1=1, kw2="hello") \
                == {}
         # bundled chained_order to base_order
         assert chained_order in base_order.chained_orders
         assert chained_order.triggered_by is base_order
         assert chained_order.has_been_bundled is False
+        assert chained_order.update_with_triggering_order_fees is True
         assert chained_order.exchange_creation_params == {}
         assert chained_order.trader_creation_kwargs == {"kw1": 1, "kw2": "hello"}
         assert chained_order.is_waiting_for_chained_trigger is True
@@ -938,12 +939,13 @@ class TestTrader:
         chained_order = StopLossOrder(trader_inst)
         # with bundle support
         exchange_manager.exchange.SUPPORTED_BUNDLED_ORDERS[base_order.order_type] = [chained_order.order_type]
-        assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
+        assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, False, kw1=1, kw2="hello") \
                == {}
         # bundled chained_order to base_order
         assert chained_order in base_order.chained_orders
         assert chained_order.triggered_by is base_order
         assert chained_order.has_been_bundled is True
+        assert chained_order.update_with_triggering_order_fees is False
         assert chained_order.exchange_creation_params == {}
         assert chained_order.trader_creation_kwargs == {"kw1": 1, "kw2": "hello"}
         assert chained_order.is_waiting_for_chained_trigger is True

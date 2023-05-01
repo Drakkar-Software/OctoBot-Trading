@@ -274,16 +274,19 @@ async def test_set_as_chained_order(trader_simulator):
     base_order = personal_data.Order(trader_inst)
 
     with pytest.raises(errors.ConflictingOrdersError):
-        await base_order.set_as_chained_order(base_order, True, {})
+        await base_order.set_as_chained_order(base_order, True, {}, True)
     assert base_order.triggered_by is None
     assert base_order.has_been_bundled is False
+    assert base_order.update_with_triggering_order_fees is False
     assert base_order.status is enums.OrderStatus.OPEN
     assert base_order.state is None
 
     chained_order = personal_data.Order(trader_inst)
-    await chained_order.set_as_chained_order(base_order, True, {})
+    await chained_order.set_as_chained_order(base_order, True, {}, True)
     assert chained_order.triggered_by is base_order
     assert chained_order.has_been_bundled is True
+    assert base_order.update_with_triggering_order_fees is False
+    assert chained_order.update_with_triggering_order_fees is True
     assert chained_order.status is enums.OrderStatus.PENDING_CREATION
     assert isinstance(chained_order.state, personal_data.PendingCreationOrderState)
 
@@ -362,6 +365,7 @@ async def test_update_from_order_storage(trader_simulator):
     origin_shared_signal_order_id = order.shared_signal_order_id
     origin_has_been_bundled = order.has_been_bundled
     origin_associated_entry_ids = order.associated_entry_ids
+    origin_update_with_triggering_order_fees = order.update_with_triggering_order_fees
 
     # wrong format
     order.update_from_storage_order_details({"hello": "hi there"})
@@ -371,6 +375,7 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.shared_signal_order_id is origin_shared_signal_order_id
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
+    assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
 
     # partial update
     order.update_from_storage_order_details({
@@ -383,6 +388,7 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.shared_signal_order_id == "11" != origin_shared_signal_order_id
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
+    assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
 
     # full update
     order.update_from_storage_order_details({
@@ -394,6 +400,7 @@ async def test_update_from_order_storage(trader_simulator):
         enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: "11a",
         enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: True,
         enums.StoredOrdersAttr.ENTRIES.value: ["ABC", "2"],
+        enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: True,
     })
     assert order.tag == "t1" != origin_tag
     assert order.trader_creation_kwargs == {"plop2": 1} != origin_trader_creation_kwargs
@@ -401,3 +408,5 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.shared_signal_order_id == "11a" != origin_shared_signal_order_id
     assert order.has_been_bundled is True is not origin_has_been_bundled
     assert order.associated_entry_ids == ["ABC", "2"] != origin_associated_entry_ids
+    assert order.has_been_bundled is True is not origin_has_been_bundled
+    assert order.update_with_triggering_order_fees is True is not origin_update_with_triggering_order_fees
