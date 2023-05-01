@@ -59,7 +59,7 @@ async def _create_websocket(exchange_manager, websocket_class_name, ws_exchange_
     try:
         exchange_manager.exchange_web_socket = ws_exchange_class(exchange_manager.config, exchange_manager)
         await _init_websocket(exchange_manager)
-        exchange_manager.logger.info(f"{ws_exchange_class.get_name()} connected to "
+        exchange_manager.logger.info(f"{ws_exchange_class.get_name()} connecting to "
                                      f"{exchange_manager.exchange.name.capitalize()}")
     except Exception as e:
         exchange_manager.logger.error(f"Fail to init websocket for {websocket_class_name} "
