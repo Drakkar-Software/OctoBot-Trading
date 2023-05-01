@@ -117,7 +117,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.additional_config = additional_config
         self.headers = {}
         self.options = {
-            "newUpdates": True  # only get new updates from trades and ohlcv (don't return the full cached history)
+            "newUpdates": True,  # only get new updates from trades and ohlcv (don't return the full cached history)
         }
         # add default options
         self.add_options(
@@ -541,7 +541,9 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 self._last_message_time = time.time()
                 subsequent_disconnections = 0
                 if update_data:
-                    await callback(update_data, **g_kwargs)
+                    # Use a copy of the update data as it will be edited by adapters.
+                    # We should avoid editing the original object since it is also used in ccxt internally buffers
+                    await callback(copy.deepcopy(update_data), **g_kwargs)
                 if enable_throttling:
                     # ccxt keeps updating the internal structures while waiting
                     # https://docs.ccxt.com/en/latest/ccxt.pro.manual.html?rtd_search=fetchLedger#incremental-data-structures
@@ -592,11 +594,12 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 return
             except Exception as err:
                 error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
-                error_message = f"Unexpected error when handling {ws_des} feed: {err} ({error_count} times)"
+                error_message = f"Unexpected error when handling {ws_des} feed: {err} ({err.__class__.__name__}) " \
+                                f"({error_count} times)"
                 if error_count == 1:
                     self.logger.exception(err, True, error_message)
                 elif error_count % spamming_logs_warning_interval == 0:
-                    self.logger.warning(err)
+                    self.logger.warning(error_message)
                 elif error_count % spamming_logs_debug_interval == 0:
                     self.logger.debug(error_message)
                 await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
