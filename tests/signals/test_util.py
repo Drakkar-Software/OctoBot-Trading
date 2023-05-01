@@ -70,7 +70,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     sell_limit_order.add_chained_order(buy_limit_order)
     sell_limit_order.symbol = "BTC/ETH"
     buy_limit_order.associate_to_entry("1")
-    await buy_limit_order.set_as_chained_order(sell_limit_order, True, {})
+    await buy_limit_order.set_as_chained_order(sell_limit_order, True, {}, False)
     assert signals.create_order_signal_content(
         buy_limit_order,
         enums.TradingSignalOrdersActions.CREATE,

@@ -528,6 +528,7 @@ class TradingSignalOrdersAttrs(enum.Enum):
     CHAINED_TO = "chained_to"
     ADDITIONAL_ORDERS = "additional_orders"
     ASSOCIATED_ORDER_IDS = "associated_order_ids"
+    UPDATE_WITH_TRIGGERING_ORDER_FEES = "update_with_triggering_order_fees"
 
 
 class TradingSignalOrdersActions(enum.Enum):
@@ -552,6 +553,7 @@ class StoredOrdersAttr(enum.Enum):
     ORDER_ID = "oid"
     ORDER_STATUS = "s"
     ORDER_DETAILS = "d"
+    UPDATE_WITH_TRIGGERING_ORDER_FEES = "utf"
 
 
 class OrderUpdateType(enum.Enum):

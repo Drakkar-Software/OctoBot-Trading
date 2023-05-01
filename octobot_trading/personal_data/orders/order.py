@@ -105,6 +105,8 @@ class Order(util.Initializable):
         self.chained_orders = []
         # order that triggered this order creation (when created as a chained order)
         self.triggered_by = None
+        # if True this orders quantity will be reduced according to the triggering order's paid fees
+        self.update_with_triggering_order_fees = False
         # True when this order has been created directly by the exchange (usually as stop loss / take profit
         # when passed as parameter alongside another order)
         self.has_been_bundled = False
@@ -427,20 +429,38 @@ class Order(util.Initializable):
             return True
         return False
 
+    def update_quantity_with_order_fees(self, other_order):
+        relevant_fees_amount = order_util.get_fees_for_currency(other_order.fee, self.quantity_currency)
+        if relevant_fees_amount:
+            logger = logging.get_logger(self.get_logger_name())
+            fees_str = f"Paid {self.quantity_currency} fees: {relevant_fees_amount}, " \
+                       f"initial order size: {self.origin_quantity}"
+            if relevant_fees_amount > self.origin_quantity:
+                logger.error(f"Impossible to update chained order amount according to triggering order fees: "
+                             f"fees are larger than then chained order size. {fees_str}")
+                return False
+            self.origin_quantity -= relevant_fees_amount
+            logger.debug(f"Updating chained order quantity with triggering order fees. {fees_str}")
+        return True
+
     async def _trigger_chained_orders(self):
         logger = logging.get_logger(self.get_logger_name())
         for index, order in enumerate(self.chained_orders):
-            if order.should_be_created():
+            can_be_created = True
+            if order.update_with_triggering_order_fees:
+                can_be_created = order.update_quantity_with_order_fees(self)
+            if can_be_created and order.should_be_created():
                 logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
                 await order_util.create_as_chained_order(order)
             else:
                 logger.debug(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
 
     async def set_as_chained_order(self, triggered_by, has_been_bundled, exchange_creation_params,
-                                   **trader_creation_kwargs):
+                                   update_with_triggering_order_fees, **trader_creation_kwargs):
         if triggered_by is self:
             raise errors.ConflictingOrdersError("Impossible to chain an order to itself")
         self.triggered_by = triggered_by
+        self.update_with_triggering_order_fees = update_with_triggering_order_fees
         self.has_been_bundled = has_been_bundled
         self.exchange_creation_params = exchange_creation_params
         self.trader_creation_kwargs = trader_creation_kwargs
@@ -626,6 +646,9 @@ class Order(util.Initializable):
                                                   self.has_been_bundled)
         self.associated_entry_ids = order_details.get(enums.StoredOrdersAttr.ENTRIES.value,
                                                       self.associated_entry_ids)
+        self.update_with_triggering_order_fees = order_details.get(
+            enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value, False
+        )
 
     def consider_as_filled(self):
         self.status = enums.OrderStatus.FILLED

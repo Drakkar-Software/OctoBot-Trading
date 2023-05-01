@@ -189,6 +189,8 @@ def _format_order(order, exchange_manager):
             enums.StoredOrdersAttr.GROUP.value: _get_group_dict(order),
             enums.StoredOrdersAttr.CHAINED_ORDERS.value:
                 _get_chained_orders(order, exchange_manager),
+            enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value:
+                order.update_with_triggering_order_fees,
         }
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(err, True, f"Error when formatting order: {err}")
