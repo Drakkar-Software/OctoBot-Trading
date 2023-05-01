@@ -273,6 +273,7 @@ class Trader(util.Initializable):
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
             updated_order.set_shared_signal_order_id(new_order.shared_signal_order_id)
             updated_order.associated_entry_ids = new_order.associated_entry_ids
+            updated_order.update_with_triggering_order_fees = new_order.update_with_triggering_order_fees
 
             if is_pending_creation:
                 # register order as pending order, it will then be added to live orders in order manager once open
