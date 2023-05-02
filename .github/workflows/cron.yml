@@ -5,18 +5,18 @@ on:
 
 jobs:
   real-exchange-tests:
-    name: ubuntu-latest - Python 3.8 - ${{ matrix.exchange }} - real exchange tests
+    name: ubuntu-latest - Python 3.10 - ${{ matrix.exchange }} - real exchange tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
         exchange: [ ascendex, binance, bitfinex, bitget, bithumb, bitso, bitstamp, bittrex, bybit, bybit_futures, coinex, gateio, hitbtc, hollaex, huobi, huobipro, kraken, kucoin, kucoin_futures, ndax, okcoin, okx, okx_futures, phemex, poloniex, upbit, wavesexchange]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.8.x'
+        python-version: '3.10.x'
         architecture: 'x64'
 
     - name: Install dependencies
