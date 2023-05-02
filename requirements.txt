@@ -5,7 +5,7 @@ OctoBot-Backtesting>=1.9, <1.10
 Async-Channel>=2.2, <2.3
 OctoBot-Commons>=1.9, <1.10
 OctoBot-Tentacles-Manager>=2.9, <2.10
-trading-backend>=1.1.0
+trading-backend>=1.2.3
 
 # Exchange connection requirements
 ccxt==3.0.74 # always ensure real exchanges tests (in tests_additional and authenticated exchange tests) are passing before changing the ccxt version
