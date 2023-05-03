@@ -267,6 +267,7 @@ class Trader(util.Initializable):
             updated_order.chained_orders = new_order.chained_orders
             for chained_order in new_order.chained_orders:
                 chained_order.triggered_by = updated_order
+                chained_order.replace_associated_entry_id(new_order.order_id, updated_order.order_id)
             updated_order.triggered_by = new_order.triggered_by
             updated_order.has_been_bundled = new_order.has_been_bundled
             updated_order.exchange_creation_params = new_order.exchange_creation_params
