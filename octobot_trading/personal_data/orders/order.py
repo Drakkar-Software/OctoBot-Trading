@@ -429,6 +429,13 @@ class Order(util.Initializable):
             return True
         return False
 
+    def replace_associated_entry_id(self, previous_entry_order_id, updated_entry_order_id):
+        if self.associated_entry_ids is None:
+            return
+        for index, entry_id in enumerate(self.associated_entry_ids):
+            if entry_id == previous_entry_order_id:
+                self.associated_entry_ids[index] = updated_entry_order_id
+
     def update_quantity_with_order_fees(self, other_order):
         relevant_fees_amount = order_util.get_fees_for_currency(other_order.fee, self.quantity_currency)
         if relevant_fees_amount:
