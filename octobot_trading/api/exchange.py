@@ -220,8 +220,12 @@ def get_trading_symbols(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbols
 
 
-def get_watched_timeframes(exchange_manager) -> list:
+def get_trading_timeframes(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_time_frames
+
+
+def get_watched_timeframes(exchange_manager) -> list:
+    return exchange_manager.exchange_config.available_time_frames
 
 
 def get_relevant_time_frames(exchange_manager) -> list:

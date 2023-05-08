@@ -39,7 +39,7 @@ def is_channel_fully_managed_by_websocket(exchange_manager, channel):
         ])
         or all([
             exchange_manager.exchange_web_socket.is_time_frame_supported(time_frame)
-            for time_frame in exchange_manager.exchange_config.traded_time_frames
+            for time_frame in exchange_manager.exchange_config.available_time_frames
         ])
     )
 
@@ -70,7 +70,7 @@ async def _create_websocket(exchange_manager, websocket_class_name, ws_exchange_
 
 
 async def _init_websocket(exchange_manager):
-    await exchange_manager.exchange_web_socket.init_websocket(exchange_manager.exchange_config.traded_time_frames,
+    await exchange_manager.exchange_web_socket.init_websocket(exchange_manager.exchange_config.available_time_frames,
                                                               exchange_manager.exchange_config.traded_symbol_pairs,
                                                               exchange_manager.tentacles_setup_config)
 

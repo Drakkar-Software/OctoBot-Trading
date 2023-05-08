@@ -57,6 +57,9 @@ class ExchangeConfig(util.Initializable):
         # list of time frames to be used for real-time purposes (short time frames)
         self.real_time_time_frames = []
 
+        # list of exchange supported time frames that are traded (config + real time) and that are used for display only
+        self.available_time_frames = []
+
         # number of required historical candles
         self.required_historical_candles_count = constants.DEFAULT_IGNORED_VALUE
 
@@ -72,10 +75,10 @@ class ExchangeConfig(util.Initializable):
             currencies.append(symbol.quote)
         return list(set(currencies))
 
-    def set_config_traded_pairs(self):  # TODO
+    def set_config_traded_pairs(self):
         self._set_config_traded_pairs()
 
-    def set_config_time_frame(self):  # TODO
+    def set_config_time_frame(self):
         self._set_config_time_frame()
 
     def init_backtesting_exchange_config(self):
@@ -243,20 +246,31 @@ class ExchangeConfig(util.Initializable):
         existing_pairs.update(wildcard_pairs_list)
 
     def _set_config_time_frame(self):
+        display_time_frames = []
         for time_frame in time_frame_manager.get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.available_required_time_frames.append(time_frame)
         if not self.exchange_manager.is_backtesting or not self.available_required_time_frames:
-            # add shortest time frame for realtime evaluators or if no time frame at all has
-            # been registered in backtesting
+            # add shortest time frame for realtime evaluators
             client_shortest_time_frame = time_frame_manager.find_min_time_frame(
                 self.exchange_manager.client_time_frames,
                 constants.MIN_EVAL_TIME_FRAME)
             self.real_time_time_frames.append(client_shortest_time_frame)
+        if self.exchange_manager.time_frame_exists(trading_constants.DISPLAY_TIME_FRAME.value):
+            # add display time frame if not available already
+            display_time_frames.append(trading_constants.DISPLAY_TIME_FRAME)
         self.available_required_time_frames = time_frame_manager.sort_time_frames(self.available_required_time_frames,
                                                                                   reverse=True)
-        self.traded_time_frames = list(set().union(self.available_required_time_frames, self.real_time_time_frames))
+        self.traded_time_frames = list(set().union(
+            self.available_required_time_frames,
+            self.real_time_time_frames,
+        ))
+        self.available_time_frames = list(set().union(
+            self.traded_time_frames,
+            display_time_frames,
+        ))
         self.traded_time_frames = time_frame_manager.sort_time_frames(self.traded_time_frames, reverse=True)
+        self.available_time_frames = time_frame_manager.sort_time_frames(self.available_time_frames, reverse=True)
 
     @staticmethod
     def _is_tradable_with_cryptocurrency(symbol, cryptocurrency):
