@@ -28,6 +28,12 @@ def test_parse_quantity_types():
         script_keywords.QuantityType.DELTA, decimal.Decimal("1.366666663347877"))
     assert script_keywords.parse_quantity("-10") == (script_keywords.QuantityType.DELTA, decimal.Decimal(-10))
 
+    assert script_keywords.parse_quantity("q") == (script_keywords.QuantityType.DELTA_QUOTE, None)
+    assert script_keywords.parse_quantity("123q") == (
+        script_keywords.QuantityType.DELTA_QUOTE, decimal.Decimal("123"))
+    assert script_keywords.parse_quantity("q-0.11") == (
+        script_keywords.QuantityType.DELTA_QUOTE, decimal.Decimal("-0.11"))
+
     assert script_keywords.parse_quantity("%") == (script_keywords.QuantityType.PERCENT, None)
     assert script_keywords.parse_quantity("99.5%") == (
         script_keywords.QuantityType.PERCENT, decimal.Decimal("99.5"))

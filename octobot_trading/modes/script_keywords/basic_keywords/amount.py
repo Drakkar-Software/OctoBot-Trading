@@ -16,8 +16,10 @@
 
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
+import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.errors as trading_errors
 import octobot_trading.enums as trading_enums
+import octobot_trading.constants as trading_constants
 
 
 async def get_amount_from_input_amount(
@@ -37,6 +39,12 @@ async def get_amount_from_input_amount(
     if amount_type is dsl.QuantityType.DELTA:
         # nothing to do
         pass
+    elif amount_type is dsl.QuantityType.DELTA_QUOTE:
+        price = target_price or \
+            await trading_personal_data.get_up_to_date_price(context.exchange_manager,
+                                                             symbol=context.symbol,
+                                                             timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
+        amount_value = amount_value / price
     elif amount_type is dsl.QuantityType.PERCENT:
         amount_value = await account_balance.total_account_balance(context) * amount_value / 100
     elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
@@ -45,7 +53,7 @@ async def get_amount_from_input_amount(
     elif amount_type is dsl.QuantityType.POSITION_PERCENT:
         raise NotImplementedError(amount_type)
     else:
-        raise trading_errors.InvalidArgumentError("make sure to use a supported syntax for amount")
+        raise trading_errors.InvalidArgumentError(f"Unsupported input: {input_amount} make sure to use a supported syntax for amount")
     return await account_balance.adapt_amount_to_holdings(context, amount_value, side,
                                                           use_total_holding, reduce_only, is_stop_order,
                                                           target_price=target_price)

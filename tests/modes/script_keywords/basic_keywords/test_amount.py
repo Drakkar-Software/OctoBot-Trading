@@ -19,6 +19,7 @@ import decimal
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
+import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
@@ -51,6 +52,39 @@ async def test_get_amount_from_input_amount(null_context):
                                                                   False, True, False, target_price=None)
             parse_quantity_mock.assert_called_once_with("1")
             adapt_amount_to_holdings_mock.reset_mock()
+
+        with mock.patch.object(dsl, "parse_quantity",
+                               mock.Mock(return_value=(script_keywords.QuantityType.DELTA_QUOTE, decimal.Decimal(2)))) \
+                as parse_quantity_mock:
+            with mock.patch.object(trading_personal_data, "get_up_to_date_price",
+                                   mock.AsyncMock(return_value=decimal.Decimal(100))) \
+                    as get_up_to_date_price_mock:
+                assert await script_keywords.get_amount_from_input_amount(null_context, "1", "buy") == decimal.Decimal(1)
+                get_up_to_date_price_mock.assert_awaited_with(
+                    null_context.exchange_manager,
+                    symbol=null_context.symbol,
+                    timeout=constants.ORDER_DATA_FETCHING_TIMEOUT
+                )
+                # without target_price
+                adapt_amount_to_holdings_mock.assert_called_once_with(
+                    null_context, decimal.Decimal(2) / decimal.Decimal(100), "buy",
+                    False, True, False, target_price=None
+                )
+                parse_quantity_mock.assert_called_once_with("1")
+                adapt_amount_to_holdings_mock.reset_mock()
+                parse_quantity_mock.reset_mock()
+                get_up_to_date_price_mock.reset_mock()
+                # with target_price
+                assert await script_keywords.get_amount_from_input_amount(
+                    null_context, "1", "buy", target_price=decimal.Decimal(23)
+                ) == decimal.Decimal(1)
+                get_up_to_date_price_mock.assert_not_called()
+                adapt_amount_to_holdings_mock.assert_called_once_with(
+                    null_context, decimal.Decimal(2) / decimal.Decimal(23), "buy",
+                    False, True, False, target_price=decimal.Decimal(23)
+                )
+                parse_quantity_mock.assert_called_once_with("1")
+                adapt_amount_to_holdings_mock.reset_mock()
 
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(script_keywords.QuantityType.PERCENT, decimal.Decimal(75)))) \
