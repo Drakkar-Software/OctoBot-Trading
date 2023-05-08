@@ -83,9 +83,10 @@ def is_trading_signal_emitter(trading_mode) -> bool:
 def _get_order_amount_title(side):
     return f"Amount per {side} order. To specify the amount per order, " \
         f"use the following syntax: " \
-        f"0.1 to trade 0.1 BTC on BTC/USD, " \
-        f"2{dsl.QuantityType.PERCENT.value} to trade 2% of the total portfolio value, " \
-        f"12{dsl.QuantityType.AVAILABLE_PERCENT.value} to trade 12% of the available holdings, " \
+        f"0.1 to trade 0.1 BTC on BTC/USD (amount in base currency); " \
+        f"25q to trade 25 USD worth of BTC on BTC/USD (amount in quote currency); " \
+        f"2{dsl.QuantityType.PERCENT.value} to trade 2% of the total portfolio value; " \
+        f"12{dsl.QuantityType.AVAILABLE_PERCENT.value} to trade 12% of the available holdings. " \
         f"Leave empty to auto-compute the amount."
 
 

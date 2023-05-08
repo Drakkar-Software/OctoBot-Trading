@@ -19,6 +19,7 @@ import enum
 
 class QuantityType(enum.Enum):
     DELTA = ""
+    DELTA_QUOTE = "q"
     PERCENT = "%"
     AVAILABLE = "a"
     POSITION = "p"
