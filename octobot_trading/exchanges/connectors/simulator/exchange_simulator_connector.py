@@ -217,7 +217,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
 
     def get_time_frames(self, importer):
         return time_frame_manager.sort_time_frames(list(set(backtesting_api.get_available_time_frames(importer)) &
-                                                        set(self.exchange_manager.exchange_config.traded_time_frames)),
+                                                        set(self.exchange_manager.exchange_config.available_time_frames)),
                                                    reverse=True)
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):

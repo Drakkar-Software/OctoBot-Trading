@@ -244,7 +244,7 @@ class ExchangeManager(util.Initializable):
         return self.exchange_class_string
 
     def get_currently_handled_pair_with_time_frame(self):
-        return len(self.exchange_config.traded_symbol_pairs) * len(self.exchange_config.traded_time_frames)
+        return len(self.exchange_config.traded_symbol_pairs) * len(self.exchange_config.available_time_frames)
 
     def ensure_reachability(self):
         """
@@ -295,7 +295,7 @@ class ExchangeManager(util.Initializable):
         self.debug_info = {
             "str": str(self),
             "trading_modes": str([tm.get_name() for tm in self.trading_modes]),
-            "traded_time_frames": str(self.exchange_config.traded_time_frames),
+            "available_time_frames": str(self.exchange_config.available_time_frames),
             "watched_pairs": str(self.exchange_config.watched_pairs),
             "traded_symbol_pairs": str(self.exchange_config.traded_symbol_pairs),
         }

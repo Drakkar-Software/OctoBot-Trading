@@ -48,7 +48,8 @@ class KlineUpdater(kline_channel.KlineProducer):
         else:
             self.tasks = [
                 asyncio.create_task(self.time_frame_watcher(time_frame))
-                for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
+                for time_frame in self.channel.exchange_manager.exchange_config.available_time_frames
+            ]
 
     async def time_frame_watcher(self, time_frame):
         """

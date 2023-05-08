@@ -61,16 +61,16 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             else:
                 self.tasks = [
                     asyncio.create_task(self._candle_update_loop(time_frame, pair))
-                    for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
-                    for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+                    for time_frame in self._get_time_frames()
+                    for pair in self._get_traded_pairs()
                     if self._should_maintain_candle(time_frame, pair)
                 ]
 
     def _get_traded_pairs(self):
-        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+        return self.channel.exchange_manager.exchange_config.watched_pairs
 
     def _get_time_frames(self):
-        return self.channel.exchange_manager.exchange_config.traded_time_frames
+        return self.channel.exchange_manager.exchange_config.available_time_frames
 
     def _should_maintain_candle(self, time_frame, pair):
         return not (

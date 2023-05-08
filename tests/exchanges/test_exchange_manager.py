@@ -78,13 +78,13 @@ class TestExchangeManager:
 
         # few traded elements
         exchange_manager.exchange_config.traded_symbol_pairs = [0] * 3
-        exchange_manager.exchange_config.traded_time_frames = [0] * 3
+        exchange_manager.exchange_config.available_time_frames = [0] * 3
         assert exchange_manager.get_currently_handled_pair_with_time_frame() == 3*3
         assert not exchange_manager.get_is_overloaded()
 
         # too many traded elements
         exchange_manager.exchange_config.traded_symbol_pairs = [0] * 99
-        exchange_manager.exchange_config.traded_time_frames = [0] * 99
+        exchange_manager.exchange_config.available_time_frames = [0] * 99
         assert exchange_manager.get_currently_handled_pair_with_time_frame() == 99*99
         # not overloaded since exchange simulator is not limited in term of traded elements
         assert not exchange_manager.get_is_overloaded()
@@ -95,13 +95,13 @@ class TestExchangeManager:
 
         # few traded elements
         exchange_manager.exchange_config.traded_symbol_pairs = [0] * 3
-        exchange_manager.exchange_config.traded_time_frames = [0] * 3
+        exchange_manager.exchange_config.available_time_frames = [0] * 3
         assert exchange_manager.get_currently_handled_pair_with_time_frame() == 3*3
         assert not exchange_manager.get_is_overloaded()
 
         # too many traded elements
         exchange_manager.exchange_config.traded_symbol_pairs = [0] * 99
-        exchange_manager.exchange_config.traded_time_frames = [0] * 99
+        exchange_manager.exchange_config.available_time_frames = [0] * 99
         assert exchange_manager.get_currently_handled_pair_with_time_frame() == 99*99
         # overloaded since exchange simulator is limited in term of traded elements
         assert exchange_manager.get_is_overloaded()
