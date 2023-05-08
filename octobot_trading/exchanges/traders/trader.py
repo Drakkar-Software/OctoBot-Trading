@@ -406,7 +406,8 @@ class Trader(util.Initializable):
         if order.state is None:
             raise errors.OrderCancelError(
                 f"Error when cancelling order. This order state is unset, which makes "
-                f"it impossible to handle this the issue. Please report it if you see it."
+                f"it impossible to handle this the issue. Please report it if you see it. "
+                f"Order: {order}"
             ) from err
         # trigger forced refresh to get an update of the order
         if order.state.is_refreshing():
@@ -418,7 +419,7 @@ class Trader(util.Initializable):
                 # status changed: wait for state change
                 await order.state.wait_for_next_state(cancelling_timeout)
         if order.is_cancelled():
-            self.logger.debug(f"Tried to cancel an already cancelled order.")
+            self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
             return True
         if order.is_cancelling():
             if wait_for_cancelling:
@@ -426,12 +427,12 @@ class Trader(util.Initializable):
             return True
         elif order.is_open():
             raise errors.OpenOrderError(
-                "Order is open, but can't be cancelled. This is unexpected"
+                f"Order is open, but can't be cancelled. This is unexpected. Order: {order}"
             ) from err
         elif order.is_filled():
-            raise errors.FilledOrderError("Order is filled, it can't be cancelled") from err
+            raise errors.FilledOrderError(f"Order is filled, it can't be cancelled. Order: {order}") from err
         elif order.is_closed():
-            raise errors.ClosedOrderError("Order is closed, it can't be cancelled") from err
+            raise errors.ClosedOrderError(f"Order is closed, it can't be cancelled. Order: {order}") from err
         else:
             # should not happen
             raise errors.OrderCancelError(
