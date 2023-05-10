@@ -157,6 +157,15 @@ class OrdersManager(util.Initializable):
                 return pending_order
         return None
 
+    def get_all_active_and_pending_orders_shared_signal_order_id(self) -> list:
+        return [
+            order.shared_signal_order_id
+            for order in self._select_orders()
+        ] + [
+            order.shared_signal_order_id
+            for order in self.pending_creation_orders
+        ]
+
     async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[order_class.Order]:
         if self.has_order(order_id):
             order = self.orders[order_id]
