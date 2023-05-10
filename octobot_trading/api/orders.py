@@ -41,8 +41,8 @@ async def create_order(exchange_manager,
     )
 
 
-def get_open_orders(exchange_manager) -> list:
-    return exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
+def get_open_orders(exchange_manager, symbol=None) -> list:
+    return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)
 
 
 async def cancel_all_open_orders(exchange_manager, emit_trading_signals=True) -> bool:
