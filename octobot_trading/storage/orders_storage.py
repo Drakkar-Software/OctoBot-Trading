@@ -133,6 +133,8 @@ class OrdersStorage(abstract_storage.AbstractStorage):
                 decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.COST.value]))
             origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value] = \
                 decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value]))
+            origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value] = \
+                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value]))
             if origin_val[enums.ExchangeConstantsOrderColumns.FEE.value] and \
                     enums.FeePropertyColumns.COST.value in origin_val[enums.ExchangeConstantsOrderColumns.FEE.value]:
                 origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value] = \
