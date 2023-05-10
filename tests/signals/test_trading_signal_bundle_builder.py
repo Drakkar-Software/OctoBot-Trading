@@ -32,10 +32,12 @@ import octobot_trading.personal_data as personal_data
 
 @pytest.fixture
 def trading_signal_bundle_builder():
-    return signals.TradingSignalBundleBuilder(
+    builder = signals.TradingSignalBundleBuilder(
         "identifier",
         "strategy_name",
     )
+    builder.logger = mock.Mock(debug=mock.Mock(), error=mock.Mock())
+    return builder
 
 
 def test_build(trading_signal_bundle_builder):
@@ -337,9 +339,12 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
                for signal in trading_signal_bundle_builder.signals)
 
     # missing id
-    with pytest.raises(errors.OrderDescriptionNotFoundError):
-        pre_pack_signals[2].content[enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value] = "11"
-        trading_signal_bundle_builder._pack_referenced_orders_together()
+    trading_signal_bundle_builder.logger.debug.assert_not_called()
+    pre_pack_signals[2].content[enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value] = "11"
+    trading_signal_bundle_builder._pack_referenced_orders_together()
+    trading_signal_bundle_builder.logger.debug.assert_called_once()
+    assert "triggering order not found" in trading_signal_bundle_builder.logger.debug.call_args[0][0]
+    trading_signal_bundle_builder.logger.debug.reset_mock()
     # no signals update
     assert trading_signal_bundle_builder.signals == pre_pack_signals
 
@@ -352,6 +357,7 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
            is pre_pack_signals[2].content
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value] \
            == []
+    trading_signal_bundle_builder.logger.debug.assert_not_called()
 
     # reset signals
     trading_signal_bundle_builder.signals = pre_pack_signals
@@ -365,6 +371,7 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
            is pre_pack_signals[1].content
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][1] \
            is pre_pack_signals[2].content
+    trading_signal_bundle_builder.logger.debug.assert_not_called()
 
     # reset signals
     trading_signal_bundle_builder.signals = pre_pack_signals
@@ -378,6 +385,7 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
            is pre_pack_signals[1].content
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][1] \
            is pre_pack_signals[2].content
+    trading_signal_bundle_builder.logger.debug.assert_not_called()
 
     # reset signals
     trading_signal_bundle_builder.signals = pre_pack_signals
@@ -390,8 +398,11 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
     trading_signal_bundle_builder.signals[3].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] = "grp"
     pre_pack_signals = copy.copy(trading_signal_bundle_builder.signals)
     trading_signal_bundle_builder._pack_referenced_orders_together()
+    trading_signal_bundle_builder.logger.debug.assert_not_called()
     assert len(trading_signal_bundle_builder.signals) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
            is pre_pack_signals[1].content
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
            is pre_pack_signals[3].content
+    
+    trading_signal_bundle_builder.logger.error.assert_not_called()

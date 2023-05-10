@@ -184,19 +184,28 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
         order_description_by_seen_group_ids = {}
         for signal in self.signals:
             include_signal = True
-            # bundled orders must be sent at the same time as the original order, add them both to the same signal
-            if add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value]:
-                _, order_description = self._get_order_description_from_local_orders(add_to_order_id)
-                order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
-                include_signal = False
-            # chained orders must be sent at the same time as the original order, add them both to the same signal
-            elif add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.CHAINED_TO.value]:
-                _, order_description = self._get_order_description_from_local_orders(add_to_order_id)
-                order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
-                include_signal = False
+            try:
+                # bundled orders must be sent at the same time as the original order, add them both to the same signal
+                if add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value]:
+                    _, order_description = self._get_order_description_from_local_orders(add_to_order_id)
+                    order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value]\
+                        .append(signal.content)
+                    include_signal = False
+                # chained orders must be sent at the same time as the original order, add them both to the same signal
+                elif add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.CHAINED_TO.value]:
+                    _, order_description = self._get_order_description_from_local_orders(add_to_order_id)
+                    order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value]\
+                        .append(signal.content)
+                    include_signal = False
+            except trading_errors.OrderDescriptionNotFoundError:
+                # Failed to find the triggering order's associated signal that this order signal should be associated to
+                # in ADDITIONAL_ORDERS.
+                # This can happen when the triggering order has already been sent in a different signal
+                self.logger.debug(f"Skip signal packing for {signal}: triggering order not found in associated signals")
             # grouped orders must be created before the group is enabled, add them both to the same signal
-            # groups might also need to be update together
-            elif add_to_group_ids := signal.content[trading_enums.TradingSignalOrdersAttrs.GROUP_ID.value]:
+            # groups. They might also need to be updated together
+            if (add_to_group_ids := signal.content[trading_enums.TradingSignalOrdersAttrs.GROUP_ID.value]) \
+               and include_signal:
                 if add_to_group_ids in order_description_by_seen_group_ids:
                     order_description_by_seen_group_ids[add_to_group_ids][
                         trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
