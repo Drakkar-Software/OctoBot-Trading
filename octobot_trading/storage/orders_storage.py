@@ -32,7 +32,6 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     LIVE_CHANNEL = channels_name.OctoBotTradingChannelsName.ORDERS_CHANNEL.value
     HISTORY_TABLE = commons_enums.DBTables.ORDERS.value
     HISTORICAL_OPEN_ORDERS_TABLE = commons_enums.DBTables.HISTORICAL_ORDERS_UPDATES.value
-    IS_HISTORICAL = False
     ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE = constants.ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE
 
     def __init__(self, exchange_manager, use_live_consumer_in_backtesting=None, is_historical=None):
