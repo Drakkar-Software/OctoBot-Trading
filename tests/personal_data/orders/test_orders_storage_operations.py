@@ -20,6 +20,7 @@ import decimal
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
+import octobot_trading.storage as storage
 
 from tests import event_loop
 from tests.exchanges import exchange_manager, simulated_exchange_manager
@@ -67,7 +68,9 @@ async def test_apply_order_storage_details_if_any(initialized_mocked_order_stora
     # ensure order update is done
     assert order.shared_signal_order_id != "new id 123"
     mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={
-        enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: "new id 123"
+        storage.OrdersStorage.ORIGIN_VALUE_KEY: {
+            enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value: "new id 123"
+        }
     })
     await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
     mocked_order_storage.get_startup_order_details.assert_awaited_once()

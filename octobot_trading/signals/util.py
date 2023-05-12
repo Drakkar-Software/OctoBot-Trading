@@ -28,6 +28,7 @@ def create_order_signal_content(
         updated_stop_price=trading_constants.ZERO,
         updated_current_price=trading_constants.ZERO,
 ) -> dict:
+    # only use order.shared_signal_order_id to identify orders in signals
     return {
         trading_enums.TradingSignalCommonsAttrs.ACTION.value: action.value,
         trading_enums.TradingSignalOrdersAttrs.STRATEGY.value: strategy,

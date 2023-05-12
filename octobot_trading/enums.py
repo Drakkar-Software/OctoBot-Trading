@@ -329,6 +329,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     TAG = "tag"
     SELF_MANAGED = "self-managed"
     ENTRIES = "entries"
+    SHARED_SIGNAL_ORDER_ID = "shared-signal-order-id"
 
 
 class ExchangeConstantsPositionColumns(enum.Enum):

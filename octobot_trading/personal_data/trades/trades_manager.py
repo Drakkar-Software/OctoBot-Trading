@@ -66,8 +66,8 @@ class TradesManager(util.Initializable):
             self._check_trades_size()
 
     def has_closing_trade_with_order_id(self, order_id) -> bool:
-        for trade in self.trades.values():
-            if trade.origin_order_id == order_id and trade.is_closing_order:
+        for trade in self.get_trades(origin_order_id=order_id):
+            if trade.is_closing_order:
                 return True
         return False
 
@@ -86,23 +86,23 @@ class TradesManager(util.Initializable):
         return total_fees
 
     def get_completed_trades_pnl(self, trades=None) -> list:
-        trades = trades or self.trades.values()
-        trades_by_order_id = {
-            trade.origin_order_id: trade
+        trades = trades or self.get_trades()
+        trades_by_shared_order_id = {
+            trade.shared_signal_order_id: trade
             for trade in trades
         }
         exits_by_entry_id = {}
         for trade in trades:
             if trade.status is not enums.OrderStatus.CANCELED and trade.associated_entry_ids:
                 for entry_id in trade.associated_entry_ids:
-                    if entry_id not in trades_by_order_id:
+                    if entry_id not in trades_by_shared_order_id:
                         continue
                     if entry_id not in exits_by_entry_id:
                         exits_by_entry_id[entry_id] = []
                     exits_by_entry_id[entry_id].append(trade)
         return [
             trade_pnl.TradePnl(
-                [trades_by_order_id[entry_id]],
+                [trades_by_shared_order_id[entry_id]],
                 exit_trade,
             )
             for entry_id, exit_trade in exits_by_entry_id.items()
@@ -110,6 +110,15 @@ class TradesManager(util.Initializable):
 
     def get_trade(self, trade_id):
         return self.trades[trade_id]
+
+    def get_trades(self, origin_order_id=None):
+        return [
+            trade
+            for trade in self.trades.values()
+            if (
+                not origin_order_id or trade.origin_order_id == origin_order_id
+            )
+        ]
 
     # private
     def _check_trades_size(self):

@@ -51,16 +51,16 @@ def test_get_completed_trades_pnl(trade_manager_and_trader):
     # no trades
     assert trade_manager.get_completed_trades_pnl() == []
     # with trades
-    for trade_id in (str(i) for i in range(1, 21)):
-        trade_manager.trades[trade_id] = create_trade(
+    for trade_shared_id in (str(i) for i in range(1, 21)):
+        trade_manager.trades[trade_shared_id] = create_trade(
             trader,
-            trade_id,
+            trade_shared_id,
             False,
-            trade_id,
+            trade_shared_id,
         )
     # associate first 5 together
-    for trade_id in range(1, 6):
-        trade_manager.get_trade(str(trade_id)).associated_entry_ids = [str(trade_id + 1)]
+    for trade_shared_id in range(1, 6):
+        trade_manager.get_trade(str(trade_shared_id)).associated_entry_ids = [str(trade_shared_id + 1)]
     assert len(trade_manager.get_completed_trades_pnl()) == 5
     trade_manager.get_trade("2").associated_entry_ids.append("10")
     assert len(trade_manager.get_completed_trades_pnl()) == 6

@@ -25,6 +25,7 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
+import octobot_trading.personal_data.orders.order as order_import
 import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 import octobot_trading.personal_data.trades.trades_manager as trades_manager
 import octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
@@ -171,7 +172,7 @@ class ExchangePersonalData(util.Initializable):
     async def handle_order_update_from_raw(self, order_id, raw_order,
                                            is_new_order: bool = False,
                                            should_notify: bool = True,
-                                           is_from_exchange=True) -> bool:
+                                           is_from_exchange=True) -> (bool, order_import.Order):
         # Orders can sometimes be out of sync between different exchange endpoints (ex: binance order API vs
         # open_orders API which is slower).
         # Always check if this order has not already been closed previously (most likely during the last
@@ -181,11 +182,10 @@ class ExchangePersonalData(util.Initializable):
                               f"(received raw order: {raw_order})")
         else:
             try:
-                changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order, is_from_exchange)
+                changed, order = await self.orders_manager.upsert_order_from_raw(order_id, raw_order, is_from_exchange)
                 if changed:
-                    updated_order = self.orders_manager.get_order(order_id)
-                    await self.on_order_refresh_success(updated_order, should_notify, is_new_order)
-                return changed
+                    await self.on_order_refresh_success(order, should_notify, is_new_order)
+                return changed, order
             except errors.PortfolioNegativeValueError as e:
                 if is_new_order:
                     self.logger.debug(f"Impossible to count new order in portfolio: a synch is necessary "
@@ -197,7 +197,7 @@ class ExchangePersonalData(util.Initializable):
                 self.logger.debug(f"Failed to update order : Order was not found ({ke})")
             except Exception as e:
                 self.logger.exception(e, True, f"Failed to update order : {e}")
-        return False
+        return False, None
 
     async def update_order_from_stored_data(self, order_id, pending_groups):
         order = self.orders_manager.get_order(order_id)

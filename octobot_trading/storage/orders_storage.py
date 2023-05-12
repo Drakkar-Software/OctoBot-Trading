@@ -184,7 +184,6 @@ def _format_order(order, exchange_manager):
                 OrdersStorage.sanitize_for_storage(order.exchange_creation_params),
             enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value:
                 OrdersStorage.sanitize_for_storage(order.trader_creation_kwargs),
-            enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: order.shared_signal_order_id,
             enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: order.has_been_bundled,
             enums.StoredOrdersAttr.ENTRIES.value: order.associated_entry_ids,
             enums.StoredOrdersAttr.GROUP.value: _get_group_dict(order),
