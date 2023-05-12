@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import sys
 import concurrent.futures as futures
 
 import octobot_commons.thread_util as thread_util
@@ -134,7 +135,8 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             try:
                 self.websocket_connectors_executors = futures.ThreadPoolExecutor(
                     max_workers=len(self.websocket_connectors),
-                    thread_name_prefix=f"{self.get_name()}-{self.exchange_name}-pool-executor"
+                    thread_name_prefix=f"{self.get_name()}-{self.exchange_name}-pool-executor",
+
                 )
 
                 self.websocket_connectors_tasks = [
@@ -201,7 +203,10 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             self.logger.error(f"Error when closing sockets : {e}")
         for websocket_task in self.websocket_connectors_tasks:
             websocket_task.cancel()
-        thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
+        if sys.version_info.minor >= 9:
+            self.websocket_connectors_executors.shutdown(True)
+        else:
+            thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
         self.websocket_connectors_executors = None
 
     def add_pairs(self, pairs, watching_only=False):
