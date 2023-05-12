@@ -48,8 +48,8 @@ class Order(util.Initializable):
         self.simulated = trader.simulate
 
         self.logger_name = None
-        self.order_id = trader.parse_order_id(None)
-        self.shared_signal_order_id = str(uuid.uuid4())
+        self.order_id = trader.parse_order_id(None)      # order id: given by the exchange local to the user account
+        self.shared_signal_order_id = str(uuid.uuid4())  # shared order id: kept through instances and trading signals
         self.status = enums.OrderStatus.OPEN
         self.symbol = None
         self.currency = None
@@ -643,12 +643,12 @@ class Order(util.Initializable):
         # rebind order attributes that are not stored on exchange
         order_dict = order_details.get(orders_storage.OrdersStorage.ORIGIN_VALUE_KEY, {})
         self.tag = order_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value, self.tag)
+        self.shared_signal_order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value,
+                                                     self.shared_signal_order_id)
         self.trader_creation_kwargs = order_details.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value,
                                                         self.trader_creation_kwargs)
         self.exchange_creation_params = order_details.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value,
                                                           self.exchange_creation_params)
-        self.set_shared_signal_order_id(order_details.get(enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value,
-                                                          self.shared_signal_order_id))
         self.has_been_bundled = order_details.get(enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value,
                                                   self.has_been_bundled)
         self.associated_entry_ids = order_details.get(enums.StoredOrdersAttr.ENTRIES.value,
@@ -739,6 +739,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
+            enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value: self.shared_signal_order_id,
             enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
         }
 

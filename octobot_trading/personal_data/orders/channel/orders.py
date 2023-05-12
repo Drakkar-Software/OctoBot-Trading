@@ -83,7 +83,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def _handle_open_order_update(self, symbol, order, order_id, is_from_bot, is_new_order, pending_groups):
+    async def _handle_open_order_update(self, symbol, order_dict, order_id, is_from_bot, is_new_order, pending_groups):
         """
         Create or update an open Order from exchange data
         :param symbol: the order symbol
@@ -93,8 +93,10 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         :param is_new_order: True if this open order has been created
         :param pending_groups: dict of groups to be created
         """
-        if (await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order_id, order, is_new_order=is_new_order, should_notify=False)):
+        changed, order = await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
+            order_id, order_dict, is_new_order=is_new_order, should_notify=False
+        )
+        if changed:
             if is_new_order and \
                     not self.channel.exchange_manager.exchange_personal_data.orders_manager.\
                     are_exchange_orders_initialized:
@@ -109,7 +111,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             await self.send(
                 self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                 symbol,
-                order,
+                order.to_dict(),
                 is_from_bot=is_from_bot,
                 update_type=enums.OrderUpdateType.NEW if is_new_order else enums.OrderUpdateType.STATE_CHANGE,
                 is_closed=False

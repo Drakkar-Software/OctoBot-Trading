@@ -25,7 +25,7 @@ def get_trade_history(
 ) -> list:
     return [
         trade.to_dict() if as_dict else trade
-        for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
+        for trade in exchange_manager.exchange_personal_data.trades_manager.get_trades()
         if _trade_filter(trade, quote, symbol, since, include_cancelled)
     ]
 

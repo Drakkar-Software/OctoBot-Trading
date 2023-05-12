@@ -379,13 +379,12 @@ async def test_update_from_order_storage(trader_simulator):
 
     # partial update
     order.update_from_storage_order_details({
-        enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop": 1},
-        enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: "11"
+        enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop": 1}
     })
     assert order.tag is origin_tag
     assert order.trader_creation_kwargs == {"plop": 1} != origin_trader_creation_kwargs
     assert order.exchange_creation_params is origin_exchange_creation_params
-    assert order.shared_signal_order_id == "11" != origin_shared_signal_order_id
+    assert order.shared_signal_order_id is origin_shared_signal_order_id
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
     assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
@@ -394,10 +393,10 @@ async def test_update_from_order_storage(trader_simulator):
     order.update_from_storage_order_details({
         orders_storage.OrdersStorage.ORIGIN_VALUE_KEY: {
             enums.ExchangeConstantsOrderColumns.TAG.value: "t1",
+            enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value: "11a",
         },
         enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop2": 1},
         enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value: {"ex": 2, "gg": "yesyes"},
-        enums.StoredOrdersAttr.SHARED_SIGNAL_ORDER_ID.value: "11a",
         enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: True,
         enums.StoredOrdersAttr.ENTRIES.value: ["ABC", "2"],
         enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: True,

@@ -120,7 +120,7 @@ class OrdersManager(util.Initializable):
         self.order_groups[group_name] = group
         return group
 
-    async def upsert_order_from_raw(self, order_id, raw_order, is_from_exchange) -> bool:
+    async def upsert_order_from_raw(self, order_id, raw_order, is_from_exchange) -> (bool, order_class.Order):
         if not self.has_order(order_id):
             self.logger.info(f"Including new order fetched from exchange: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
@@ -131,8 +131,9 @@ class OrdersManager(util.Initializable):
             self._add_order(order_id, new_order)
             self._check_orders_size()
             await new_order.initialize(is_from_exchange_data=True)
-            return True
-        return await _update_order_from_raw(self.orders[order_id], raw_order)
+            return True, new_order
+        order = self.orders[order_id]
+        return await _update_order_from_raw(order, raw_order), order
 
     def register_pending_creation_order(self, pending_order):
         if self.trader.simulate:
