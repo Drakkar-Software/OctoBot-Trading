@@ -60,27 +60,42 @@ def should_emit_trading_signal(exchange_manager):
         return False
 
 
+async def _get_order_portfolio_percent(order, exchange_manager):
+    percent = await orders.get_order_size_portfolio_percent(
+        exchange_manager,
+        order.origin_quantity,
+        order.side,
+        order.symbol
+    )
+    return f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
+
+
 async def create_order(exchange_manager, should_emit_signal, order,
                        loaded: bool = False, params: dict = None,
                        wait_for_creation=True,
                        creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
     order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
+    chained_orders_pf_percent = []
     if should_emit_signal:
-        percent = await orders.get_order_size_portfolio_percent(
-            exchange_manager,
-            order.origin_quantity,
-            order.side,
-            order.symbol
-        )
-        order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
+        order_pf_percent = await _get_order_portfolio_percent(order, exchange_manager)
+        chained_orders_pf_percent = [
+            (chained_order, await _get_order_portfolio_percent(chained_order, exchange_manager))
+            for chained_order in order.chained_orders
+        ]
     created_order = await exchange_manager.trader.create_order(
         order, loaded=loaded, params=params,
         wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
     )
     if created_order is not None and should_emit_signal:
-        signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
+        builder = signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol)
+        builder.add_created_order(
             created_order, exchange_manager, target_amount=order_pf_percent
         )
+        for chained_order, chained_order_pf_percent in chained_orders_pf_percent:
+            builder.add_created_order(
+                chained_order, exchange_manager, target_amount=chained_order_pf_percent
+            )
+
     return created_order
 
 
