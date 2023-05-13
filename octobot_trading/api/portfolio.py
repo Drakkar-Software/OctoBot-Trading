@@ -40,14 +40,12 @@ def get_global_portfolio_currencies_values(exchange_managers: list) -> dict:
     currencies_values = {}
     for exchange in exchange_managers:
         this_currency_values = (
-            exchange.exchange_personal_data.portfolio_manager \
-                .portfolio_value_holder.get_current_crypto_currencies_values()
+            exchange.exchange_personal_data.portfolio_manager
+            .portfolio_value_holder.get_current_crypto_currencies_values()
         )
         for currency, value in this_currency_values.items():
             if currency not in currencies_values:
                 currencies_values[currency] = value
-            else:
-                currencies_values[currency] += value
     return currencies_values
 
 
