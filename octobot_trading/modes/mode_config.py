@@ -56,18 +56,23 @@ def get_activated_trading_mode(tentacles_setup_config):
 
 
 def should_emit_trading_signals_user_input(trading_mode, inputs: dict):
-    if trading_mode.UI.user_input(
+    trading_mode.UI.user_input(
         common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
         title="Emit trading signals on OctoBot cloud for people to follow.",
         order=commons_configuration.UserInput.MAX_ORDER - 2
-    ):
-        trading_mode.UI.user_input(
-            common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, trading_mode.get_name(),
-            inputs,
-            title="Name of the strategy to send signals on.",
-            order=commons_configuration.UserInput.MAX_ORDER - 1,
-            other_schema_values={"minLength": 0},
-        )
+    )
+    trading_mode.UI.user_input(
+        common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, trading_mode.get_name(),
+        inputs,
+        title="Name of the strategy to send signals on.",
+        order=commons_configuration.UserInput.MAX_ORDER - 1,
+        other_schema_values={"minLength": 0},
+        editor_options={
+            common_enums.UserInputOtherSchemaValuesTypes.DEPENDENCIES.value: {
+                common_constants.CONFIG_EMIT_TRADING_SIGNALS: True
+            }
+        }
+    )
 
 
 def is_trading_signal_emitter(trading_mode) -> bool:
@@ -97,14 +102,18 @@ def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, inclu
             constants.CONFIG_BUY_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
             title=_get_order_amount_title("buy"),
             other_schema_values={"minLength": 0},
-            editor_options={"dependencies": buy_dependencies} if buy_dependencies else None,
+            editor_options={
+                common_enums.UserInputOtherSchemaValuesTypes.DEPENDENCIES.value: buy_dependencies
+            } if buy_dependencies else None,
         )
     if include_sell:
         trading_mode.UI.user_input(
             constants.CONFIG_SELL_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
             title=_get_order_amount_title("sell"),
             other_schema_values={"minLength": 0},
-            editor_options={"dependencies": sell_dependencies} if sell_dependencies else None,
+            editor_options={
+                common_enums.UserInputOtherSchemaValuesTypes.DEPENDENCIES.value: sell_dependencies
+            } if sell_dependencies else None,
         )
 
 
