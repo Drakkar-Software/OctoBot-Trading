@@ -67,7 +67,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 ]
 
     def _get_traded_pairs(self):
-        return self.channel.exchange_manager.exchange_config.watched_pairs
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
     def _get_time_frames(self):
         return self.channel.exchange_manager.exchange_config.available_time_frames
