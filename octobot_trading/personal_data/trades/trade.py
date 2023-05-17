@@ -121,6 +121,7 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
             enums.ExchangeConstantsOrderColumns.ENTRIES.value: self.associated_entry_ids,
+            enums.TradeExtraConstants.CREATION_TIME.value: self.creation_time,
         }
 
     @classmethod
@@ -159,4 +160,5 @@ class Trade:
         trade.reduce_only = trade_dict.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value)
         trade.tag = trade_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value)
         trade.associated_entry_ids = trade_dict.get(enums.ExchangeConstantsOrderColumns.ENTRIES.value)
+        trade.creation_time = trade_dict.get(enums.TradeExtraConstants.CREATION_TIME.value)
         return trade

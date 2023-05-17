@@ -332,6 +332,10 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     ENTRIES = "entries"
 
 
+class TradeExtraConstants(enum.Enum):
+    CREATION_TIME = "creation_time"
+
+
 class ExchangeConstantsPositionColumns(enum.Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
