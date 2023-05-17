@@ -29,21 +29,22 @@ def trade_manager_and_trader(simulated_trader):
     return personal_data.TradesManager(trader_instance), trader_instance
 
 
-def test_has_closing_trade_with_order_id(trade_manager_and_trader):
+def test_has_closing_trade_with_exchange_order_id(trade_manager_and_trader):
     trade_manager, trader = trade_manager_and_trader
-    assert trade_manager.has_closing_trade_with_order_id(None) is False
-    assert trade_manager.has_closing_trade_with_order_id("None") is False
+    assert trade_manager.has_closing_trade_with_exchange_order_id(None) is False
+    assert trade_manager.has_closing_trade_with_exchange_order_id("None") is False
     trade = create_trade(trader, "id", False, "None")
+    trade.exchange_order_id = "plop"
     trade_manager.trades["id"] = trade
     # trade is not closing order not has the right origin_order_id
-    assert trade_manager.has_closing_trade_with_order_id("id") is False
-    # trade does not has the right origin_order_id
+    assert trade_manager.has_closing_trade_with_exchange_order_id("id") is False
+    # trade does not have the right exchange_order_id
     trade.is_closing_order = True
-    assert trade_manager.has_closing_trade_with_order_id("id2") is False
-    assert trade_manager.has_closing_trade_with_order_id("id") is False
-    trade.origin_order_id = "id"
+    assert trade_manager.has_closing_trade_with_exchange_order_id("id2") is False
+    assert trade_manager.has_closing_trade_with_exchange_order_id("id") is False
+    trade.exchange_order_id = "id"
     # trade is closing this order
-    assert trade_manager.has_closing_trade_with_order_id("id") is True
+    assert trade_manager.has_closing_trade_with_exchange_order_id("id") is True
 
 
 def test_get_completed_trades_pnl(trade_manager_and_trader):
@@ -51,16 +52,16 @@ def test_get_completed_trades_pnl(trade_manager_and_trader):
     # no trades
     assert trade_manager.get_completed_trades_pnl() == []
     # with trades
-    for trade_shared_id in (str(i) for i in range(1, 21)):
-        trade_manager.trades[trade_shared_id] = create_trade(
+    for trade_order_id in (str(i) for i in range(1, 21)):
+        trade_manager.trades[trade_order_id] = create_trade(
             trader,
-            trade_shared_id,
+            trade_order_id,
             False,
-            trade_shared_id,
+            trade_order_id,
         )
     # associate first 5 together
-    for trade_shared_id in range(1, 6):
-        trade_manager.get_trade(str(trade_shared_id)).associated_entry_ids = [str(trade_shared_id + 1)]
+    for trade_order_id in range(1, 6):
+        trade_manager.get_trade(str(trade_order_id)).associated_entry_ids = [str(trade_order_id + 1)]
     assert len(trade_manager.get_completed_trades_pnl()) == 5
     trade_manager.get_trade("2").associated_entry_ids.append("10")
     assert len(trade_manager.get_completed_trades_pnl()) == 6

@@ -209,9 +209,7 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
     details = None
     try:
         details = _format_order(
-            exchange_manager.exchange_personal_data.orders_manager.get_order(
-                order_dict[enums.ExchangeConstantsOrderColumns.ID.value]
-            ),
+            exchange_manager.exchange_personal_data.orders_manager.get_order(order_id),
             exchange_manager
         )
     except KeyError:

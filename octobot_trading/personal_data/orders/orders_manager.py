@@ -78,7 +78,12 @@ class OrdersManager(util.Initializable):
             until=until, limit=limit, tag=tag
         )
 
-    def get_order(self, order_id):
+    def get_order(self, order_id, exchange_order_id=None):
+        if order_id is None:
+            for order in self.orders.values():
+                if order.exchange_order_id == exchange_order_id:
+                    return order
+            raise KeyError(exchange_order_id)
         return self.orders[order_id]
 
     def get_order_from_group(self, group_name):
@@ -120,19 +125,19 @@ class OrdersManager(util.Initializable):
         self.order_groups[group_name] = group
         return group
 
-    async def upsert_order_from_raw(self, order_id, raw_order, is_from_exchange) -> (bool, order_class.Order):
-        if not self.has_order(order_id):
+    async def upsert_order_from_raw(self, exchange_order_id, raw_order, is_from_exchange) -> (bool, order_class.Order):
+        if not self.has_order(None, exchange_order_id=exchange_order_id):
             self.logger.info(f"Including new order fetched from exchange: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
             # replace new_order by previously created pending_order if any relevant pending_order
             new_order = await self.get_and_update_pending_order(new_order) or new_order
             if is_from_exchange:
                 new_order.is_synchronized_with_exchange = True
-            self._add_order(order_id, new_order)
+            self._add_order(new_order.order_id, new_order)
             self._check_orders_size()
             await new_order.initialize(is_from_exchange_data=True)
             return True, new_order
-        order = self.orders[order_id]
+        order = self.get_order(None, exchange_order_id=exchange_order_id)
         return await _update_order_from_raw(order, raw_order), order
 
     def register_pending_creation_order(self, pending_order):
@@ -158,19 +163,19 @@ class OrdersManager(util.Initializable):
                 return pending_order
         return None
 
-    def get_all_active_and_pending_orders_shared_signal_order_id(self) -> list:
+    def get_all_active_and_pending_orders_id(self) -> list:
         return [
-            order.shared_signal_order_id
+            order.order_id
             for order in self._select_orders()
         ] + [
-            order.shared_signal_order_id
+            order.order_id
             for order in self.pending_creation_orders
         ]
 
-    async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[order_class.Order]:
-        if self.has_order(order_id):
-            order = self.orders[order_id]
-            await _update_order_from_raw(self.orders[order_id], raw_order)
+    async def upsert_order_close_from_raw(self, exchange_order_id, raw_order) -> typing.Optional[order_class.Order]:
+        if self.has_order(None, exchange_order_id=exchange_order_id):
+            order = self.get_order(None, exchange_order_id=exchange_order_id)
+            await _update_order_from_raw(order, raw_order)
             return order
         return None
 
@@ -192,7 +197,13 @@ class OrdersManager(util.Initializable):
             self.logger.warning(f"Adding order with None order_id to order manager: {order}")
         self.orders[order_id] = order
 
-    def has_order(self, order_id) -> bool:
+    def has_order(self, order_id, exchange_order_id=None) -> bool:
+        if order_id is None:
+            try:
+                self.get_order(None, exchange_order_id=exchange_order_id)
+                return True
+            except KeyError:
+                return False
         return order_id in set(self.orders.keys())
 
     def remove_order_instance(self, order):

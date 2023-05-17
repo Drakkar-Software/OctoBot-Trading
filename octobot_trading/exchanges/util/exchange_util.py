@@ -249,7 +249,7 @@ def get_supported_exchange_types(exchange_name):
 def update_raw_order_from_raw_trade(order_to_update, raw_trade):
     order_to_update[enums.ExchangeConstantsOrderColumns.INFO.value] = raw_trade[
         enums.ExchangeConstantsOrderColumns.INFO.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.ID.value] = raw_trade[
+    order_to_update[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = raw_trade[
         enums.ExchangeConstantsOrderColumns.ORDER.value]
     order_to_update[enums.ExchangeConstantsOrderColumns.SYMBOL.value] = raw_trade[
         enums.ExchangeConstantsOrderColumns.SYMBOL.value]
@@ -299,12 +299,12 @@ def is_missing_trading_fees(raw_order):
         return True
 
 
-def apply_trades_fees(raw_order, raw_trades_by_order_id):
-    order_id = raw_order[enums.ExchangeConstantsOrderColumns.ID.value]
-    if order_id in raw_trades_by_order_id and raw_trades_by_order_id[order_id]:
-        order_fee = raw_trades_by_order_id[order_id][0][enums.ExchangeConstantsOrderColumns.FEE.value]
+def apply_trades_fees(raw_order, raw_trades_by_exchange_order_id):
+    exchange_order_id = raw_order[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value]
+    if exchange_order_id in raw_trades_by_exchange_order_id and raw_trades_by_exchange_order_id[exchange_order_id]:
+        order_fee = raw_trades_by_exchange_order_id[exchange_order_id][0][enums.ExchangeConstantsOrderColumns.FEE.value]
         # add each order's trades fee
-        for trade in raw_trades_by_order_id[order_id][1:]:
+        for trade in raw_trades_by_exchange_order_id[exchange_order_id][1:]:
             order_fee[enums.FeePropertyColumns.COST.value] += \
                 trade[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
             order_fee[enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value] += \

@@ -171,6 +171,7 @@ async def test_update_from_raw(trader_simulator):
     # binance example market order
     raw_order = {
         'id': '362550114',
+        'exchange_id': '123',
         'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
         'timestamp': 1637579281.377,
         'datetime': '2021-11-22T11:08:01.377Z',
@@ -195,6 +196,7 @@ async def test_update_from_raw(trader_simulator):
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.SELL_MARKET
     assert order_inst.order_id == "362550114"
+    assert order_inst.exchange_order_id == "123"
     assert order_inst.side is enums.TradeOrderSide.SELL
     assert order_inst.status is enums.OrderStatus.CLOSED
     assert order_inst.symbol == "UNI/USDT"
@@ -221,6 +223,7 @@ async def test_update_from_raw(trader_simulator):
     # binance example limit order
     raw_order = {
         'id': '362550114',
+        'exchange_id': '123a',
         'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
         'timestamp': 1637579281.377,
         'datetime': '2021-11-22T11:08:01.377Z',
@@ -245,6 +248,7 @@ async def test_update_from_raw(trader_simulator):
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.BUY_LIMIT
     assert order_inst.order_id == "362550114"
+    assert order_inst.exchange_order_id == "123a"
     assert order_inst.side is enums.TradeOrderSide.BUY
     assert order_inst.status is enums.OrderStatus.CLOSED
     assert order_inst.symbol == "UNI/USDT"
@@ -320,17 +324,20 @@ async def test_update_from_order(trader_simulator):
 
     base_order_1 = personal_data.Order(trader_inst)
     base_order_1.order_id = "1"
+    base_order_1.exchange_order_id = "1a"
     base_order_1.status = enums.OrderStatus.OPEN
     base_order_1.filled_price = decimal.Decimal("2")
 
     base_order_2 = personal_data.Order(trader_inst)
     base_order_2.order_id = "2"
+    base_order_2.exchange_order_id = "2a"
     base_order_2.status = enums.OrderStatus.CLOSED
     base_order_2.filled_price = decimal.Decimal("3")
 
     # no state
     await base_order_1.update_from_order(base_order_2)
     assert base_order_1.order_id == "2"
+    assert base_order_1.exchange_order_id == "2a"
     assert base_order_1.status == enums.OrderStatus.CLOSED
     assert base_order_1.filled_price == decimal.Decimal("3")
 
@@ -340,10 +347,12 @@ async def test_update_from_order(trader_simulator):
     base_order_1.state = state_1
     base_order_2.state = state_2
     base_order_2.order_id = "3"
+    base_order_2.exchange_order_id = "3AAAAA"
     base_order_2.status = enums.OrderStatus.CANCELED
     base_order_2.filled_price = decimal.Decimal("4")
     await base_order_1.update_from_order(base_order_2)
     assert base_order_1.order_id == "3"
+    assert base_order_1.exchange_order_id == "3AAAAA"
     assert base_order_1.status == enums.OrderStatus.CANCELED
     assert base_order_1.filled_price == decimal.Decimal("4")
     assert base_order_1.state is state_2
@@ -358,11 +367,13 @@ async def test_update_from_order_storage(trader_simulator):
                  symbol="BTC/USDT",
                  current_price=decimal.Decimal("70"),
                  quantity=decimal.Decimal("10"),
-                 price=decimal.Decimal("70"))
+                 price=decimal.Decimal("70"),
+                 exchange_order_id="PLOP")
     origin_tag = order.tag
     origin_trader_creation_kwargs = order.trader_creation_kwargs
     origin_exchange_creation_params = order.exchange_creation_params
-    origin_shared_signal_order_id = order.shared_signal_order_id
+    origin_order_id = order.order_id
+    origin_exchange_order_id = order.exchange_order_id
     origin_has_been_bundled = order.has_been_bundled
     origin_associated_entry_ids = order.associated_entry_ids
     origin_update_with_triggering_order_fees = order.update_with_triggering_order_fees
@@ -372,7 +383,8 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.tag is origin_tag
     assert order.trader_creation_kwargs is origin_trader_creation_kwargs
     assert order.exchange_creation_params is origin_exchange_creation_params
-    assert order.shared_signal_order_id is origin_shared_signal_order_id
+    assert order.order_id is origin_order_id
+    assert order.exchange_order_id is origin_exchange_order_id
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
     assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
@@ -384,7 +396,8 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.tag is origin_tag
     assert order.trader_creation_kwargs == {"plop": 1} != origin_trader_creation_kwargs
     assert order.exchange_creation_params is origin_exchange_creation_params
-    assert order.shared_signal_order_id is origin_shared_signal_order_id
+    assert order.order_id is origin_order_id
+    assert order.exchange_order_id is origin_exchange_order_id
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
     assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
@@ -393,7 +406,8 @@ async def test_update_from_order_storage(trader_simulator):
     order.update_from_storage_order_details({
         orders_storage.OrdersStorage.ORIGIN_VALUE_KEY: {
             enums.ExchangeConstantsOrderColumns.TAG.value: "t1",
-            enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value: "11a",
+            enums.ExchangeConstantsOrderColumns.ID.value: "11a",
+            enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: "eee1",
         },
         enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop2": 1},
         enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value: {"ex": 2, "gg": "yesyes"},
@@ -404,7 +418,8 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.tag == "t1" != origin_tag
     assert order.trader_creation_kwargs == {"plop2": 1} != origin_trader_creation_kwargs
     assert order.exchange_creation_params == {"ex": 2, "gg": "yesyes"} != origin_exchange_creation_params
-    assert order.shared_signal_order_id == "11a" != origin_shared_signal_order_id
+    assert order.order_id == "11a" != origin_order_id
+    assert order.exchange_order_id == "eee1" != origin_exchange_order_id
     assert order.has_been_bundled is True is not origin_has_been_bundled
     assert order.associated_entry_ids == ["ABC", "2"] != origin_associated_entry_ids
     assert order.has_been_bundled is True is not origin_has_been_bundled

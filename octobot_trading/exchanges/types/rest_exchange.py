@@ -39,7 +39,7 @@ import octobot_trading.personal_data.orders as orders
 
 
 class RestExchange(abstract_exchange.AbstractExchange):
-    ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
+    ORDER_NON_EMPTY_FIELDS = [ecoc.EXCHANGE_ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     PRINT_DEBUG_LOGS = False
@@ -143,7 +143,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return await self._verify_order(created_order, order_type, symbol, price, side)
         return None
 
-    async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+    async def edit_order(self, exchange_order_id: str, order_type: enums.TraderOrderType, symbol: str,
                          quantity: decimal.Decimal, price: decimal.Decimal,
                          stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
                          current_price: decimal.Decimal = None,
@@ -158,17 +158,17 @@ class RestExchange(abstract_exchange.AbstractExchange):
             side = None if side is None else side.value
             params = {} if params is None else params
             params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
-            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
+            edited_order = await self._edit_order(exchange_order_id, order_type, symbol, quantity=float_quantity,
                                                   price=float_price, stop_price=float_stop_price, side=side,
                                                   current_price=float_current_price, params=params)
             order = await self._verify_order(edited_order, order_type, symbol, price, side)
             return order
         return None
 
-    async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+    async def _edit_order(self, exchange_order_id: str, order_type: enums.TraderOrderType, symbol: str,
                           quantity: float, price: float, stop_price: float = None, side: str = None,
                           current_price: float = None, params: dict = None):
-        return await self.connector.edit_order(order_id, order_type, symbol,
+        return await self.connector.edit_order(exchange_order_id, order_type, symbol,
                                                quantity, price, stop_price, side,
                                                current_price, params)
 
@@ -196,14 +196,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def _verify_order(self, created_order, order_type, symbol, price, side, get_order_params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
-            if ecoc.ID.value in created_order:
-                order_id = created_order[ecoc.ID.value]
-                if order_id is None:
-                    self.logger.error(f"No order id on created order: {created_order}")
+            if ecoc.EXCHANGE_ID.value in created_order:
+                order_exchange_id = created_order[ecoc.EXCHANGE_ID.value]
+                if order_exchange_id is None:
+                    self.logger.error(f"No order exchange id on created order: {created_order}")
                     return None
                 params = get_order_params or {}
                 fetched_order = await self.get_order(
-                    created_order[ecoc.ID.value], symbol=symbol, **params
+                    created_order[ecoc.EXCHANGE_ID.value], symbol=symbol, **params
                 )
                 if fetched_order is None:
                     created_order[ecoc.STATUS.value] = enums.OrderStatus.PENDING_CREATION.value
@@ -446,27 +446,27 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
-    async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+    async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         return await self._ensure_order_completeness(
-            await self.connector.get_order(order_id, symbol=symbol, **kwargs),
+            await self.connector.get_order(exchange_order_id, symbol=symbol, **kwargs),
             symbol, **kwargs
         )
 
-    async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+    async def get_order_from_open_and_closed_orders(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         for order in await self.get_open_orders(symbol, **kwargs):
-            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
+            if order[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] == exchange_order_id:
                 return order
         for order in await self.get_closed_orders(symbol, **kwargs):
-            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
+            if order[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] == exchange_order_id:
                 return order
         return None  # OrderNotFound
 
-    async def get_order_from_trades(self, symbol, order_id, order_to_update=None):
+    async def get_order_from_trades(self, symbol, exchange_order_id, order_to_update=None):
         order_to_update = order_to_update or {}
         trades = await self.get_my_recent_trades(symbol)
         # usually the right trade is within the last ones
         for trade in trades[::-1]:
-            if trade[ecoc.ORDER.value] == order_id:
+            if trade[ecoc.ORDER.value] == exchange_order_id:
                 return exchanges_util.update_raw_order_from_raw_trade(order_to_update, trade)
         return None  #OrderNotFound
 
@@ -505,47 +505,49 @@ class RestExchange(abstract_exchange.AbstractExchange):
         ]
 
     async def _ensure_orders_completeness(
-        self, raw_orders, symbol, since=None, limit=None, trades_by_order_id=None, **kwargs
+        self, raw_orders, symbol, since=None, limit=None, trades_by_exchange_order_id=None, **kwargs
     ):
         if not self.REQUIRE_ORDER_FEES_FROM_TRADES \
                 or not any(exchanges_util.is_missing_trading_fees(order) for order in raw_orders):
             return raw_orders
-        trades_by_order_id = trades_by_order_id or await self._get_trades_by_order_id(
+        trades_by_exchange_order_id = trades_by_exchange_order_id or await self._get_trades_by_exchange_order_id(
             symbol=symbol, since=since, limit=limit, **kwargs
         )
         return [
-            await self._ensure_order_completeness(order, symbol, trades_by_order_id=trades_by_order_id, **kwargs)
+            await self._ensure_order_completeness(
+                order, symbol, trades_by_exchange_order_id=trades_by_exchange_order_id, **kwargs
+            )
             for order in raw_orders
         ]
 
     async def _ensure_order_completeness(
-        self, raw_order, symbol, since=None, limit=None, trades_by_order_id=None, **kwargs
+        self, raw_order, symbol, since=None, limit=None, trades_by_exchange_order_id=None, **kwargs
     ):
         if not self.REQUIRE_ORDER_FEES_FROM_TRADES or not exchanges_util.is_missing_trading_fees(raw_order):
             return raw_order
-        trades_by_order_id = trades_by_order_id or await self._get_trades_by_order_id(
+        trades_by_exchange_order_id = trades_by_exchange_order_id or await self._get_trades_by_exchange_order_id(
             symbol=symbol, since=since, limit=limit, **kwargs
         )
-        exchanges_util.apply_trades_fees(raw_order, trades_by_order_id)
+        exchanges_util.apply_trades_fees(raw_order, trades_by_exchange_order_id)
         return raw_order
 
-    async def _get_trades_by_order_id(self, symbol=None, since=None, limit=None, **kwargs):
-        trades_by_order_id = {}
+    async def _get_trades_by_exchange_order_id(self, symbol=None, since=None, limit=None, **kwargs):
+        trades_by_exchange_order_id = {}
         for trade in await self.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs):
-            order_id = trade[enums.ExchangeConstantsOrderColumns.ORDER.value]
-            if order_id in trades_by_order_id:
-                trades_by_order_id[order_id].append(trade)
+            exchange_order_id = trade[enums.ExchangeConstantsOrderColumns.ORDER.value]
+            if exchange_order_id in trades_by_exchange_order_id:
+                trades_by_exchange_order_id[exchange_order_id].append(trade)
             else:
-                trades_by_order_id[order_id] = [trade]
-        return trades_by_order_id
+                trades_by_exchange_order_id[exchange_order_id] = [trade]
+        return trades_by_exchange_order_id
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
 
     async def cancel_order(
-            self, order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
+            self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
-        return await self.connector.cancel_order(order_id, symbol, order_type, **kwargs)
+        return await self.connector.cancel_order(exchange_order_id, symbol, order_type, **kwargs)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)
@@ -836,8 +838,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def parse_order_book_ticker(self, order_book_ticker):
         return self.connector.parse_order_book_ticker(order_book_ticker)
 
-    def parse_order_id(self, order):
-        return self.connector.parse_order_id(order)
+    def parse_exhange_order_id(self, order):
+        return self.connector.parse_exhange_order_id(order)
 
     def parse_order_symbol(self, order):
         return self.connector.parse_order_symbol(order)

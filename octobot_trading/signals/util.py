@@ -28,7 +28,7 @@ def create_order_signal_content(
         updated_stop_price=trading_constants.ZERO,
         updated_current_price=trading_constants.ZERO,
 ) -> dict:
-    # only use order.shared_signal_order_id to identify orders in signals
+    # only use order.order_id to identify orders in signals (exchange_order_id is local and never shared)
     return {
         trading_enums.TradingSignalCommonsAttrs.ACTION.value: action.value,
         trading_enums.TradingSignalOrdersAttrs.STRATEGY.value: strategy,
@@ -61,11 +61,11 @@ def create_order_signal_content(
             None if order.order_group is None else order.order_group.__class__.__name__,
         trading_enums.TradingSignalOrdersAttrs.TAG.value: order.tag,
         trading_enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: order.associated_entry_ids,
-        trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value: order.shared_signal_order_id,
+        trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value: order.order_id,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
-            None if order.triggered_by is None else order.triggered_by.shared_signal_order_id
+            None if order.triggered_by is None else order.triggered_by.order_id
         if order.has_been_bundled else None,
         trading_enums.TradingSignalOrdersAttrs.CHAINED_TO.value:
-            None if order.triggered_by is None else order.triggered_by.shared_signal_order_id,
+            None if order.triggered_by is None else order.triggered_by.order_id,
         trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
     }

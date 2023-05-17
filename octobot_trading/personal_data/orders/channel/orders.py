@@ -40,28 +40,28 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                     self.channel.exchange_manager.exchange.parse_order_symbol(order)
                 )
                 symbols.add(symbol)
-                order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
+                exchange_order_id: str = self.channel.exchange_manager.exchange.parse_exhange_order_id(order)
 
                 # if this order was not managed by order_manager before
                 is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
-                    has_order(order_id)
+                    has_order(None, exchange_order_id=exchange_order_id)
                 has_new_order |= is_new_order
 
                 # update this order
                 if are_closed:
-                    await self._handle_close_order_update(order_id, order)
+                    await self._handle_close_order_update(exchange_order_id, order)
                 else:
                     try:
                         # will add a group to pending_groups if a group is restored from orders storage
                         await self._handle_open_order_update(
-                            symbol, order, order_id, is_from_bot, is_new_order, pending_groups
+                            symbol, order, exchange_order_id, is_from_bot, is_new_order, pending_groups
                         )
                     except errors.PortfolioNegativeValueError:
                         # Special case for new orders: their order init does not finish properly when this happens
                         if is_new_order and self.channel.exchange_manager.exchange_personal_data.orders_manager. \
-                           has_order(order_id):
+                           has_order(None, exchange_order_id=exchange_order_id):
                             new_order = self.channel.exchange_manager.exchange_personal_data.orders_manager.get_order(
-                                order_id
+                                None, exchange_order_id=exchange_order_id
                             )
                             # Order init might have failed due to a portfolio update on the exchange side
                             # (added funds, etc).
@@ -83,18 +83,20 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def _handle_open_order_update(self, symbol, order_dict, order_id, is_from_bot, is_new_order, pending_groups):
+    async def _handle_open_order_update(
+        self, symbol, order_dict, exchange_order_id, is_from_bot, is_new_order, pending_groups
+    ):
         """
         Create or update an open Order from exchange data
         :param symbol: the order symbol
-        :param order: the order dict
-        :param order_id: the order id
+        :param order_dict: the order dict
+        :param exchange_order_id: the order id on exchange
         :param is_from_bot: If the order was created by OctoBot
         :param is_new_order: True if this open order has been created
         :param pending_groups: dict of groups to be created
         """
         changed, order = await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-            order_id, order_dict, is_new_order=is_new_order, should_notify=False
+            exchange_order_id, order_dict, is_new_order=is_new_order, should_notify=False
         )
         if changed:
             if is_new_order and \
@@ -103,7 +105,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 try:
                     # when fetching initial orders, complete them with storage data when possible
                     await self.channel.exchange_manager.exchange_personal_data.update_order_from_stored_data(
-                        order_id,
+                        order.exchange_order_id,
                         pending_groups,
                     )
                 except Exception as err:
@@ -133,13 +135,15 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 is_closed=False
             )
 
-    async def _handle_close_order_update(self, order_id, order):
+    async def _handle_close_order_update(self, exchange_order_id, raw_order):
         """
         Create or update a close Order from exchange data
-        :param order: the order dict
-        :param order_id: the order id
+        :param exchange_order_id: the order id
+        :param raw_order: the order dict
         """
-        await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(order_id, order)
+        await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(
+            exchange_order_id, raw_order
+        )
 
     async def handle_post_open_orders_update(
             self, symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
@@ -210,7 +214,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         """
         missing_order_ids = list(
             set(
-                order.order_id for order in
+                order.exchange_order_id for order in
                 self.channel.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
                     symbol
                 ) + self.channel.exchange_manager.exchange_personal_data.orders_manager.get_pending_cancel_orders(
@@ -218,8 +222,9 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 )
                 if not (order.is_cleared() or order.is_self_managed())) -
             set(
-                self.channel.exchange_manager.exchange.parse_order_id(order)
-                for order in orders)
+                self.channel.exchange_manager.exchange.parse_exhange_order_id(order)
+                for order in orders
+            )
         )
         if missing_order_ids:
             self.logger.debug(f"{len(missing_order_ids)} open orders are missing on exchange, "

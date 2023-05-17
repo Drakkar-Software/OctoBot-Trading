@@ -335,7 +335,7 @@ async def create_as_chained_order(order):
 
 
 def is_associated_pending_order(pending_order, created_order):
-    return created_order.order_id == pending_order.order_id or (
+    return created_order.exchange_order_id == pending_order.exchange_order_id or (
         created_order.symbol == pending_order.symbol and
         created_order.origin_quantity == pending_order.origin_quantity and
         created_order.origin_price == pending_order.origin_price and
@@ -353,11 +353,13 @@ async def apply_pending_order_from_created_order(pending_order, created_order, t
 
 async def _apply_pending_order_on_existing_orders(pending_order):
     for created_order in pending_order.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
-            symbol=pending_order.symbol):
+        symbol=pending_order.symbol
+    ):
         if is_associated_pending_order(pending_order, created_order) and created_order.order_group is None:
             await apply_pending_order_from_created_order(pending_order, created_order, False)
-            pending_order.exchange_manager.exchange_personal_data.orders_manager.replace_order(created_order.order_id,
-                                                                                               pending_order)
+            pending_order.exchange_manager.exchange_personal_data.orders_manager.replace_order(
+                created_order.order_id, pending_order
+            )
             created_order.clear()
             return True
     return False

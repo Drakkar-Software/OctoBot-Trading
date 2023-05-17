@@ -124,7 +124,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
         updated_current_price=trading_constants.ZERO,
     ):
         try:
-            index, order_description = self._get_order_description_from_local_orders(order.shared_signal_order_id)
+            index, order_description = self._get_order_description_from_local_orders(order.order_id)
             if action is trading_enums.TradingSignalOrdersActions.CREATE:
                 # replace order
                 self.signals[index] = self.create_signal(
@@ -216,11 +216,10 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 filtered_signals.append(signal)
         self.signals = filtered_signals
 
-    def _get_order_description_from_local_orders(self, shared_signal_order_id):
+    def _get_order_description_from_local_orders(self, order_id):
         for index, signal in enumerate(self.signals):
-            if signal.content[trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-                    shared_signal_order_id:
+            if signal.content[trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value] == order_id:
                 return index, signal.content
         raise trading_errors.OrderDescriptionNotFoundError(
-            f"order not found (shared_signal_order_id: {shared_signal_order_id})"
+            f"order not found (order_id: {order_id})"
         )

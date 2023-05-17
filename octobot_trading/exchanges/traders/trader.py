@@ -165,7 +165,7 @@ class Trader(util.Initializable):
         if not order.can_be_edited():
             raise errors.OrderEditError(f"Order can't be edited, order: {order}")
         changed = False
-        previous_order_id = order.order_id
+        previous_exchange_order_id = order.exchange_order_id
         try:
             async with order.lock:
                 # now that we got the lock, ensure we can edit the order
@@ -183,7 +183,7 @@ class Trader(util.Initializable):
                         order_params.update(params or {})
                         # fill in every param as some exchange rely on re-creating the order altogether
                         edited_order = await self.exchange_manager.exchange.edit_order(
-                            order.order_id,
+                            order.exchange_order_id,
                             order.order_type,
                             order.symbol,
                             quantity=order.origin_quantity if edited_quantity is None else edited_quantity,
@@ -222,9 +222,9 @@ class Trader(util.Initializable):
                 self.logger.info(f"Edited order: {order}")
             return changed
         finally:
-            if previous_order_id != order.order_id:
+            if previous_exchange_order_id != order.exchange_order_id:
                 # order id changed: update orders_manager to keep consistency
-                self.exchange_manager.exchange_personal_data.orders_manager.replace_order(previous_order_id, order)
+                self.exchange_manager.exchange_personal_data.orders_manager.replace_order(order.order_id, order)
 
     async def _create_new_order(self, new_order, params: dict,
                                 wait_for_creation=True,
@@ -263,16 +263,15 @@ class Trader(util.Initializable):
             # rebind local elements to new order instance
             if new_order.order_group:
                 updated_order.add_to_order_group(new_order.order_group)
+            updated_order.order_id = new_order.order_id
             updated_order.tag = new_order.tag
             updated_order.chained_orders = new_order.chained_orders
             for chained_order in new_order.chained_orders:
                 chained_order.triggered_by = updated_order
-                chained_order.replace_associated_entry_id(new_order.order_id, updated_order.order_id)
             updated_order.triggered_by = new_order.triggered_by
             updated_order.has_been_bundled = new_order.has_been_bundled
             updated_order.exchange_creation_params = new_order.exchange_creation_params
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
-            updated_order.set_shared_signal_order_id(new_order.shared_signal_order_id)
             updated_order.associated_entry_ids = new_order.associated_entry_ids
             updated_order.update_with_triggering_order_fees = new_order.update_with_triggering_order_fees
 
@@ -362,7 +361,7 @@ class Trader(util.Initializable):
                 async with order.lock:
                     try:
                         order_status = await self.exchange_manager.exchange.cancel_order(
-                            order.order_id, order.symbol, order.order_type
+                            order.exchange_order_id, order.symbol, order.order_type
                         )
                     except errors.NotSupported:
                         raise
@@ -370,7 +369,7 @@ class Trader(util.Initializable):
                         # retry to cancel order
                         self.logger.debug(f"Failed to cancel order ({err} {err.__class__.__name__}), retrying")
                         order_status = await self.exchange_manager.exchange.cancel_order(
-                            order.order_id, order.symbol, order.order_type
+                            order.exchange_order_id, order.symbol, order.order_type
                         )
             except errors.OrderCancelError as err:
                 if await self._handle_order_cancel_error(order, err, wait_for_cancelling, cancelling_timeout):
@@ -444,19 +443,19 @@ class Trader(util.Initializable):
         await order.state.wait_for_terminate(cancelling_timeout)
         self.logger.debug(f"Completed order cancelling, order: {order}")
 
-    async def cancel_order_with_id(self, order_id, emit_trading_signals=False,
+    async def cancel_order_with_id(self, exchange_order_id, emit_trading_signals=False,
                                    wait_for_cancelling=True,
                                    cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
         """
         Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
-        :param order_id: Id of the order to cancel
+        :param exchange_order_id: Exchange id of the order to cancel
         :param emit_trading_signals: when true, trading signals will be emitted
         :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
         :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: True if cancel is successful, False if order is not found or cancellation failed
         """
         try:
-            order = self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
+            order = self.exchange_manager.exchange_personal_data.orders_manager.get_order(exchange_order_id)
             async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
                 return await signals.cancel_order(
                     self.exchange_manager,

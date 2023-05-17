@@ -299,6 +299,7 @@ class ExchangeConstantsOrderBookTickerColumns(enum.Enum):
 class ExchangeConstantsOrderColumns(enum.Enum):
     INFO = "info"
     ID = "id"
+    EXCHANGE_ID = "exchange_id"
     ORDER_ID = "order_id"
     TIMESTAMP = "timestamp"
     DATETIME = 'datetime'
@@ -329,7 +330,6 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     TAG = "tag"
     SELF_MANAGED = "self-managed"
     ENTRIES = "entries"
-    SHARED_SIGNAL_ORDER_ID = "shared-signal-order-id"
 
 
 class ExchangeConstantsPositionColumns(enum.Enum):
@@ -524,7 +524,7 @@ class TradingSignalOrdersAttrs(enum.Enum):
     GROUP_ID = "group_id"
     GROUP_TYPE = "group_type"
     TAG = "tag"
-    SHARED_SIGNAL_ORDER_ID = "shared_signal_order_id"
+    ORDER_ID = "order_id"
     BUNDLED_WITH = "bundled_with"
     CHAINED_TO = "chained_to"
     ADDITIONAL_ORDERS = "additional_orders"
@@ -546,12 +546,12 @@ class StoredOrdersAttr(enum.Enum):
     CHAINED_ORDERS = "co"
     EXCHANGE_CREATION_PARAMS = "ecp"
     TRADER_CREATION_KWARGS = "tck"
-    SHARED_SIGNAL_ORDER_ID = "ssoi"
     HAS_BEEN_BUNDLED = "hbb"
     ENTRIES = "en"
     UPDATE_TIME = "ut"
     UPDATE_TYPE = "uty"
     ORDER_ID = "oid"
+    ORDER_EXCHANGE_ID = "oeid"
     ORDER_STATUS = "s"
     ORDER_DETAILS = "d"
     UPDATE_WITH_TRIGGERING_ORDER_FEES = "utf"

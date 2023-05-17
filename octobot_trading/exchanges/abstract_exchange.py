@@ -227,10 +227,10 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_all_currencies_price_ticker is not implemented")
 
-    async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+    async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         """
         Get the order data from the exchange
-        :param order_id: the order id
+        :param exchange_order_id: the order id on exchange
         :param symbol: the order symbol
         :return: the order data
         """
@@ -288,11 +288,11 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         raise NotImplementedError("get_leverage_tiers is not implemented")
 
     async def cancel_order(
-            self, order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
+            self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
         """
         Cancel a order on the exchange
-        :param order_id: the order id
+        :param exchange_order_id: the order id on exchange
         :param symbol: the order symbol
         :param order_type: the type of the order
         :return: True if the order is successfully cancelled
