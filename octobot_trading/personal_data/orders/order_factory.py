@@ -49,6 +49,7 @@ def create_order_instance(
     stop_price=constants.ZERO,
     status=enums.OrderStatus.OPEN,
     order_id=None,
+    exchange_order_id=None,
     filled_price=constants.ZERO,
     average_price=constants.ZERO,
     quantity_filled=constants.ZERO,
@@ -75,6 +76,7 @@ def create_order_instance(
         price=price,
         stop_price=stop_price,
         order_id=trader.parse_order_id(order_id),
+        exchange_order_id=exchange_order_id,
         timestamp=timestamp,
         status=status,
         filled_price=filled_price,
@@ -91,7 +93,6 @@ def create_order_instance(
         exchange_creation_params=exchange_creation_params,
         associated_entry_id=associated_entry_id
     )
-    order.ensure_order_id()
     return order
 
 

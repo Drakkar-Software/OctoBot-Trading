@@ -56,8 +56,8 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert len(trading_signal_bundle_builder.signals) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalCommonsAttrs.ACTION.value] \
            is enums.TradingSignalOrdersActions.CREATE.value
-    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-           buy_limit_order.shared_signal_order_id
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
+           buy_limit_order.order_id
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.BUY_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] == "1%"
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] is None
@@ -74,18 +74,18 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "2%"
 
-    # add new order (orders are based on shared_signal_order_id)
-    previous_shared_signal_order_id= buy_limit_order.shared_signal_order_id
-    buy_limit_order.set_shared_signal_order_id("other_id")
+    # add new order (orders are based on order_id)
+    previous_order_id = buy_limit_order.order_id
+    buy_limit_order.order_id = "other_id"
     buy_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_position="50")
     assert len(trading_signal_bundle_builder.signals) == 2
-    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-           previous_shared_signal_order_id
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
+           previous_order_id
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.SELL_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "2%"
-    assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == "other_id"
+    assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == "other_id"
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TYPE.value] == \
            enums.TraderOrderType.STOP_LOSS_LIMIT.value
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
@@ -99,8 +99,8 @@ def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
     assert len(trading_signal_bundle_builder.signals) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalCommonsAttrs.ACTION.value] \
            is enums.TradingSignalOrdersActions.ADD_TO_GROUP.value
-    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-           buy_limit_order.shared_signal_order_id
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
+           buy_limit_order.order_id
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.BUY_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] is None
@@ -137,8 +137,8 @@ def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_TYPE.value] == \
            personal_data.BalancedTakeProfitAndStopOrderGroup.__name__
 
-    # add new order (orders are based on shared_signal_order_id)
-    buy_limit_order.set_shared_signal_order_id("other_id")
+    # add new order (orders are based on order_id)
+    buy_limit_order.order_id = "other_id"
     buy_limit_order.add_to_order_group(order_group)
     trading_signal_bundle_builder.add_order_to_group(buy_limit_order, buy_limit_order.exchange_manager)
     assert len(trading_signal_bundle_builder.signals) == 2
@@ -160,8 +160,8 @@ def test_add_edited_order(trading_signal_bundle_builder, buy_limit_order):
     assert len(trading_signal_bundle_builder.signals) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalCommonsAttrs.ACTION.value] \
            is enums.TradingSignalOrdersActions.EDIT.value
-    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-           buy_limit_order.shared_signal_order_id
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
+           buy_limit_order.order_id
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.BUY_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] == "1%"
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] is None
@@ -213,8 +213,8 @@ def test_add_edited_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.UPDATED_STOP_PRICE.value] == 0.0
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.UPDATED_CURRENT_PRICE.value] == 1.0
 
-    # add new order (orders are based on shared_signal_order_id)
-    buy_limit_order.set_shared_signal_order_id("other_id")
+    # add new order (orders are based on order_id)
+    buy_limit_order.order_id = "other_id"
     trading_signal_bundle_builder.add_edited_order(buy_limit_order, buy_limit_order.exchange_manager, updated_target_position="1%a")
     assert len(trading_signal_bundle_builder.signals) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.UPDATED_CURRENT_PRICE.value] == 1.0
@@ -229,19 +229,19 @@ async def test_add_cancelled_order(trading_signal_bundle_builder, buy_limit_orde
     assert len(trading_signal_bundle_builder.signals) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalCommonsAttrs.ACTION.value] \
            is enums.TradingSignalOrdersActions.CANCEL.value
-    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-           buy_limit_order.shared_signal_order_id
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
+           buy_limit_order.order_id
 
     # add the same order: do not add it twice
     trading_signal_bundle_builder.add_cancelled_order(buy_limit_order, buy_limit_order.exchange_manager)
     assert len(trading_signal_bundle_builder.signals) == 1
 
-    # add new order (orders are based on shared_signal_order_id)
+    # add new order (orders are based on order_id)
     # cancel order first to be sure it can be added
     exchange_manager = buy_limit_order.exchange_manager
     await buy_limit_order.exchange_manager.trader.cancel_order(buy_limit_order)
     buy_limit_order.clear()
-    buy_limit_order.set_shared_signal_order_id("other_id")
+    buy_limit_order.order_id = "other_id"
     buy_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
     trading_signal_bundle_builder.add_created_order(buy_limit_order, exchange_manager, target_position="50")
     assert len(trading_signal_bundle_builder.signals) == 2
@@ -251,7 +251,7 @@ async def test_add_cancelled_order(trading_signal_bundle_builder, buy_limit_orde
 
     # add an orders via create action: it gets popped out of the orders list as there is no point creating
     # it and cancelling it right away
-    buy_limit_order.set_shared_signal_order_id("buy_other_id")
+    buy_limit_order.order_id = "buy_other_id"
     buy_limit_order.order_type = enums.TraderOrderType.BUY_MARKET
     trading_signal_bundle_builder.add_created_order(buy_limit_order, exchange_manager, target_amount="1")
     assert len(trading_signal_bundle_builder.signals) == 3
@@ -293,7 +293,7 @@ async def test_add_cancelled_order(trading_signal_bundle_builder, buy_limit_orde
            enums.TradingSignalOrdersActions.CANCEL.value
 
     # adding BUY_MARKET as edited order
-    buy_limit_order.set_shared_signal_order_id("edit_buy_other_id")
+    buy_limit_order.order_id = "edit_buy_other_id"
     trading_signal_bundle_builder.add_edited_order(buy_limit_order, exchange_manager, updated_target_amount="1")
     assert len(trading_signal_bundle_builder.signals) == 4
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.BUY_LIMIT.value
@@ -322,9 +322,9 @@ async def test_add_cancelled_order(trading_signal_bundle_builder, buy_limit_orde
 
 def test_pack_referenced_orders_together(trading_signal_bundle_builder,
                                          buy_limit_order, sell_limit_order, stop_loss_limit_order, stop_loss_buy_order):
-    buy_limit_order.set_shared_signal_order_id("0")
-    sell_limit_order.set_shared_signal_order_id("1")
-    stop_loss_limit_order.set_shared_signal_order_id("2")
+    buy_limit_order.order_id = "0"
+    sell_limit_order.order_id = "1"
+    stop_loss_limit_order.order_id = "2"
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.add_created_order(sell_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.add_created_order(stop_loss_limit_order, buy_limit_order.exchange_manager, target_amount="1%")

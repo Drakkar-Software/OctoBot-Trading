@@ -285,12 +285,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_all_currencies_price_ticker {e}")
 
     # ORDERS
-    async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+    async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         if self.client.has['fetchOrder']:
             try:
                 with self.error_describer():
                     return self.adapter.adapt_order(
-                        await self.client.fetch_order(order_id, symbol, params=kwargs),
+                        await self.client.fetch_order(exchange_order_id, symbol, params=kwargs),
                         symbol=symbol
                     )
             except ccxt.OrderNotFound:
@@ -306,7 +306,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             # When fetch_order is not supported, uses get_open_orders and extract order id
             open_orders = await self.get_open_orders(symbol=symbol)
             for order in open_orders:
-                if order.get(ecoc.ID.value, None) == order_id:
+                if order.get(ecoc.EXCHANGE_ID.value, None) == exchange_order_id:
                     return order
         return None  # OrderNotFound
 
@@ -449,7 +449,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("create_limit_trailing_stop_order is not implemented")
 
-    async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+    async def edit_order(self, exchange_order_id: str, order_type: enums.TraderOrderType, symbol: str,
                          quantity: float, price: float, stop_price: float = None, side: str = None,
                          current_price: float = None, params: dict = None):
         ccxt_order_type = self.get_ccxt_order_type(order_type)
@@ -459,21 +459,23 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             price_to_use = None
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
         return self.adapter.adapt_order(
-            await self.client.edit_order(order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params),
+            await self.client.edit_order(
+                exchange_order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params
+            ),
             symbol=symbol
         )
 
     async def cancel_order(
-            self, order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
+        self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
         try:
             with self.error_describer():
-                await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
+                await self.client.cancel_order(exchange_order_id, symbol=symbol, params=kwargs)
                 # no exception, cancel worked
             try:
                 # make sure order is canceled
                 cancelled_order = await self.exchange_manager.exchange.get_order(
-                    order_id, symbol=symbol
+                    exchange_order_id, symbol=symbol
                 )
                 if cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order):
                     return enums.OrderStatus.CANCELED
@@ -489,13 +491,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 # get a cancelled order).
                 return enums.OrderStatus.CANCELED
         except ccxt.OrderNotFound as e:
-            self.logger.debug(f"Trying to cancel order with id {order_id} but order was not found")
+            self.logger.debug(f"Trying to cancel order with id {exchange_order_id} but order was not found")
             raise octobot_trading.errors.OrderCancelError from e
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
             raise octobot_trading.errors.NotSupported from e
         except Exception as e:
-            self.logger.exception(e, True, f"Unexpected error when cancelling order with id: "
-                                           f"{order_id} failed to cancel | {e} ({e.__class__.__name__})")
+            self.logger.exception(e, True, f"Unexpected error when cancelling order with exchange id: "
+                                           f"{exchange_order_id} failed to cancel | {e} ({e.__class__.__name__})")
             raise e
 
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
@@ -726,8 +728,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def parse_currency(self, currency):
         return self.client.safe_currency_code(currency)
 
-    def parse_order_id(self, order):
-        return order.get(ecoc.ID.value, None)
+    def parse_exhange_order_id(self, order):
+        return order.get(ecoc.EXCHANGE_ID.value, None)
 
     def parse_order_symbol(self, order):
         return order.get(ecoc.SYMBOL.value, None)

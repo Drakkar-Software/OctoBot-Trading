@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
 
@@ -133,6 +134,9 @@ class AbstractAdapter:
         return default
 
     def fix_order(self, raw, **kwargs):
+        # id is reserved for octobot managed id. store exchange id in EXCHANGE_ID
+        raw[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = \
+            raw.pop(enums.ExchangeConstantsOrderColumns.ID.value, None)
         # add generic logic if necessary
         return raw
 
@@ -182,7 +186,11 @@ class AbstractAdapter:
         raise NotImplementedError("parse_public_recent_trades is not implemented")
 
     def fix_trades(self, raw, **kwargs):
-        # add generic logic if necessary
+        for trade in raw:
+            # id is reserved for octobot managed id. store exchange id in EXCHANGE_ID
+            trade[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = \
+                trade.pop(enums.ExchangeConstantsOrderColumns.ID.value, None)
+            # add generic logic if necessary
         return raw
 
     def parse_trades(self, fixed, **kwargs):

@@ -34,7 +34,7 @@ class TradesProducer(exchanges_channel.ExchangeChannelProducer):
                     trade[enums.ExchangeConstantsOrderColumns.SYMBOL.value])
                 if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
                         self.channel.get_filtered_consumers(symbol=symbol):
-                    trade_id: str = trade[enums.ExchangeConstantsOrderColumns.ID.value]
+                    trade_id: str = trade[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value]
 
                     await self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
                         symbol,

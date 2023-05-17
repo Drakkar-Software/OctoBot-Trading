@@ -64,6 +64,7 @@ class TestTradeFactory:
             {	
               "info": {},
               "id": "12345-67890:09876/54321",
+              "exchange_id": "plop",
               "timestamp": 1502962946216,
               "datetime": "2017-08-17 12:42:48.000",
               "symbol": "ETH/BTC",
@@ -86,6 +87,7 @@ class TestTradeFactory:
 
         assert trade.trade_id == '12345-67890:09876/54321'
         assert trade.origin_order_id == '12345-67890:09876/54321'
+        assert trade.exchange_order_id == 'plop'
         assert trade.trade_type == TraderOrderType.BUY_LIMIT
         assert trade.symbol == 'ETH/BTC'
         assert trade.total_cost == decimal.Decimal(str(0.10376526))
@@ -113,6 +115,7 @@ class TestTradeFactory:
             """
             {
                 "id":                "12345-67890:09876/54321",
+                "exchange_id":       "12345-67890:09876/1111",
                 "datetime":          "2017-08-17 12:42:48.000",
                 "timestamp":          1502962946216,
                 "lastTradeTimestamp": 1502962956216,
@@ -141,6 +144,7 @@ class TestTradeFactory:
 
         assert trade.trade_id == '12345-67890:09876/54321'
         assert trade.origin_order_id == '12345-67890:09876/54321'
+        assert trade.exchange_order_id == '12345-67890:09876/1111'
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'
@@ -163,6 +167,7 @@ class TestTradeFactory:
         # market order
         raw_order = {
             'id': '362550114',
+            'exchange_id': 'AaaaAA',
             'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
             'timestamp': 1637579281.377,
             'datetime': '2021-11-22T11:08:01.377Z',
@@ -189,6 +194,7 @@ class TestTradeFactory:
 
         assert trade.trade_id == '362550114'
         assert trade.origin_order_id == '362550114'
+        assert trade.exchange_order_id == 'AaaaAA'
         assert trade.trade_type == TraderOrderType.SELL_MARKET
         assert trade.symbol == 'UNI/USDT'
         assert trade.total_cost == ZERO
@@ -208,7 +214,7 @@ class TestTradeFactory:
         raw_order = json.loads(
             """
             {
-                "id":                "12345-67890:09876/54321",
+                "exchange_id":       "plopplip",
                 "datetime":          "2017-08-17 12:42:48.000",
                 "timestamp":          1502962946216,
                 "lastTradeTimestamp": 1502962956216,
@@ -234,8 +240,9 @@ class TestTradeFactory:
         order = create_order_instance_from_raw(trader, raw_order)
         trade = create_trade_from_order(order, close_status=OrderStatus.OPEN)
 
-        assert trade.trade_id == '12345-67890:09876/54321'
-        assert trade.origin_order_id == '12345-67890:09876/54321'
+        assert trade.trade_id is not None
+        assert trade.origin_order_id == trade.trade_id
+        assert trade.exchange_order_id == 'plopplip'
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'

@@ -187,13 +187,13 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         """
         exchange_name = order.exchange_manager.exchange_name if order.exchange_manager else "cleared order's exchange"
         self.logger.debug(f"Requested update for {order} on {exchange_name}")
-        raw_order = await self.channel.exchange_manager.exchange.get_order(order.order_id, order.symbol)
+        raw_order = await self.channel.exchange_manager.exchange.get_order(order.exchange_order_id, order.symbol)
 
         if raw_order is not None:
             self.logger.debug(f"Received update for {order} on {exchange_name}: {raw_order}")
 
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order.order_id, raw_order, should_notify=should_notify
+                order.exchange_order_id, raw_order, should_notify=should_notify
             )
         else:
             self.logger.debug(f"Can't received update for {order} on {exchange_name}: received order is None")

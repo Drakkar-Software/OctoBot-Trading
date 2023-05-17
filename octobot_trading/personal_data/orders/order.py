@@ -17,7 +17,6 @@ import asyncio
 import typing
 import contextlib
 import decimal
-import uuid
 
 import octobot_commons.logging as logging
 
@@ -48,8 +47,8 @@ class Order(util.Initializable):
         self.simulated = trader.simulate
 
         self.logger_name = None
-        self.order_id = trader.parse_order_id(None)      # order id: given by the exchange local to the user account
-        self.shared_signal_order_id = str(uuid.uuid4())  # shared order id: kept through instances and trading signals
+        self.order_id = order_util.generate_order_id()        # used id; kept through instances and trading signals
+        self.exchange_order_id = trader.parse_order_id(None)  # given by the exchange, local to the user account
         self.status = enums.OrderStatus.OPEN
         self.symbol = None
         self.currency = None
@@ -125,10 +124,10 @@ class Order(util.Initializable):
 
     def get_logger_name(self):
         if self.logger_name is None:
-            self.logger_name = f"{self.get_name()} | {self.order_id}"
+            self.logger_name = f"{self.get_name()} | {self.order_id} [exchange id: {self.exchange_order_id}]"
         return self.logger_name
 
-    def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
+    def update(self, symbol, order_id="", exchange_order_id=None, status=enums.OrderStatus.OPEN,
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
@@ -142,6 +141,9 @@ class Order(util.Initializable):
 
         if order_id and self.order_id != order_id:
             self.order_id = order_id
+
+        if exchange_order_id and self.exchange_order_id != exchange_order_id:
+            self.exchange_order_id = exchange_order_id
 
         if symbol and self.symbol != symbol:
             self.currency, self.market = self.exchange_manager.get_exchange_quote_and_base(symbol)
@@ -289,12 +291,6 @@ class Order(util.Initializable):
         :param price_time: time starting from when the price should be considered
         """
 
-    def set_shared_signal_order_id(self, shared_signal_order_id):
-        """
-        Updates the local shared_signal_order_id. Should only be called on orders originated from trading signals
-        """
-        self.shared_signal_order_id = shared_signal_order_id
-
     def add_chained_order(self, chained_order):
         """
         chained_order will be assigned with the actually created order when this order will be filled
@@ -429,13 +425,6 @@ class Order(util.Initializable):
             return True
         return False
 
-    def replace_associated_entry_id(self, previous_entry_order_id, updated_entry_order_id):
-        if self.associated_entry_ids is None:
-            return
-        for index, entry_id in enumerate(self.associated_entry_ids):
-            if entry_id == previous_entry_order_id:
-                self.associated_entry_ids[index] = updated_entry_order_id
-
     def update_quantity_with_order_fees(self, other_order):
         relevant_fees_amount = order_util.get_fees_for_currency(other_order.fee, self.quantity_currency)
         if relevant_fees_amount:
@@ -537,7 +526,7 @@ class Order(util.Initializable):
         return self.order_profitability
 
     async def default_exchange_update_order_status(self):
-        raw_order = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
+        raw_order = await self.exchange_manager.exchange.get_order(self.exchange_order_id, self.symbol)
         new_status = order_util.parse_order_status(raw_order)
         self.is_synchronized_with_exchange = True
         if new_status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED}:
@@ -592,7 +581,8 @@ class Order(util.Initializable):
             quantity=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0) or 0.0)),
             price=decimal.Decimal(str(price)),
             status=order_util.parse_order_status(raw_order),
-            order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
+            order_id=raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None),
+            exchange_order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value, None)),
             quantity_filled=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0)
                                                 or 0.0)),
             filled_price=decimal.Decimal(str(filled_price)),
@@ -618,6 +608,7 @@ class Order(util.Initializable):
         self.side = other_order.side
 
         self.order_id = other_order.order_id
+        self.exchange_order_id = other_order.exchange_order_id
         self.status = other_order.status
 
         self.filled_quantity = other_order.filled_quantity
@@ -643,8 +634,9 @@ class Order(util.Initializable):
         # rebind order attributes that are not stored on exchange
         order_dict = order_details.get(orders_storage.OrdersStorage.ORIGIN_VALUE_KEY, {})
         self.tag = order_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value, self.tag)
-        self.shared_signal_order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value,
-                                                     self.shared_signal_order_id)
+        self.order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.ID.value, self.order_id)
+        self.exchange_order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value,
+                                                self.exchange_order_id)
         self.trader_creation_kwargs = order_details.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value,
                                                         self.trader_creation_kwargs)
         self.exchange_creation_params = order_details.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value,
@@ -716,15 +708,11 @@ class Order(util.Initializable):
             # (should only be used for simulation anyway)
             self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
 
-    def ensure_order_id(self):
-        if self.order_id is None and self.is_self_managed():
-            # self managed orders should always have an id, even on real trader
-            self.order_id = order_util.generate_order_id()
-
     def to_dict(self):
         filled_price = self.filled_price if self.filled_price > 0 else self.origin_price
         return {
             enums.ExchangeConstantsOrderColumns.ID.value: self.order_id,
+            enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: self.exchange_order_id,
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsOrderColumns.PRICE.value: filled_price,
             enums.ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
@@ -739,7 +727,6 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
-            enums.ExchangeConstantsOrderColumns.SHARED_SIGNAL_ORDER_ID.value: self.shared_signal_order_id,
             enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
         }
 
@@ -763,7 +750,8 @@ class Order(util.Initializable):
                 f"Price : {str(self.origin_price)} | "
                 f"Quantity : {str(self.origin_quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.order_id}{tag}")
+                f"id : {self.order_id}{tag}"
+                f"exchange id: {self.exchange_order_id}")
 
     def __str__(self):
         return self.to_string()

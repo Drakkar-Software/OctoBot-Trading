@@ -111,16 +111,6 @@ class PortfolioOperationError(Exception):
     """
 
 
-class MissingOrderException(Exception):
-    """
-    Raised when an order is missing
-    """
-
-    def __init__(self, order_id):
-        super().__init__()
-        self.order_id = order_id
-
-
 class InvalidOrderState(Exception):
     """
     Raised when an order state is handled on a previously cleared order

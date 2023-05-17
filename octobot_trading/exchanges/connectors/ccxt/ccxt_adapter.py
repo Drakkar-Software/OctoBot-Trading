@@ -148,6 +148,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         for recent_trade in fixed:
             recent_trade.pop(ecoc.INFO.value, None)
             recent_trade.pop(ecoc.DATETIME.value, None)
+            recent_trade.pop(ecoc.EXCHANGE_ID.value, None)
             recent_trade.pop(ecoc.ID.value, None)
             recent_trade.pop(ecoc.ORDER.value, None)
             recent_trade.pop(ecoc.FEE.value, None)

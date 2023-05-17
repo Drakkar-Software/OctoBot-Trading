@@ -169,7 +169,7 @@ class ExchangePersonalData(util.Initializable):
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update portfolio profitability : {e}")
 
-    async def handle_order_update_from_raw(self, order_id, raw_order,
+    async def handle_order_update_from_raw(self, exchange_order_id, raw_order,
                                            is_new_order: bool = False,
                                            should_notify: bool = True,
                                            is_from_exchange=True) -> (bool, order_import.Order):
@@ -177,12 +177,14 @@ class ExchangePersonalData(util.Initializable):
         # open_orders API which is slower).
         # Always check if this order has not already been closed previously (most likely during the last
         # seconds/minutes)
-        if self._is_out_of_sync_order(order_id):
-            self.logger.debug(f"Ignored update for order with {order_id}: this order has already been closed "
-                              f"(received raw order: {raw_order})")
+        if self._is_out_of_sync_order(exchange_order_id):
+            self.logger.debug(f"Ignored update for order with exchange id: {exchange_order_id}: this order "
+                              f"has already been closed (received raw order: {raw_order})")
         else:
             try:
-                changed, order = await self.orders_manager.upsert_order_from_raw(order_id, raw_order, is_from_exchange)
+                changed, order = await self.orders_manager.upsert_order_from_raw(
+                    exchange_order_id, raw_order, is_from_exchange
+                )
                 if changed:
                     await self.on_order_refresh_success(order, should_notify, is_new_order)
                 return changed, order
@@ -199,8 +201,8 @@ class ExchangePersonalData(util.Initializable):
                 self.logger.exception(e, True, f"Failed to update order : {e}")
         return False, None
 
-    async def update_order_from_stored_data(self, order_id, pending_groups):
-        order = self.orders_manager.get_order(order_id)
+    async def update_order_from_stored_data(self, exchange_order_id, pending_groups):
+        order = self.orders_manager.get_order(None, exchange_order_id=exchange_order_id)
         await orders_storage_operations.apply_order_storage_details_if_any(order, self.exchange_manager, pending_groups)
 
     async def on_order_refresh_success(self, order, should_notify, is_new_order):
@@ -212,8 +214,8 @@ class ExchangePersonalData(util.Initializable):
             await self.handle_order_update_notification(order, update_type)
         return order.state is not None
 
-    def _is_out_of_sync_order(self, order_id) -> bool:
-        return self.trades_manager.has_closing_trade_with_order_id(order_id)
+    def _is_out_of_sync_order(self, exchange_order_id) -> bool:
+        return self.trades_manager.has_closing_trade_with_exchange_order_id(exchange_order_id)
 
     async def handle_order_instance_update(self, order, is_new_order: bool = False, should_notify: bool = True):
         try:
@@ -248,15 +250,15 @@ class ExchangePersonalData(util.Initializable):
         except ValueError as e:
             self.logger.error(f"Failed to send order update notification : {e}")
 
-    async def handle_closed_order_update(self, order_id, raw_order) -> bool:
+    async def handle_closed_order_update(self, exchange_order_id, raw_order) -> bool:
         """
         Handle closed order creation or update
-        :param order_id: the closed order id
+        :param exchange_order_id: the closed order id on exchange
         :param raw_order: the closed order dict
         :return: True if the closed order has been created or updated
         """
         try:
-            found_order = await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
+            found_order = await self.orders_manager.upsert_order_close_from_raw(exchange_order_id, raw_order)
             if found_order is None:
                 return False
             await self.on_order_refresh_success(found_order, False, False)
