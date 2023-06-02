@@ -50,6 +50,16 @@ async def get_amount_from_input_amount(
     elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
         amount_value = await account_balance.available_account_balance(context, side, reduce_only=reduce_only) \
                        * amount_value / 100
+    elif amount_type is dsl.QuantityType.QUOTE_VALUE:
+        if (context.exchange_manager.is_future 
+            and context.exchange_manager.exchange.is_inverse_symbol(context.symbol)
+            ):
+            # is measured in QUOTE_VALUE
+            pass
+        else:
+            # avoid circular import error
+            import tentacles.Meta.Keywords.scripting_library.data.reading.exchange_public_data as exchange_public_data
+            amount_value = amount_value / await exchange_public_data.current_live_price(context)
     elif amount_type is dsl.QuantityType.POSITION_PERCENT:
         raise NotImplementedError(amount_type)
     else:
