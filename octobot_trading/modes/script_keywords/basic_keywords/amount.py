@@ -46,10 +46,13 @@ async def get_amount_from_input_amount(
                                                              timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
         amount_value = amount_value / price
     elif amount_type is dsl.QuantityType.PERCENT:
-        amount_value = await account_balance.total_account_balance(context) * amount_value / 100
+        amount_value = await account_balance.available_account_balance(
+            context, side, use_total_holding=True, reduce_only=reduce_only
+        ) * amount_value / 100
     elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
-        amount_value = await account_balance.available_account_balance(context, side, reduce_only=reduce_only) \
-                       * amount_value / 100
+        amount_value = await account_balance.available_account_balance(
+            context, side, use_total_holding=False, reduce_only=reduce_only
+        ) * amount_value / 100
     elif amount_type is dsl.QuantityType.POSITION_PERCENT:
         raise NotImplementedError(amount_type)
     else:

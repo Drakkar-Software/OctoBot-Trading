@@ -565,7 +565,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     message = f"Closed exchange connection to force reconnect. Error: {err}"
                     if subsequent_disconnections > 1 and subsequent_disconnections % 5 == 0:
                         self.logger.error(
-                            f"Multiple disconnections if a row [{subsequent_disconnections}]for {ws_des}. {message}"
+                            f"Multiple disconnections if a row [{subsequent_disconnections}] for {ws_des}. {message}"
                         )
                     else:
                         self.logger.debug(message)

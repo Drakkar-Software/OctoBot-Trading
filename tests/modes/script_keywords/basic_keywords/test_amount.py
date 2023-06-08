@@ -89,9 +89,9 @@ async def test_get_amount_from_input_amount(null_context):
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(script_keywords.QuantityType.PERCENT, decimal.Decimal(75)))) \
                 as parse_quantity_mock, \
-                mock.patch.object(account_balance, "total_account_balance",
+                mock.patch.object(account_balance, "available_account_balance",
                                   mock.AsyncMock(return_value=decimal.Decimal(2))) \
-                as total_account_balance_mock:
+                as available_account_balance_mock:
             assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy", use_total_holding=True,
                                                                       reduce_only=False,
                                                                       is_stop_order=True,
@@ -99,7 +99,8 @@ async def test_get_amount_from_input_amount(null_context):
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
                                                                   True, False, True, target_price=constants.ZERO)
             parse_quantity_mock.assert_called_once_with("50")
-            total_account_balance_mock.assert_called_once_with(null_context)
+            available_account_balance_mock.assert_called_once_with(null_context, "buy",
+                                                                   use_total_holding=True, reduce_only=False)
             adapt_amount_to_holdings_mock.reset_mock()
 
         with mock.patch.object(dsl, "parse_quantity",
@@ -113,5 +114,6 @@ async def test_get_amount_from_input_amount(null_context):
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
                                                                   False, True, False, target_price=None)
             parse_quantity_mock.assert_called_once_with("50")
-            available_account_balance_mock.assert_called_once_with(null_context, "buy", reduce_only=True)
+            available_account_balance_mock.assert_called_once_with(null_context, "buy",
+                                                                   use_total_holding=False, reduce_only=True)
             adapt_amount_to_holdings_mock.reset_mock()
