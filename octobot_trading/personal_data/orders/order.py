@@ -750,7 +750,7 @@ class Order(util.Initializable):
                 f"Price : {str(self.origin_price)} | "
                 f"Quantity : {str(self.origin_quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.order_id}{tag}"
+                f"id : {self.order_id}{tag} "
                 f"exchange id: {self.exchange_order_id}")
 
     def __str__(self):
