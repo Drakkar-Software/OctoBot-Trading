@@ -19,7 +19,6 @@ import typing
 
 import octobot_commons.async_job as async_job
 import octobot_commons.constants as common_constants
-import octobot_commons.symbols as common_symbols
 
 import octobot_trading.exchange_data.funding.channel.funding as funding_channel
 import octobot_trading.exchanges.exchange_websocket_factory as exchange_websocket_factory
@@ -79,8 +78,6 @@ class FundingUpdater(funding_channel.FundingProducer):
     async def _funding_fetch_and_push(self) -> list:
         next_funding_times = []
         for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            if not common_symbols.parse_symbol(pair).is_future():
-                continue
             next_funding_time_candidate = await self.fetch_symbol_funding_rate(pair)
             if next_funding_time_candidate is not None:
                 next_funding_times.append(next_funding_time_candidate)
