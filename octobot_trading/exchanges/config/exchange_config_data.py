@@ -25,7 +25,9 @@ import octobot_commons.tree as commons_tree
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config
+import octobot_trading.exchanges.util as exchange_util
 import octobot_trading.constants as trading_constants
+import octobot_trading.enums as trading_enums
 import octobot_trading.util as util
 
 
@@ -204,6 +206,7 @@ class ExchangeConfig(util.Initializable):
         return traded_symbol_pairs_set
 
     def _populate_non_wildcard_pairs(self, cryptocurrency, existing_pairs, is_enabled):
+        exchange_type = exchange_util.get_exchange_type(self.exchange_manager)
         if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] != \
                 constants.CONFIG_SYMBOLS_WILDCARD:
             currency_pairs = []
@@ -211,7 +214,12 @@ class ExchangeConfig(util.Initializable):
                 constants.CONFIG_CRYPTO_PAIRS]:
                 if self.exchange_manager.symbol_exists(symbol):
                     if is_enabled:
-                        currency_pairs.append(symbol)
+                        if self._is_pair_compatible(exchange_type, symbol):
+                            currency_pairs.append(symbol)
+                        else:
+                            self._logger.warning(f"Ignored {symbol} trading pair: only {exchange_type.value} "
+                                                 f"pairs are allowed on {self.exchange_manager.exchange_name} when "
+                                                 f"using {exchange_type.value} trading")
                     # also add disabled pairs to existing pairs since they still exist on exchange
                     existing_pairs.add(symbol)
                 elif is_enabled:
@@ -244,6 +252,14 @@ class ExchangeConfig(util.Initializable):
 
         # also add disabled pairs to existing pairs since they still exist on exchange
         existing_pairs.update(wildcard_pairs_list)
+
+    @staticmethod
+    def _is_pair_compatible(exchange_type, symbol):
+        parsed_symbol = octobot_commons.symbols.parse_symbol(symbol)
+        if exchange_type is trading_enums.ExchangeTypes.FUTURE:
+            return parsed_symbol.is_future()
+        # allow futures symbols for spot
+        return True
 
     def _set_config_time_frame(self):
         display_time_frames = []
