@@ -434,10 +434,16 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         raise NotImplementedError("get_sub_account_list is not available on this exchange")
 
     async def retry_till_success(self, timeout, request_func, *args, **kwargs):
+        return await self._retry_until(timeout, 0, request_func, *args, **kwargs)
+
+    async def retry_n_time(self, n_times, request_func, *args, **kwargs):
+        return await self._retry_until(0, n_times, request_func, *args, **kwargs)
+
+    async def _retry_until(self, timeout, n_times, request_func, *args, **kwargs):
         t0 = time.time()
         minimal_interval = 0.1
         attempt = 1
-        while time.time() - t0 < timeout:
+        while (timeout != 0 and time.time() - t0 < timeout) or (n_times != 0 and attempt <= n_times + 1):
             last_request_time = time.time()
             try:
                 result = await request_func(*args, **kwargs)

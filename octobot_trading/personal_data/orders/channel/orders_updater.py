@@ -19,7 +19,6 @@ import asyncio
 import octobot_commons.async_job as async_job
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
-import octobot_commons.constants as commons_constants
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.channel.orders as orders_channel
@@ -39,7 +38,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     CLOSE_ORDER_REFRESH_TIME = 81
     TIME_BETWEEN_ORDERS_REFRESH = 2
     DEPENDENCIES_TIMEOUT = 30
-    OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT = 3 * commons_constants.MINUTE_TO_SECONDS
+    OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT = 30
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -89,7 +88,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         """
         await self.initialize()
         await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
-        await self.open_orders_job.run()
+        await self.open_orders_job.run(retry_attempts=1)
         # await self.closed_orders_job.run()
 
     async def fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT, retry_till_success=False):
@@ -113,18 +112,26 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         except errors.NotSupported:
             self.logger.debug(f"{self.channel.exchange_manager.exchange_name} is not supporting closed orders updates")
 
-    async def _open_orders_fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT, retry_till_success=False):
+    async def _open_orders_fetch_and_push(
+        self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT, retry_till_success=False, retry_attempts=0
+    ):
         """
         Update open orders from exchange
         :param is_from_bot: True if the order was created by OctoBot
         :param limit: the exchange request orders count limit
         :param retry_till_success: retry request till it works. Should be rarely used as it might take some time
+        :param retry_attempts: how many times to retry before failing
         """
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             if retry_till_success:
                 open_orders: list = await self.channel.exchange_manager.exchange.retry_till_success(
                     self.OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT,
-                    self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit
+                    self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit,
+                )
+            elif retry_attempts:
+                open_orders: list = await self.channel.exchange_manager.exchange.retry_n_time(
+                    retry_attempts,
+                    self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit,
                 )
             else:
                 open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(

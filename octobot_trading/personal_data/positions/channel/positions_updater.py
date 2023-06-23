@@ -117,13 +117,16 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
                in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
-    async def fetch_and_push_positions(self):
+    async def fetch_and_push_positions(self, retry_attempts=1):
         """
         Update positions from exchange
         """
         symbols = self.channel.exchange_manager.exchange_config.traded_symbol_pairs \
             if self.channel.exchange_manager.exchange.REQUIRES_SYMBOL_FOR_EMPTY_POSITION else None
-        positions = await self.channel.exchange_manager.exchange.get_positions(symbols=symbols)
+        positions = await self.channel.exchange_manager.exchange.retry_n_time(
+            retry_attempts,
+            self.channel.exchange_manager.exchange.get_positions, symbols=symbols,
+        )
         if positions:
             relevant_positions = [
                 position
