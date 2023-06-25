@@ -131,7 +131,10 @@ class ExchangeBuilder:
             # allow backtesting and collecting on incompatible exchange types
             return
         # live exchange: ensure the exchange to be created supports the trading type
-        supported_exchange_types = exchanges.get_supported_exchange_types(self.exchange_manager.exchange_name)
+        supported_exchange_types = exchanges.get_supported_exchange_types(
+            self.exchange_manager.exchange_name,
+            self.exchange_manager.tentacles_setup_config
+        )
         exchange_type = exchanges.get_exchange_type(self.exchange_manager)
         if exchange_type not in supported_exchange_types:
             raise errors.NotSupported(f"{self.exchange_manager.exchange_name} does not support {exchange_type.value}"
@@ -210,8 +213,8 @@ class ExchangeBuilder:
         self.exchange_manager.is_loading_markets = is_loading_markets
         return self
 
-    def is_ignoring_config(self):
-        self.exchange_manager.ignore_config = True
+    def is_ignoring_config(self, ignore_config=True):
+        self.exchange_manager.ignore_config = ignore_config
         return self
 
     def is_without_auth(self):

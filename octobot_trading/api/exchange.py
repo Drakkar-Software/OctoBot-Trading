@@ -15,6 +15,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import contextlib
+
 import trading_backend
 
 import octobot_trading.constants
@@ -44,13 +46,11 @@ def get_exchange_manager_from_exchange_name_and_id(exchange_name: str, exchange_
 
 async def get_ccxt_exchange_available_time_frames(
         exchange_name: str,
-        exchange_lib: octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs =
-        octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs.CCXT
+        tentacles_setup_config
 ) -> list:
     """
     When using CCXT, prefer using the sync lib since no request is required to get time frames
     :param exchange_name: name of the exchange
-    :param exchange_lib: octobot_trading.exchanges.connectors.ccxt.enums.ExchangeWrapperLibs to use
     :return: the list of time frames
     """
     try:
@@ -58,8 +58,8 @@ async def get_ccxt_exchange_available_time_frames(
         for exchange_configuration in get_exchange_configurations_from_exchange_name(exchange_name).values():
             return exchange_configuration.exchange_manager.client_time_frames
     except KeyError:
-        async with exchanges.temporary_exchange_wrapper(exchange_name, exchange_lib) as wrapper:
-            return list(await wrapper.get_available_time_frames())
+        async with get_new_ccxt_client(exchange_name, {}, tentacles_setup_config, False) as ccxt_exchange:
+            return ccxt_exchange.timeframes
 
 
 def get_exchange_available_required_time_frames(exchange_name: str, exchange_id: str) -> list:
@@ -263,6 +263,14 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     return await exchanges.is_compatible_account(exchange_name, exchange_config, tentacles_setup_config, is_sandboxed)
 
 
+@contextlib.asynccontextmanager
+async def get_new_ccxt_client(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool):
+    async with exchanges.get_local_exchange_manager(
+        exchange_name, exchange_config, tentacles_setup_config, is_sandboxed, ignore_config=True
+    ) as local_exchange_manager:
+        yield local_exchange_manager.exchange.connector.client
+
+
 def get_default_exchange_type(exchange_name: str) -> str:
     return exchanges.get_default_exchange_type(exchange_name)
 
@@ -288,8 +296,8 @@ def get_bot_id(exchange_manager):
     return exchange_manager.bot_id
 
 
-def get_supported_exchange_types(exchange_name) -> list:
-    return exchanges.get_supported_exchange_types(exchange_name)
+def get_supported_exchange_types(exchange_name, tentacles_setup_config) -> list:
+    return exchanges.get_supported_exchange_types(exchange_name, tentacles_setup_config)
 
 
 async def store_history_in_run_storage(exchange_manager):
@@ -298,6 +306,18 @@ async def store_history_in_run_storage(exchange_manager):
 
 def get_enabled_exchanges_names(config) -> list:
     return exchanges.get_enabled_exchanges(config)
+
+
+def get_auto_filled_exchange_names(tentacles_setup_config) -> list:
+    return exchanges.get_auto_filled_exchange_names(tentacles_setup_config)
+
+
+async def get_exchange_details(
+    exchange_name, is_autofilled, tentacles_setup_config, aiohttp_session
+) -> exchanges.ExchangeDetails:
+    return await exchanges.get_exchange_details(
+        exchange_name, is_autofilled, tentacles_setup_config, aiohttp_session
+    )
 
 
 def cancel_ccxt_throttle_task():

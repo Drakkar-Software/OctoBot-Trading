@@ -39,7 +39,7 @@ def create_client(exchange_class, exchange_name, exchange_manager, logger,
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_name):
         try:
             key, secret, password = exchange_manager.get_exchange_credentials(exchange_name)
-            if not (key and secret) and not exchange_manager.is_simulated:
+            if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
             if should_authenticate:

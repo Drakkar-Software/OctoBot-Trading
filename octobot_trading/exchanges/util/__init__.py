@@ -26,6 +26,7 @@ from octobot_trading.exchanges.util.exchange_util import (
     log_time_sync_error,
     get_partners_explanation_message,
     get_enabled_exchanges,
+    get_local_exchange_manager,
     is_compatible_account,
     get_historical_ohlcv,
     get_exchange_type,
@@ -35,6 +36,8 @@ from octobot_trading.exchanges.util.exchange_util import (
     is_missing_trading_fees,
     apply_trades_fees,
     get_exchange_class_from_name,
+    get_auto_filled_exchange_names,
+    get_exchange_details,
 )
 from octobot_trading.exchanges.util import websockets_util
 from octobot_trading.exchanges.util.websockets_util import (
@@ -52,6 +55,7 @@ __all__ = [
     "log_time_sync_error",
     "get_partners_explanation_message",
     "get_enabled_exchanges",
+    "get_local_exchange_manager",
     "is_compatible_account",
     "get_historical_ohlcv",
     "get_exchange_type",
@@ -61,6 +65,8 @@ __all__ = [
     "is_missing_trading_fees",
     "apply_trades_fees",
     "get_exchange_class_from_name",
+    "get_auto_filled_exchange_names",
+    "get_exchange_details",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",

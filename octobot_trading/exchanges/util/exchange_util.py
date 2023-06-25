@@ -13,6 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+
+import ccxt
 import trading_backend
 
 import octobot_commons.logging as logging
@@ -26,6 +29,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.implementations as exchanges_implementations
+import octobot_trading.exchanges.exchange_details as exchange_details
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
 
@@ -66,7 +70,54 @@ def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles
             # As we are searching for an exchange_type specific subclass
             # We should ignore classes that raises NotImplementedError
             pass
+    auto_filled_exchanges = _get_auto_filled_exchanges(tentacles_setup_config)
+    if exchange_name in auto_filled_exchanges:
+        return auto_filled_exchanges[exchange_name][0]
     return None
+
+
+def _get_auto_filled_exchanges(tentacles_setup_config):
+    auto_filled_exchanges = {}
+    for exchange_candidate in _get_auto_filled_exchanges_tentacles():
+        config = api.get_tentacle_config(
+            tentacles_setup_config, exchange_candidate
+        )
+        for exchange_name in exchange_candidate.supported_autofill_exchanges(config):
+            auto_filled_exchanges[exchange_name] = (exchange_candidate, config)
+    return auto_filled_exchanges
+
+
+def get_auto_filled_exchange_names(tentacles_setup_config):
+    return list(_get_auto_filled_exchanges(tentacles_setup_config))
+
+
+def _get_auto_filled_exchanges_tentacles():
+    return [
+        exchange_candidate
+        for exchange_candidate in tentacles_management.get_all_classes_from_parent(exchanges_types.RestExchange)
+        if exchange_candidate.HAS_FETCHED_DETAILS
+    ]
+
+
+async def get_exchange_details(
+    exchange_name, is_autofilled, tentacles_setup_config, aiohttp_session
+) -> exchange_details.ExchangeDetails:
+    if is_autofilled:
+        auto_filled_exchanges = _get_auto_filled_exchanges(tentacles_setup_config)
+        if exchange_name in auto_filled_exchanges:
+            return await auto_filled_exchanges[exchange_name][0].get_autofilled_exchange_details(
+                aiohttp_session, auto_filled_exchanges[exchange_name][1], exchange_name
+            )
+    else:
+        exchange = getattr(ccxt, exchange_name)()
+        return exchange_details.ExchangeDetails(
+            exchange.id,
+            exchange.name,
+            exchange.urls["www"],
+            exchange.urls["api"],
+            exchange.urls["logo"],
+            False,
+        )
 
 
 def _is_exchange_candidate_matching(exchange_candidate, exchange_name, tentacles_setup_config, enable_default=False):
@@ -141,51 +192,62 @@ def get_enabled_exchanges(config):
     ]
 
 
-async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
-        -> (bool, bool, str):
-    """
-    Returns details regarding the compatibility of the account given in parameters
-    :return: (True if compatible, True if successful login, error explanation if any)
-    """
+@contextlib.asynccontextmanager
+async def get_local_exchange_manager(
+    exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool, ignore_config=False
+):
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
     builder = exchange_builder.ExchangeBuilder(
         _get_minimal_exchange_config(exchange_name, exchange_config),
         exchange_name
     )
-    local_exchange_manager = await builder.use_tentacles_setup_config(tentacles_setup_config) \
+    exchange_manager = await builder.use_tentacles_setup_config(tentacles_setup_config) \
         .is_checking_credentials(False) \
         .is_sandboxed(is_sandboxed) \
         .is_using_exchange_type(exchange_type) \
         .is_exchange_only() \
         .is_rest_only() \
         .is_loading_markets(False) \
+        .is_ignoring_config(ignore_config) \
         .disable_trading_mode() \
         .build()
-    backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
     try:
-        is_compatible, error = await backend.is_valid_account()
-        if not local_exchange_manager.is_spot_only:
-            message = f"Future trading on {exchange_name.capitalize()} requires a supporting account. {error}." \
-                      f"Please create a new {exchange_name.capitalize()} account to use futures trading. "
-            # only ensure compatibility for non spot trading
-            return is_compatible, True, message if error else error
-        else:
-            # auth didn't fail, spot trading is always allowed
-            return True, True, None
-    except trading_backend.TimeSyncError:
-        return False, False, _get_time_sync_error_message(exchange_name, "backend.is_valid_account")
-    except trading_backend.ExchangeAuthError:
-        return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
-    except (AttributeError, Exception) as e:
-        return True, False, f"Error when loading exchange account: {e}"
+        yield exchange_manager
     finally:
         # do not log stopping message
-        logger = local_exchange_manager.exchange.connector.logger
+        logger = exchange_manager.exchange.connector.logger
         logger.disable(True)
-        await local_exchange_manager.stop(enable_logs=False)
         builder.clear()
-        builder = local_exchange_manager = None
+        await exchange_manager.stop(enable_logs=False)
         logger.disable(False)
+
+
+async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
+        -> (bool, bool, str):
+    """
+    Returns details regarding the compatibility of the account given in parameters
+    :return: (True if compatible, True if successful login, error explanation if any)
+    """
+    async with get_local_exchange_manager(
+        exchange_name, exchange_config, tentacles_setup_config, is_sandboxed
+    ) as local_exchange_manager:
+        backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
+        try:
+            is_compatible, error = await backend.is_valid_account()
+            if not local_exchange_manager.is_spot_only:
+                message = f"Future trading on {exchange_name.capitalize()} requires a supporting account. {error}." \
+                          f"Please create a new {exchange_name.capitalize()} account to use futures trading. "
+                # only ensure compatibility for non spot trading
+                return is_compatible, True, message if error else error
+            else:
+                # auth didn't fail, spot trading is always allowed
+                return True, True, None
+        except trading_backend.TimeSyncError:
+            return False, False, _get_time_sync_error_message(exchange_name, "backend.is_valid_account")
+        except trading_backend.ExchangeAuthError:
+            return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
+        except (AttributeError, Exception) as e:
+            return True, False, f"Error when loading exchange account: {e}"
 
 
 async def get_historical_ohlcv(
@@ -237,9 +299,10 @@ def get_default_exchange_type(exchange_name):
     return common_constants.DEFAULT_EXCHANGE_TYPE
 
 
-def get_supported_exchange_types(exchange_name):
-    exchange_class = get_exchange_class_from_name(exchanges_types.RestExchange, exchange_name, None, False,
-                                                  strict_name_matching=True)
+def get_supported_exchange_types(exchange_name, tentacles_setup_config):
+    exchange_class = get_exchange_class_from_name(
+        exchanges_types.RestExchange, exchange_name, tentacles_setup_config, False, strict_name_matching=True
+    )
     if exchange_class is None:
         # default
         return [enums.ExchangeTypes.SPOT]
