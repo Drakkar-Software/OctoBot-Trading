@@ -40,12 +40,6 @@ from octobot_trading.exchanges.abstract_websocket_exchange import (
     AbstractWebsocketExchange,
 )
 
-from octobot_trading.exchanges import basic_exchange_wrapper
-from octobot_trading.exchanges.basic_exchange_wrapper import (
-    BasicExchangeWrapper,
-    temporary_exchange_wrapper,
-)
-
 from octobot_trading.exchanges import exchange_manager
 from octobot_trading.exchanges.exchange_manager import (
     ExchangeManager,
@@ -181,8 +175,6 @@ __all__ = [
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
     "AbstractWebsocketExchange",
-    "BasicExchangeWrapper",
-    "temporary_exchange_wrapper",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
