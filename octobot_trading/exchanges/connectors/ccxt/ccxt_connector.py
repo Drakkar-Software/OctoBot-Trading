@@ -48,7 +48,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     """
 
     def __init__(
-            self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None, force_auth=False
+        self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None, force_auth=False
     ):
         super().__init__(config, exchange_manager)
         self.client = None

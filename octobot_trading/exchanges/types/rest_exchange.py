@@ -57,6 +57,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
     # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
     REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
+    HAS_FETCHED_DETAILS = False  # set True when this exchange details (urls etc) have to be fetched before
+    # starting the exchange
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -65,7 +67,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     Is extended in exchange tentacles to define custom behaviors or exchange adapter (override of get_adapter_class)
     """
-
     # Mark price params
     MARK_PRICE_IN_POSITION = False
     MARK_PRICE_IN_TICKER = False
@@ -81,6 +82,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     def __init__(self, config, exchange_manager, connector_class=None):
         super().__init__(config, exchange_manager)
+        if self.HAS_FETCHED_DETAILS:
+            self._fetch_details(config, exchange_manager)
         self.connector = self._create_connector(config, exchange_manager, connector_class)
         self.pair_contracts = {}
         self.update_supported_elements(exchange_manager)
@@ -830,6 +833,21 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: True if the symbol is related to a contract having an expiration date
         """
         return self.connector.is_expirable_symbol(symbol)
+
+    """
+    Auto fetched and filled exchanges
+    """
+    def _fetch_details(self, config, exchange_manager):
+        raise NotImplementedError("_fetch_details is not implemented")
+
+    @staticmethod
+    def supported_autofill_exchanges(tentacle_config):
+        raise NotImplementedError("supported_autofill_exchanges is not implemented")
+
+    @classmethod
+    async def get_autofilled_exchange_details(cls, aiohttp_session, tentacle_config, exchange_name):
+        raise NotImplementedError("get_autofilled_exchange_details is not implemented")
+
 
     """
     Parsers todo remove ?
