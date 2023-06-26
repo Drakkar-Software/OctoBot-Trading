@@ -31,9 +31,9 @@ pytestmark = pytest.mark.asyncio
 
 class TestWavesExchangeRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "wavesexchange"
-    SYMBOL = "ETH/USDT"
-    SYMBOL_2 = "CRO/XTN"
-    SYMBOL_3 = "SHIB/XTN"
+    SYMBOL = "ETH/USDT-ERC20"
+    SYMBOL_2 = "CRO-WXG/XTN"
+    SYMBOL_3 = "SHIB-WXG/XTN"
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = RealExchangeTester.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1    # account for dumped candle
 
     async def test_time_frames(self):

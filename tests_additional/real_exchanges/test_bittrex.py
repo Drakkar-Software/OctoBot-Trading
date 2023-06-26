@@ -91,7 +91,12 @@ class TestBittrexRealExchangeTester(RealExchangeTester):
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                if limit is None:
+                    assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                else:
+                    with pytest.raises(AssertionError):  # not supported: candles are after the max time requested
+                        assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_kline_price(self):
         # kline_price = await self.get_kline_price()

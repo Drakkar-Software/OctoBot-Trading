@@ -20,6 +20,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
+import octobot_trading.errors as errors
 from tests_additional.real_exchanges.real_futures_exchange_tester import RealFuturesExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
@@ -140,9 +141,10 @@ class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        tickers = await self.get_all_currencies_price_ticker()
-        for symbol, ticker in tickers.items():
-            self._check_ticker(ticker, symbol)
+        with pytest.raises(errors.NotSupported):
+            tickers = await self.get_all_currencies_price_ticker()
+            for symbol, ticker in tickers.items():
+                self._check_ticker(ticker, symbol)
 
     async def test_get_funding_rate(self):
         funding_rate, ticker_funding_rate = await self.get_funding_rate()
