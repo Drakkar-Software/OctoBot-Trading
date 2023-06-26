@@ -229,7 +229,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     :return: (True if compatible, True if successful login, error explanation if any)
     """
     async with get_local_exchange_manager(
-        exchange_name, exchange_config, tentacles_setup_config, is_sandboxed
+        exchange_name, exchange_config, tentacles_setup_config, is_sandboxed, ignore_config=False
     ) as local_exchange_manager:
         backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
         try:

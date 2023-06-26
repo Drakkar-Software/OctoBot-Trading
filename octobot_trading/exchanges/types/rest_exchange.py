@@ -129,6 +129,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def get_rest_name(self):
         return self.exchange_manager.exchange_class_string
 
+    def get_associated_websocket_exchange_name(self):
+        return self.exchange_manager.exchange_name
+
     def get_adapter_class(self):
         # Override in tentacles when using a custom adapter
         return None
