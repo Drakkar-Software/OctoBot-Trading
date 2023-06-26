@@ -28,6 +28,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.implementations as exchanges_implementations
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.exchange_details as exchange_details
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
@@ -116,9 +117,9 @@ async def get_exchange_details(
         return exchange_details.ExchangeDetails(
             exchange.id,
             exchange.name,
-            exchange.urls["www"],
-            exchange.urls["api"],
-            exchange.urls["logo"],
+            exchange.urls[ccxt_enums.ExchangeColumns.WEBSITE.value],
+            exchange.urls[ccxt_enums.ExchangeColumns.API.value],
+            exchange.urls[ccxt_enums.ExchangeColumns.LOGO_URL.value],
             False,
         )
     except AttributeError as err:

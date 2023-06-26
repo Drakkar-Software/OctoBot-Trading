@@ -110,6 +110,15 @@ class ExchangeWrapperLibs(enum.Enum):
     CCXT = "ccxt"
 
 
+class ExchangeColumns(enum.Enum):
+    WEBSITE = "www"
+    URLS = "urls"
+    API = "api"
+    REST = "rest"
+    WEBSOCKET = "ws"
+    LOGO_URL = "logo"
+
+
 class ExchangeMarginTypes(enum.Enum):
     ISOLATED = "isolated"
     CROSS = "cross"
