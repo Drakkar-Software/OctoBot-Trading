@@ -75,7 +75,6 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "binance",
     "bitfinex2",
     "bitstamp",
-    "bittrex",
     "bybit",
     "gateio",
     "hitbtc",

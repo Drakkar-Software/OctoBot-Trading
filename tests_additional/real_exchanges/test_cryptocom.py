@@ -65,12 +65,13 @@ class TestCryptoComRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(market_status, expect_invalid_price_limit_values=False,
                                             enable_price_and_cost_comparison=False,
-                                            normal_cost_min=1e-10, low_cost_min=1e-9)
+                                            normal_cost_min=1e-10, low_cost_min=1e-9,
+                                            has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 300
+        assert len(symbol_prices) == 25
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle

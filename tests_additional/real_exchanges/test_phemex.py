@@ -78,7 +78,7 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 100
+        assert len(symbol_prices) == 1000
         symbol_prices = await self.get_symbol_prices(limit=100)
         assert len(symbol_prices) == 100
         symbol_prices = await self.get_symbol_prices(limit=500)
@@ -90,22 +90,33 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
 
         # try with candles limit (used in candled updater)
         symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 100    # see possibleLimitValues
+        assert len(symbol_prices) == 200    # see possibleLimitValues
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_historical_symbol_prices(self):
+        # try with since and limit (used in data collector)
         for limit in (100, None):
-            assert len(await self.get_symbol_prices(since=self.CANDLE_SINCE_SEC, limit=limit)) == 5    # not supported
+            symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
+            if limit:
+                assert len(symbol_prices) == limit
+            else:
+                assert len(symbol_prices) > 5
+            # check candles order (oldest first)
+            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            # check that fetched candles are historical candles
+            max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
+            assert max_candle_time <= self.get_time()
+            for candle in symbol_prices:
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                with pytest.raises(AssertionError):  # not supported: candles are after the max time requested
+                    assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_kline_price(self):
-        # todo add param in tentacle
         kline_price = await self.get_kline_price()
-        # get_kline_price is returning the last 100 candles on phemex
-        assert len(kline_price) == 100
-        kline_price = [kline_price[-1]]
+        assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
         kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
         # assert kline is the current candle
@@ -129,8 +140,9 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        with pytest.raises(errors.NotSupported):
-            await self.get_all_currencies_price_ticker()
+        tickers = await self.get_all_currencies_price_ticker()
+        for symbol, ticker in tickers.items():
+            self._check_ticker(ticker, symbol)
 
     @staticmethod
     def _check_ticker(ticker, symbol, check_content=False):
