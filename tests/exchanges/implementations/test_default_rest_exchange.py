@@ -18,24 +18,10 @@ import octobot_trading.exchanges as exchanges
 import octobot_commons.enums as commons_enums
 import pytest
 
-from tests.exchanges import exchange_manager, DEFAULT_EXCHANGE_NAME
+from tests.exchanges import exchange_manager, DEFAULT_EXCHANGE_NAME, MockedRestExchange
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
-
-
-class MockedCCXTConnector(exchanges.CCXTConnector):
-    @classmethod
-    def get_name(cls):
-        return DEFAULT_EXCHANGE_NAME
-
-
-class MockedRestExchange(exchanges.DefaultRestExchange):
-    DEFAULT_CONNECTOR_CLASS = MockedCCXTConnector
-
-    @classmethod
-    def get_exchange_connector_class(cls, exchange_manager):
-        return cls.DEFAULT_CONNECTOR_CLASS
 
 
 @pytest.fixture

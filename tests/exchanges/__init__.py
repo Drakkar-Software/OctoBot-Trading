@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
 import os
 import mock
 import pytest
@@ -28,6 +29,8 @@ from octobot_commons.enums import TimeFrames
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from octobot_trading.exchanges.implementations.default_rest_exchange import DefaultRestExchange
+from octobot_trading.exchanges.connectors.ccxt.ccxt_connector import CCXTConnector
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
@@ -39,6 +42,54 @@ TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
 DEFAULT_EXCHANGE_NAME = "binanceus"
 DEFAULT_FUTURE_EXCHANGE_NAME = "bybit"
+
+
+class MockedCCXTConnector(CCXTConnector):
+    @classmethod
+    def get_name(cls):
+        return DEFAULT_EXCHANGE_NAME
+
+
+class MockedRestExchange(DefaultRestExchange):
+    DEFAULT_CONNECTOR_CLASS = MockedCCXTConnector
+
+    @classmethod
+    def get_exchange_connector_class(cls, exchange_manager):
+        return cls.DEFAULT_CONNECTOR_CLASS
+
+    @classmethod
+    def is_default_exchange(cls) -> bool:
+        return False
+
+
+class MockedAutoFillRestExchange(MockedRestExchange):
+    HAS_FETCHED_DETAILS = True
+    _SUPPORTED_EXCHANGE_MOCK = []
+    _EXCHANGE_DETAILS_MOCK = {}
+
+    def _fetch_details(self, config, exchange_manager):
+        pass
+
+    @staticmethod
+    def supported_autofill_exchanges(tentacle_config):
+        return MockedAutoFillRestExchange._SUPPORTED_EXCHANGE_MOCK
+
+    @classmethod
+    async def get_autofilled_exchange_details(cls, aiohttp_session, tentacle_config, exchange_name):
+        return MockedAutoFillRestExchange._EXCHANGE_DETAILS_MOCK[exchange_name]
+
+    @classmethod
+    @contextlib.contextmanager
+    def patched_supported_exchanges(cls, exchange_details_by_exchange_name):
+        previous_exchanges = cls._SUPPORTED_EXCHANGE_MOCK
+        previous_details = cls._EXCHANGE_DETAILS_MOCK
+        try:
+            cls._SUPPORTED_EXCHANGE_MOCK = list(exchange_details_by_exchange_name)
+            cls._EXCHANGE_DETAILS_MOCK = exchange_details_by_exchange_name
+            yield
+        finally:
+            cls._SUPPORTED_EXCHANGE_MOCK = previous_exchanges
+            cls._EXCHANGE_DETAILS_MOCK = previous_details
 
 
 @pytest_asyncio.fixture

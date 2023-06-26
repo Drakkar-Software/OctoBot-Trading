@@ -22,6 +22,8 @@ import octobot_commons.configuration as commons_configuration
 import octobot_trading.exchanges as exchanges
 
 from tests import event_loop
+from tests.exchanges import MockedRestExchange, MockedAutoFillRestExchange
+import octobot_tentacles_manager.api as api
 
 
 @pytest.fixture
@@ -36,6 +38,14 @@ def exchange_config():
     return {
         commons_constants.CONFIG_EXCHANGE_KEY: commons_configuration.encrypt("01234").decode(),
         commons_constants.CONFIG_EXCHANGE_SECRET: commons_configuration.encrypt("012345").decode()
+    }
+
+
+@pytest.fixture()
+def supported_exchanges():
+    return {
+        "plop.exchange": exchanges.ExchangeDetails("id_plop", "name_plop", "url_plop", "api_plop", "logo_plop", True),
+        "blip": exchanges.ExchangeDetails("id_blip", "name_blip", "url_blip", "api_blip", "logo_blip", True)
     }
 
 
@@ -107,3 +117,126 @@ async def test_is_compatible_account_with_unchecked_exchange(exchange_config, te
         assert auth is False
         assert "authentication" in error and len(error) > len("authentication")
         is_valid_account_mock.assert_called_once()
+
+
+def test_get_auto_filled_exchange_names(tentacles_setup_config, supported_exchanges):
+    with mock.patch.object(api, "get_tentacle_config", mock.Mock()) as get_tentacle_config_mock:
+        # no auto filled exchanges
+        assert exchanges.get_auto_filled_exchange_names(tentacles_setup_config) == []
+        get_tentacle_config_mock.assert_called_once_with(tentacles_setup_config, MockedAutoFillRestExchange)
+        get_tentacle_config_mock.reset_mock()
+
+        with MockedAutoFillRestExchange.patched_supported_exchanges(supported_exchanges):
+            auto_filled_exchanges = exchanges.get_auto_filled_exchange_names(tentacles_setup_config)
+            assert auto_filled_exchanges == list(supported_exchanges)
+            assert "blip" in auto_filled_exchanges
+            get_tentacle_config_mock.assert_called_once_with(tentacles_setup_config, MockedAutoFillRestExchange)
+
+
+def test_get_exchange_class_from_name(tentacles_setup_config, supported_exchanges):
+    # not found exchange
+    assert exchanges.get_exchange_class_from_name(
+        exchanges.RestExchange, "plop", tentacles_setup_config, True,
+        strict_name_matching=False
+    ) == exchanges.DefaultRestExchange
+    with mock.patch.object(api, "get_tentacle_config", mock.Mock()) as get_tentacle_config_mock:
+        assert exchanges.get_exchange_class_from_name(
+            exchanges.RestExchange, "plop", tentacles_setup_config, False,
+            strict_name_matching=False
+        ) == MockedRestExchange
+        get_tentacle_config_mock.assert_not_called()
+        assert exchanges.get_exchange_class_from_name(
+            exchanges.RestExchange, "plop", tentacles_setup_config, True,
+            strict_name_matching=True
+        ) is None
+        get_tentacle_config_mock.assert_called_once()
+        get_tentacle_config_mock.reset_mock()
+
+    # regular exchange
+    assert exchanges.get_exchange_class_from_name(
+        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+        strict_name_matching=False
+    ) == exchanges.DefaultRestExchange
+    assert exchanges.get_exchange_class_from_name(
+        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, False,
+        strict_name_matching=False
+    ) == MockedRestExchange
+    assert exchanges.get_exchange_class_from_name(
+        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+        strict_name_matching=True
+    ) == MockedRestExchange
+
+    with mock.patch.object(api, "get_tentacle_config", mock.Mock()) as get_tentacle_config_mock:
+        # auto-filled exchange
+        with MockedAutoFillRestExchange.patched_supported_exchanges(supported_exchanges):
+            assert exchanges.get_exchange_class_from_name(
+                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+                strict_name_matching=False
+            ) == exchanges.DefaultRestExchange
+            assert exchanges.get_exchange_class_from_name(
+                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, False,
+                strict_name_matching=False
+            ) == MockedRestExchange
+            assert exchanges.get_exchange_class_from_name(
+                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+                strict_name_matching=True
+            ) == MockedRestExchange
+
+            get_tentacle_config_mock.assert_not_called()
+
+            assert exchanges.get_exchange_class_from_name(
+                exchanges.RestExchange, "blip", tentacles_setup_config, True,
+                strict_name_matching=False
+            ) == exchanges.DefaultRestExchange
+            assert exchanges.get_exchange_class_from_name(
+                exchanges.RestExchange, "blip", tentacles_setup_config, False,
+                strict_name_matching=False
+            ) == MockedRestExchange
+            get_tentacle_config_mock.assert_not_called()
+            assert exchanges.get_exchange_class_from_name(
+                exchanges.RestExchange, "blip", tentacles_setup_config, True,
+                strict_name_matching=True
+            ) == MockedAutoFillRestExchange
+            get_tentacle_config_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_exchange_details(tentacles_setup_config, supported_exchanges):
+    with mock.patch.object(api, "get_tentacle_config", mock.Mock()) as get_tentacle_config_mock:
+        # not found exchange
+        with pytest.raises(KeyError):
+            await exchanges.get_exchange_details(
+                "blip", False, tentacles_setup_config, None
+            )
+        get_tentacle_config_mock.assert_not_called()
+        with pytest.raises(KeyError):
+            await exchanges.get_exchange_details(
+                "blip", True, tentacles_setup_config, None
+            )
+        get_tentacle_config_mock.assert_called_once()
+        get_tentacle_config_mock.reset_mock()
+
+        # regular exchange
+        details = await exchanges.get_exchange_details(
+            "binance", False, tentacles_setup_config, None
+        )
+        assert details.id == "binance"
+        assert details.name == "Binance"
+        assert details.url == "https://www.binance.com"
+        assert len(details.api) > 1
+        assert "https://user-images.githubusercontent.com/" in details.logo_url
+        assert details.has_websocket is False   # default value
+        get_tentacle_config_mock.assert_not_called()
+
+        # auto-filled exchange
+        with MockedAutoFillRestExchange.patched_supported_exchanges(supported_exchanges):
+            with pytest.raises(KeyError):
+                await exchanges.get_exchange_details(
+                    "blip", False, tentacles_setup_config, None
+                )
+            get_tentacle_config_mock.assert_not_called()
+            details = await exchanges.get_exchange_details(
+                "blip", True, tentacles_setup_config, None
+            )
+            assert details == supported_exchanges["blip"]
+            get_tentacle_config_mock.assert_called_once()

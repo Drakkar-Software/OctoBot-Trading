@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
-
 import ccxt
 import trading_backend
 
@@ -55,13 +54,14 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
     return exchanges_implementations.DefaultRestExchange
 
 
-def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles_setup_config, enable_default,
-                                 strict_name_matching=False):
+def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles_setup_config,
+                                 enable_default_implementation, strict_name_matching=False):
     for exchange_candidate in tentacles_management.get_all_classes_from_parent(exchange_parent_class):
         try:
-            if _is_exchange_candidate_matching(exchange_candidate, exchange_name,
-                                               tentacles_setup_config, enable_default=enable_default) and \
-               (not strict_name_matching or exchange_candidate.get_name() == exchange_name):
+            if _is_exchange_candidate_matching(
+                exchange_candidate, exchange_name, tentacles_setup_config,
+                enable_default_implementation=enable_default_implementation
+            ) and (not strict_name_matching or exchange_candidate.get_name() == exchange_name):
                 return exchange_candidate
         except NotImplementedError:
             # A subclass of AbstractExchange will raise a NotImplementedError when calling its get_name() method
@@ -79,6 +79,9 @@ def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles
 def _get_auto_filled_exchanges(tentacles_setup_config):
     auto_filled_exchanges = {}
     for exchange_candidate in _get_auto_filled_exchanges_tentacles():
+        if tentacles_setup_config is None:
+            # tentacles_setup_config is required for auto-filled exchanges
+            continue
         config = api.get_tentacle_config(
             tentacles_setup_config, exchange_candidate
         )
@@ -108,7 +111,7 @@ async def get_exchange_details(
             return await auto_filled_exchanges[exchange_name][0].get_autofilled_exchange_details(
                 aiohttp_session, auto_filled_exchanges[exchange_name][1], exchange_name
             )
-    else:
+    try:
         exchange = getattr(ccxt, exchange_name)()
         return exchange_details.ExchangeDetails(
             exchange.id,
@@ -118,11 +121,15 @@ async def get_exchange_details(
             exchange.urls["logo"],
             False,
         )
+    except AttributeError as err:
+        raise KeyError from err
 
 
-def _is_exchange_candidate_matching(exchange_candidate, exchange_name, tentacles_setup_config, enable_default=False):
+def _is_exchange_candidate_matching(
+    exchange_candidate, exchange_name, tentacles_setup_config, enable_default_implementation=False
+):
     return not exchange_candidate.is_simulated_exchange() and \
-           (not exchange_candidate.is_default_exchange() or enable_default) and \
+           (not exchange_candidate.is_default_exchange() or enable_default_implementation) and \
            exchange_candidate.is_supporting_exchange(exchange_name) and \
            (tentacles_setup_config is None or
             api.is_tentacle_activated_in_tentacles_setup_config(tentacles_setup_config,
