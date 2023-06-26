@@ -82,7 +82,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         try:
             if self.exchange_manager.exchange.is_supporting_sandbox():
                 ccxt_client_util.set_sandbox_mode(
-                    self, self.exchange_manager.is_sandboxed)
+                    self, self.exchange_manager.is_sandboxed
+                )
                 
             if self.force_authentication or (
                 self._should_authenticate() and not self.exchange_manager.exchange_only
@@ -159,7 +160,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def _create_client(self):
         self.client, self.is_authenticated = ccxt_client_util.create_client(
-            self.exchange_type, self.name, self.exchange_manager, self.logger,
+            self.exchange_type, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
             self._should_authenticate(), self.unauthenticated_exchange_fallback
         )

@@ -250,7 +250,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         """
         client_class = getattr(ccxtpro, self.get_feed_name())
         self.client, self.is_authenticated = ccxt_client_util.create_client(
-            client_class, self.name, self.exchange_manager, self.logger,
+            client_class, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
             self._should_authenticate()
         )

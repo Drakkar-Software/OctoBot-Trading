@@ -61,7 +61,10 @@ class AbstractWebsocketExchange:
 
         self.client = None
         self.name = self.get_name()
-        self.logger = logging.get_logger(f"WebSocket - {self.name}")
+        self.logger = logging.get_logger(self._get_logger_name())
+
+    def _get_logger_name(self):
+        return f"WebSocket - {self.name}"
 
     def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
         self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []

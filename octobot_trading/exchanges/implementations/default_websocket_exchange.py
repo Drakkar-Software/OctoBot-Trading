@@ -25,7 +25,7 @@ class DefaultWebSocketExchange(exchanges_types.WebSocketExchange):
     @classmethod
     def get_exchange_connector_class(cls, exchange_manager):
         return api.get_class_from_name_with_activated_required_tentacles(
-            name=exchange_manager.exchange_name,
+            name=exchange_manager.exchange.get_associated_websocket_exchange_name(),
             tentacles_setup_config=exchange_manager.tentacles_setup_config,
             parent_class=cls.DEFAULT_CONNECTOR_CLASS
         )
