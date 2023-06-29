@@ -54,6 +54,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # set True when get_positions() is not returning empty positions and should use get_position() instead
     REQUIRES_SYMBOL_FOR_EMPTY_POSITION = False
     SUPPORTS_SET_MARGIN_TYPE = True  # set False when there is no API to switch between cross and isolated margin types
+    SUPPORTS_SET_MARGIN_TYPE_ON_OPEN_POSITIONS = True  # set False when the exchange refuses to change margin type
+    # when an associated position is open
     EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
     # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
     REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication

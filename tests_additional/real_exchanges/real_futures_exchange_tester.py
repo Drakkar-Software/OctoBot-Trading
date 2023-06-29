@@ -27,7 +27,7 @@ class RealFuturesExchangeTester(RealExchangeTester):
         pass
 
     async def get_funding_rate(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return (
                 await exchange_manager.exchange.get_funding_rate(self.SYMBOL, **kwargs),
                 exchange_manager.exchange.parse_funding(
