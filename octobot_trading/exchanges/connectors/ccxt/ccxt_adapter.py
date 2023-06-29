@@ -197,6 +197,8 @@ class CCXTAdapter(adapters.AbstractAdapter):
             else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
         is_empty = contracts == constants.ZERO
         liquidation_price = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)
+        if margin_type := fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None):
+            margin_type = enums.MarginType(margin_type)
         if force_empty or liquidation_price is None:
             liquidation_price = constants.NaN
         else:
@@ -208,8 +210,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     fixed.get(ccxt_enums.ExchangePositionCCXTColumns.TIMESTAMP.value,
                               self.connector.get_exchange_current_time()),
                 enums.ExchangeConstantsPositionColumns.SIDE.value: position_side,
-                enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
-                    fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
+                enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: margin_type,
                 enums.ExchangeConstantsPositionColumns.SIZE.value:
                     contract_size * contracts if original_side == enums.PositionSide.LONG.value
                     else -contract_size * contracts,

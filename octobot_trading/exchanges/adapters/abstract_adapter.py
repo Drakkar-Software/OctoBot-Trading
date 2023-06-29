@@ -31,7 +31,9 @@ def _adapter(func):
             # add any other common adapter function logic here
             return adapted
         except Exception as err:
-            raise errors.UnexpectedAdapterError(f"Unexpected error when adapting exchange data: {err}") from err
+            raise errors.UnexpectedAdapterError(
+                f"Unexpected error when adapting exchange data: {err} (data: {args[1]})"
+            ) from err
     return wrapper
 
 

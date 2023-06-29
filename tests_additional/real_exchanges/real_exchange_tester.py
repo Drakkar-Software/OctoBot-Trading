@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+
 from ccxt import Exchange
 
 import octobot_commons.constants as constants
@@ -103,50 +105,48 @@ class RealExchangeTester:
                 }
             }
         }
+    
+    @contextlib.asynccontextmanager
+    async def get_exchange_manager(self):
+        async with get_exchange_manager(self.EXCHANGE_NAME, config=self.get_config(),
+                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+            yield exchange_manager
 
     async def time_frames(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return exchange_manager.exchange.time_frames
 
     async def get_market_statuses(self):
         # return 2 different market status with different traded pairs to reduce possible
         # side effects using only one pair.
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return exchange_manager.exchange.get_market_status(self.SYMBOL), \
                 exchange_manager.exchange.get_market_status(self.SYMBOL_2), \
                 exchange_manager.exchange.get_market_status(self.SYMBOL_3)
 
     async def get_symbol_prices(self, limit=None, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME,
                                                                      limit=limit, **kwargs)
 
     async def get_kline_price(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_kline_price(self.SYMBOL, self.TIME_FRAME, **kwargs)
 
     async def get_order_book(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_order_book(self.SYMBOL, **kwargs)
 
     async def get_recent_trades(self, limit=50):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_recent_trades(self.SYMBOL, limit=limit)
 
     async def get_price_ticker(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_price_ticker(self.SYMBOL)
 
     async def get_all_currencies_price_ticker(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+        async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
 
     def get_allowed_time_delta(self):
