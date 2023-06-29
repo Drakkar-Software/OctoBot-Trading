@@ -50,7 +50,13 @@ async def set_leverage(ctx, leverage):
         except NotImplementedError as e:
             ctx.logger.exception(e, True, str(e))
         except Exception as e:
-            ctx.logger.exception(e, True, str(e))
+            contract = ctx.exchange_manager.exchange.get_pair_future_contract(ctx.symbol)
+            ctx.logger.exception(
+                e,
+                True,
+                f"Impossible to set leverage to {leverage}, using current "
+                f"value instead: {contract.current_leverage} ({e})"
+            )
 
 
 async def set_partial_take_profit_stop_loss(ctx, tp_sl_mode=enums.TakeProfitStopLossMode.PARTIAL.value):
