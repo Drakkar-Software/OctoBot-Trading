@@ -77,7 +77,9 @@ class ExchangeBuilder:
             # add to global exchanges
             self.exchange_manager.update_debug_info()
         except Exception:
-            exchanges.Exchanges.instance().del_exchange(self.exchange_manager.exchange_name, self.exchange_manager.id)
+            exchanges.Exchanges.instance().del_exchange(
+                self.exchange_manager.exchange_name, self.exchange_manager.id, should_warn=False
+            )
             raise
 
     async def _build_trader(self):

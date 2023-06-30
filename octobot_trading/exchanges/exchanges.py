@@ -66,8 +66,9 @@ class Exchanges(singleton.Singleton):
                 self.exchanges.pop(exchange_name, None)
         except KeyError:
             if should_warn:
-                logging.get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
-                                                                    f"with id {exchange_manager_id}")
+                logging.get_logger(self.__class__.__name__).warning(
+                    "Can't del exchange {exchange_name} with id {exchange_manager_id}"
+                )
 
     def get_exchange_names(self) -> typing.KeysView:
         return self.exchanges.keys()

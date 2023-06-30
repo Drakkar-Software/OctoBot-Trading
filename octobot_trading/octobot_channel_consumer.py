@@ -63,8 +63,8 @@ async def octobot_channel_callback(bot_id, subject, action, data) -> None:
 
 async def _handle_creation(bot_id, action, data):
     if action == OctoBotChannelTradingActions.EXCHANGE.value:
+        exchange_name = data.get(OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value, None)
         try:
-            exchange_name = data.get(OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value, None)
             config = data[OctoBotChannelTradingDataKeys.EXCHANGE_CONFIG.value]
             exchange_builder = exchanges.create_exchange_builder_instance(config, exchange_name) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
@@ -72,12 +72,14 @@ async def _handle_creation(bot_id, action, data):
                 .set_bot_id(bot_id)
             _set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
             await exchange_builder.build()
-            await channel_instances.get_chan_at_id(channels_name.OctoBotChannelsName.OCTOBOT_CHANNEL.value,
-                                                   bot_id).get_internal_producer() \
-                .send(bot_id=bot_id,
-                      subject=enums.OctoBotChannelSubjects.NOTIFICATION.value,
-                      action=action,
-                      data={OctoBotChannelTradingDataKeys.EXCHANGE_ID.value: exchange_builder.exchange_manager.id})
+            await channel_instances.get_chan_at_id(
+                channels_name.OctoBotChannelsName.OCTOBOT_CHANNEL.value, bot_id
+            ).get_internal_producer().send(
+                bot_id=bot_id,
+                subject=enums.OctoBotChannelSubjects.NOTIFICATION.value,
+                action=action,
+                data={OctoBotChannelTradingDataKeys.EXCHANGE_ID.value: exchange_builder.exchange_manager.id}
+            )
         except errors.TradingModeIncompatibility as e:
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
                 f"Error when initializing trading mode, {exchange_name} "
@@ -86,12 +88,16 @@ async def _handle_creation(bot_id, action, data):
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
                 e,
                 True,
-                f"Error when connecting to {exchange_name} exchange, please check your internet connection ({e}).")
+                f"Error when connecting to {exchange_name} exchange, please check your internet connection ({e})."
+            )
+        except errors.NotSupported as e:
+            logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(e, True, str(e))
         except Exception as e:
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
                 e,
                 True,
-                f"Error when creating a new {exchange_name} exchange connexion: {e.__class__.__name__} {e}")
+                f"Error when creating a new {exchange_name} exchange connexion: {e.__class__.__name__} {e}"
+            )
 
 
 def _set_exchange_type_details(exchange_builder, config, backtesting):

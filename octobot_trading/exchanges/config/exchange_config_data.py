@@ -211,27 +211,38 @@ class ExchangeConfig(util.Initializable):
                 constants.CONFIG_SYMBOLS_WILDCARD:
             currency_pairs = []
             for symbol in self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][
-                constants.CONFIG_CRYPTO_PAIRS]:
-                if self.exchange_manager.symbol_exists(symbol):
-                    if is_enabled:
-                        if self._is_pair_compatible(exchange_type, symbol):
-                            currency_pairs.append(symbol)
-                        else:
-                            self._logger.warning(f"Ignored {symbol} trading pair: only {exchange_type.value} "
-                                                 f"pairs are allowed on {self.exchange_manager.exchange_name} when "
-                                                 f"using {exchange_type.value} trading")
-                    # also add disabled pairs to existing pairs since they still exist on exchange
-                    existing_pairs.add(symbol)
-                elif is_enabled:
-                    additional_details = ""
-                    if self.exchange_manager.is_sandboxed:
-                        additional_details = f" Exchange sandbox is enabled, please make sure this pair is traded on " \
-                                             f" the {self.exchange_manager.exchange_name} sandbox as sandboxes " \
-                                             f"usually only support a subset of the real exchange's pairs."
-                    self._logger.error(f"{self.exchange_manager.exchange_name} is not supporting the "
-                                       f"{symbol} trading pair.{additional_details}")
+               constants.CONFIG_CRYPTO_PAIRS]:
+                self._add_compatible_pairs(currency_pairs, symbol, existing_pairs, is_enabled, exchange_type)
             if is_enabled:
                 self.traded_cryptocurrencies[cryptocurrency] = currency_pairs
+
+    def _add_compatible_pairs(self, currency_pairs, symbol, existing_pairs, is_enabled, exchange_type):
+        if self.exchange_manager.symbol_exists(symbol):
+            if is_enabled:
+                if self._is_pair_compatible(exchange_type, symbol):
+                    currency_pairs.append(symbol)
+                else:
+                    self._logger.warning(f"Ignored {symbol} trading pair: only {exchange_type.value} "
+                                         f"pairs are allowed on {self.exchange_manager.exchange_name} when "
+                                         f"using {exchange_type.value} trading")
+            # also add disabled pairs to existing pairs since they still exist on exchange
+            existing_pairs.add(symbol)
+        elif is_enabled:
+            additional_details = ""
+            if self.exchange_manager.is_sandboxed:
+                additional_details = f" Exchange sandbox is enabled, please make sure this pair is traded on " \
+                                     f" the {self.exchange_manager.exchange_name} sandbox as sandboxes " \
+                                     f"usually only support a subset of the real exchange's pairs."
+            self._logger.error(f"{self.exchange_manager.exchange_name} is not supporting the "
+                               f"{symbol} trading pair.{additional_details}")
+
+    @staticmethod
+    def _is_pair_compatible(exchange_type, symbol):
+        parsed_symbol = octobot_commons.symbols.parse_symbol(symbol)
+        if exchange_type is trading_enums.ExchangeTypes.FUTURE:
+            return parsed_symbol.is_future()
+        # allow futures symbols for spot
+        return True
 
     def _populate_wildcard_pairs(self, cryptocurrency, existing_pairs, is_enabled):
         try:
@@ -252,14 +263,6 @@ class ExchangeConfig(util.Initializable):
 
         # also add disabled pairs to existing pairs since they still exist on exchange
         existing_pairs.update(wildcard_pairs_list)
-
-    @staticmethod
-    def _is_pair_compatible(exchange_type, symbol):
-        parsed_symbol = octobot_commons.symbols.parse_symbol(symbol)
-        if exchange_type is trading_enums.ExchangeTypes.FUTURE:
-            return parsed_symbol.is_future()
-        # allow futures symbols for spot
-        return True
 
     def _set_config_time_frame(self):
         display_time_frames = []
