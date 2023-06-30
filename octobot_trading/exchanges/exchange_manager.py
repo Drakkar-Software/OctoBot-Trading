@@ -123,8 +123,9 @@ class ExchangeManager(util.Initializable):
             if not self.exchange_only:
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
             await self.exchange.stop()
-            exchanges.Exchanges.instance().del_exchange(self.exchange.name, self.id,
-                                                        should_warn=warning_on_missing_elements)
+            exchanges.Exchanges.instance().del_exchange(
+                self.exchange.name, self.id, should_warn=warning_on_missing_elements
+            )
             self.exchange.exchange_manager = None
             self.exchange = None
         if self.exchange_personal_data is not None:

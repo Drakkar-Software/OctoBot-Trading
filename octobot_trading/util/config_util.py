@@ -13,8 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
+import collections
 import octobot_commons.constants as commons_constants
 import octobot_trading.constants as trading_constants
+import octobot_trading.enums as trading_enums
 import octobot_commons.symbols as symbol_util
 
 
@@ -61,6 +63,29 @@ def get_symbols(config, enabled_only) -> list:
             if symbol != commons_constants.CONFIG_SYMBOLS_WILDCARD[0]
         ]
     return []
+
+
+def get_symbol_trading_type(symbol) -> str:
+    parsed_symbol = symbol_util.parse_symbol(symbol)
+    if parsed_symbol.is_spot():
+        return trading_enums.ExchangeTypes.SPOT.value
+    elif parsed_symbol.is_perpetual_future():
+        if parsed_symbol.is_linear():
+            return trading_enums.FutureContractType.LINEAR_PERPETUAL.value
+        if parsed_symbol.is_inverse():
+            return trading_enums.FutureContractType.INVERSE_PERPETUAL.value
+    else:
+        if parsed_symbol.is_linear():
+            return trading_enums.FutureContractType.LINEAR_EXPIRABLE.value
+        if parsed_symbol.is_inverse():
+            return trading_enums.FutureContractType.INVERSE_EXPIRABLE.value
+
+
+def get_symbol_types_counts(config, enabled_only) -> dict:
+    enabled_symbols = get_symbols(config, enabled_only)
+    return collections.Counter(
+        get_symbol_trading_type(symbol) for symbol in enabled_symbols
+    )
 
 
 def get_all_currencies(config, enabled_only=False) -> set:
