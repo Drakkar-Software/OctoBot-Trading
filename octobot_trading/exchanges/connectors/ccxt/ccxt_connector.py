@@ -405,7 +405,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                         amount=quantity,
                         stopPrice=price,
                         params=params,
-                    )
+                    ),
+                    symbol=symbol, quantity=quantity
                 )
             except ccxt.OrderImmediatelyFillable:
                 # make sure stop always stops
@@ -434,7 +435,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     price=price,
                     stopPrice=stop_price,
                     params=params,
-                )
+                ),
+                symbol=symbol, quantity=quantity
             )
         raise NotImplementedError("create_limit_stop_loss_order is not implemented")
 
@@ -463,7 +465,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.edit_order(
                 exchange_order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params
             ),
-            symbol=symbol
+            symbol=symbol, quantity=quantity
         )
 
     async def cancel_order(
