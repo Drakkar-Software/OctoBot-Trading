@@ -131,18 +131,30 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             max_order_size, _ = personal_data.get_futures_max_order_size(
                 self.exchange_manager, symbol, side, current_price, False, current_symbol_holding, market_quantity
             )
+            self.logger.debug(
+                f"can_create_order: max_order_size > symbol_min_amount: {max_order_size} > {symbol_min_amount}"
+            )
             return max_order_size > symbol_min_amount
 
         # spot, trade asset directly
         # short cases => sell => need this currency
         if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value:
+            self.logger.debug(
+                f"can_create_order: portfolio.get_currency_portfolio(currency).available > symbol_min_amount: "
+                f"{portfolio.get_currency_portfolio(currency).available} > {symbol_min_amount}"
+            )
             return portfolio.get_currency_portfolio(currency).available > symbol_min_amount
 
         # long cases => buy => need money(aka other currency in the pair) to buy this currency
         elif state == enums.EvaluatorStates.LONG.value or state == enums.EvaluatorStates.VERY_LONG.value:
+            self.logger.debug(
+                f"can_create_order: portfolio.get_currency_portfolio(market).available > order_min_amount: "
+                f"{portfolio.get_currency_portfolio(market).available} > {order_min_amount}"
+            )
             return portfolio.get_currency_portfolio(market).available > order_min_amount
 
         # other cases like neutral state or unfulfilled previous conditions
+        self.logger.debug("can_create_order: return False")
         return False
 
     def get_holdings_ratio(self, currency):
