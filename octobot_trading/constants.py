@@ -100,6 +100,7 @@ TESTED_EXCHANGES = [
     "cryptocom",
     "phemex",
     "hollaex",
+    "mexc",
 ]
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 SIMULATOR_TESTED_EXCHANGES = ["bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",
