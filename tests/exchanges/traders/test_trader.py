@@ -29,7 +29,7 @@ from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, \
-    ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode
+    ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode, ExchangeSupportedElements
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
@@ -938,7 +938,8 @@ class TestTrader:
         base_order = BuyLimitOrder(trader_inst)
         chained_order = StopLossOrder(trader_inst)
         # with bundle support
-        exchange_manager.exchange.SUPPORTED_BUNDLED_ORDERS[base_order.order_type] = [chained_order.order_type]
+        exchange_manager.exchange.get_supported_elements(ExchangeSupportedElements.SUPPORTED_BUNDLED_ORDERS)[
+            base_order.order_type] = [chained_order.order_type]
         assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, False, kw1=1, kw2="hello") \
                == {}
         # bundled chained_order to base_order
@@ -1066,18 +1067,17 @@ async def test__has_open_position(future_trader_simulator_with_default_linear):
     contract = default_contract
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
 
-    if not os.getenv('CYTHON_IGNORE'):
-        assert not trader_inst._has_open_position(DEFAULT_FUTURE_SYMBOL)
+    assert not trader_inst._has_open_position(DEFAULT_FUTURE_SYMBOL)
 
-        position_inst = LinearPosition(trader_inst, contract)
-        await position_inst.initialize()
-        position_inst.update_from_raw(
-            {
-                ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
-            }
-        )
-        exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
-        assert trader_inst._has_open_position(DEFAULT_FUTURE_SYMBOL)
+    position_inst = LinearPosition(trader_inst, contract)
+    await position_inst.initialize()
+    position_inst.update_from_raw(
+        {
+            ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+    assert trader_inst._has_open_position(DEFAULT_FUTURE_SYMBOL)
 
 
 def make_coroutine(response):

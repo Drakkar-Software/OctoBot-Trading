@@ -59,8 +59,9 @@ async def test_supports_bundled_order_on_order_creation(abstract_exchange):
     order_mock.order_type = enums.TraderOrderType.SELL_MARKET
     assert abstract_exchange.supports_bundled_order_on_order_creation(order_mock, enums.TraderOrderType.STOP_LOSS) \
            is False
-    abstract_exchange.SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.SELL_MARKET] = [enums.TraderOrderType.SELL_MARKET,
-                                                                                     enums.TraderOrderType.BUY_LIMIT]
+    abstract_exchange.get_supported_elements(enums.ExchangeSupportedElements.SUPPORTED_BUNDLED_ORDERS)[
+        enums.TraderOrderType.SELL_MARKET
+    ] = [enums.TraderOrderType.SELL_MARKET, enums.TraderOrderType.BUY_LIMIT]
     assert abstract_exchange.supports_bundled_order_on_order_creation(order_mock, enums.TraderOrderType.STOP_LOSS) \
            is False
     assert abstract_exchange.supports_bundled_order_on_order_creation(order_mock, enums.TraderOrderType.BUY_LIMIT) \
