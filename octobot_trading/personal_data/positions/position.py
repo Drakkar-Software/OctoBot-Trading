@@ -43,7 +43,8 @@ class Position(util.Initializable):
         self.simulated = trader.simulate
 
         self.logger_name = None
-        self.position_id = None
+        self.position_id = None             # position id within OctoBot
+        self.exchange_position_id = None    # position id as fetched from exchange, local to the user account
         self.timestamp = 0
         self.symbol = None
         self.currency, self.market = None, None
@@ -128,7 +129,7 @@ class Position(util.Initializable):
         if new_value is not None and original_value != new_value:
             return True
 
-    def _update(self, position_id, symbol, currency, market, timestamp,
+    def _update(self, position_id, exchange_position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
                 quantity, size, value, initial_margin,
                 unrealized_pnl, realised_pnl, fee_to_close,
@@ -137,6 +138,9 @@ class Position(util.Initializable):
 
         if self._should_change(self.position_id, position_id):
             self.position_id = position_id
+
+        if self._should_change(self.exchange_position_id, exchange_position_id):
+            self.exchange_position_id = exchange_position_id
 
         if self._should_change(self.symbol, symbol):
             self.symbol, self.currency, self.market = symbol, currency, market
@@ -732,7 +736,8 @@ class Position(util.Initializable):
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
             initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
                                             constants.ZERO),
-            position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None) or symbol),
+            position_id=self.position_id or symbol,
+            exchange_position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None) or symbol),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
                                             constants.ZERO),
