@@ -22,6 +22,8 @@ import octobot_commons.tree as commons_tree
 import octobot_trading.personal_data.positions.position_factory as position_factory
 import octobot_trading.util as util
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
+import octobot_trading.exchange_channel as exchange_channel
 
 
 class PositionsManager(util.Initializable):
@@ -103,6 +105,18 @@ class PositionsManager(util.Initializable):
         position.clear()
         position.position_id = self._generate_position_id(symbol=position.symbol, side=position.side)
         return await self._finalize_position_creation(new_position)
+
+    async def refresh_real_trader_position(self, position, force_job_execution=False):
+        """
+        :param position: the position instance to refresh
+        :param force_job_execution: force_job_execution
+        Call POSITIONS_CHANNEL producer to refresh real trader position
+        """
+        await exchange_channel.get_chan(
+            constants.POSITIONS_CHANNEL, self.trader.exchange_manager.id
+        ).get_internal_producer().update_position_from_exchange(
+            position, wait_for_refresh=True, force_job_execution=force_job_execution
+        )
 
     def upsert_position_instance(self, position) -> bool:
         """

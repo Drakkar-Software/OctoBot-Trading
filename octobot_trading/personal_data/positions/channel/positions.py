@@ -16,7 +16,9 @@
 import asyncio
 
 import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 
 class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
@@ -56,6 +58,44 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
                 "position": position,
                 "is_updated": is_updated
             })
+
+    async def update_position_from_exchange(self, position,
+                                            should_notify=False,
+                                            wait_for_refresh=False,
+                                            force_job_execution=False,
+                                            create_position_producer_if_missing=True):
+        """
+        Trigger position job refresh from exchange
+        :param position: the position to update
+        :param wait_for_refresh: if True, wait until the position refresh task to finish
+        :param should_notify: if Positions channel consumers should be notified
+        :param force_job_execution: When True, position_update_job will bypass its dependencies check
+        :param create_position_producer_if_missing: Should be set to False when called by self to prevent spamming
+        :return: True if the position was updated
+        """
+        try:
+            await (exchanges_channel.get_chan(
+                constants.POSITIONS_CHANNEL, self.channel.exchange_manager.id
+            ).producers[-1].update_position_from_exchange(
+                position,
+                should_notify=should_notify,
+                force_job_execution=force_job_execution,
+                wait_for_refresh=wait_for_refresh
+            ))
+        except IndexError:
+            if not self.channel.exchange_manager.is_simulated and create_position_producer_if_missing:
+                self.logger.debug("Missing positions producer, starting one...")
+                await exchanges.create_authenticated_producer_from_parent(self.channel.exchange_manager,
+                                                                          self.__class__,
+                                                                          force_register_producer=True)
+                await self.update_position_from_exchange(
+                    position,
+                    should_notify=should_notify,
+                    wait_for_refresh=wait_for_refresh,
+                    force_job_execution=force_job_execution,
+                    create_position_producer_if_missing=False
+                )
+
 
 
 class PositionsChannel(exchanges_channel.ExchangeChannel):

@@ -15,10 +15,7 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.constants
 import octobot_trading.enums as enums
-import octobot_trading.errors
-import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.personal_data.state as state_class
 
 
@@ -64,11 +61,8 @@ class PositionState(state_class.State):
         :param force_synchronization: When True, for the update of the position from the exchange
         :return: the result of PositionsProducer.update_position_from_exchange()
         """
-        return (await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
-                                                self.position.exchange_manager.id).get_internal_producer().
-                update_position_from_exchange(position=self.position,
-                                              wait_for_refresh=True,
-                                              force_job_execution=force_synchronization))
+        return self.position.exchange_manager.exchange_personal_data.positions_manager.\
+            refresh_real_trader_position(self.position, force_job_execution=force_synchronization)
 
     def set_is_changing_state(self):
         if not self._has_state_changed.is_set():
