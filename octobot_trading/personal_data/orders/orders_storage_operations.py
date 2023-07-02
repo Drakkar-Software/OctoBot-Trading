@@ -26,7 +26,9 @@ async def apply_order_storage_details_if_any(order, exchange_manager, pending_gr
     if not exchange_manager.storage_manager.orders_storage \
             or not exchange_manager.storage_manager.orders_storage.should_store_date():
         return
-    order_details = await exchange_manager.storage_manager.orders_storage.get_startup_order_details(order.order_id)
+    order_details = await exchange_manager.storage_manager.orders_storage.get_startup_order_details(
+        order.exchange_order_id
+    )
     if order_details:
         order.update_from_storage_order_details(order_details)
         await create_orders_storage_related_elements(order, order_details, exchange_manager, pending_groups)
@@ -36,6 +38,7 @@ async def create_orders_storage_related_elements(order, order_storage_details, e
     group = group_util.get_or_create_order_group_from_storage_order_details(order_storage_details, exchange_manager)
     if group:
         order.add_to_order_group(group)
+        logging.get_logger(LOGGER_NAME).debug(f"Adding {order} to restored group {group}")
         pending_groups[group.name] = group
     await order_factory.restore_chained_orders_from_storage_order_details(
         order, order_storage_details, exchange_manager, pending_groups

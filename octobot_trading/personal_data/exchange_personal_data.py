@@ -205,7 +205,11 @@ class ExchangePersonalData(util.Initializable):
 
     async def update_order_from_stored_data(self, exchange_order_id, pending_groups):
         order = self.orders_manager.get_order(None, exchange_order_id=exchange_order_id)
+        previous_order_id = order.order_id
         await orders_storage_operations.apply_order_storage_details_if_any(order, self.exchange_manager, pending_groups)
+        if previous_order_id != order.order_id:
+            # order_id got restored to its original value
+            self.orders_manager.replace_order(previous_order_id, order)
 
     async def on_order_refresh_success(self, order, should_notify, is_new_order):
         if order.state is not None:
