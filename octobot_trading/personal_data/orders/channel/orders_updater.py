@@ -192,7 +192,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :param should_notify: if Orders channel consumers should be notified
         :return: True if the order was updated
         """
-        exchange_name = order.exchange_manager.exchange_name if order.exchange_manager else "cleared order's exchange"
+        exchange_name = self.channel.exchange_manager.exchange_name
         self.logger.debug(f"Requested update for {order} on {exchange_name}")
         raw_order = await self.channel.exchange_manager.exchange.get_order(order.exchange_order_id, order.symbol)
 

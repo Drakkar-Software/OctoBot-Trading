@@ -40,9 +40,18 @@ class PositionsUpdater(positions_channel.PositionsProducer):
     def __init__(self, channel):
         super().__init__(channel)
         # create async jobs
-        self.position_update_job = async_job.AsyncJob(self.fetch_and_push_positions,
-                                                      execution_interval_delay=self.POSITION_REFRESH_TIME,
-                                                      min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
+        self.positions_update_job = async_job.AsyncJob(
+            self.fetch_and_push_positions,
+            execution_interval_delay=self.POSITION_REFRESH_TIME,
+            min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH
+        )
+        self.position_update_job = async_job.AsyncJob(
+            self._position_fetch_and_push,
+            is_periodic=False,
+            enable_multiple_runs=True
+        )
+        self.position_update_job.add_job_dependency(self.positions_update_job)
+        self.positions_update_job.add_job_dependency(self.position_update_job)
 
     async def initialize(self) -> None:
         """
@@ -101,7 +110,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
         await self.initialize()
         await asyncio.sleep(self.POSITIONS_STARTING_REFRESH_TIME)
-        await self.position_update_job.run()
+        await self.positions_update_job.run()
 
     async def fetch_and_push(self):
         """
@@ -178,18 +187,35 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                                             wait_for_refresh=False,
                                             force_job_execution=False,
                                             create_position_producer_if_missing=True):
-        """
-        Trigger position job refresh from exchange
-        :param position: the position to update
-        :param wait_for_refresh: if True, wait until the position refresh task to finish
-        :param should_notify: if Positions channel consumers should be notified
-        :param force_job_execution: When True, position_update_job will bypass its dependencies check
-        :param create_position_producer_if_missing: Should be set to False when called by self to prevent spamming
-        :return: True if the position was updated
-        """
         await self.position_update_job.run(force=True, wait_for_task_execution=wait_for_refresh,
                                            ignore_dependencies_check=force_job_execution,
                                            position=position, should_notify=should_notify)
+
+    async def _position_fetch_and_push(self, position, should_notify=False):
+        """
+        Update Position from exchange
+        :param position: the position to update
+        :param should_notify: if Positions channel consumers should be notified
+        :return: True if the position was updated
+        """
+        exchange_name = self.channel.exchange_manager.exchange_name
+        self.logger.debug(f"Requested update for position: {position} on {exchange_name}")
+        raw_position = await self.channel.exchange_manager.exchange.get_position(position.symbol)
+
+        if raw_position:
+            self.logger.debug(f"Received update for {position} on {exchange_name}: {raw_position}")
+
+            await self.channel.exchange_manager.exchange_personal_data.handle_position_update(
+                symbol=raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value],
+                side=raw_position[enums.ExchangeConstantsPositionColumns.SIDE.value],
+                position=raw_position,
+                should_notify=should_notify
+            )
+        else:
+            self.logger.debug(
+                f"Can't received update for {position} on {exchange_name}: received position is {raw_position}"
+            )
+
 
     def _should_push_mark_price(self):
         return self._has_mark_price_in_position()
@@ -215,6 +241,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         await super().stop()
         if not self._should_run():
             return
+        self.positions_update_job.stop()
         self.position_update_job.stop()
 
     async def resume(self) -> None:
