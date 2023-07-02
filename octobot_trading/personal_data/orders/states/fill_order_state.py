@@ -106,7 +106,8 @@ class FillOrderState(order_state.OrderState):
                 async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
                     self.ensure_not_cleared(self.order)
                     await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(
-                        self.order)
+                        self.order
+                    )
 
                 # notify order filled
                 await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
