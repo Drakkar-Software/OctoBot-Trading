@@ -51,19 +51,20 @@ async def test_apply_order_storage_details_if_any(initialized_mocked_order_stora
                  symbol="BTC/USDT",
                  current_price=decimal.Decimal("70"),
                  quantity=decimal.Decimal("10"),
-                 price=decimal.Decimal("70"))
+                 price=decimal.Decimal("70"),
+                 exchange_order_id="plop exchange_id")
     await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
     # disabled in trader simulator
     mocked_order_storage.get_startup_order_details.assert_not_awaited()
 
     mocked_order_storage.should_store_date = mock.Mock(return_value=True)
     await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
-    mocked_order_storage.get_startup_order_details.assert_awaited_once()
+    mocked_order_storage.get_startup_order_details.assert_awaited_once_with("plop exchange_id")
 
     # ensure no crash with not well formatted order_details
     mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={"hello": "hi there"})
     await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
-    mocked_order_storage.get_startup_order_details.assert_awaited_once()
+    mocked_order_storage.get_startup_order_details.assert_awaited_once_with("plop exchange_id")
 
     # ensure order update is done
     assert order.order_id != "new id 123"
@@ -75,6 +76,6 @@ async def test_apply_order_storage_details_if_any(initialized_mocked_order_stora
         }
     })
     await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
-    mocked_order_storage.get_startup_order_details.assert_awaited_once()
+    mocked_order_storage.get_startup_order_details.assert_awaited_once_with("plop exchange_id")
     assert order.order_id == "new id 123"
     assert order.exchange_order_id == "new exchange id 123"

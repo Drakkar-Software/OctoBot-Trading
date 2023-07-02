@@ -32,10 +32,12 @@ def get_or_create_order_group_from_storage_order_details(order_details, exchange
         try:
             group_name = group.get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             if group_name:
-                return exchange_manager.exchange_personal_data.orders_manager.get_or_create_group(
+                group = exchange_manager.exchange_personal_data.orders_manager.get_or_create_group(
                     get_group_class(group[enums.StoredOrdersAttr.GROUP_TYPE.value]),
                     group_name,
                 )
+                logging.get_logger("GroupUtil").debug(f"Restored {group} order group")
+                return group
         except KeyError as err:
             logging.get_logger("GroupUtil").error(f"Unhandled group type: {err}")
     return None

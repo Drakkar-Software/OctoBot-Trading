@@ -98,14 +98,13 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     async def get_historical_orders_updates(self):
         return copy.deepcopy(await self._get_db().all(self.HISTORICAL_OPEN_ORDERS_TABLE))
 
-    async def get_startup_order_details(self, order_id):
-        return self.startup_orders.get(order_id, None)
+    async def get_startup_order_details(self, order_exchange__id):
+        return self.startup_orders.get(order_exchange__id, None)
 
     async def _load_startup_orders(self):
         if self.should_store_date():
             self.startup_orders = {
-                order[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.ID.value]:
-                    self._from_order_document(order)
+                _get_startup_order_key(order): self._from_order_document(order)
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))
                 if order    # skip empty order details (error when serializing)
             }
@@ -221,3 +220,8 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
     order_update[enums.StoredOrdersAttr.ORDER_DETAILS.value] = details
     return order_update
 
+
+def _get_startup_order_key(order_dict):
+    # use exchange id if available, fallback to order_id (for self managed orders)
+    return order_dict[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] or \
+        order_dict[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.ID.value]
