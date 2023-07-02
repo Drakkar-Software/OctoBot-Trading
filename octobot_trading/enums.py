@@ -566,3 +566,8 @@ class OrderUpdateType(enum.Enum):
     CLOSED = "closed"
     EDIT = "edit"
     STATE_CHANGE = "state_transition"
+
+
+class ExchangeSupportedElements(enum.Enum):
+    UNSUPPORTED_ORDERS = "unsupported_orders"
+    SUPPORTED_BUNDLED_ORDERS = "supported_bundled_orders"

@@ -34,23 +34,41 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
 
-    # order that should be self-managed by OctoBot
-    # can be overridden locally to match exchange support
-    UNSUPPORTED_ORDERS = [
-        enums.TraderOrderType.STOP_LOSS,
-        enums.TraderOrderType.STOP_LOSS_LIMIT,
-        enums.TraderOrderType.TAKE_PROFIT,
-        enums.TraderOrderType.TAKE_PROFIT_LIMIT,
-        enums.TraderOrderType.TRAILING_STOP,
-        enums.TraderOrderType.TRAILING_STOP_LIMIT
-    ]
-
-    # order that can be bundled together to create them all in one request
-    # format: dict of bundled types by base order type
-    # ex: SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.BUY_MARKET] = \
-    # [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT]
-    # can be overridden locally to match exchange support
-    SUPPORTED_BUNDLED_ORDERS = {}
+    # should be overridden locally to match exchange support
+    SUPPORTED_ELEMENTS = {
+        enums.ExchangeTypes.FUTURE.value: {
+            # order that should be self-managed by OctoBot
+            enums.ExchangeSupportedElements.UNSUPPORTED_ORDERS.value: [
+                enums.TraderOrderType.STOP_LOSS,
+                enums.TraderOrderType.STOP_LOSS_LIMIT,
+                enums.TraderOrderType.TAKE_PROFIT,
+                enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                enums.TraderOrderType.TRAILING_STOP,
+                enums.TraderOrderType.TRAILING_STOP_LIMIT
+            ],
+            # order that can be bundled together to create them all in one request
+            # format: dict of bundled types by base order type
+            # ex: SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.BUY_MARKET] = \
+            # [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT]
+            enums.ExchangeSupportedElements.SUPPORTED_BUNDLED_ORDERS.value: {},
+        },
+        enums.ExchangeTypes.SPOT.value: {
+            # order that should be self-managed by OctoBot
+            enums.ExchangeSupportedElements.UNSUPPORTED_ORDERS.value: [
+                enums.TraderOrderType.STOP_LOSS,
+                enums.TraderOrderType.STOP_LOSS_LIMIT,
+                enums.TraderOrderType.TAKE_PROFIT,
+                enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                enums.TraderOrderType.TRAILING_STOP,
+                enums.TraderOrderType.TRAILING_STOP_LIMIT
+            ],
+            # order that can be bundled together to create them all in one request
+            # format: dict of bundled types by base order type
+            # ex: SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.BUY_MARKET] = \
+            # [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT]
+            enums.ExchangeSupportedElements.SUPPORTED_BUNDLED_ORDERS.value: {},
+        }
+    }
     ACCOUNTS = {}
 
     def __init__(self, config, exchange_manager):
@@ -151,6 +169,14 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: the uniformized timestamp
         """
         raise NotImplementedError("get_uniform_timestamp not implemented")
+
+    def get_supported_elements(self, element_key: enums.ExchangeSupportedElements):
+        """
+        :return: the supported elements such as order type and bundle orders for the current exchange and trading type
+        """
+        exchange_type_key = enums.ExchangeTypes.FUTURE if self.exchange_manager.is_future \
+            else enums.ExchangeTypes.SPOT
+        return self.__class__.SUPPORTED_ELEMENTS[exchange_type_key.value][element_key.value]
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         """
@@ -336,7 +362,9 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         in one request
         """
         try:
-            return bundled_order_type in self.SUPPORTED_BUNDLED_ORDERS[base_order.order_type]
+            return bundled_order_type in self.get_supported_elements(
+                enums.ExchangeSupportedElements.SUPPORTED_BUNDLED_ORDERS
+            )[base_order.order_type]
         except KeyError:
             return False
 
@@ -359,7 +387,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :param order_type: the order type, should be a member of enums.TraderOrderType
         :return: True if the order type is supported by the exchange, else False
         """
-        return order_type not in self.UNSUPPORTED_ORDERS
+        return order_type not in self.get_supported_elements(enums.ExchangeSupportedElements.UNSUPPORTED_ORDERS)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         """
