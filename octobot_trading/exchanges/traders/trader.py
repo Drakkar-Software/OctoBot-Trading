@@ -198,7 +198,8 @@ class Trader(util.Initializable):
                                           f"new order values: {edited_order}")
                         changed = order.update_from_raw(edited_order)
                         # update portfolio from exchange
-                        await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
+                        await self.exchange_manager.exchange_personal_data.\
+                            handle_portfolio_and_position_update_from_order(order)
                 else:
                     # consider order as cancelled to release portfolio amounts
                     self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
