@@ -23,6 +23,7 @@ import octobot_trading.personal_data.positions.position_factory as position_fact
 import octobot_trading.util as util
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.exchange_channel as exchange_channel
 
 
@@ -105,6 +106,48 @@ class PositionsManager(util.Initializable):
         position.clear()
         position.position_id = self._generate_position_id(symbol=position.symbol, side=position.side)
         return await self._finalize_position_creation(new_position)
+
+    async def handle_position_update_from_order(self, order, require_exchange_update: bool) -> bool:
+        """
+        Handle a position update from an order update
+        :param order: the order
+        :param require_exchange_update: when True, will sync with exchange position, otherwise will predict the
+        position changes using order data (as in trading simulator)
+        :return: True if the position was updated
+        """
+        if self.trader.is_enabled:
+            # portfolio might be updated when refreshing the position
+            async with self.trader.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_history_update():
+                if self.trader.simulate or not require_exchange_update:
+                    # update simulated positions
+                    return self._refresh_simulated_position_from_order(order)
+                if require_exchange_update and order.is_filled():
+                    # on real trading when orders is filled: reload positions to ensure positions sync
+                    try:
+                        await self.refresh_real_trader_position(self.get_order_position(order))
+                        return True
+                    except Exception as err:
+                        self.logger.exception(
+                            err, True, f"Error while refreshing real trader {order.symbol} position: {err}"
+                        )
+        return False
+
+    def _refresh_simulated_position_from_order(self, order):
+        if order.is_filled():
+            # Don't update if order filled quantity is null
+            if order.filled_quantity == 0:
+                return False
+
+            position_instance = order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(
+                order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
+            try:
+                position_instance.update_from_order(order)
+                return True
+            except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
+                self.logger.exception(portfolio_negative_value_error, True,
+                                      f"Failed to update portfolio via position : {portfolio_negative_value_error} "
+                                      f"for order {order.to_dict()}")
+        return False
 
     async def refresh_real_trader_position(self, position, force_job_execution=False):
         """

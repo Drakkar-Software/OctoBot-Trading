@@ -26,16 +26,10 @@ class FuturePortfolio(portfolio_class.Portfolio):
 
     def update_portfolio_data_from_order(self, order):
         """
-        Call update_portfolio_data for order currency and market
+        Nothing to do on futures, the portfolio will be updated once the position is updated
+        from the order.
         :param order: the order that updated the portfolio
         """
-        # Don't update if order filled quantity is null
-        if order.filled_quantity == 0:
-            return False
-
-        position_instance = order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(
-            order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
-        position_instance.update_from_order(order)
 
     def update_portfolio_data_from_withdrawal(self, amount, currency):
         """
