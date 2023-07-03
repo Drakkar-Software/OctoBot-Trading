@@ -86,10 +86,13 @@ class ExchangePersonalData(util.Initializable):
         self, order, require_exchange_update: bool = True, should_notify: bool = True
     ) -> bool:
         try:
-            # will also update positions on filled order
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(
                 order, require_exchange_update
             )
+            if self.exchange_manager.is_future:
+                changed = await self.positions_manager.handle_position_update_from_order(
+                    order, require_exchange_update
+                ) and changed
             if should_notify:
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
 

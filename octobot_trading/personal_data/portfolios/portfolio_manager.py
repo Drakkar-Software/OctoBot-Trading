@@ -77,32 +77,20 @@ class PortfolioManager(util.Initializable):
 
     async def handle_balance_update_from_order(self, order, require_exchange_update: bool) -> bool:
         """
-        Handle a balance update from an order request
+        Handle a balance update from an order update
         :param order: the order
         :param require_exchange_update: when True, will sync with exchange portfolio, otherwise will predict the
         portfolio changes using order data (as in trading simulator)
         :return: True if the portfolio was updated
         """
-        portfolio_update_success = False
         if self.trader.is_enabled:
             async with self.portfolio_history_update():
                 if self.trader.simulate or not require_exchange_update:
-                    # will also update simulated positions
-                    portfolio_update_success = self._refresh_simulated_trader_portfolio_from_order(order)
-                if not self.trader.simulate and require_exchange_update:
-                    # on real trading only:
-                    # reload portfolio to ensure portfolio sync
-                    portfolio_update_success = await self._refresh_real_trader_portfolio() and portfolio_update_success
-                    # when orders is filled on futures: reload positions to ensure positions sync
-                    if self.exchange_manager.is_future and order.is_filled():
-                        try:
-                            position_instance = order.exchange_manager.exchange_personal_data.positions_manager. \
-                                get_order_position(order)
-                            await self.exchange_manager.exchange_personal_data.positions_manager.\
-                                refresh_real_trader_position(position_instance)
-                        except Exception as err:
-                            self.logger.exception(err)
-        return portfolio_update_success
+                    return self._refresh_simulated_trader_portfolio_from_order(order)
+                # on real trading only:
+                # reload portfolio to ensure portfolio sync
+                return await self._refresh_real_trader_portfolio()
+        return False
 
     async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
         """
