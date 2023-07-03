@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] - 2023-07-03
+### Added
+- Full stop loss support for supporting exchanges
+- Binance futures support
+- MEXC support
+### Updated
+- Improved futures trading related error messages
+- Position and orders update request policy: now retry once before giving up and falling back to the next update cycle
+- Improved orders logs
+### Fixed
+- Positions sync issues when order are instantly filled
+- Positions duplicate issues
+- Futures trading non-future symbols related errors
+- Decimal division by zero error when building signals
+
 ## [2.4.4] - 2023-06-08
 ### Fixed
 - Orders sync issues
