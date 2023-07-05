@@ -576,17 +576,22 @@ class Trader(util.Initializable):
                     quantity = 0
             else:
                 quantity = current_symbol_holding
-            for order_quantity, order_price in decimal_order_adapter.decimal_check_and_adapt_order_details_if_necessary(
-                    quantity, price,
-                    symbol_market):
-                current_order = order_factory.create_order_instance(trader=self,
-                                                                    order_type=order_type,
-                                                                    symbol=symbol,
-                                                                    current_price=order_price,
-                                                                    quantity=order_quantity,
-                                                                    price=order_price)
-                created_orders.append(
-                    await self.create_order(current_order))
+            try:
+                for order_quantity, order_price in decimal_order_adapter.decimal_check_and_adapt_order_details_if_necessary(
+                        quantity, price,
+                        symbol_market):
+                    current_order = order_factory.create_order_instance(trader=self,
+                                                                        order_type=order_type,
+                                                                        symbol=symbol,
+                                                                        current_price=order_price,
+                                                                        quantity=order_quantity,
+                                                                        price=order_price)
+                    created_orders.append(
+                        await self.create_order(current_order))
+            except errors.MissingMinimalExchangeTradeVolume as error:
+                self.logger.exception(
+                    error, True, 
+                    f"Failed to sell everything - error: {error}")
         return created_orders
 
     async def sell_all(self, currencies_to_sell=None, timeout=None):
@@ -646,35 +651,42 @@ class Trader(util.Initializable):
             _, _, _, price, symbol_market = await order_util.get_pre_order_data(self.exchange_manager,
                                                                                 position.symbol,
                                                                                 timeout=timeout)
-            for order_quantity, order_price in decimal_order_adapter.decimal_check_and_adapt_order_details_if_necessary(
-                    position.get_quantity_to_close().copy_abs(), price, symbol_market):
+            try:
+                for order_quantity, order_price in decimal_order_adapter.decimal_check_and_adapt_order_details_if_necessary(
+                        position.get_quantity_to_close().copy_abs(), price, symbol_market):
 
-                if limit_price is not None:
-                    order_type = enums.TraderOrderType.SELL_LIMIT \
-                        if position.is_long() else enums.TraderOrderType.BUY_LIMIT
-                else:
-                    order_type = enums.TraderOrderType.SELL_MARKET \
-                        if position.is_long() else enums.TraderOrderType.BUY_MARKET
+                    if limit_price is not None:
+                        order_type = enums.TraderOrderType.SELL_LIMIT \
+                            if position.is_long() else enums.TraderOrderType.BUY_LIMIT
+                    else:
+                        order_type = enums.TraderOrderType.SELL_MARKET \
+                            if position.is_long() else enums.TraderOrderType.BUY_MARKET
 
-                current_order = order_factory.create_order_instance(trader=self,
-                                                                    order_type=order_type,
-                                                                    symbol=position.symbol,
-                                                                    current_price=order_price,
-                                                                    quantity=order_quantity,
-                                                                    price=limit_price
-                                                                    if limit_price is not None else order_price,
-                                                                    reduce_only=True,
-                                                                    close_position=True)
-                async with signals.remote_signal_publisher(self.exchange_manager, current_order.symbol,
-                                                           emit_trading_signals):
-                    order = await signals.create_order(
-                        self.exchange_manager,
-                        emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
-                        current_order,
-                        wait_for_creation=wait_for_creation,
-                        creation_timeout=creation_timeout
-                    )
-                created_orders.append(order)
+                    current_order = order_factory.create_order_instance(trader=self,
+                                                                        order_type=order_type,
+                                                                        symbol=position.symbol,
+                                                                        current_price=order_price,
+                                                                        quantity=order_quantity,
+                                                                        price=limit_price
+                                                                        if limit_price is not None else order_price,
+                                                                        reduce_only=True,
+                                                                        close_position=True)
+                    async with signals.remote_signal_publisher(self.exchange_manager, current_order.symbol,
+                                                            emit_trading_signals):
+                        order = await signals.create_order(
+                            self.exchange_manager,
+                            emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
+                            current_order,
+                            wait_for_creation=wait_for_creation,
+                            creation_timeout=creation_timeout
+                        )
+                    created_orders.append(order)
+            except errors.MissingMinimalExchangeTradeVolume as error:
+                # this error should never happen as you are
+                # able to always close a position
+                self.logger.exception(
+                    error, True, 
+                    f"Failed close position - error: {error}")
         return created_orders
 
     async def withdraw(self, amount, currency):

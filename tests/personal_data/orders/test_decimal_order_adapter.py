@@ -20,6 +20,7 @@ import decimal
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -170,8 +171,11 @@ async def test_decimal_check_and_adapt_order_details_if_necessary():
     # invalid cost <
     quantity = decimal.Decimal(str(0.5))
     price = decimal.Decimal(str(1))
-    assert personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == []
-
+    try:
+        personal_data.decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market)
+        assert False
+    except errors.MissingMinimalExchangeTradeVolume:
+        assert True
     # invalid cost >
     quantity = decimal.Decimal(str(10))
     price = decimal.Decimal(str(49))

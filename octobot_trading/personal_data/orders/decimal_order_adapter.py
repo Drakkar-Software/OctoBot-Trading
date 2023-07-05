@@ -188,7 +188,11 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
 
             # check total_order_price not < min_cost
             if not personal_data.check_cost(float(total_order_price), min_cost):
-                return []
+                symbol = f"{symbol_market['symbol']} - " if 'symbol' in symbol_market else ""
+                raise errors.MissingMinimalExchangeTradeVolume(
+                    f"Order value ({symbol}value: "
+                    f"{total_order_price}) must be at least {min_cost} to open a order "
+                    )
 
             # check total_order_price not > max_cost and valid_quantity not > max_quantity
             elif (max_cost is not None and total_order_price > max_cost) or \
