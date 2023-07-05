@@ -36,7 +36,9 @@ def is_trader_enabled_in_config_from_exchange_manager(exchange_manager) -> bool:
 
 
 def is_trader_existing_and_enabled(exchange_manager) -> bool:
-    return False if exchange_manager.trader is None else exchange_manager.trader.is_enabled
+    return False if (exchange_manager.exchange_only or exchange_manager.trader is None) else (
+        exchange_manager.trader.is_enabled
+    )
 
 
 def is_trader_enabled(exchange_manager) -> bool:
