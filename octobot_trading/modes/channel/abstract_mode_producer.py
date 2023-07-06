@@ -444,6 +444,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         try:
             await self._apply_exchange_side_config(context)
         except Exception as err:
+            # TODO important error to display
             self.logger.exception(err, True, f"Error when applying exchange side config: {err}")
 
     async def _apply_exchange_side_config(self, context):

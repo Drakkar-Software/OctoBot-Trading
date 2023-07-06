@@ -35,6 +35,7 @@ class PositionsManager(util.Initializable):
         self.logger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
         self.positions = collections.OrderedDict()
+        self.logged_unsupported_positions = set()
 
     async def initialize_impl(self):
         self._reset_positions()
@@ -79,6 +80,7 @@ class PositionsManager(util.Initializable):
         :param raw_position: the position raw dictionary
         :return: True when the creation or the update succeeded
         """
+        self._ensure_support(raw_position)
         position_id = self._generate_position_id(symbol=symbol, side=side)
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=raw_position)
@@ -86,6 +88,22 @@ class PositionsManager(util.Initializable):
             return await self._finalize_position_creation(new_position, is_from_exchange_data=True)
 
         return self.positions[position_id].update_from_raw(raw_position)
+
+    def _ensure_support(self, raw_position):
+        if (
+            raw_position.get(enums.ExchangeConstantsPositionColumns.POSITION_MODE.value, enums.PositionMode.ONE_WAY)
+            is not enums.PositionMode.ONE_WAY
+            and raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]
+            not in self.logged_unsupported_positions
+        ):
+            # TODO important error to display
+            self.logger.error(
+                f"{raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]} position is in "
+                f"{raw_position[enums.ExchangeConstantsPositionColumns.POSITION_MODE.value].name} mode. "
+                f"This mode is not supported and will create unexpected behaviors in OctoBot. Please switch "
+                f"to {enums.PositionMode.ONE_WAY.name} mode on {self.trader.exchange_manager.exchange_name}."
+            )
+            self.logged_unsupported_positions.add(raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value])
 
     def set_initialized_event(self, symbol):
         commons_tree.EventProvider.instance().trigger_event(
