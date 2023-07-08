@@ -208,7 +208,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             await self.channel.exchange_manager.exchange_personal_data.handle_position_update(
                 symbol=raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value],
                 side=raw_position[enums.ExchangeConstantsPositionColumns.SIDE.value],
-                position=raw_position,
+                raw_position=raw_position,
                 should_notify=should_notify
             )
         else:

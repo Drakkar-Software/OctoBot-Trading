@@ -34,7 +34,7 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
                 changed = await self.channel.exchange_manager.exchange_personal_data. \
                     handle_position_update(symbol=symbol,
                                            side=position[enums.ExchangeConstantsPositionColumns.SIDE.value],
-                                           position=position,
+                                           raw_position=position,
                                            should_notify=False)
 
                 if changed:

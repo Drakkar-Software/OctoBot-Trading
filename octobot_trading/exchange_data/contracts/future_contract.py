@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging as logging
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 
@@ -92,3 +94,20 @@ class FutureContract(margin_contract.MarginContract):
     def is_handled_contract(self):
         # unhandled / unknown contracts have None in self.contract_type
         return self.contract_type is not None
+
+    def update_from_position(self, raw_position) -> bool:
+        changed = super().update_from_position(raw_position)
+        leverage = raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, None)
+        if leverage is not None and self.current_leverage != leverage:
+            self.set_current_leverage(leverage)
+            logging.get_logger(str(self)).debug(f"Changed leverage to {self.current_leverage}")
+            changed = True
+        pos_mode = raw_position.get(enums.ExchangeConstantsPositionColumns.POSITION_MODE.value, None)
+        if pos_mode is not None and self.position_mode != pos_mode:
+            self.set_position_mode(
+                is_one_way=pos_mode is enums.PositionMode.ONE_WAY,
+                is_hedge=pos_mode is enums.PositionMode.HEDGE
+            )
+            logging.get_logger(str(self)).debug(f"Changed position mode to {pos_mode}")
+            changed = True
+        return changed

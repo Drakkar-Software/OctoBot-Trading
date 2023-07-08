@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging as logging
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 
@@ -68,3 +70,15 @@ class MarginContract:
         :return: False if this contract can't be traded in OctoBot
         """
         return True
+
+    def update_from_position(self, raw_position) -> bool:
+        changed = False
+        margin_type = raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None)
+        if margin_type is not None and self.margin_type != margin_type:
+            self.set_margin_type(
+                is_isolated=margin_type is enums.MarginType.ISOLATED,
+                is_cross=margin_type is enums.MarginType.CROSS
+            )
+            logging.get_logger(str(self)).debug(f"Changed margin type to {margin_type}")
+            changed = True
+        return changed
