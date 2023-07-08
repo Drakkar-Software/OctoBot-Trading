@@ -314,13 +314,15 @@ class ExchangePersonalData(util.Initializable):
         except ValueError as e:
             self.logger.error(f"Failed to send trade update notification : {e}")
 
-    async def handle_position_update(self, symbol, side, position, should_notify: bool = True):
+    async def handle_position_update(self, symbol, side, raw_position, should_notify: bool = True):
         try:
-            changed: bool = await self.positions_manager.upsert_position(symbol, side, position)
+            changed: bool = await self.positions_manager.upsert_position(symbol, side, raw_position)
             position_instance = self.positions_manager.get_symbol_position(symbol=symbol, side=side)
             # Position has been fetched from exchange, make sure it is initialized.
             # Position might have been previously created without exchange data and therefore not be initialized
             await position_instance.ensure_position_initialized(is_from_exchange_data=True)
+            if position_instance.symbol_contract:
+                position_instance.symbol_contract.update_from_position(raw_position)
             if should_notify:
                 await self.handle_position_update_notification(position_instance, is_updated=changed)
             return changed
