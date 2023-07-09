@@ -66,7 +66,8 @@ class CandlesStorage(abstract_storage.AbstractStorage):
             commons_enums.DBRows.TIME_FRAME.value: time_frame,
             commons_enums.DBRows.VALUE.value: backtesting_api.get_data_file_from_importers(
                 self.exchange_manager.exchange.connector.exchange_importers, symbol,
-                commons_enums.TimeFrames(time_frame)
+                commons_enums.TimeFrames(time_frame),
+                self.exchange_manager.exchange_name
             )
             if self.exchange_manager.is_backtesting else commons_constants.LOCAL_BOT_DATA,
             commons_enums.DisplayedElementTypes.CHART.value: self.plot_settings.chart
