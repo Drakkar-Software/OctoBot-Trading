@@ -146,7 +146,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         )
 
     async def handle_post_open_orders_update(
-            self, symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
+        self, symbols, orders, waiting_complete_init_orders, has_new_order, is_from_bot
     ):
         """
         Perform post open Order update actions :
@@ -243,8 +243,10 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                                       f"missing from order manager")
             await asyncio.gather(*synchronize_tasks)
 
-    async def send(self, cryptocurrency, symbol, order, is_from_bot=True,
-                   update_type=enums.OrderUpdateType.STATE_CHANGE, is_closed=False):
+    async def send(
+        self, cryptocurrency, symbol, order, is_from_bot=True,
+        update_type=enums.OrderUpdateType.STATE_CHANGE, is_closed=False
+    ):
         if is_closed or update_type is enums.OrderUpdateType.CLOSED:
             # do not push closed orders
             return

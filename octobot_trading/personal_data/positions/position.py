@@ -897,6 +897,6 @@ class Position(util.Initializable):
         try:
             yield
         except errors.PortfolioNegativeValueError:
-            logging.get_logger(self.get_logger_name()).warning("Restoring after PortfolioNegativeValueError...")
+            logging.get_logger(self.get_logger_name()).info("Restoring after PortfolioNegativeValueError...")
             self.restore(previous_position)
             raise

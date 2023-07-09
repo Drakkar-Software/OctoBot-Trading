@@ -131,6 +131,6 @@ class Asset:
         try:
             yield
         except errors.PortfolioNegativeValueError:
-            logging.get_logger(self.__class__.__name__).warning("Restoring after PortfolioNegativeValueError...")
+            logging.get_logger(self.__class__.__name__).info("Restoring after PortfolioNegativeValueError...")
             self.restore(previous_asset)
             raise
