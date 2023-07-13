@@ -55,13 +55,13 @@ class TradesStorage(abstract_storage.AbstractStorage):
     async def _update_auth_data(self, reset):
         authenticator = authentication.Authenticator.instance()
         history = [
-            trade
+            trade.to_dict()
             for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
             if trade.status is not enums.OrderStatus.CANCELED and trade.trade_id in self._to_update_auth_data_ids_buffer
         ]
         if (history or reset) and authenticator.is_initialized():
             # also update when history is empty to reset trade history
-            await authenticator.update_trades(history, reset)
+            await authenticator.update_trades(history, self.exchange_manager.exchange_name, reset)
             self._to_update_auth_data_ids_buffer.clear()
 
     async def _store_history(self):
