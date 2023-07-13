@@ -22,6 +22,7 @@ import octobot_commons.display as commons_display
 import octobot_commons.logging as logging
 
 import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.constants as trading_constants
 
 
 class AbstractStorage:
@@ -32,7 +33,7 @@ class AbstractStorage:
     HISTORY_TABLE = None
     AUTH_UPDATE_DEBOUNCE_DURATION = 1
     FLUSH_DEBOUNCE_DURATION = 0.5   # avoid disc spam on multiple quick live updated
-    ORIGIN_VALUE_KEY = "origin_value"
+    ORIGIN_VALUE_KEY = trading_constants.STORAGE_ORIGIN_VALUE
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
