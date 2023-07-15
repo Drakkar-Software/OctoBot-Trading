@@ -276,17 +276,25 @@ class PortfolioManager(util.Initializable):
             self.logger.info(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
     def _load_simulated_portfolio_from_history(self):
-        #  todo also load available amounts when loading simulated orders
+        #  todo test
         portfolio_amount_dict = personal_data.parse_decimal_config_portfolio(
             {
-                symbol: value[commons_constants.PORTFOLIO_TOTAL]
+                symbol: value
                 for symbol, value in self.historical_portfolio_value_manager.historical_ending_portfolio.items()
             }
         )
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
     def set_simulated_portfolio_initial_config(self, portfolio_config):
-        self._simulated_portfolio_initial_config = copy.deepcopy(portfolio_config)
+        to_save_initial_config = copy.deepcopy(portfolio_config)
+        # ensure free and total amounts are present
+        for key in list(to_save_initial_config):
+            if not isinstance(to_save_initial_config[key], dict):
+                to_save_initial_config[key] = {
+                    commons_constants.PORTFOLIO_AVAILABLE: to_save_initial_config[key],
+                    commons_constants.PORTFOLIO_TOTAL: to_save_initial_config[key],
+                }
+        self._simulated_portfolio_initial_config = to_save_initial_config
 
     def _apply_starting_simulated_portfolio(self):
         """

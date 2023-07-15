@@ -183,10 +183,16 @@ class Portfolio:
         :param amount_dict:
         :return: the portfolio dictionary
         """
-        if not all(isinstance(i, decimal.Decimal) for i in amount_dict.values()):
+        if not all(all(isinstance(v, decimal.Decimal) for v in values.values()) for values in amount_dict.values()):
             raise RuntimeError("Portfolio has to be initialized using decimal.Decimal")
-        return {currency: self.create_currency_asset(currency=currency, available=total, total=total).to_dict()
-                for currency, total in amount_dict.items()}
+        return {
+            currency: self.create_currency_asset(
+                currency=currency,
+                available=values[common_constants.PORTFOLIO_AVAILABLE],
+                total=values[common_constants.PORTFOLIO_TOTAL]
+            ).to_dict()
+            for currency, values in amount_dict.items()
+        }
 
     def _update_portfolio_data(self, currency, total_value=constants.ZERO, available_value=constants.ZERO,
                                replace_value=False):
