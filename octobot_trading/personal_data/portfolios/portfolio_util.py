@@ -37,7 +37,8 @@ def parse_decimal_portfolio(portfolio):
 
 def parse_decimal_config_portfolio(portfolio):
     return {
-        symbol: decimal.Decimal(str(symbol_balance))
+        symbol: {k: decimal.Decimal(str(v)) for k, v in symbol_balance.items()} if isinstance(symbol_balance, dict)
+        else decimal.Decimal(str(symbol_balance))
         for symbol, symbol_balance in portfolio.items()
     }
 

@@ -202,10 +202,11 @@ def get_enabled_exchanges(config):
 
 @contextlib.asynccontextmanager
 async def get_local_exchange_manager(
-    exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool, ignore_config=False
+    exchange_name: str, exchange_config: dict, tentacles_setup_config,
+    is_sandboxed: bool, ignore_config=False, builder=None
 ):
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
-    builder = exchange_builder.ExchangeBuilder(
+    builder = builder or exchange_builder.ExchangeBuilder(
         _get_minimal_exchange_config(exchange_name, exchange_config),
         exchange_name
     )

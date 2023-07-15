@@ -282,13 +282,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             time_frame=self.time_frame if self.time_frame else channel_constants.CHANNEL_WILDCARD)
         return mode_consumer
 
-    async def reload_config(self, bot_id: str) -> None:
+    async def reload_config(self, bot_id: str, trading_config=None) -> None:
         """
         Try to load TradingMode tentacle config.
         Calls set_default_config() if the tentacle config is empty
         """
-        self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
-                                                                        self.__class__)
+        self.trading_config = trading_config or \
+            tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config, self.__class__)
         # set default config if nothing found
         if not self.trading_config:
             self.set_default_config()

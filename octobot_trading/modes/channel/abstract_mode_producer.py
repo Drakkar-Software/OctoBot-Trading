@@ -410,6 +410,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     async def _wait_for_bot_init(self, timeout) -> bool:
         try:
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.BALANCE.value)
             self.logger.debug("Trading mode start complete. Now waiting for orders full initialisation.")
             await util.wait_for_topic_init(self.exchange_manager, timeout,
                                            common_enums.InitializationEventExchangeTopics.ORDERS.value)

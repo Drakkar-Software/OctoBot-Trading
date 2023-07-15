@@ -73,27 +73,29 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
 
 
 async def add_symbols_details(
-        exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-        full_kline=False, history_size=1
+    exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
+    full_kline=False, history_size=1
 ) -> exchange_data_import.ExchangeData:
     client = exchange_manager.exchange.connector.client
+    if exchange_manager.is_spot_only:
+        # only fetch spot markets
+        client.options["fetchMarkets"] = ["spot"]
     parsed_tf = common_enums.TimeFrames(time_frame)
 
     async def _update_ohlcv(symbol):
         market = client.markets[symbol]
-        ohlcvs = exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
+        ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
         details = exchange_data_import.MarketDetails(
             id=market[enums.ExchangeConstantsMarketStatusColumns.ID.value],
             symbol=market[enums.ExchangeConstantsMarketStatusColumns.SYMBOL.value],
-            precision=market[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value],
-            limits=market[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value],
+            info=market[enums.ExchangeConstantsMarketStatusColumns.INFO.value],
             time_frame=time_frame,
             close=[ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] for ohlcv in ohlcvs],
-            open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs] if full_kline else None,
-            high=[ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] for ohlcv in ohlcvs] if full_kline else None,
-            low=[ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] for ohlcv in ohlcvs] if full_kline else None,
-            volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if full_kline else None,
-            time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs] if full_kline else None,
+            open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs],
+            high=[ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] for ohlcv in ohlcvs],
+            low=[ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] for ohlcv in ohlcvs],
+            volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs],
+            time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
         )
         exchange_data.markets.append(details)
 
@@ -106,9 +108,9 @@ async def get_portfolio(exchange_manager) -> dict:
     balance = await exchange_manager.exchange.get_balance()
     # filter out 0 values
     return {
-        asset: values
+        asset: {key: float(val) for key, val in values.items()}  # use float for values
         for asset, values in balance.items()
-        if any(value for value in values)
+        if any(value for value in values.values())
     }
 
 
@@ -142,7 +144,7 @@ async def get_trades(exchange_manager, exchange_data: exchange_data_import.Excha
     return trades
 
 
-async def create_orders(exchange_manager, exchange_data: exchange_data_import.ExchangeData, orders: dict) -> list:
+async def create_orders(exchange_manager, exchange_data: exchange_data_import.ExchangeData, orders: list) -> list:
     async def _create_order(order_dict) -> dict:
         symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
         side, order_type = personal_data.parse_order_type(order_dict)

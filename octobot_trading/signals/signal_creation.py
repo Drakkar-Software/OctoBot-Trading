@@ -87,7 +87,7 @@ async def create_order(exchange_manager, should_emit_signal, order,
         wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
     )
     if created_order is not None and should_emit_signal:
-        builder = signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol)
+        builder = signals.SignalPublisher.instance().get_signal_bundle_builder(created_order.symbol)
         builder.add_created_order(
             created_order, exchange_manager, target_amount=order_pf_percent
         )

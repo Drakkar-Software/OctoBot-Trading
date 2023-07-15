@@ -55,9 +55,9 @@ async def create_real_exchange(exchange_manager) -> None:
     await _create_rest_exchange(exchange_manager)
     try:
         await exchange_manager.exchange.initialize()
+        _create_exchange_backend(exchange_manager)
         if exchange_manager.exchange_only:
             return
-        _create_exchange_backend(exchange_manager)
         await _initialize_exchange_backend(exchange_manager)
         _ensure_exchange_validity(exchange_manager)
     except errors.AuthenticationError:
