@@ -120,8 +120,12 @@ class ExchangeManager(util.Initializable):
         if enable_logs:
             self.logger.debug(f"Stopping exchange channels for exchange_id: {self.id} ...")
         if self.exchange is not None:
-            if not self.exchange_only:
+            try:
+                exchange_channel.get_exchange_channels(self.id)
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
+            except KeyError:
+                # no exchange channel to stop
+                pass
             await self.exchange.stop()
             exchanges.Exchanges.instance().del_exchange(
                 self.exchange.name, self.id, should_warn=warning_on_missing_elements
