@@ -639,9 +639,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         return self.adapter.get_uniformized_timestamp(timestamp)
 
     async def stop(self) -> None:
-        self.logger.info(f"Closing connection.")
+        self.logger.debug(f"Closing connection.")
         await ccxt_client_util.close_client(self.client)
-        self.logger.info(f"Connection closed.")
+        self.logger.debug(f"Connection closed.")
         self.client = None
         self.exchange_manager = None
 
