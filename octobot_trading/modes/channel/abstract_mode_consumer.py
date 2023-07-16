@@ -131,27 +131,33 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             max_order_size, _ = personal_data.get_futures_max_order_size(
                 self.exchange_manager, symbol, side, current_price, False, current_symbol_holding, market_quantity
             )
+            can_create_order = max_order_size > symbol_min_amount
             self.logger.debug(
-                f"can_create_order: max_order_size > symbol_min_amount: {max_order_size} > {symbol_min_amount}"
+                f"can_create_order: {can_create_order} = "
+                f"max_order_size > symbol_min_amount = {max_order_size} > {symbol_min_amount}"
             )
-            return max_order_size > symbol_min_amount
+            return can_create_order
 
         # spot, trade asset directly
         # short cases => sell => need this currency
         if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value:
+            can_create_order = portfolio.get_currency_portfolio(currency).available > symbol_min_amount
             self.logger.debug(
-                f"can_create_order: portfolio.get_currency_portfolio(currency).available > symbol_min_amount: "
+                f"can_create_order: {portfolio.can_create_order} = "
+                f"portfolio.get_currency_portfolio(currency).available > symbol_min_amount = "
                 f"{portfolio.get_currency_portfolio(currency).available} > {symbol_min_amount}"
             )
-            return portfolio.get_currency_portfolio(currency).available > symbol_min_amount
+            return can_create_order
 
         # long cases => buy => need money(aka other currency in the pair) to buy this currency
         elif state == enums.EvaluatorStates.LONG.value or state == enums.EvaluatorStates.VERY_LONG.value:
+            can_create_order = portfolio.get_currency_portfolio(market).available > order_min_amount
             self.logger.debug(
-                f"can_create_order: portfolio.get_currency_portfolio(market).available > order_min_amount: "
+                f"can_create_order: {can_create_order} = "
+                f"portfolio.get_currency_portfolio(market).available > order_min_amount = "
                 f"{portfolio.get_currency_portfolio(market).available} > {order_min_amount}"
             )
-            return portfolio.get_currency_portfolio(market).available > order_min_amount
+            return can_create_order
 
         # other cases like neutral state or unfulfilled previous conditions
         self.logger.debug("can_create_order: return False")

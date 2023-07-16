@@ -47,7 +47,7 @@ class ExchangeManager(util.Initializable):
         self.is_backtesting: bool = False
         self.rest_only: bool = False
         self.ignore_config: bool = False
-        self.is_loading_markets: bool = True
+        self.forced_markets: dict = None
         self.is_spot_only: bool = False
         self.is_margin: bool = False
         self.is_future: bool = False

@@ -40,8 +40,9 @@ class Exchanges(singleton.Singleton):
         if exchange_manager.exchange_name not in self.exchanges:
             self.exchanges[exchange_manager.exchange_name] = {}
 
-        self.exchanges[exchange_manager.exchange_name][exchange_manager.id] = ExchangeConfiguration(exchange_manager,
-                                                                                                    matrix_id)
+        self.exchanges[exchange_manager.exchange_name][exchange_manager.id] = ExchangeConfiguration(
+            exchange_manager, matrix_id
+        )
 
     def get_exchange(self, exchange_name, exchange_manager_id) -> ExchangeConfiguration:
         return self.exchanges[exchange_name][exchange_manager_id]
