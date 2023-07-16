@@ -90,9 +90,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             ):
                 await self._ensure_auth()
 
-            if self.exchange_manager.is_loading_markets:
-                with self.error_describer():
-                    await self.load_symbol_markets()
+            with self.error_describer():
+                await self.load_symbol_markets(forced_markets=self.exchange_manager.forced_markets)
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
@@ -111,8 +110,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
-    async def load_symbol_markets(self, reload=False):
-        await self.client.load_markets(reload=reload)
+    async def load_symbol_markets(self, reload=False, forced_markets=None):
+        if forced_markets is not None:
+            if forced_markets:
+                # only set markets if there are markets to be set
+                self.client.set_markets([
+                    self.client.parse_market(market) for market in forced_markets
+                ])
+        else:
+            await self.client.load_markets(reload=reload)
 
     def get_client_symbols(self):
         return ccxt_client_util.get_symbols(self.client)

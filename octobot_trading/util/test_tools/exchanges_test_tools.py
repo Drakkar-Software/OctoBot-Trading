@@ -73,8 +73,7 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
 
 
 async def add_symbols_details(
-    exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-    full_kline=False, history_size=1
+    exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData, history_size=1
 ) -> exchange_data_import.ExchangeData:
     client = exchange_manager.exchange.connector.client
     if exchange_manager.is_spot_only:

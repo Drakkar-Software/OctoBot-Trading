@@ -273,7 +273,7 @@ class PortfolioManager(util.Initializable):
                     self._apply_starting_simulated_portfolio()
                 else:
                     self._load_simulated_portfolio_from_history()
-            self.logger.info(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
+            self.logger.debug(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
     def _load_simulated_portfolio_from_history(self):
         #  todo test

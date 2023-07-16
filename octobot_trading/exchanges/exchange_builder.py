@@ -211,8 +211,8 @@ class ExchangeBuilder:
         self.exchange_manager.exchange_only = True
         return self
 
-    def is_loading_markets(self, is_loading_markets):
-        self.exchange_manager.is_loading_markets = is_loading_markets
+    def has_forced_markets(self, forced_markets: dict):
+        self.exchange_manager.forced_markets = forced_markets
         return self
 
     def is_ignoring_config(self, ignore_config=True):
