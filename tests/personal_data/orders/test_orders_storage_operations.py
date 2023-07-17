@@ -20,7 +20,7 @@ import decimal
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
-import octobot_trading.storage as storage
+import octobot_trading.constants as constants
 
 from tests import event_loop
 from tests.exchanges import exchange_manager, simulated_exchange_manager
@@ -70,7 +70,7 @@ async def test_apply_order_storage_details_if_any(initialized_mocked_order_stora
     assert order.order_id != "new id 123"
     assert order.exchange_order_id != "new exchange id 123"
     mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={
-        storage.OrdersStorage.ORIGIN_VALUE_KEY: {
+        constants.STORAGE_ORIGIN_VALUE: {
             enums.ExchangeConstantsOrderColumns.ID.value: "new id 123",
             enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: "new exchange id 123"
         }

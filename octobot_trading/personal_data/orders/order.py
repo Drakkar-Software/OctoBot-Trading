@@ -632,7 +632,7 @@ class Order(util.Initializable):
 
     def update_from_storage_order_details(self, order_details):
         # rebind order attributes that are not stored on exchange
-        order_dict = order_details.get(orders_storage.OrdersStorage.ORIGIN_VALUE_KEY, {})
+        order_dict = order_details.get(constants.STORAGE_ORIGIN_VALUE, {})
         self.tag = order_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value, self.tag)
         self.order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.ID.value, self.order_id)
         self.exchange_order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value,

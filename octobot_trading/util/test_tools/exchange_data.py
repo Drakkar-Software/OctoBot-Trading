@@ -48,18 +48,45 @@ class MarketDetails:
 
 
 @dataclasses.dataclass
+class OrdersDetails:
+    open_orders: list[dict] = None
+    missing_orders: list[dict] = None
+
+    def __post_init__(self):
+        if self.open_orders is None:
+            self.open_orders = []
+        if self.missing_orders is None:
+            self.missing_orders = []
+
+
+@dataclasses.dataclass
+class PortfolioDetails:
+    initial_value: float = 0
+
+
+@dataclasses.dataclass
 class ExchangeData(minimizable_dataclass.MinimizableDataclass):
     auth_details: ExchangeAuthDetails
     exchange_details: ExchangeDetails
     markets: list[MarketDetails] = None
+    orders_details: OrdersDetails = None
+    portfolio_details: PortfolioDetails = None
 
     def __post_init__(self):
         if isinstance(self.auth_details, dict):
             self.auth_details = ExchangeAuthDetails(**self.auth_details)
         if isinstance(self.exchange_details, dict):
             self.exchange_details = ExchangeDetails(**self.exchange_details)
-        if self.markets and isinstance(self.markets[0], dict):
+        if self.markets is None:
+            self.markets = []
+        elif self.markets and isinstance(self.markets[0], dict):
             self.markets = [MarketDetails(**market) for market in self.markets] if self.markets else []
+        if not isinstance(self.orders_details, OrdersDetails):
+            self.orders_details = OrdersDetails(**self.orders_details) if self.orders_details else OrdersDetails()
+        if not isinstance(self.portfolio_details, PortfolioDetails):
+            self.portfolio_details = PortfolioDetails(**self.portfolio_details) if \
+                self.portfolio_details else PortfolioDetails()
+
 
     def get_price(self, symbol):
         for market in self.markets:

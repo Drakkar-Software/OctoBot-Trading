@@ -117,14 +117,14 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             for order in self.startup_orders.values()
             if order.get(enums.StoredOrdersAttr.GROUP.value, {}).get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             == group_id
-            and order.get(OrdersStorage.ORIGIN_VALUE_KEY, {})
+            and order.get(constants.STORAGE_ORIGIN_VALUE, {})
             .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
         ]
 
     def _from_order_document(self, order_document):
         order_dict = dict(order_document)
         try:
-            origin_val = order_dict[OrdersStorage.ORIGIN_VALUE_KEY]
+            origin_val = order_dict[constants.STORAGE_ORIGIN_VALUE]
             origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = \
                 decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
             origin_val[enums.ExchangeConstantsOrderColumns.COST.value] = \
@@ -178,7 +178,7 @@ def _get_chained_orders(order, exchange_manager):
 def _format_order(order, exchange_manager):
     try:
         return {
-            OrdersStorage.ORIGIN_VALUE_KEY: OrdersStorage.sanitize_for_storage(order.to_dict()),
+            constants.STORAGE_ORIGIN_VALUE: OrdersStorage.sanitize_for_storage(order.to_dict()),
             enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value:
                 OrdersStorage.sanitize_for_storage(order.exchange_creation_params),
             enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value:
@@ -215,7 +215,7 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
         if status == enums.OrderStatus.OPEN.value:
             # ensure order details are present in open orders
             details = {
-                OrdersStorage.ORIGIN_VALUE_KEY: OrdersStorage.sanitize_for_storage(order_dict),
+                constants.STORAGE_ORIGIN_VALUE: OrdersStorage.sanitize_for_storage(order_dict),
             }
     order_update[enums.StoredOrdersAttr.ORDER_DETAILS.value] = details
     return order_update
@@ -223,5 +223,5 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
 
 def _get_startup_order_key(order_dict):
     # use exchange id if available, fallback to order_id (for self managed orders)
-    return order_dict[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] or \
-        order_dict[OrdersStorage.ORIGIN_VALUE_KEY][enums.ExchangeConstantsOrderColumns.ID.value]
+    return order_dict[constants.STORAGE_ORIGIN_VALUE][enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] or \
+        order_dict[constants.STORAGE_ORIGIN_VALUE][enums.ExchangeConstantsOrderColumns.ID.value]
