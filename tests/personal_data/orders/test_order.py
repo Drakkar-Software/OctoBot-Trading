@@ -404,7 +404,7 @@ async def test_update_from_order_storage(trader_simulator):
 
     # full update
     order.update_from_storage_order_details({
-        orders_storage.OrdersStorage.ORIGIN_VALUE_KEY: {
+        constants.STORAGE_ORIGIN_VALUE: {
             enums.ExchangeConstantsOrderColumns.TAG.value: "t1",
             enums.ExchangeConstantsOrderColumns.ID.value: "11a",
             enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: "eee1",

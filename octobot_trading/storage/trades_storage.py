@@ -19,6 +19,7 @@ import octobot_commons.authentication as authentication
 import octobot_commons.databases as commons_databases
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.storage.abstract_storage as abstract_storage
 import octobot_trading.storage.util as storage_util
 
@@ -141,7 +142,7 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
     fee_cost = float(fee[enums.FeePropertyColumns.COST.value] if
                      fee and fee[enums.FeePropertyColumns.COST.value] else 0)
     return {
-        TradesStorage.ORIGIN_VALUE_KEY: TradesStorage.sanitize_for_storage(trade_dict),
+        constants.STORAGE_ORIGIN_VALUE: TradesStorage.sanitize_for_storage(trade_dict),
         commons_enums.DisplayedElementTypes.CHART.value: chart,
         commons_enums.DBRows.SYMBOL.value: trade_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
         commons_enums.DBRows.FEES_AMOUNT.value: fee_cost,

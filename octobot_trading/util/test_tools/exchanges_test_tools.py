@@ -75,14 +75,10 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
 async def add_symbols_details(
     exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData, history_size=1
 ) -> exchange_data_import.ExchangeData:
-    client = exchange_manager.exchange.connector.client
-    if exchange_manager.is_spot_only:
-        # only fetch spot markets
-        client.options["fetchMarkets"] = ["spot"]
     parsed_tf = common_enums.TimeFrames(time_frame)
 
     async def _update_ohlcv(symbol):
-        market = client.markets[symbol]
+        market = exchange_manager.exchange.connector.client.markets[symbol]
         ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
         details = exchange_data_import.MarketDetails(
             id=market[enums.ExchangeConstantsMarketStatusColumns.ID.value],
@@ -98,7 +94,7 @@ async def add_symbols_details(
         )
         exchange_data.markets.append(details)
 
-    await client.load_markets()
+    await exchange_manager.exchange.connector.load_symbol_markets()
     await asyncio.gather(*(_update_ohlcv(symbol) for symbol in symbols))
     return exchange_data
 
@@ -156,6 +152,7 @@ async def create_orders(exchange_manager, exchange_data: exchange_data_import.Ex
             current_price=decimal.Decimal(str(exchange_data.get_price(symbol))),
             reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
         )
+        # created_order = order_dict
         # is private, to use in tests context only
         return order_storage._format_order(
             personal_data.create_order_instance_from_raw(

@@ -16,7 +16,6 @@
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
-import octobot_trading.storage.orders_storage as orders_storage
 
 
 def create_order_from_raw(trader, raw_order):
@@ -123,7 +122,7 @@ def create_order_from_dict(trader, order_dict):
 async def create_order_from_order_storage_details(order_storage_details, exchange_manager, pending_groups):
     order = create_order_from_dict(
         exchange_manager.trader,
-        order_storage_details[orders_storage.OrdersStorage.ORIGIN_VALUE_KEY]
+        order_storage_details[constants.STORAGE_ORIGIN_VALUE]
     )
     order.update_from_storage_order_details(order_storage_details)
     await personal_data.create_orders_storage_related_elements(

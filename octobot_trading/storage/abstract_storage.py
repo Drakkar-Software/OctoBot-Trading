@@ -33,7 +33,6 @@ class AbstractStorage:
     HISTORY_TABLE = None
     AUTH_UPDATE_DEBOUNCE_DURATION = 1
     FLUSH_DEBOUNCE_DURATION = 0.5   # avoid disc spam on multiple quick live updated
-    ORIGIN_VALUE_KEY = trading_constants.STORAGE_ORIGIN_VALUE
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
@@ -117,9 +116,9 @@ class AbstractStorage:
     async def get_history(self):
         # override if necessary
         return [
-            copy.copy(document[self.ORIGIN_VALUE_KEY])
+            copy.copy(document[trading_constants.STORAGE_ORIGIN_VALUE])
             for document in await self._get_db().all(self.HISTORY_TABLE)
-            if self.ORIGIN_VALUE_KEY in document
+            if trading_constants.STORAGE_ORIGIN_VALUE in document
         ]
 
     async def _waiting_update_auth_data(self, reset):
