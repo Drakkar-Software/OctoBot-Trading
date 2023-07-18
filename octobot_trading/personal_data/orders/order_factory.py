@@ -119,7 +119,7 @@ def create_order_from_dict(trader, order_dict):
     )
 
 
-async def create_order_from_order_storage_details(order_storage_details, exchange_manager, pending_groups):
+async def create_order_from_order_storage_details(order_storage_details, exchange_manager, pending_groups: dict):
     order = create_order_from_dict(
         exchange_manager.trader,
         order_storage_details[constants.STORAGE_ORIGIN_VALUE]

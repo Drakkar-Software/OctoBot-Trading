@@ -77,8 +77,9 @@ class ExchangeData(minimizable_dataclass.MinimizableDataclass):
     auth_details: ExchangeAuthDetails
     exchange_details: ExchangeDetails
     markets: list[MarketDetails] = None
-    orders_details: OrdersDetails = None
     portfolio_details: PortfolioDetails = None
+    orders_details: OrdersDetails = None
+    trades: list[dict] = None
 
     def __post_init__(self):
         if isinstance(self.auth_details, dict):
@@ -89,11 +90,13 @@ class ExchangeData(minimizable_dataclass.MinimizableDataclass):
             self.markets = []
         elif self.markets and isinstance(self.markets[0], dict):
             self.markets = [MarketDetails(**market) for market in self.markets] if self.markets else []
-        if not isinstance(self.orders_details, OrdersDetails):
-            self.orders_details = OrdersDetails(**self.orders_details) if self.orders_details else OrdersDetails()
         if not isinstance(self.portfolio_details, PortfolioDetails):
             self.portfolio_details = PortfolioDetails(**self.portfolio_details) if \
                 self.portfolio_details else PortfolioDetails()
+        if not isinstance(self.orders_details, OrdersDetails):
+            self.orders_details = OrdersDetails(**self.orders_details) if self.orders_details else OrdersDetails()
+        if self.trades is None:
+            self.trades = []
 
     def get_price(self, symbol):
         for market in self.markets:

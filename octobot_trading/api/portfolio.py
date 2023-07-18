@@ -62,7 +62,7 @@ def get_origin_portfolio(exchange_manager, as_decimal=True) -> dict:
 
 def set_simulated_portfolio_initial_config(exchange_manager, portfolio_content):
     if exchange_manager.exchange_personal_data.portfolio_manager:
-        exchange_manager.exchange_personal_data.portfolio_manager.set_simulated_portfolio_initial_config(
+        exchange_manager.exchange_personal_data.portfolio_manager.set_forced_portfolio_initial_config(
             portfolio_content
         )
 
