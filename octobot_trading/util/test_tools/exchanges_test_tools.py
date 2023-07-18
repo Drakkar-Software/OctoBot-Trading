@@ -140,7 +140,7 @@ async def get_trades(exchange_manager, exchange_data: exchange_data_import.Excha
 
 
 async def create_orders(exchange_manager, exchange_data: exchange_data_import.ExchangeData, orders: list) -> list:
-    async def _create_order(order_dict) -> dict:
+    async def _create_order(order_dict) -> personal_data.Order:
         symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
         side, order_type = personal_data.parse_order_type(order_dict)
         created_order = await exchange_manager.exchange.create_order(
@@ -154,11 +154,8 @@ async def create_orders(exchange_manager, exchange_data: exchange_data_import.Ex
         )
         # created_order = order_dict
         # is private, to use in tests context only
-        return order_storage._format_order(
-            personal_data.create_order_instance_from_raw(
-                exchange_manager.trader, created_order, force_open_or_pending_creation=True
-            ),
-            exchange_manager
+        return personal_data.create_order_instance_from_raw(
+            exchange_manager.trader, created_order, force_open_or_pending_creation=True
         )
 
     return await asyncio.gather(*(_create_order(order_dict) for order_dict in orders))

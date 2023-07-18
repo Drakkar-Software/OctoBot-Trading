@@ -115,13 +115,16 @@ class ExchangeBuilder:
             else:
                 self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
 
-    async def _build_trading_modes(self, trading_mode_class):
+    async def _build_trading_modes(self, trading_mode_class, trading_config_by_trading_mode=None):
         try:
             self._ensure_trading_mode_compatibility(trading_mode_class)
-            return await modes.create_trading_modes(self.config,
-                                                    self.exchange_manager,
-                                                    trading_mode_class,
-                                                    self.exchange_manager.bot_id)
+            return await modes.create_trading_modes(
+                self.config,
+                self.exchange_manager,
+                trading_mode_class,
+                self.exchange_manager.bot_id,
+                trading_config_by_trading_mode=trading_config_by_trading_mode
+            )
         except errors.TradingModeIncompatibility as e:
             raise e
         except Exception as e:
