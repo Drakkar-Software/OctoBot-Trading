@@ -62,6 +62,14 @@ class OrdersDetails:
 @dataclasses.dataclass
 class PortfolioDetails:
     initial_value: float = 0
+    content: dict = None
+    asset_values: dict = None
+
+    def __post_init__(self):
+        if self.content is None:
+            self.content = {}
+        if self.asset_values is None:
+            self.asset_values = {}
 
 
 @dataclasses.dataclass
@@ -86,7 +94,6 @@ class ExchangeData(minimizable_dataclass.MinimizableDataclass):
         if not isinstance(self.portfolio_details, PortfolioDetails):
             self.portfolio_details = PortfolioDetails(**self.portfolio_details) if \
                 self.portfolio_details else PortfolioDetails()
-
 
     def get_price(self, symbol):
         for market in self.markets:
