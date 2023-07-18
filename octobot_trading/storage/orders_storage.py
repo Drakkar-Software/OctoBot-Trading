@@ -104,7 +104,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     async def _load_startup_orders(self):
         if self.should_store_date():
             self.startup_orders = {
-                _get_startup_order_key(order): self._from_order_document(order)
+                _get_startup_order_key(order): _from_order_document(order)
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))
                 if order    # skip empty order details (error when serializing)
             }
@@ -120,30 +120,6 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             and order.get(constants.STORAGE_ORIGIN_VALUE, {})
             .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
         ]
-
-    def _from_order_document(self, order_document):
-        order_dict = dict(order_document)
-        try:
-            origin_val = order_dict[constants.STORAGE_ORIGIN_VALUE]
-            origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = \
-                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
-            origin_val[enums.ExchangeConstantsOrderColumns.COST.value] = \
-                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.COST.value]))
-            origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value] = \
-                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value]))
-            origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value] = \
-                decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value]))
-            if origin_val[enums.ExchangeConstantsOrderColumns.FEE.value] and \
-                    enums.FeePropertyColumns.COST.value in origin_val[enums.ExchangeConstantsOrderColumns.FEE.value]:
-                origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value] = \
-                    decimal.Decimal(str(
-                        origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
-                    ))
-        except Exception as err:
-            commons_logging.get_logger(OrdersStorage.__name__).exception(
-                err, True, f"Error when reading: {err} order: {order_document}"
-            )
-        return order_dict
 
     @classmethod
     async def clear_database_history(cls, database, flush=True):
@@ -220,6 +196,30 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
     order_update[enums.StoredOrdersAttr.ORDER_DETAILS.value] = details
     return order_update
 
+
+def _from_order_document(order_document):
+    order_dict = dict(order_document)
+    try:
+        origin_val = order_dict[constants.STORAGE_ORIGIN_VALUE]
+        origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = \
+            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
+        origin_val[enums.ExchangeConstantsOrderColumns.COST.value] = \
+            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.COST.value]))
+        origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value] = \
+            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value]))
+        origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value] = \
+            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value]))
+        if origin_val[enums.ExchangeConstantsOrderColumns.FEE.value] and \
+                enums.FeePropertyColumns.COST.value in origin_val[enums.ExchangeConstantsOrderColumns.FEE.value]:
+            origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value] = \
+                decimal.Decimal(str(
+                    origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
+                ))
+    except Exception as err:
+        commons_logging.get_logger(OrdersStorage.__name__).exception(
+            err, True, f"Error when reading: {err} order: {order_document}"
+        )
+    return order_dict
 
 def _get_startup_order_key(order_dict):
     # use exchange id if available, fallback to order_id (for self managed orders)
