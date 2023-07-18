@@ -21,19 +21,25 @@ import octobot_trading.errors as errors
 LOGGER_TAG = "TradingModeFactory"
 
 
-async def create_trading_modes(config: dict,
-                               exchange_manager,
-                               trading_mode_class,
-                               bot_id: str) -> list:
+async def create_trading_modes(
+    config: dict,
+    exchange_manager,
+    trading_mode_class,
+    bot_id: str,
+    trading_config_by_trading_mode: dict = None
+) -> list:
     is_symbol_wildcard = trading_mode_class.get_is_symbol_wildcard()
     if is_symbol_wildcard or (not is_symbol_wildcard and exchange_manager.exchange_config.traded_symbol_pairs):
-        return await _create_trading_modes(trading_mode_class=trading_mode_class,
-                                           config=config,
-                                           exchange_manager=exchange_manager,
-                                           cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,
-                                           symbols=exchange_manager.exchange_config.traded_symbol_pairs,
-                                           time_frames=exchange_manager.exchange_config.traded_time_frames,
-                                           bot_id=bot_id)
+        return await _create_trading_modes(
+            trading_mode_class=trading_mode_class,
+            config=config,
+            exchange_manager=exchange_manager,
+            cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,
+            symbols=exchange_manager.exchange_config.traded_symbol_pairs,
+            time_frames=exchange_manager.exchange_config.traded_time_frames,
+            bot_id=bot_id,
+            trading_config_by_trading_mode=trading_config_by_trading_mode
+        )
     # Do not create no symbol wildcard trading mode if no trading pair is available
     raise errors.TradingModeIncompatibility(
         f"As non symbol-wildcard trading mode, {trading_mode_class.get_name()} requires "
@@ -41,41 +47,51 @@ async def create_trading_modes(config: dict,
         f"None of the required pairs are available on {exchange_manager.exchange_name}.")
 
 
-async def _create_trading_modes(trading_mode_class,
-                                config: dict,
-                                exchange_manager,
-                                cryptocurrencies: dict = None,
-                                symbols: list = None,
-                                time_frames: list = None,
-                                bot_id: str = None) -> list:
+async def _create_trading_modes(
+    trading_mode_class,
+    config: dict,
+    exchange_manager,
+    cryptocurrencies: dict = None,
+    symbols: list = None,
+    time_frames: list = None,
+    bot_id: str = None,
+    trading_config_by_trading_mode: dict = None
+) -> list:
+    trading_config_by_trading_mode = trading_config_by_trading_mode or {}
     return [
-        await create_trading_mode(trading_mode_class=trading_mode_class,
-                                  config=config,
-                                  exchange_manager=exchange_manager,
-                                  cryptocurrency=cryptocurrency,
-                                  symbol=symbol,
-                                  time_frame=time_frame,
-                                  bot_id=bot_id)
+        await create_trading_mode(
+            trading_mode_class=trading_mode_class,
+            config=config,
+            exchange_manager=exchange_manager,
+            cryptocurrency=cryptocurrency,
+            symbol=symbol,
+            time_frame=time_frame,
+            bot_id=bot_id,
+            trading_config=trading_config_by_trading_mode.get(trading_mode_class.get_name())
+        )
         for cryptocurrency in _get_cryptocurrencies_to_create(trading_mode_class, cryptocurrencies)
         for symbol in _get_symbols_to_create(trading_mode_class, cryptocurrencies, cryptocurrency, symbols)
         for time_frame in _get_time_frames_to_create(trading_mode_class, time_frames)
     ]
 
 
-async def create_trading_mode(trading_mode_class,
-                              config: dict,
-                              exchange_manager,
-                              cryptocurrency: str = None,
-                              symbol: str = None,
-                              time_frame: object = None,
-                              bot_id: str = None):
+async def create_trading_mode(
+    trading_mode_class,
+    config: dict,
+    exchange_manager,
+    cryptocurrency: str = None,
+    symbol: str = None,
+    time_frame: object = None,
+    bot_id: str = None,
+    trading_config: dict = None
+):
     try:
         trading_mode = trading_mode_class(config, exchange_manager)
         trading_mode.cryptocurrency = cryptocurrency
         trading_mode.symbol = symbol
         trading_mode.time_frame = time_frame
         trading_mode.bot_id = bot_id
-        await trading_mode.initialize()
+        await trading_mode.initialize(trading_config=trading_config)
         logging.get_logger(f"{LOGGER_TAG}[{exchange_manager.exchange_name}]") \
             .debug(f"{trading_mode.get_name()} started for "
                    f"[cryptocurrency={cryptocurrency if cryptocurrency else constants.CONFIG_WILDCARD},"

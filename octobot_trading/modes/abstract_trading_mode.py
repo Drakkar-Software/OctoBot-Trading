@@ -177,11 +177,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         return True
 
-    async def initialize(self) -> None:
+    async def initialize(self, trading_config=None) -> None:
         """
         Triggers producers and consumers creation
         """
-        await self.reload_config(self.exchange_manager.bot_id)
+        await self.reload_config(self.exchange_manager.bot_id, trading_config=trading_config)
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
 
