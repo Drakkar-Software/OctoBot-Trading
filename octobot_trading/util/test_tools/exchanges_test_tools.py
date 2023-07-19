@@ -99,11 +99,11 @@ async def add_symbols_details(
     return exchange_data
 
 
-async def get_portfolio(exchange_manager) -> dict:
+async def get_portfolio(exchange_manager, as_float=False) -> dict:
     balance = await exchange_manager.exchange.get_balance()
     # filter out 0 values
     return {
-        asset: {key: float(val) for key, val in values.items()}  # use float for values
+        asset: {key: float(val) if as_float else val for key, val in values.items()}  # use float for values
         for asset, values in balance.items()
         if any(value for value in values.values())
     }
