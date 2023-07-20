@@ -143,7 +143,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value:
             can_create_order = portfolio.get_currency_portfolio(currency).available > symbol_min_amount
             self.logger.debug(
-                f"can_create_order: {portfolio.can_create_order} = "
+                f"can_create_order: {can_create_order} = "
                 f"portfolio.get_currency_portfolio(currency).available > symbol_min_amount = "
                 f"{portfolio.get_currency_portfolio(currency).available} > {symbol_min_amount}"
             )
