@@ -82,6 +82,7 @@ class ExchangeData(minimizable_dataclass.MinimizableDataclass):
     orders_details: OrdersDetails = None
     trades: list[dict] = None
 
+    # pylint: disable=E1134
     def __post_init__(self):
         if isinstance(self.auth_details, dict):
             self.auth_details = ExchangeAuthDetails(**self.auth_details)
