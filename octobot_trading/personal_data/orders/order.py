@@ -26,7 +26,6 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.util as util
-import octobot_trading.storage.orders_storage as orders_storage
 
 
 class Order(util.Initializable):
