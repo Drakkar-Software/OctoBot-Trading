@@ -36,6 +36,8 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsMarketPropertyColumns
 
+import tests.exchanges.connectors.ccxt.mock_exchanges_data as mock_exchanges_data
+
 pytestmark = pytest.mark.asyncio
 
 TESTS_FOLDER = "tests"
@@ -48,6 +50,17 @@ class MockedCCXTConnector(CCXTConnector):
     @classmethod
     def get_name(cls):
         return DEFAULT_EXCHANGE_NAME
+
+    async def load_symbol_markets(self, reload=False, forced_markets=None):
+        if forced_markets is None:
+            forced_markets = mock_exchanges_data.MOCKED_EXCHANGE_INFO.get(self.exchange_manager.exchange_name, None)
+        await super().load_symbol_markets(
+            reload=reload,
+            forced_markets=forced_markets
+        )
+
+    def _should_authenticate(self):
+        return False
 
 
 class MockedRestExchange(DefaultRestExchange):

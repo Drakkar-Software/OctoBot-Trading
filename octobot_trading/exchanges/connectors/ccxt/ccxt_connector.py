@@ -115,7 +115,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             if forced_markets:
                 # only set markets if there are markets to be set
                 self.client.set_markets([
-                    self.client.parse_market(market) for market in forced_markets
+                    self.client.parse_market(market) if hasattr(self.client, "parse_market") else market
+                    for market in forced_markets
                 ])
         else:
             await self.client.load_markets(reload=reload)

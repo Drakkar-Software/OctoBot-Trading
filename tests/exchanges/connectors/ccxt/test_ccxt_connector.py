@@ -15,16 +15,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
-import pytest
 
-import ccxt.async_support
-from mock import patch, Mock
+from mock import patch
 
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data.contracts as contracts
 import pytest
 
+import tests.exchanges.connectors.ccxt.mock_exchanges_data as mock_exchanges_data
 from tests.exchanges import exchange_manager, future_simulated_exchange_manager, set_future_exchange_fees
 from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, \
     DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, DEFAULT_FUTURE_SYMBOL_LEVERAGE
@@ -153,7 +152,10 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
 
     # future trading
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
-    await fut_ccxt_exchange.client.load_markets()
+
+    await fut_ccxt_exchange.load_symbol_markets(
+        forced_markets=mock_exchanges_data.MOCKED_EXCHANGE_INFO.get(fut_exchange_manager_inst.exchange_name, None)
+    )
     # enforce taker and maker values
     set_future_exchange_fees(fut_ccxt_exchange, future_symbol, taker=future_fees_value, maker=future_fees_value)
     assert future_fees_value / 5 <= fut_ccxt_exchange.client.markets[future_symbol]['taker'] <= future_fees_value * 5

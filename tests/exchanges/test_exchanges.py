@@ -51,6 +51,7 @@ class TestExchanges:
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bybit = ExchangeManager(config, "bybit")
+        exchange_manager_bybit.exchange_only = True
         await exchange_manager_bybit.initialize()
         Exchanges.instance().add_exchange(exchange_manager_bybit, "")
 
