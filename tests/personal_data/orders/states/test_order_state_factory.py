@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import mock
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import OrderStatus, OrderStates, States
 from octobot_trading.personal_data.orders import create_order_state
@@ -27,9 +28,12 @@ pytestmark = pytest.mark.asyncio
 
 async def test_create_order_state_pending_creation(buy_limit_order):
     buy_limit_order.status = OrderStatus.PENDING_CREATION
-    await create_order_state(buy_limit_order)
-    assert isinstance(buy_limit_order.state, personal_data.PendingCreationOrderState)
-    assert buy_limit_order.state.state is States.PENDING_CREATION
+    with mock.patch.object(personal_data.PendingCreationOrderState, "_synchronize_with_exchange", mock.AsyncMock()) as \
+        _synchronize_with_exchange_mock:
+        await create_order_state(buy_limit_order)
+        _synchronize_with_exchange_mock.assert_called_once()
+        assert isinstance(buy_limit_order.state, personal_data.PendingCreationOrderState)
+        assert buy_limit_order.state.state is States.PENDING_CREATION
 
 
 async def test_create_order_state_pending_chained_creation(buy_limit_order):
