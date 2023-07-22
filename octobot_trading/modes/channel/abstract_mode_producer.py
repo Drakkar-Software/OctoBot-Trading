@@ -410,12 +410,19 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     async def _wait_for_bot_init(self, timeout) -> bool:
         try:
-            await util.wait_for_topic_init(self.exchange_manager, timeout,
-                                           common_enums.InitializationEventExchangeTopics.BALANCE.value)
-            self.logger.debug("Trading mode start complete. Now waiting for orders full initialisation.")
-            await util.wait_for_topic_init(self.exchange_manager, timeout,
-                                           common_enums.InitializationEventExchangeTopics.ORDERS.value)
-            self.logger.debug("Trading mode start complete. Orders initialisation completed.")
+            topics = [
+                common_enums.InitializationEventExchangeTopics.BALANCE.value,
+                common_enums.InitializationEventExchangeTopics.ORDERS.value
+            ]
+            if self.trading_mode.REQUIRE_TRADES_HISTORY:
+                topics.append(common_enums.InitializationEventExchangeTopics.TRADES.value)
+            for topic in topics:
+                self.logger.debug(f"Trading mode [{self.exchange_manager.exchange_name}] start complete. "
+                                  f"Now waiting for {topic} full initialisation.")
+                await util.wait_for_topic_init(self.exchange_manager, timeout, topic)
+            self.logger.debug(
+                f"Trading mode requirements init complete: {', '.join(t for t in topics)} initialisation completed."
+            )
             return True
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Initialization took more than {timeout} seconds")
