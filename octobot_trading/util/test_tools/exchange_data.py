@@ -31,7 +31,7 @@ class ExchangeAuthDetails:
 
 @dataclasses.dataclass
 class ExchangeDetails:
-    name: str
+    name: str = ""
 
 
 @dataclasses.dataclass
