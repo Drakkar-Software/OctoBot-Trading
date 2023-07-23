@@ -64,7 +64,6 @@ async def test_copy_portfolio(backtesting_trader):
 
 
 async def test_get_portfolio_from_amount_dict(backtesting_trader):
-    # todo fix
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     assert portfolio_manager.portfolio.get_portfolio_from_amount_dict(
