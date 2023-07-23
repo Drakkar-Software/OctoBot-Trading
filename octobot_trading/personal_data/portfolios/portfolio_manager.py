@@ -276,7 +276,6 @@ class PortfolioManager(util.Initializable):
             self.logger.debug(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
     def _load_simulated_portfolio_from_history(self):
-        #  todo test
         portfolio_amount_dict = personal_data.parse_decimal_config_portfolio(
             {
                 symbol: value
