@@ -26,7 +26,7 @@ class ExchangeAuthDetails:
     api_password: str = ""
     exchange_type: str = ""
     sandboxed: bool = False
-    encrypted: bytes = ""
+    encrypted: str = ""
 
 
 @dataclasses.dataclass
