@@ -64,18 +64,34 @@ async def test_copy_portfolio(backtesting_trader):
 
 
 async def test_get_portfolio_from_amount_dict(backtesting_trader):
+    # todo fix
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     assert portfolio_manager.portfolio.get_portfolio_from_amount_dict(
-        {"zyx": decimal.Decimal(str(10)), "BTC": decimal.Decimal('1')}) == {
-               'zyx': {'available': decimal.Decimal('10'), 'total': decimal.Decimal('10')},
-               'BTC': {'available': decimal.Decimal('1'), 'total': decimal.Decimal('1')}
+        {"zyx": {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('10'),
+                 commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('24')},
+         "BTC": {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('0.1'),
+                 commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('0.1')}}) == {
+               'zyx': {'available': decimal.Decimal('10'), 'total': decimal.Decimal('24')},
+               'BTC': {'available': decimal.Decimal('0.1'), 'total': decimal.Decimal('0.1')}
            }
     assert portfolio_manager.portfolio.get_portfolio_from_amount_dict({}) == {}
     with pytest.raises(RuntimeError):
-        portfolio_manager.portfolio.get_portfolio_from_amount_dict({"zyx": "10", "BTC": decimal.Decimal('1')})
+        portfolio_manager.portfolio.get_portfolio_from_amount_dict({
+            "zyx":  {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('10'),
+                     commons_constants.PORTFOLIO_TOTAL: '24'},
+            "BTC":  {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('10'),
+                     commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('24')},
+        })
     with pytest.raises(RuntimeError):
-        portfolio_manager.portfolio.get_portfolio_from_amount_dict({"BTC": 1})
+        portfolio_manager.portfolio.get_portfolio_from_amount_dict({
+            "zyx":  {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('10'),
+                     commons_constants.PORTFOLIO_TOTAL: 24},
+            "BTC":  {commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal('10'),
+                     commons_constants.PORTFOLIO_TOTAL: decimal.Decimal('24')},
+        })
+    with pytest.raises(AttributeError):
+        portfolio_manager.portfolio.get_portfolio_from_amount_dict({"BTC":  '10'})
 
 
 async def test_get_currency_portfolio(backtesting_trader):
