@@ -33,6 +33,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         super().__init__()
         self.trading_mode = trading_mode
         self.exchange_manager = trading_mode.exchange_manager
+        self.previous_call_error_per_symbol = {}    # stores the last order creation issue for symbol
         self.on_reload_config()
 
     def on_reload_config(self):
@@ -44,24 +45,29 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
     def flush(self):
         self.trading_mode = None
         self.exchange_manager = None
+        self.previous_call_error_per_symbol = None
 
     async def internal_callback(self, trading_mode_name, cryptocurrency, symbol, time_frame, final_note, state, data):
         # creates a new order (or multiple split orders), always check self.can_create_order() first.
         try:
             await self.create_order_if_possible(symbol, final_note, state, data=data)
-        except errors.MissingMinimalExchangeTradeVolume:
+            self.previous_call_error_per_symbol[symbol] = None
+        except errors.MissingMinimalExchangeTradeVolume as err:
+            self.previous_call_error_per_symbol[symbol] = err
             market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
             self.logger.info(f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
                              f"{self.exchange_manager.exchange_name} exchange minimal order "
                              f"volume has not been reached. "
                              f"Exchanges requirements are: {market_status.get(Ecmsc.LIMITS.value)}")
         except errors.UnhandledContractError as err:
+            self.previous_call_error_per_symbol[symbol] = err
             self.logger.error(f"Unhandled contract error on {self.exchange_manager.exchange_name}: {err}. "
                               f"Please make sure that {symbol} is the full futures contract symbol. "
                               f"Future contract symbols contain the settlement currency after ':'. "
                               f"Example: use BTC/USDT:USDT for linear BTC/USDT contracts and "
                               f"BTC/USD:BTC for inverse BTC/USD contracts.")
-        except errors.OrderCreationError:
+        except errors.OrderCreationError as err:
+            self.previous_call_error_per_symbol[symbol] = err
             self.logger.info(f"Failed {symbol} order creation on: {self.exchange_manager.exchange_name} "
                              f"an unexpected error happened when creating order. This is likely due to "
                              f"the order being refused by the exchange.")
@@ -95,10 +101,12 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                                 refresh_real_trader_portfolio(True)
 
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                        except errors.MissingFunds as e:
-                            self.logger.error(f"Failed to create order on second attempt : {e})")
-                    except Exception as e:
-                        self.logger.exception(e, True, f"Error when creating order: {e}")
+                        except errors.MissingFunds as err:
+                            self.previous_call_error_per_symbol[symbol] = err
+                            self.logger.error(f"Failed to create order on second attempt : {err})")
+                    except Exception as err:
+                        self.previous_call_error_per_symbol[symbol] = err
+                        self.logger.exception(err, True, f"Error when creating order: {err}")
             self.logger.info(f"Skipping order creation for {symbol} on {self.exchange_manager.exchange_name}: "
                              f"not enough available funds")
             return []
