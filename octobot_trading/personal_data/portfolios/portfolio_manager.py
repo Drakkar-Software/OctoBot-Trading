@@ -282,6 +282,10 @@ class PortfolioManager(util.Initializable):
                 for symbol, value in self.historical_portfolio_value_manager.historical_ending_portfolio.items()
             }
         )
+        for asset_dict in portfolio_amount_dict.values():
+            # ignore loaded available value as simulated orders are not kept throughout instance
+            # and therefore can't lock funds
+            asset_dict[commons_constants.PORTFOLIO_AVAILABLE] = asset_dict[commons_constants.PORTFOLIO_TOTAL]
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
     def set_forced_portfolio_initial_config(self, portfolio_config):

@@ -13,10 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import os
 
+import mock
 import pytest
 from mock import patch, Mock, AsyncMock
+import octobot_commons.constants as commons_constants
+import octobot_trading.personal_data as personal_data
 from octobot_trading.personal_data.orders import BuyMarketOrder, BuyLimitOrder
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
@@ -120,3 +124,33 @@ async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader)
         update_portfolio_from_filled_order_mock.assert_not_called()
         portfolio_manager._refresh_simulated_trader_portfolio_from_order(order)
         update_portfolio_from_filled_order_mock.assert_called_once()
+
+
+async def test_load_simulated_portfolio_from_history(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    portfolio_manager.historical_portfolio_value_manager = mock.Mock(
+        historical_ending_portfolio={
+            "BTC": {
+                commons_constants.PORTFOLIO_AVAILABLE: 1,
+                commons_constants.PORTFOLIO_TOTAL: 10.11,
+            },
+            "ETH": {
+                commons_constants.PORTFOLIO_AVAILABLE: -1,
+                commons_constants.PORTFOLIO_TOTAL: 10,
+            },
+            "USDT": {
+                commons_constants.PORTFOLIO_AVAILABLE: 34,
+                commons_constants.PORTFOLIO_TOTAL: 34,
+            }
+        },
+        stop=mock.AsyncMock()
+    )
+    portfolio_manager._load_simulated_portfolio_from_history()
+    # ensure only the total value is loaded in simulated portfolio
+    assert portfolio_manager.portfolio.portfolio == {
+        "BTC": personal_data.SpotAsset("BTC", decimal.Decimal("10.11"), decimal.Decimal("10.11")),
+        "ETH": personal_data.SpotAsset("ETH", decimal.Decimal("10"), decimal.Decimal("10")),
+        "USDT": personal_data.SpotAsset("USDT", decimal.Decimal("34"), decimal.Decimal("34"))
+    }
