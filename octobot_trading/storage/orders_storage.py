@@ -153,20 +153,22 @@ def _get_chained_orders(order, exchange_manager):
 
 def _format_order(order, exchange_manager):
     try:
-        return {
+        formatted = {
             constants.STORAGE_ORIGIN_VALUE: OrdersStorage.sanitize_for_storage(order.to_dict()),
-            enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value:
-                OrdersStorage.sanitize_for_storage(order.exchange_creation_params),
-            enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value:
-                OrdersStorage.sanitize_for_storage(order.trader_creation_kwargs),
-            enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: order.has_been_bundled,
-            enums.StoredOrdersAttr.ENTRIES.value: order.associated_entry_ids,
-            enums.StoredOrdersAttr.GROUP.value: _get_group_dict(order),
-            enums.StoredOrdersAttr.CHAINED_ORDERS.value:
-                _get_chained_orders(order, exchange_manager),
-            enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value:
-                order.update_with_triggering_order_fees,
         }
+        for key, val in (
+            (enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS, OrdersStorage.sanitize_for_storage(order.exchange_creation_params)),
+            (enums.StoredOrdersAttr.TRADER_CREATION_KWARGS, OrdersStorage.sanitize_for_storage(order.trader_creation_kwargs)),
+            (enums.StoredOrdersAttr.HAS_BEEN_BUNDLED, order.has_been_bundled),
+            (enums.StoredOrdersAttr.ENTRIES, order.associated_entry_ids),
+            (enums.StoredOrdersAttr.GROUP, _get_group_dict(order)),
+            (enums.StoredOrdersAttr.CHAINED_ORDERS, _get_chained_orders(order, exchange_manager)),
+            (enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES, order.update_with_triggering_order_fees),
+        ):
+            # do not include default values
+            if val:
+                formatted[key.value] = val
+        return formatted
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(err, True, f"Error when formatting order: {err}")
     return {}
