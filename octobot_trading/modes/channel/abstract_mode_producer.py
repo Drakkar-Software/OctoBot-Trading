@@ -132,27 +132,28 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         Start trading mode channels subscriptions
         """
         registration_topics = self.get_channels_registration()
-        trigger_time_frames = self.get_trigger_time_frames()
-        currency_filter = self.trading_mode.cryptocurrency \
-            if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard() \
-            else common_constants.CONFIG_WILDCARD
-        symbol_filter = self.trading_mode.symbol \
-            if self.trading_mode.symbol is not None and not self.is_symbol_wildcard() \
-            else common_constants.CONFIG_WILDCARD
-        self.time_frame_filter = self.trading_mode.time_frame \
-            if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
-            else [tf.value
-                  for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
-                  if tf.value in trigger_time_frames or
-                  trigger_time_frames == common_constants.CONFIG_WILDCARD]
-        if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
-           len(self.time_frame_filter) < len(trigger_time_frames):
-            missing_time_frames = [tf for tf in trigger_time_frames if tf not in self.time_frame_filter]
-            self.logger.error(f"Missing timeframe to satisfy {trigger_time_frames} required time frames. "
-                              f"Please activate those timeframes {missing_time_frames}")
-        self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                     self.exchange_manager.id).matrix_id
-        await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
+        if registration_topics:
+            trigger_time_frames = self.get_trigger_time_frames()
+            currency_filter = self.trading_mode.cryptocurrency \
+                if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard() \
+                else common_constants.CONFIG_WILDCARD
+            symbol_filter = self.trading_mode.symbol \
+                if self.trading_mode.symbol is not None and not self.is_symbol_wildcard() \
+                else common_constants.CONFIG_WILDCARD
+            self.time_frame_filter = self.trading_mode.time_frame \
+                if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
+                else [tf.value
+                      for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
+                      if tf.value in trigger_time_frames or
+                      trigger_time_frames == common_constants.CONFIG_WILDCARD]
+            if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
+               len(self.time_frame_filter) < len(trigger_time_frames):
+                missing_time_frames = [tf for tf in trigger_time_frames if tf not in self.time_frame_filter]
+                self.logger.error(f"Missing timeframe to satisfy {trigger_time_frames} required time frames. "
+                                  f"Please activate those timeframes {missing_time_frames}")
+            self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                                         self.exchange_manager.id).matrix_id
+            await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
         await self.init_user_inputs(False)
         await self._wait_for_bot_init(self.CONFIG_INIT_TIMEOUT)
 
@@ -408,12 +409,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             self.logger.error(f"Initialization took more than {timeout} seconds")
         return False
 
-    async def _wait_for_bot_init(self, timeout) -> bool:
+    async def _wait_for_bot_init(self, timeout, extra_topics: list=None) -> bool:
         try:
             topics = [
                 common_enums.InitializationEventExchangeTopics.BALANCE.value,
                 common_enums.InitializationEventExchangeTopics.ORDERS.value
-            ]
+            ] + (extra_topics if extra_topics else [])
             if self.trading_mode.REQUIRE_TRADES_HISTORY:
                 topics.append(common_enums.InitializationEventExchangeTopics.TRADES.value)
             for topic in topics:
