@@ -47,6 +47,7 @@ from octobot_trading.modes.mode_config import (
     should_emit_trading_signals_user_input,
     is_trading_signal_emitter,
     user_select_order_amount,
+    get_order_amount_value_desc,
     get_user_selected_order_amount,
 )
 
@@ -80,6 +81,7 @@ __all__ = [
     "should_emit_trading_signals_user_input",
     "is_trading_signal_emitter",
     "user_select_order_amount",
+    "get_order_amount_value_desc",
     "get_user_selected_order_amount",
     "get_required_candles_count",
 ]
