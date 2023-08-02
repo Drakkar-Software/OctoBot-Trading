@@ -221,12 +221,14 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             side=side,
             associated_entry_id=main_order.order_id,
         )
-        return (
-            await self.exchange_manager.trader.bundle_chained_order_with_uncreated_order(
+        params = {}
+        if allow_bundling:
+            params = await self.exchange_manager.trader.bundle_chained_order_with_uncreated_order(
                 main_order, chained_order, True
-            ) if allow_bundling else {},
-            chained_order
-        )
+            )
+        else:
+            await self.exchange_manager.trader.chain_order(main_order, chained_order, True, False)
+        return params, chained_order
 
 
 def check_factor(min_val, max_val, factor):

@@ -322,10 +322,13 @@ class Trader(util.Initializable):
                     f"Including {chained_order.order_type} chained order into order "
                     f"parameters to handle it directly on exchange."
                 )
+        await self.chain_order(order, chained_order, update_with_triggering_order_fees, is_bundled, **kwargs)
+        return params
+
+    async def chain_order(self, order, chained_order, update_with_triggering_order_fees, is_bundled, **kwargs):
         await chained_order.set_as_chained_order(order, is_bundled, {}, update_with_triggering_order_fees, **kwargs)
         order.add_chained_order(chained_order)
         self.logger.debug(f"Added chained order [{chained_order}] to [{order}] order.")
-        return params
 
     async def cancel_order(self, order, ignored_order=None,
                            wait_for_cancelling=True,
