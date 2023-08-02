@@ -210,6 +210,25 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                     self.logger.debug(f"Timeout while waiting for idle position to be active, position: {position}")
         return position.state.is_active()
 
+    async def register_chained_order(self, main_order, price, order_type, side, quantity=None, allow_bundling=True) \
+            -> (dict, personal_data.Order):
+        chained_order = personal_data.create_order_instance(
+            trader=self.exchange_manager.trader,
+            order_type=order_type,
+            symbol=main_order.symbol,
+            current_price=price,
+            quantity=quantity or main_order.origin_quantity,
+            price=price,
+            side=side,
+            associated_entry_id=main_order.order_id,
+        )
+        return (
+            await self.exchange_manager.trader.bundle_chained_order_with_uncreated_order(
+                main_order, chained_order, True
+            ) if allow_bundling else {},
+            chained_order
+        )
+
 
 def check_factor(min_val, max_val, factor):
     """

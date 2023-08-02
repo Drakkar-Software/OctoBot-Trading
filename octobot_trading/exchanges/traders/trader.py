@@ -288,7 +288,7 @@ class Trader(util.Initializable):
 
     async def bundle_chained_order_with_uncreated_order(
         self, order, chained_order, update_with_triggering_order_fees, **kwargs
-    ):
+    ) -> dict:
         """
         Creates and bundles an order as a chained order to the given order.
         When supported and in real trading, return the stop loss parameters to be given when
