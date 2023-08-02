@@ -162,3 +162,7 @@ class Trade:
         trade.associated_entry_ids = trade_dict.get(enums.ExchangeConstantsOrderColumns.ENTRIES.value)
         trade.creation_time = trade_dict.get(enums.TradeExtraConstants.CREATION_TIME.value)
         return trade
+
+    def clear(self):
+        self.trader = None
+        self.exchange_manager = None

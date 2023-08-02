@@ -161,6 +161,5 @@ class TradesManager(util.Initializable):
 
     def clear(self):
         for trade in self.trades.values():
-            trade.trader = None
-            trade.exchange_manager = None
+            trade.clear()
         self._reset_trades()
