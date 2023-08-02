@@ -103,6 +103,78 @@ def check_cost(total_order_price, min_cost):
     return True
 
 
+def get_split_orders_count_and_increment(lower_price, higher_price, quantity, orders_count, symbol_market) \
+        -> (int, decimal.Decimal):
+    """
+    :param lower_price: smallest order price
+    :param higher_price: largest order price
+    :param quantity: total quantity to handle
+    :param orders_count: ideal orders count
+    :param symbol_market: description of the market to trade on
+    :return: the exchange compatible orders count and price increment
+    """
+    min_quantity, max_quantity, min_cost, max_cost, min_price, max_price = get_min_max_amounts(symbol_market)
+    min_quantity = None if min_quantity is None else decimal.Decimal(f"{min_quantity}")
+    max_quantity = None if max_quantity is None else decimal.Decimal(f"{max_quantity}")
+    min_cost = None if min_cost is None else decimal.Decimal(f"{min_cost}")
+    max_cost = None if max_cost is None else decimal.Decimal(f"{max_cost}")
+    min_price = None if min_price is None else decimal.Decimal(f"{min_price}")
+    max_price = None if max_price is None else decimal.Decimal(f"{max_price}")
+
+    limit_check = _ensure_orders_size(
+        lower_price, higher_price, quantity, orders_count,
+        min_quantity, min_cost, min_price,
+        max_quantity, max_cost, max_price)
+
+    while limit_check > 0:
+        if limit_check == 1:
+            if orders_count > 1:
+                orders_count -= 1
+            else:
+                # not enough funds to create orders
+                logging.get_logger(LOGGER_NAME).warning(f"Not enough funds to create order.")
+                return 0, 0
+        elif limit_check == 2:
+            if orders_count < 40:
+                orders_count += 1
+            else:
+                # too many orders to create, must be a problem
+                logging.get_logger(LOGGER_NAME).error("Too many orders to create.")
+                return 0, 0
+        limit_check = _ensure_orders_size(
+            lower_price, higher_price, quantity, orders_count,
+            min_quantity, min_cost, min_price,
+            max_quantity, max_cost, max_price)
+    return orders_count, (higher_price - lower_price) / orders_count
+
+
+def _ensure_orders_size(lower_price, higher_price, quantity, orders_count,
+                        min_quantity, min_cost, min_price,
+                        max_quantity, max_cost, max_price):
+    increment = (higher_price - lower_price) / orders_count
+    first_price = lower_price + increment
+    last_price = lower_price + (increment * orders_count)
+    order_vol = quantity / orders_count
+
+    if _are_orders_too_small(min_quantity, min_cost, min_price, first_price, order_vol):
+        return 1
+    elif _are_orders_too_large(max_quantity, max_cost, max_price, last_price, order_vol):
+        return 2
+    return 0
+
+
+def _are_orders_too_small(min_quantity, min_cost, min_price, price, volume):
+    return (min_price and price < min_price) or \
+           (min_quantity and volume < min_quantity) or \
+           (min_cost and price * volume < min_cost)
+
+
+def _are_orders_too_large(max_quantity, max_cost, max_price, price, volume):
+    return (max_price and price > max_price) or \
+           (max_quantity and volume > max_quantity) or \
+           (max_cost and price * volume > max_cost)
+
+
 async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = None, base_error: str = None):
     exchange_time = exchange_manager.exchange.get_exchange_current_time()
     base_error = base_error or f"Can't get the necessary {exchange_manager.exchange_name} " \
