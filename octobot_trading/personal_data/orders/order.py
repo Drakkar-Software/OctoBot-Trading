@@ -323,15 +323,23 @@ class Order(util.Initializable):
         return self.state is None or self.state.is_open()
 
     def is_filled(self):
+        if self.state is None:
+            return self.status is enums.OrderStatus.FILLED
         return self.state.is_filled() or (self.state.is_closed() and self.status is enums.OrderStatus.FILLED)
 
     def is_cancelled(self):
+        if self.state is None:
+            return self.status is enums.OrderStatus.CANCELED
         return self.state.is_canceled() or (self.state.is_closed() and self.status is enums.OrderStatus.CANCELED)
 
     def is_cancelling(self):
+        if self.state is None:
+            return self.status is enums.OrderStatus.PENDING_CANCEL
         return self.state.state is enums.OrderStates.CANCELING or self.status is enums.OrderStatus.PENDING_CANCEL
 
     def is_closed(self):
+        if self.state is None:
+            return self.status is enums.OrderStatus.CLOSED
         return self.state.is_closed() if self.state is not None else self.status is enums.OrderStatus.CLOSED
 
     def is_refreshing(self):

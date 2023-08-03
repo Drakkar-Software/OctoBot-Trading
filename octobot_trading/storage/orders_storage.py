@@ -202,26 +202,31 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
 def _from_order_document(order_document):
     order_dict = dict(order_document)
     try:
-        origin_val = order_dict[constants.STORAGE_ORIGIN_VALUE]
-        origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = \
-            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
-        origin_val[enums.ExchangeConstantsOrderColumns.COST.value] = \
-            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.COST.value]))
-        origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value] = \
-            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value]))
-        origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value] = \
-            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value]))
-        if origin_val[enums.ExchangeConstantsOrderColumns.FEE.value] and \
-                enums.FeePropertyColumns.COST.value in origin_val[enums.ExchangeConstantsOrderColumns.FEE.value]:
-            origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value] = \
-                decimal.Decimal(str(
-                    origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
-                ))
+        restore_order_storage_origin_value(order_dict[constants.STORAGE_ORIGIN_VALUE])
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(
             err, True, f"Error when reading: {err} order: {order_document}"
         )
     return order_dict
+
+
+def restore_order_storage_origin_value(origin_val):
+    origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = \
+        decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
+    origin_val[enums.ExchangeConstantsOrderColumns.COST.value] = \
+        decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.COST.value]))
+    origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value] = \
+        decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.FILLED.value]))
+    origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value] = \
+        decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.PRICE.value]))
+    if origin_val[enums.ExchangeConstantsOrderColumns.FEE.value] and \
+            enums.FeePropertyColumns.COST.value in origin_val[enums.ExchangeConstantsOrderColumns.FEE.value]:
+        origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value] = \
+            decimal.Decimal(str(
+                origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
+            ))
+    return origin_val
+
 
 def _get_startup_order_key(order_dict):
     # use exchange id if available, fallback to order_id (for self managed orders)

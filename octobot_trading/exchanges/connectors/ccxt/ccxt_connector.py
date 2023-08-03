@@ -119,7 +119,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     for market in forced_markets
                 ])
         else:
-            await self.client.load_markets(reload=reload)
+            try:
+                await self.client.load_markets(reload=reload)
+            except ccxt.ExchangeNotAvailable as err:
+                raise octobot_trading.errors.FailedRequest(
+                    f"Failed to get_symbol_prices: {err.__class__.__name__} on {err}"
+                ) from err
 
     def get_client_symbols(self):
         return ccxt_client_util.get_symbols(self.client)
