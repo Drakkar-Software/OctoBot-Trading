@@ -319,36 +319,36 @@ def get_supported_exchange_types(exchange_name, tentacles_setup_config):
 
 
 def update_raw_order_from_raw_trade(order_to_update, raw_trade):
-    order_to_update[enums.ExchangeConstantsOrderColumns.INFO.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.INFO.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.ORDER.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.SYMBOL.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.SYMBOL.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.TYPE.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.TYPE.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.AMOUNT.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.DATETIME.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.DATETIME.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.SIDE.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.SIDE.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.PRICE.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.PRICE.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.INFO.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.INFO.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.ORDER.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.SYMBOL.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.SYMBOL.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.TYPE.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.TYPE.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.DATETIME.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.DATETIME.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.SIDE.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.SIDE.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.PRICE.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.PRICE.value)
     order_to_update[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] = order_to_update.get(
         enums.ExchangeConstantsOrderColumns.TIMESTAMP.value,
         raw_trade[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
     order_to_update[enums.ExchangeConstantsOrderColumns.STATUS.value] = enums.OrderStatus.FILLED.value
-    order_to_update[enums.ExchangeConstantsOrderColumns.FILLED.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.AMOUNT.value]
-    order_to_update[enums.ExchangeConstantsOrderColumns.COST.value] = raw_trade[
-        enums.ExchangeConstantsOrderColumns.COST.value]
+    order_to_update[enums.ExchangeConstantsOrderColumns.FILLED.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value)
+    order_to_update[enums.ExchangeConstantsOrderColumns.COST.value] = raw_trade.get(
+        enums.ExchangeConstantsOrderColumns.COST.value)
     order_to_update[enums.ExchangeConstantsOrderColumns.REMAINING.value] = 0
     order_to_update[
         enums.ExchangeConstantsOrderColumns.FEE.value
-    ] = raw_trade[enums.ExchangeConstantsOrderColumns.FEE.value]
+    ] = raw_trade.get(enums.ExchangeConstantsOrderColumns.FEE.value)
     return order_to_update
 
 

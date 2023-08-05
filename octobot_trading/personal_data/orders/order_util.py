@@ -351,7 +351,7 @@ def get_pnl_transaction_source_from_order(order):
     return enums.PNLTransactionSource.UNKNOWN
 
 
-def is_stop_order(order_type):
+def is_stop_order(order_type: enums.TraderOrderType):
     return order_type in [
         enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
         enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT,
@@ -364,7 +364,7 @@ def is_take_profit_order(order_type):
     ]
 
 
-def get_trade_order_type(order_type: enums.TraderOrderType):
+def get_trade_order_type(order_type: enums.TraderOrderType) -> enums.TradeOrderType:
     if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET):
         return enums.TradeOrderType.MARKET
     if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT):

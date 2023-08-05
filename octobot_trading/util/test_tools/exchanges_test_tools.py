@@ -71,18 +71,21 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
     await asyncio_tools.wait_asyncio_next_cycle()
 
 
+def _update_symbol_market(exchange_manager, market_details: exchange_data_import.MarketDetails):
+    market = exchange_manager.exchange.connector.client.markets[market_details.symbol]
+    market_details.id = market[enums.ExchangeConstantsMarketStatusColumns.ID.value]
+    market_details.info = market[enums.ExchangeConstantsMarketStatusColumns.INFO.value]
+
+
 async def add_symbols_details(
-    exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData, history_size=1
+        exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
+        history_size=1, forced_markets=None
 ) -> exchange_data_import.ExchangeData:
     parsed_tf = common_enums.TimeFrames(time_frame)
-
     async def _update_ohlcv(symbol):
-        market = exchange_manager.exchange.connector.client.markets[symbol]
         ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
         details = exchange_data_import.MarketDetails(
-            id=market[enums.ExchangeConstantsMarketStatusColumns.ID.value],
-            symbol=market[enums.ExchangeConstantsMarketStatusColumns.SYMBOL.value],
-            info=market[enums.ExchangeConstantsMarketStatusColumns.INFO.value],
+            symbol=symbol,
             time_frame=time_frame,
             close=[ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] for ohlcv in ohlcvs],
             open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs],
@@ -91,9 +94,10 @@ async def add_symbols_details(
             volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs],
             time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
         )
+        _update_symbol_market(exchange_manager, details)
         exchange_data.markets.append(details)
 
-    await exchange_manager.exchange.connector.load_symbol_markets()
+    await exchange_manager.exchange.connector.load_symbol_markets(forced_markets=forced_markets)
     await asyncio.gather(*(_update_ohlcv(symbol) for symbol in symbols))
     return exchange_data
 

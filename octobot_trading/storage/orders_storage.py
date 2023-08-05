@@ -203,6 +203,8 @@ def _from_order_document(order_document):
     order_dict = dict(order_document)
     try:
         restore_order_storage_origin_value(order_dict[constants.STORAGE_ORIGIN_VALUE])
+        for chained_order in order_dict.get(enums.StoredOrdersAttr.CHAINED_ORDERS.value, []):
+            _from_order_document(chained_order)
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(
             err, True, f"Error when reading: {err} order: {order_document}"
