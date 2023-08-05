@@ -172,4 +172,12 @@ def requires_refresh_trigger(exchange_manager, channel):
     :param channel: name of the channel
     :return: True if it should be refreshed via a manual trigger to be exactly up to date
     """
-    return not exchanges.is_channel_managed_by_websocket(exchange_manager, channel)
+    return not (
+        exchanges.is_channel_managed_by_websocket(exchange_manager, channel)
+        or _is_updater_refresh_disabled(exchange_manager)
+    )
+
+
+def _is_updater_refresh_disabled(exhange_manager):
+    # channel updaters are disabled on exchange_only mode
+    return exhange_manager.exchange_only

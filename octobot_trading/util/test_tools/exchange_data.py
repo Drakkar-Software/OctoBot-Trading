@@ -51,14 +51,8 @@ class MarketDetails(updatable_dataclass.UpdatableDataclass):
 
 @dataclasses.dataclass
 class OrdersDetails(updatable_dataclass.UpdatableDataclass):
-    open_orders: list[dict] = None
-    missing_orders: list[dict] = None
-
-    def __post_init__(self):
-        if self.open_orders is None:
-            self.open_orders = []
-        if self.missing_orders is None:
-            self.missing_orders = []
+    open_orders: list[dict] = dataclasses.field(default_factory=list)
+    missing_orders: list[dict] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
