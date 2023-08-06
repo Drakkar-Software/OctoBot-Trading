@@ -178,6 +178,6 @@ def requires_refresh_trigger(exchange_manager, channel):
     )
 
 
-def _is_updater_refresh_disabled(exhange_manager):
+def _is_updater_refresh_disabled(exchange_manager):
     # channel updaters are disabled on exchange_only mode
-    return exhange_manager.exchange_only
+    return exchange_manager.exchange_only
