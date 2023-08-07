@@ -82,6 +82,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
             await authenticator.update_portfolio(
                 full_history[-1][portfolio_history.HistoricalAssetValue.VALUES_KEY],
                 full_history[0][portfolio_history.HistoricalAssetValue.VALUES_KEY],
+                float(hist_portfolio_values_manager.portfolio_manager.portfolio_profitability.profitability_percent),
                 hist_portfolio_values_manager.portfolio_manager.reference_market,
                 hist_portfolio_values_manager.ending_portfolio,
                 {
