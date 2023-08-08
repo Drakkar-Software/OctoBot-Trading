@@ -399,6 +399,7 @@ async def create_as_chained_order(order):
         order.status = enums.OrderStatus.OPEN
         # set uninitialized to allow second initialization from create_order
         order.is_initialized = False
+        order.creation_time = order.exchange_manager.exchange.get_exchange_current_time()
         await order.trader.create_order(
             order,
             loaded=False,
