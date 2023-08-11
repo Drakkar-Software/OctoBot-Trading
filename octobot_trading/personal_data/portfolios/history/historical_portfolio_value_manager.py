@@ -75,7 +75,9 @@ class HistoricalPortfolioValueManager(util.Initializable):
         """
         Reset the portfolio instance
         """
-        await self._reload_historical_portfolio_value()
+        # don't load any previous portfolio value on backtesting
+        if not self.portfolio_manager.exchange_manager.is_backtesting:
+            await self._reload_historical_portfolio_value()
 
     async def reset_history(self):
         self.starting_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()

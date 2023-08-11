@@ -263,7 +263,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
 
 async def get_historical_ohlcv(
     local_exchange_manager, symbol, time_frame, start_time, end_time,
-        request_retry_timeout=constants.HISTORICAL_CANDLES_FETCH_DEFAULT_TIMEOUT
+    request_retry_timeout=constants.HISTORICAL_CANDLES_FETCH_DEFAULT_TIMEOUT
 ):
     """
     Async generator, use as follows:
