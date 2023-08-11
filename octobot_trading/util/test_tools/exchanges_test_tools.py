@@ -155,10 +155,9 @@ async def create_orders(exchange_manager, exchange_data: exchange_data_import.Ex
             current_price=decimal.Decimal(str(exchange_data.get_price(symbol))),
             reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
         )
-        # created_order = order_dict
         # is private, to use in tests context only
         return personal_data.create_order_instance_from_raw(
             exchange_manager.trader, created_order, force_open_or_pending_creation=True
-        )
+        ) if created_order else None
 
     return await asyncio.gather(*(_create_order(order_dict) for order_dict in orders))
