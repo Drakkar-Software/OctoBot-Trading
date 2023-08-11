@@ -242,7 +242,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     ) as local_exchange_manager:
         backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
         try:
-            is_compatible, error = await backend.is_valid_account()
+            is_compatible, error = await backend.is_valid_account(always_check_key_rights=True)
             if not local_exchange_manager.is_spot_only:
                 message = f"Future trading on {exchange_name.capitalize()} requires a supporting account. {error}." \
                           f"Please create a new {exchange_name.capitalize()} account to use futures trading. "
@@ -255,6 +255,8 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
             return False, False, _get_time_sync_error_message(exchange_name, "backend.is_valid_account")
         except trading_backend.ExchangeAuthError:
             return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
+        except trading_backend.APIKeyPermissionsError as err:
+            return False, False, f"Please update your API Key permissions: {err}"
         except (AttributeError, Exception) as e:
             return True, False, f"Error when loading exchange account: {e}"
 
