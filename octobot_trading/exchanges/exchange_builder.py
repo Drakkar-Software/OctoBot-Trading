@@ -34,6 +34,7 @@ class ExchangeBuilder:
 
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
+        self.trading_config_by_trading_mode: dict = None
 
     async def build(self):
         """
@@ -115,7 +116,7 @@ class ExchangeBuilder:
             else:
                 self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
 
-    async def _build_trading_modes(self, trading_mode_class, trading_config_by_trading_mode=None):
+    async def _build_trading_modes(self, trading_mode_class):
         try:
             self._ensure_trading_mode_compatibility(trading_mode_class)
             return await modes.create_trading_modes(
@@ -123,7 +124,7 @@ class ExchangeBuilder:
                 self.exchange_manager,
                 trading_mode_class,
                 self.exchange_manager.bot_id,
-                trading_config_by_trading_mode=trading_config_by_trading_mode
+                trading_config_by_trading_mode=self.trading_config_by_trading_mode
             )
         except errors.TradingModeIncompatibility as e:
             raise e
@@ -244,6 +245,10 @@ class ExchangeBuilder:
 
     def has_matrix(self, matrix_id):
         self._matrix_id = matrix_id
+        return self
+
+    def use_trading_config_by_trading_mode(self, trading_config_by_trading_mode):
+        self.trading_config_by_trading_mode = trading_config_by_trading_mode
         return self
 
 

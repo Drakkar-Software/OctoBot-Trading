@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import decimal
+import time
 
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as common_enums
@@ -27,6 +28,9 @@ import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_trading.personal_data as personal_data
 
 import octobot_trading.util.test_tools.exchange_data as exchange_data_import
+
+
+BASE_TIMEOUT = 10
 
 
 async def create_test_exchange_manager(
@@ -79,11 +83,20 @@ def _update_symbol_market(exchange_manager, market_details: exchange_data_import
 
 async def add_symbols_details(
         exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-        history_size=1, forced_markets=None
+        history_size=1, forced_markets=None, start_time=0, end_time=0
 ) -> exchange_data_import.ExchangeData:
     parsed_tf = common_enums.TimeFrames(time_frame)
+
     async def _update_ohlcv(symbol):
-        ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
+        if start_time == 0:
+            ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
+        else:
+            ohlcvs = []
+            async for ohlcv in exchanges.get_historical_ohlcv(
+                exchange_manager, symbol, parsed_tf, start_time * 1000, (end_time or time.time()) * 1000,
+                request_retry_timeout=BASE_TIMEOUT
+            ):
+                ohlcvs.extend(ohlcv)
         details = exchange_data_import.MarketDetails(
             symbol=symbol,
             time_frame=time_frame,

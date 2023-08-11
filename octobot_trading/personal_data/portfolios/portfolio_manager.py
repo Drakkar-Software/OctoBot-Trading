@@ -52,7 +52,8 @@ class PortfolioManager(util.Initializable):
         Reset the portfolio instance
         """
 
-        if self.exchange_manager.is_storage_enabled() and self.historical_portfolio_value_manager is None:
+        if (self.exchange_manager.is_storage_enabled() or self.exchange_manager.is_backtesting) \
+                and self.historical_portfolio_value_manager is None:
             self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
             await self.historical_portfolio_value_manager.initialize()
         self.set_forced_portfolio_initial_config(
