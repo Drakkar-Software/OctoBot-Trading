@@ -26,8 +26,10 @@ import octobot_commons.constants as commons_constants
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.connectors.simulator.exchange_simulator_adapter as exchange_simulator_adapter
+import octobot_trading.exchanges.connectors.simulator.ccxt_client_simulation as ccxt_client_simulation
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchanges.util as util
 
@@ -44,6 +46,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         self.current_future_candles = {}
 
         self.is_authenticated = False
+        self._forced_market_statuses: dict = None
 
     async def initialize_impl(self):
         self.exchange_importers = self.backtesting.get_importers(importers.ExchangeDataImporter)
@@ -61,8 +64,21 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         # set exchange manager attributes
         self.exchange_manager.client_symbols = list(self.symbols)
 
+        # init _forced_market_statuses when available
+        if self.exchange_manager.forced_markets is not None:
+            self._init_forced_market_statuses(self.exchange_manager.forced_markets)
+
     def get_adapter_class(self, adapter_class):
         return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
+
+    def _init_forced_market_statuses(self, forced_markets):
+        self._forced_market_statuses = ccxt_client_simulation.parse_markets(
+            self.exchange_manager.exchange_class_string,
+            forced_markets
+        )
+
+    def should_adapt_market_statuses(self) -> bool:
+        return bool(self.exchange_manager.forced_markets)
 
     @classmethod
     def load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config):
@@ -125,6 +141,18 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         return [backtesting_api.get_data_file_path(importer) for importer in self.exchange_importers]
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
+        if self._forced_market_statuses:
+            try:
+                if with_fixer:
+                    return util.ExchangeMarketStatusFixer(
+                        self._forced_market_statuses[symbol], price_example
+                    ).market_status
+                return self._forced_market_statuses[symbol]
+            except KeyError:
+                raise errors.NotSupported
+        return self._get_default_market_status()
+
+    def _get_default_market_status(self):
         return {
             # number of decimal digits "after the dot"
             enums.ExchangeConstantsMarketStatusColumns.PRECISION.value: {
@@ -199,8 +227,11 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         fee_currency = currency
 
-        precision = self.get_market_status(symbol)[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value] \
-            [enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
+        precision = self.get_market_status(
+            symbol, with_fixer=False
+        )[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value
+        ]
         cost = float(number_util.round_into_str_with_max_digits(float(quantity) * rate, precision))
 
         if util.get_order_side(order_type) == enums.TradeOrderSide.SELL.value:
