@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.constants as constants
+import octobot_trading.exchanges.util as exchange_util
 import octobot_trading.exchanges.connectors.simulator.exchange_simulator_connector as exchange_simulator_connector
 import octobot_trading.exchanges.types.rest_exchange as rest_exchange
 
@@ -36,12 +37,24 @@ class ExchangeSimulator(rest_exchange.RestExchange):
 
     async def initialize_impl(self):
         await super().initialize_impl()
+        self._set_market_status_params()
         self.exchange_importers = self.connector.exchange_importers
 
     async def stop(self) -> None:
         await super().stop()
         self.backtesting = None
         self.exchange_importers = None
+
+    def _set_market_status_params(self):
+        params_source = rest_exchange.RestExchange
+        if self.connector.should_adapt_market_statuses():
+            params_source = exchange_util.get_rest_exchange_class(
+                self.exchange_manager.exchange_name, None
+            ) or params_source
+        # update params
+        self.FIX_MARKET_STATUS = params_source.FIX_MARKET_STATUS
+        self.REMOVE_MARKET_STATUS_PRICE_LIMITS = params_source.REMOVE_MARKET_STATUS_PRICE_LIMITS
+        self.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE = params_source.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:

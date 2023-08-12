@@ -43,6 +43,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     PRINT_DEBUG_LOGS = False
+    FIX_MARKET_STATUS = False  # set True when get_fixed_market_status should be called when calling get_market_status
+    # set True when get_fixed_market_status should be remove price limits (when limits are invalid)
+    REMOVE_MARKET_STATUS_PRICE_LIMITS = False
+    # set True when get_fixed_market_status should adapt amounts for contract size
+    # (amounts are in not kept as contract size with OctoBot)
+    ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE = False
     REQUIRE_ORDER_FEES_FROM_TRADES = False  # set True when get_order is not giving fees on closed orders and fees
     # should be fetched using recent trades.
     REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES = False  # set True when get_closed_orders is not supported
@@ -357,6 +363,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         Override using get_fixed_market_status in exchange tentacle if the default market status is not as expected
         """
+        if self.FIX_MARKET_STATUS:
+            return self.get_fixed_market_status(
+                symbol,
+                price_example=price_example,
+                with_fixer=with_fixer,
+                remove_price_limits=self.REMOVE_MARKET_STATUS_PRICE_LIMITS,
+                adapt_for_contract_size=self.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE
+            )
         return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
     def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, remove_price_limits=False,

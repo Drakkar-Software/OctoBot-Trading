@@ -215,7 +215,7 @@ class ExchangeBuilder:
         self.exchange_manager.exchange_only = True
         return self
 
-    def has_forced_markets(self, forced_markets: dict):
+    def has_forced_markets(self, forced_markets: list):
         self.exchange_manager.forced_markets = forced_markets
         return self
 

@@ -216,7 +216,7 @@ async def get_local_exchange_manager(
         .is_using_exchange_type(exchange_type) \
         .is_exchange_only() \
         .is_rest_only() \
-        .has_forced_markets(forced_markets or {}) \
+        .has_forced_markets(forced_markets or None) \
         .is_ignoring_config(ignore_config) \
         .disable_trading_mode() \
         .build()
