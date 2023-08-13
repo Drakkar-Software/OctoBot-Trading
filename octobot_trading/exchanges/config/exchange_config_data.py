@@ -169,10 +169,11 @@ class ExchangeConfig(util.Initializable):
             traded_symbol_pairs_set = self._set_config_traded_pair(cryptocurrency,
                                                                    traded_symbol_pairs_set,
                                                                    existing_pairs)
-        self.traded_symbol_pairs = list(traded_symbol_pairs_set)
+        # sort lists to avoid set insert randomness issues
+        self.traded_symbol_pairs = sorted(list(traded_symbol_pairs_set))
         self.traded_symbols = [
             octobot_commons.symbols.parse_symbol(symbol)
-            for symbol in traded_symbol_pairs_set
+            for symbol in self.traded_symbol_pairs
         ]
 
         # only add self.traded_symbol_pairs to watched pairs as not every existing_pairs are being collected
