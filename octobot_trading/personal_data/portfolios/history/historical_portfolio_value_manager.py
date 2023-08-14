@@ -61,7 +61,15 @@ class HistoricalPortfolioValueManager(util.Initializable):
         )
         self.data_source = data_source or self.__class__.DEFAULT_DATA_SOURCE
         self.version = version or self.__class__.DEFAULT_DATA_VERSION
-        self.starting_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
+        try:
+            self.starting_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
+        except AttributeError:
+            if self.portfolio_manager.exchange_manager.is_backtesting and \
+               not self.portfolio_manager.exchange_manager.exchange.connector.exchange_importers:
+                # Can happen on backtesting without datafiles (used in particular setups). Only this case is acceptable
+                self.starting_time = 0
+            else:
+                raise
         self.last_update_time = self.starting_time
         self.starting_portfolio = None
         self.historical_ending_portfolio = None

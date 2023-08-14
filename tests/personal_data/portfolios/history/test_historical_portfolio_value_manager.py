@@ -53,13 +53,20 @@ async def test_initialize(historical_portfolio_value_manager):
     await historical_portfolio_value_manager.initialize()
     assert historical_portfolio_value_manager.historical_portfolio_value == sortedcontainers.SortedDict()
 
-    if os.getenv('CYTHON_IGNORE'):
-        return
     with mock.patch.object(historical_portfolio_value_manager, "_reload_historical_portfolio_value", mock.AsyncMock()) \
-        as _reload_historical_portfolio_value_mock:
+         as _reload_historical_portfolio_value_mock:
         historical_portfolio_value_manager.is_initialized = False
         await historical_portfolio_value_manager.initialize()
-        _reload_historical_portfolio_value_mock.assert_called_once()
+        _reload_historical_portfolio_value_mock.assert_not_called()
+
+        try:
+            historical_portfolio_value_manager.portfolio_manager.exchange_manager.is_backtesting = False
+            historical_portfolio_value_manager.is_initialized = False
+            await historical_portfolio_value_manager.initialize()
+            _reload_historical_portfolio_value_mock.assert_called_once()
+        finally:
+            # restore value
+            historical_portfolio_value_manager.portfolio_manager.exchange_manager.is_backtesting = True
 
 
 async def test_on_new_value(historical_portfolio_value_manager):
