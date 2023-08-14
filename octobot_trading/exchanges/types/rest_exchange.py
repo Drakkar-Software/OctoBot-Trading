@@ -438,6 +438,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
             enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = \
             number_util.get_digits_count(float_size)
 
+    async def get_account_id(self, **kwargs: dict) -> str:
+        raise NotImplementedError(f"get_account_id is not implemented on {self.exchange_manager.exchange_name}")
+
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
 
