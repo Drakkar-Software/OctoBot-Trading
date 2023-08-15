@@ -48,6 +48,9 @@ class MarketDetails(updatable_dataclass.UpdatableDataclass):
     volume: list[float] = dataclasses.field(default_factory=list)
     time: list[float] = dataclasses.field(default_factory=list)
 
+    def has_full_candles(self):
+        return self.close and self.open and self.high and self.low and self.time
+
 
 @dataclasses.dataclass
 class OrdersDetails(updatable_dataclass.UpdatableDataclass):
