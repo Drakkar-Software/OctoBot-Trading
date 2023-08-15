@@ -83,7 +83,7 @@ def _update_symbol_market(exchange_manager, market_details: exchange_data_import
 
 async def add_symbols_details(
         exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-        history_size=1, forced_markets=None, start_time=0, end_time=0
+        history_size=1, forced_markets=None, start_time=0, end_time=0, close_price_only=False
 ) -> exchange_data_import.ExchangeData:
     parsed_tf = common_enums.TimeFrames(time_frame)
 
@@ -101,13 +101,14 @@ async def add_symbols_details(
             symbol=symbol,
             time_frame=time_frame,
             close=[ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] for ohlcv in ohlcvs],
-            open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs],
-            high=[ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] for ohlcv in ohlcvs],
-            low=[ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] for ohlcv in ohlcvs],
-            volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs],
+            open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs] if not close_price_only else [],
+            high=[ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] for ohlcv in ohlcvs] if not close_price_only else [],
+            low=[ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] for ohlcv in ohlcvs] if not close_price_only else [],
+            volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if not close_price_only else [],
             time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
         )
-        _update_symbol_market(exchange_manager, details)
+        if not close_price_only:
+            _update_symbol_market(exchange_manager, details)
         exchange_data.markets.append(details)
 
     await exchange_manager.exchange.connector.load_symbol_markets(forced_markets=forced_markets)
