@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_commons.symbols as commons_symbols
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
 import octobot_trading.personal_data as trading_personal_data
@@ -48,11 +49,28 @@ async def get_amount_from_input_amount(
     elif amount_type is dsl.QuantityType.PERCENT:
         amount_value = await account_balance.available_account_balance(
             context, side, use_total_holding=True, reduce_only=reduce_only
-        ) * amount_value / 100
+        ) * amount_value / trading_constants.ONE_HUNDRED
     elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
         amount_value = await account_balance.available_account_balance(
             context, side, use_total_holding=False, reduce_only=reduce_only
-        ) * amount_value / 100
+        ) * amount_value / trading_constants.ONE_HUNDRED
+    elif amount_type is dsl.QuantityType.CURRENT_SYMBOL_ASSETS_PERCENT:
+        if not context.symbol:
+            raise trading_errors.InvalidArgumentError(f"{amount_type} input types requires context.symbol to be set")
+        base, quote = commons_symbols.parse_symbol(context.symbol).base_and_quote()
+        total_symbol_assets_holdings_value = account_balance.get_holdings_value(context, (base, quote), base)
+        amount_value = total_symbol_assets_holdings_value * amount_value / trading_constants.ONE_HUNDRED
+    elif amount_type is dsl.QuantityType.TRADED_SYMBOLS_ASSETS_PERCENT:
+        if not context.symbol:
+            raise trading_errors.InvalidArgumentError(f"{amount_type} input types requires context.symbol to be set")
+        assets = set()
+        for symbol in context.exchange_manager.exchange_config.traded_symbols:
+            assets.add(symbol.base)
+            assets.add(symbol.quote)
+        total_symbol_assets_holdings_value = account_balance.get_holdings_value(
+            context, assets, commons_symbols.parse_symbol(context.symbol).base
+        )
+        amount_value = total_symbol_assets_holdings_value * amount_value / trading_constants.ONE_HUNDRED
     elif amount_type is dsl.QuantityType.POSITION_PERCENT:
         raise NotImplementedError(amount_type)
     else:

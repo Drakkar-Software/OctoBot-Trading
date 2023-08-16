@@ -92,6 +92,24 @@ async def test_available_account_balance(mock_context):
         _get_locked_amount_in_stop_orders_mock.reset_mock()
 
 
+async def test_get_holdings_value(mock_context):
+    portfolio = mock_context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+    last_prices = mock_context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        value_converter.last_prices_by_trading_pair
+    # no provided input asset
+    assert account_balance.get_holdings_value(mock_context, (), "USDT") == trading_constants.ZERO
+    # missing currency
+    assert account_balance.get_holdings_value(mock_context, {"BTC", "ETH"}, "PLOP") == trading_constants.ZERO
+    assert account_balance.get_holdings_value(mock_context, ("BTC"), "BTC") == portfolio["BTC"].total
+    assert account_balance.get_holdings_value(mock_context, ("BTC"), "BTC") != portfolio["BTC"].available
+    assert account_balance.get_holdings_value(mock_context, ("BTC"), "USDT") == \
+           portfolio["BTC"].total * last_prices["BTC/USDT"]
+    assert account_balance.get_holdings_value(mock_context, {"BTC", "ETH"}, "USDT") == \
+           portfolio["BTC"].total * last_prices["BTC/USDT"] + portfolio["ETH"].total * last_prices["ETH/USDT"]
+    assert account_balance.get_holdings_value(mock_context, {"BTC", "ETH"}, "ETH") == \
+           portfolio["BTC"].total / last_prices["ETH/BTC"] + portfolio["ETH"].total
+
+
 async def test_adapt_amount_to_holdings(null_context):
     with mock.patch.object(account_balance, "available_account_balance",
                            mock.AsyncMock(return_value=decimal.Decimal(1))) as available_account_balance_mock:

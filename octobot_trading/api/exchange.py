@@ -19,6 +19,8 @@ import contextlib
 
 import trading_backend
 
+import octobot_commons.symbols as commons_symbols
+
 import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges.connectors.ccxt.enums
@@ -204,7 +206,7 @@ def supports_websockets(exchange_name: str, tentacles_setup_config) -> bool:
     return exchanges.supports_websocket(exchange_name, tentacles_setup_config)
 
 
-def get_trading_pairs(exchange_manager) -> list:
+def get_trading_pairs(exchange_manager) -> list[str]:
     return exchange_manager.exchange_config.traded_symbol_pairs
 
 
@@ -216,7 +218,7 @@ def get_all_exchange_time_frames(exchange_manager) -> list:
     return exchange_manager.client_time_frames
 
 
-def get_trading_symbols(exchange_manager) -> list:
+def get_trading_symbols(exchange_manager) -> list[commons_symbols.Symbol]:
     return exchange_manager.exchange_config.traded_symbols
 
 

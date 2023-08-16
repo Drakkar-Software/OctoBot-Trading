@@ -71,6 +71,22 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
         - already_locked_amount
 
 
+def get_holdings_value(context, assets, target_unit):
+    total_value = trading_constants.ZERO
+    portfolio = context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+    converter = context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.value_converter
+    for asset, asset_holdings in portfolio.items():
+        if asset not in assets:
+            continue
+        try:
+            total_value += converter.evaluate_value(
+                asset, asset_holdings.total, raise_error=True, target_currency=target_unit, init_price_fetchers=False
+            )
+        except trading_errors.MissingPriceDataError:
+            context.logger.info(f"Missing {asset} price conversion, ignoring {float(asset_holdings.total)} holdings.")
+    return total_value
+
+
 def _get_locked_amount_in_stop_orders(context, side):
     locked_amount = trading_constants.ZERO
     for order in context.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(context.symbol):

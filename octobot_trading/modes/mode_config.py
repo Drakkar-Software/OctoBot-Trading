@@ -95,7 +95,11 @@ def get_order_amount_value_desc():
         f"0.1 to trade 0.1 BTC on BTC/USD (amount in base currency); " \
         f"25q to trade 25 USD worth of BTC on BTC/USD (amount in quote currency); " \
         f"2{dsl.QuantityType.PERCENT.value} to trade 2% of the total holdings of the asset; " \
-        f"12{dsl.QuantityType.AVAILABLE_PERCENT.value} to trade 12% of the available holdings. " \
+        f"12{dsl.QuantityType.AVAILABLE_PERCENT.value} to trade 12% of the available holdings; " \
+        f"5{dsl.QuantityType.CURRENT_SYMBOL_ASSETS_PERCENT.value} to trade 5% of the available " \
+           f"holdings associated to the current traded symbol; " \
+        f"5{dsl.QuantityType.TRADED_SYMBOLS_ASSETS_PERCENT.value} to trade 5% of the available " \
+           f"holdings associated to all configured trading pairs. " \
         f"Leave empty to auto-compute the amount."
 
 
