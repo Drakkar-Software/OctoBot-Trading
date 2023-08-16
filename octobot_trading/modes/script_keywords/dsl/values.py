@@ -27,6 +27,8 @@ class QuantityType(enum.Enum):
     AVAILABLE_PERCENT = "a%"
     POSITION_PERCENT = "p%"
     ENTRY_PERCENT = "e%"
+    CURRENT_SYMBOL_ASSETS_PERCENT = "s%"
+    TRADED_SYMBOLS_ASSETS_PERCENT = "t%"
     FLAT = "@"
     UNKNOWN = "?"
 

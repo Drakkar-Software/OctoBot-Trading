@@ -55,18 +55,23 @@ class ValueConverter:
             self.logger.debug(f"Initialized last price for {symbol}")
         self.last_prices_by_trading_pair[symbol] = price
 
-    def evaluate_value(self, currency, quantity, raise_error=True):
+    def evaluate_value(self, currency, quantity, raise_error=True, target_currency=None, init_price_fetchers=True):
         """
         Evaluate value returns the currency quantity value in the reference (attribute) currency
         :param currency: the currency to evaluate
         :param quantity: the currency quantity
         :param raise_error: will catch exception if False
+        :param target_currency: asset to evaluate currency into, defaults to self.portfolio_manager.reference_market
+        :param init_price_fetchers: will ask for missing ticker if price can't be converted if False
         :return: the currency value
         """
+        target_currency = target_currency or self.portfolio_manager.reference_market
         # easy case --> the current currency is the reference currency or the quantity is 0
-        if currency == self.portfolio_manager.reference_market or quantity == constants.ZERO:
+        if currency == target_currency or quantity == constants.ZERO:
             return quantity
-        currency_value = self._try_get_value_of_currency(currency, quantity, raise_error)
+        currency_value = self._try_get_value_of_currency(
+            currency, quantity, target_currency, raise_error, init_price_fetchers
+        )
         return self._check_currency_initialization(currency, currency_value)
 
     def _check_currency_initialization(self, currency, currency_value):
@@ -80,7 +85,7 @@ class ValueConverter:
             self.initializing_symbol_prices.remove(currency)
         return currency_value
 
-    def _try_get_value_of_currency(self, currency, quantity, raise_error):
+    def _try_get_value_of_currency(self, currency, quantity, target_currency, raise_error, init_price_fetchers):
         """
         try_get_value_of_currency will try to get the value of the given currency quantity in reference market.
         It will try to get it from a trading pair that fit with the exchange availability.
@@ -92,7 +97,7 @@ class ValueConverter:
             # 1. try from existing pairs (as is and reversed)
             return self.convert_currency_value_using_last_prices(
                 quantity, currency,
-                self.portfolio_manager.reference_market,
+                target_currency,
                 settlement_asset=settlement_asset
             )
         except errors.MissingPriceDataError as missing_data_exception:
@@ -100,29 +105,30 @@ class ValueConverter:
                 try:
                     # 2. try from existing indirect pairs
                     value = self.try_convert_currency_value_using_multiple_pairs(
-                        currency, self.portfolio_manager.reference_market, quantity, []
+                        currency, target_currency, quantity, []
                     )
                     if value is not None:
                         return value
                 except (errors.MissingPriceDataError, errors.PendingPriceDataError):
                     pass
             symbol = symbol_util.merge_currencies(
-                currency, self.portfolio_manager.reference_market, settlement_asset=settlement_asset
+                currency, target_currency, settlement_asset=settlement_asset
             )
             reversed_symbol = symbol_util.merge_currencies(
-                self.portfolio_manager.reference_market, currency, settlement_asset=settlement_asset
+                target_currency, currency, settlement_asset=settlement_asset
             )
-            # 3. if the pair or reversed pair is traded on exchange, use it to price "currency"
-            if not any(
-                self.portfolio_manager.exchange_manager.symbol_exists(s)
-                for s in (symbol, reversed_symbol)
-            ) and currency not in self.missing_currency_data_in_exchange:
-                self._inform_no_matching_symbol(currency)
-                self.missing_currency_data_in_exchange.add(currency)
-            if not self.portfolio_manager.exchange_manager.is_backtesting:
-                self._try_to_ask_ticker_missing_symbol_data(currency, symbol, reversed_symbol)
-                if raise_error:
-                    raise missing_data_exception
+            if init_price_fetchers:
+                # 3. if the pair or reversed pair is traded on exchange, use it to price "currency"
+                if not any(
+                    self.portfolio_manager.exchange_manager.symbol_exists(s)
+                    for s in (symbol, reversed_symbol)
+                ) and currency not in self.missing_currency_data_in_exchange:
+                    self._inform_no_matching_symbol(currency, target_currency)
+                    self.missing_currency_data_in_exchange.add(currency)
+                if not self.portfolio_manager.exchange_manager.is_backtesting:
+                    self._try_to_ask_ticker_missing_symbol_data(currency, symbol, reversed_symbol)
+            if not self.portfolio_manager.exchange_manager.is_backtesting and raise_error:
+                raise missing_data_exception
         return constants.ZERO
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
@@ -170,14 +176,14 @@ class ValueConverter:
                 self._bot_main_loop
             )
 
-    def _inform_no_matching_symbol(self, currency):
+    def _inform_no_matching_symbol(self, currency, target_currency):
         """
         Log a missing currency pair to calculate the portfolio profitability
         :param currency: the concerned currency
         """
         # do not log warning in backtesting or tests
         if not self.portfolio_manager.exchange_manager.is_backtesting:
-            self.logger.warning(f"No trading pair including {currency} and {self.portfolio_manager.reference_market} on"
+            self.logger.warning(f"No trading pair including {currency} and {target_currency} on"
                                 f" {self.portfolio_manager.exchange_manager.exchange_name}. {currency} "
                                 f"can't be valued for portfolio and profitability.")
 

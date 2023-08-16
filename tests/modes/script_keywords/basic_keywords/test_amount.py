@@ -17,6 +17,7 @@ import pytest
 import mock
 import decimal
 
+import octobot_commons.symbols as commons_symbols
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as trading_personal_data
@@ -116,4 +117,57 @@ async def test_get_amount_from_input_amount(null_context):
             parse_quantity_mock.assert_called_once_with("50")
             available_account_balance_mock.assert_called_once_with(null_context, "buy",
                                                                    use_total_holding=False, reduce_only=True)
+            adapt_amount_to_holdings_mock.reset_mock()
+
+        with mock.patch.object(dsl, "parse_quantity",
+                               mock.Mock(return_value=(
+                                       script_keywords.QuantityType.CURRENT_SYMBOL_ASSETS_PERCENT, decimal.Decimal(75)))) \
+                as parse_quantity_mock, \
+                mock.patch.object(account_balance, "get_holdings_value",
+                                  mock.Mock(return_value=decimal.Decimal(2))) \
+                as get_holdings_value_mock:
+            null_context.symbol = None
+            with pytest.raises(errors.InvalidArgumentError):
+                # context.symbol is None
+                assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(
+                    1)
+            parse_quantity_mock.reset_mock()
+            null_context.symbol = "BTC/USDT"
+
+            assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(1)
+            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
+                                                                  False, True, False, target_price=None)
+            parse_quantity_mock.assert_called_once_with("50")
+            get_holdings_value_mock.assert_called_once_with(null_context, ("BTC", "USDT"), "BTC")
+            adapt_amount_to_holdings_mock.reset_mock()
+
+        with mock.patch.object(dsl, "parse_quantity",
+                               mock.Mock(return_value=(
+                                       script_keywords.QuantityType.TRADED_SYMBOLS_ASSETS_PERCENT, decimal.Decimal(75)))) \
+                as parse_quantity_mock, \
+                mock.patch.object(account_balance, "get_holdings_value",
+                                  mock.Mock(return_value=decimal.Decimal(10))) \
+                as get_holdings_value_mock:
+            null_context.symbol = None
+            with pytest.raises(errors.InvalidArgumentError):
+                # context.symbol is None
+                assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(
+                    1)
+            parse_quantity_mock.reset_mock()
+            null_context.symbol = "BTC/USDT"
+            null_context.exchange_manager = mock.Mock(
+                exchange_config=mock.Mock(
+                    traded_symbols=[
+                        commons_symbols.parse_symbol("BTC/USDT"),
+                        commons_symbols.parse_symbol("ETH/BTC"),
+                        commons_symbols.parse_symbol("SOL/USDT"),
+                    ]
+                )
+            )
+
+            assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(1)
+            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("7.5"), "buy",
+                                                                  False, True, False, target_price=None)
+            parse_quantity_mock.assert_called_once_with("50")
+            get_holdings_value_mock.assert_called_once_with(null_context, {'BTC', 'ETH', 'SOL', 'USDT'}, "BTC")
             adapt_amount_to_holdings_mock.reset_mock()

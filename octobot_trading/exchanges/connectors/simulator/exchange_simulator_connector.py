@@ -18,7 +18,6 @@ import decimal
 import octobot_backtesting.api as backtesting_api
 import octobot_backtesting.importers as importers
 
-import octobot_commons.number_util as number_util
 import octobot_commons.symbols as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as commons_constants
