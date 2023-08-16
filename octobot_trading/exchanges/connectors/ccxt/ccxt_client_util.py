@@ -19,6 +19,7 @@ import ccxt.pro as ccxt_pro
 
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 
@@ -170,6 +171,20 @@ def get_pair_cryptocurrency(client, pair) -> str:
 
 def get_contract_size(client, pair) -> float:
     return client.markets[pair][ccxt_enums.ExchangeConstantsMarketStatusCCXTColumns.CONTRACT_SIZE.value]
+
+
+def get_fees(market_status) -> dict:
+    return {
+        enums.ExchangeConstantsMarketPropertyColumns.TAKER.value:
+            market_status.get(enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                              constants.CONFIG_DEFAULT_FEES),
+        enums.ExchangeConstantsMarketPropertyColumns.MAKER.value:
+            market_status.get(enums.ExchangeConstantsMarketPropertyColumns.MAKER.value,
+                              constants.CONFIG_DEFAULT_FEES),
+        enums.ExchangeConstantsMarketPropertyColumns.FEE.value:
+            market_status.get(enums.ExchangeConstantsMarketPropertyColumns.FEE.value,
+                              constants.CONFIG_DEFAULT_FEES)
+    }
 
 
 def add_headers(client, headers_dict):
