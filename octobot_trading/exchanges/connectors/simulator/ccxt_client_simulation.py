@@ -21,3 +21,7 @@ def parse_markets(exchange_name, forced_markets: list) -> dict:
     client = getattr(ccxt.async_support, exchange_name)()
     ccxt_client_util.set_markets_from_forced_markets(client, forced_markets)
     return client.markets
+
+
+def get_fees(market_status) -> dict:
+    return ccxt_client_util.get_fees(market_status)

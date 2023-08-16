@@ -180,6 +180,10 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         return timestamp / 1000
 
     def get_fees(self, symbol):
+        if self._forced_market_statuses and symbol in self._forced_market_statuses:
+            # use self._forced_market_statuses when possible
+            return ccxt_client_simulation.get_fees(self._forced_market_statuses[symbol])
+
         result_fees = {
             enums.ExchangeConstantsMarketPropertyColumns.TAKER.value: constants.CONFIG_DEFAULT_SIMULATOR_FEES,
             enums.ExchangeConstantsMarketPropertyColumns.MAKER.value: constants.CONFIG_DEFAULT_SIMULATOR_FEES,
@@ -226,23 +230,17 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         rate = symbol_fees[taker_or_maker]
         currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         fee_currency = currency
-
-        precision = self.get_market_status(
-            symbol, with_fixer=False
-        )[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value
-        ]
-        cost = float(number_util.round_into_str_with_max_digits(float(quantity) * rate, precision))
+        cost = quantity * decimal.Decimal(str(rate))
 
         if util.get_order_side(order_type) == enums.TradeOrderSide.SELL.value:
-            cost = float(number_util.round_into_str_with_max_digits(cost * float(price), precision))
+            cost = cost * price
             fee_currency = market
 
         return {
             enums.FeePropertyColumns.TYPE.value: taker_or_maker,
             enums.FeePropertyColumns.CURRENCY.value: fee_currency,
             enums.FeePropertyColumns.RATE.value: rate,
-            enums.FeePropertyColumns.COST.value: decimal.Decimal(str(cost)),
+            enums.FeePropertyColumns.COST.value: cost,
             enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
         }
 
