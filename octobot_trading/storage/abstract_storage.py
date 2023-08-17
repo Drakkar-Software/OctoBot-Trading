@@ -169,3 +169,23 @@ class AbstractStorage:
             elif isinstance(val, types.FunctionType):
                 raise ValueError(f"{val.__name__} is a function, it can't be serialized")
         return sanitized
+
+    @staticmethod
+    def hard_reset_and_retry_if_necessary(fn):
+        """
+        Will retry the given function if a database hard reset error is raised
+        Warning: when it happens, will also completely reset the database
+        """
+        async def wrapper(*args, **kwargs):
+            try:
+                return await fn(*args, **kwargs)
+            except Exception as err:
+                database = args[0]._get_db()    # pylint: disable=protected-access
+                if database.is_hard_reset_error(err):
+                    logging.get_logger(args[0].__class__.__name__).warning(
+                        f"Resetting database due to [{err}] error"
+                    )
+                    await database.hard_reset()
+                    return await fn(*args, **kwargs)
+                raise
+        return wrapper

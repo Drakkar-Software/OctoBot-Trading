@@ -51,6 +51,7 @@ class CandlesStorage(abstract_storage.AbstractStorage):
                                        commons_enums.InitializationEventExchangeTopics.CANDLES.value)
         await self.store_candles()
 
+    @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def store_candles(self):
         if not self.enabled:
             return
