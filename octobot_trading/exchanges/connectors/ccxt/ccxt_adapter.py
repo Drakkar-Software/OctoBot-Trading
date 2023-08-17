@@ -109,6 +109,23 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard ticker parsing logic
         return fixed
 
+    def create_ticker_from_kline(self, kline, symbol, **kwargs):
+        return {
+            enums.ExchangeConstantsTickersColumns.SYMBOL.value: symbol,
+            enums.ExchangeConstantsTickersColumns.TIMESTAMP.value: kline[common_enums.PriceIndexes.IND_PRICE_TIME.value],
+            enums.ExchangeConstantsTickersColumns.OPEN.value: kline[common_enums.PriceIndexes.IND_PRICE_OPEN.value],
+            enums.ExchangeConstantsTickersColumns.HIGH.value: kline[common_enums.PriceIndexes.IND_PRICE_HIGH.value],
+            enums.ExchangeConstantsTickersColumns.LOW.value: kline[common_enums.PriceIndexes.IND_PRICE_LOW.value],
+            enums.ExchangeConstantsTickersColumns.CLOSE.value: kline[common_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+            enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value: kline[common_enums.PriceIndexes.IND_PRICE_VOL.value],
+            enums.ExchangeConstantsTickersColumns.LAST.value: kline[common_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+            enums.ExchangeConstantsTickersColumns.BID.value: None,
+            enums.ExchangeConstantsTickersColumns.BID_VOLUME.value: None,
+            enums.ExchangeConstantsTickersColumns.ASK.value: None,
+            enums.ExchangeConstantsTickersColumns.ASK_VOLUME.value: None,
+            enums.ExchangeConstantsTickersColumns.PREVIOUS_CLOSE.value: None,
+        }
+
     def fix_balance(self, raw, **kwargs):
         fixed = super().fix_balance(raw, **kwargs)
         # remove not currency specific keys

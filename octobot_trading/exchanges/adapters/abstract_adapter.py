@@ -70,6 +70,11 @@ class AbstractAdapter:
         return self.parse_ticker(fixed, **kwargs)
 
     @_adapter
+    def adapt_ticker_from_kline(self, raw, symbol, **kwargs):
+        fixed = self.create_ticker_from_kline(raw, symbol, **kwargs)
+        return self.parse_ticker(fixed, **kwargs)
+
+    @_adapter
     def adapt_balance(self, raw, **kwargs):
         fixed = self.fix_balance(raw, **kwargs)
         return self.parse_balance(fixed, **kwargs)
@@ -165,6 +170,9 @@ class AbstractAdapter:
 
     def parse_ticker(self, fixed, **kwargs):
         raise NotImplementedError("parse_ticker is not implemented")
+
+    def create_ticker_from_kline(self, kline, symbol, **kwargs):
+        raise NotImplementedError("create_ticker_from_kline is not implemented")
 
     def fix_balance(self, raw, **kwargs):
         # add generic logic if necessary

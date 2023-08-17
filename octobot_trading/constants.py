@@ -78,6 +78,7 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "bitstamp",
     "bybit",
     "gateio",
+    "bingx",
     "hollaex",
     "huobi",
     "huobipro",
@@ -102,8 +103,8 @@ TESTED_EXCHANGES = [
     "hollaex",
     "mexc",
 ]
-DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
-SIMULATOR_TESTED_EXCHANGES = ["bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",
+DEFAULT_FUTURE_EXCHANGES = ["bybit"]
+SIMULATOR_TESTED_EXCHANGES = ["bingx", "bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
                               "wavesexchange"]
 
