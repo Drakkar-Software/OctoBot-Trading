@@ -29,6 +29,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
     PRICE_INIT_TIMEOUT = 30
     HISTORY_TABLE = commons_enums.RunDatabases.HISTORICAL_PORTFOLIO_VALUE.value
 
+    @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def store_history(self, reset=False):
         if not self.enabled:
             return

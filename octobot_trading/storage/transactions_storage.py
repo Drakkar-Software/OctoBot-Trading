@@ -24,6 +24,7 @@ class TransactionsStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
     HISTORY_TABLE = commons_enums.DBTables.TRANSACTIONS.value
 
+    @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def _store_history(self):
         transactions = [
             transaction

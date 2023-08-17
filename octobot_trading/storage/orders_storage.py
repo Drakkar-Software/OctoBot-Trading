@@ -66,6 +66,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             await self._add_historical_open_orders(order, update_type)
         await self.trigger_debounced_flush()
 
+    @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def _update_history(self):
         await self._get_db().replace_all(
             self.HISTORY_TABLE,

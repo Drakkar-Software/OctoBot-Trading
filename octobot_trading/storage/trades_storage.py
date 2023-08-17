@@ -28,6 +28,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
     LIVE_CHANNEL = channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value
     HISTORY_TABLE = commons_enums.DBTables.TRADES.value
 
+    @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def _live_callback(
         self,
         exchange: str,
@@ -65,6 +66,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
             await authenticator.update_trades(history, self.exchange_manager.exchange_name, reset)
             self._to_update_auth_data_ids_buffer.clear()
 
+    @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def _store_history(self):
         database = self._get_db()
         await database.replace_all(
