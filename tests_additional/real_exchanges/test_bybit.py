@@ -77,9 +77,9 @@ class TestBybitRealExchangeTester(RealExchangeTester):
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # can't fetch more than 200 candles
+        # can't fetch more than 1000 candles
         symbol_prices = await self.get_symbol_prices(limit=1500)
-        assert len(symbol_prices) == 200
+        assert len(symbol_prices) == 1000
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle

@@ -68,7 +68,8 @@ class TestOkxRealExchangeTester(RealExchangeTester):
                                             normal_cost_min=1e-09,
                                             low_cost_min=1e-08,
                                             expect_invalid_price_limit_values=False,
-                                            enable_price_and_cost_comparison=False)
+                                            enable_price_and_cost_comparison=False,
+                                            has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit

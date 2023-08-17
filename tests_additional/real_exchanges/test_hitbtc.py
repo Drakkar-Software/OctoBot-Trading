@@ -71,7 +71,7 @@ class TestHitBtcRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices(sort='DESC')
-        assert len(symbol_prices) == 100
+        assert len(symbol_prices) == 10
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -99,7 +99,9 @@ class TestHitBtcRealExchangeTester(RealExchangeTester):
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                # invalid max time: history is not supported
+                assert max_candle_time <= candle[PriceIndexes.IND_PRICE_TIME.value]
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price(sort='DESC')  # to be fixed in hitbtc tentacle

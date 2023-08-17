@@ -76,7 +76,7 @@ class TestBybitRealExchangeTester(RealFuturesExchangeTester):
         # without limit
         symbol_prices = await self.get_symbol_prices()
         assert len(symbol_prices) == 200
-        # max is 200 on Bybit
+        # max is 1000 on Bybit
         symbol_prices = await self.get_symbol_prices(limit=200)
         assert len(symbol_prices) == 200
         # check candles order (oldest first)
@@ -85,8 +85,8 @@ class TestBybitRealExchangeTester(RealFuturesExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # fetching more than 200 candles is fetching candles from the past
-        symbol_prices = await self.get_symbol_prices(limit=500)
-        assert len(symbol_prices) == 200
+        symbol_prices = await self.get_symbol_prices(limit=1500)
+        assert len(symbol_prices) == 1000
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
