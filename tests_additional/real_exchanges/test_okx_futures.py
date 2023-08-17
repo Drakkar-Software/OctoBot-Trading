@@ -67,7 +67,8 @@ class TestOkxFuturesRealExchangeTester(RealFuturesExchangeTester):
             self.check_market_status_limits(market_status,
                                             low_price_max=1e-05,
                                             expect_invalid_price_limit_values=False,
-                                            enable_price_and_cost_comparison=True)
+                                            enable_price_and_cost_comparison=True,
+                                            has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit

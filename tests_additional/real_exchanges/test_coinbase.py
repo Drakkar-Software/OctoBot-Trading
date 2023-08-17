@@ -18,7 +18,7 @@ import pytest
 import octobot_trading.errors
 from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
-    ExchangeConstantsOrderColumns as Ecoc, \
+    ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
@@ -106,8 +106,11 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        with pytest.raises(octobot_trading.errors.NotSupported):
-            await self.get_order_book()
+        order_book = await self.get_order_book()
+        assert len(order_book[Ecobic.ASKS.value]) == 5
+        assert len(order_book[Ecobic.ASKS.value][0]) == 2
+        assert len(order_book[Ecobic.BIDS.value]) == 5
+        assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()
@@ -151,8 +154,8 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value] is None
-            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
+            assert ticker[Ectc.TIMESTAMP.value]
             RealExchangeTester.check_ticker_typing(
                 ticker,
-                check_open=False, check_high=False, check_low=False, check_timestamp=False, check_base_volume=False
+                check_open=False, check_high=False, check_low=False, check_base_volume=False
             )
