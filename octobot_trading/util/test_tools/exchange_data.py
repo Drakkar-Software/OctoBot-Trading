@@ -18,6 +18,7 @@ import dataclasses
 
 import octobot_commons.minimizable_dataclass as minimizable_dataclass
 import octobot_commons.updatable_dataclass as updatable_dataclass
+import octobot_trading.exchanges
 
 
 @dataclasses.dataclass
@@ -39,8 +40,7 @@ class ExchangeDetails(updatable_dataclass.UpdatableDataclass):
 class MarketDetails(updatable_dataclass.UpdatableDataclass):
     id: str = ""
     symbol: str = ""
-    info: dict = dataclasses.field(default_factory=dict)
-    parsed: dict = dataclasses.field(default_factory=dict)
+    details: octobot_trading.exchanges.SymbolDetails = octobot_trading.exchanges.SymbolDetails()
     time_frame: str = ""
     close: list[float] = dataclasses.field(default_factory=list)
     open: list[float] = dataclasses.field(default_factory=list)
@@ -48,6 +48,12 @@ class MarketDetails(updatable_dataclass.UpdatableDataclass):
     low: list[float] = dataclasses.field(default_factory=list)
     volume: list[float] = dataclasses.field(default_factory=list)
     time: list[float] = dataclasses.field(default_factory=list)
+
+    # pylint: disable=E1134
+    def __post_init__(self):
+        if not isinstance(self.details, octobot_trading.exchanges.SymbolDetails):
+            self.details = octobot_trading.exchanges.SymbolDetails(**self.details) if \
+                self.details else octobot_trading.exchanges.SymbolDetails()
 
     def has_full_candles(self):
         return self.close and self.open and self.high and self.low and self.time

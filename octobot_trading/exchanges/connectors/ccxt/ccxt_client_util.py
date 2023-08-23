@@ -22,6 +22,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.util.exchange_util as exchange_util
+import octobot_trading.exchanges.util.symbol_details as symbol_details
 
 
 def create_client(exchange_class, exchange_manager, logger,
@@ -105,9 +106,9 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
     return None
 
 
-def set_markets_from_forced_markets(client, forced_markets: list):
+def set_markets_from_forced_markets(client, forced_markets: list[symbol_details.SymbolDetails]):
     client.set_markets([
-        client.parse_market(market) if supports_markets_as_raw_info(client) else market
+        client.parse_market(market.ccxt.info) if supports_markets_as_raw_info(client) else market.ccxt.parsed
         for market in forced_markets
     ])
 

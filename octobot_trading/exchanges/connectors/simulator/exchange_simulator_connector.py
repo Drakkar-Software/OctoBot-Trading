@@ -70,7 +70,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     def get_adapter_class(self, adapter_class):
         return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
 
-    def _init_forced_market_statuses(self, forced_markets):
+    def _init_forced_market_statuses(self, forced_markets: list[util.SymbolDetails]):
         self._forced_market_statuses = ccxt_client_simulation.parse_markets(
             self.exchange_manager.exchange_class_string,
             forced_markets

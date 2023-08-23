@@ -20,6 +20,7 @@ import octobot_commons.constants as commons_constants
 import octobot_trading.errors as errors
 import octobot_trading.modes as modes
 import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.util.symbol_details as symbol_details
 import octobot_trading.constants as constants
 import octobot_trading.util as util
 
@@ -215,7 +216,7 @@ class ExchangeBuilder:
         self.exchange_manager.exchange_only = True
         return self
 
-    def has_forced_markets(self, forced_markets: list):
+    def has_forced_markets(self, forced_markets: list[symbol_details.SymbolDetails]):
         self.exchange_manager.forced_markets = forced_markets
         return self
 

@@ -79,9 +79,9 @@ def _update_symbol_market(exchange_manager, market_details: exchange_data_import
     market = exchange_manager.exchange.connector.client.markets[market_details.symbol]
     market_details.id = market[enums.ExchangeConstantsMarketStatusColumns.ID.value]
     if exchange_manager.exchange.connector.supports_markets_as_raw_info():
-        market_details.info = market[enums.ExchangeConstantsMarketStatusColumns.INFO.value]
+        market_details.details.ccxt.info = market[enums.ExchangeConstantsMarketStatusColumns.INFO.value]
     else:
-        market_details.parsed = market
+        market_details.details.ccxt.parsed = market
 
 
 async def add_symbols_details(
