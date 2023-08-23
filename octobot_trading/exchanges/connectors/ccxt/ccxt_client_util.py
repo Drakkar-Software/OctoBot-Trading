@@ -107,9 +107,13 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
 
 def set_markets_from_forced_markets(client, forced_markets: list):
     client.set_markets([
-        client.parse_market(market) if hasattr(client, "parse_market") else market
+        client.parse_market(market) if supports_markets_as_raw_info(client) else market
         for market in forced_markets
     ])
+
+
+def supports_markets_as_raw_info(client):
+    return hasattr(client, "parse_market")
 
 
 def get_ccxt_client_login_options(exchange_manager):

@@ -40,6 +40,7 @@ class MarketDetails(updatable_dataclass.UpdatableDataclass):
     id: str = ""
     symbol: str = ""
     info: dict = dataclasses.field(default_factory=dict)
+    parsed: dict = dataclasses.field(default_factory=dict)
     time_frame: str = ""
     close: list[float] = dataclasses.field(default_factory=list)
     open: list[float] = dataclasses.field(default_factory=list)
