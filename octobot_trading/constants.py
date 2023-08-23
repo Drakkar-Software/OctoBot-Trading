@@ -63,6 +63,7 @@ ENABLE_LIVE_CANDLES_STORAGE = os_util.parse_boolean_environment_var("ENABLE_LIVE
 ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE = os_util.parse_boolean_environment_var("ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE", "False")
 STORAGE_ORIGIN_VALUE = "origin_value"
 DISPLAY_TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
+DEFAULT_ACCOUNT_ID = "default_account_id"
 
 # Decimal default values (decimals are immutable, can be stored as constant)
 ZERO = decimal.Decimal(0)
