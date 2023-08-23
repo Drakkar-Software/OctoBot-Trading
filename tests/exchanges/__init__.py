@@ -53,7 +53,7 @@ class MockedCCXTConnector(CCXTConnector):
 
     async def load_symbol_markets(self, reload=False, forced_markets=None):
         if forced_markets is None:
-            forced_markets = mock_exchanges_data.MOCKED_EXCHANGE_INFO.get(self.exchange_manager.exchange_name, None)
+            forced_markets = mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(self.exchange_manager.exchange_name, None)
         await super().load_symbol_markets(
             reload=reload,
             forced_markets=forced_markets

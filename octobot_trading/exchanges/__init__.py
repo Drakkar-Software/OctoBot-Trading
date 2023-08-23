@@ -56,6 +56,7 @@ from octobot_trading.exchanges.exchange_factory import (
 from octobot_trading.exchanges.util import (
     ExchangeMarketStatusFixer,
     is_ms_valid,
+    SymbolDetails,
     get_rest_exchange_class,
     get_order_side,
     log_time_sync_error,
@@ -174,6 +175,7 @@ __all__ = [
     "RestExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
+    "SymbolDetails",
     "AbstractWebsocketExchange",
     "force_disable_web_socket",
     "check_web_socket_config",

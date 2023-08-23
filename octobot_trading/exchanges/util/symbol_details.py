@@ -13,16 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import ccxt.async_support
-import octobot_trading.exchanges.util as util
-import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
+import dataclasses
 
 
-def parse_markets(exchange_name, forced_markets: list[util.SymbolDetails]) -> dict:
-    client = getattr(ccxt.async_support, exchange_name)()
-    ccxt_client_util.set_markets_from_forced_markets(client, forced_markets)
-    return client.markets
+import octobot_commons.updatable_dataclass as updatable_dataclass
 
 
-def get_fees(market_status) -> dict:
-    return ccxt_client_util.get_fees(market_status)
+@dataclasses.dataclass
+class CCXTDetails(updatable_dataclass.UpdatableDataclass):
+    info: dict = dataclasses.field(default_factory=dict)
+    parsed: dict = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass
+class SymbolDetails(updatable_dataclass.UpdatableDataclass):
+    ccxt: CCXTDetails = CCXTDetails()
+
+    # pylint: disable=E1134
+    def __post_init__(self):
+        if not isinstance(self.ccxt, CCXTDetails):
+            self.ccxt = CCXTDetails(**self.ccxt) if self.ccxt else CCXTDetails()

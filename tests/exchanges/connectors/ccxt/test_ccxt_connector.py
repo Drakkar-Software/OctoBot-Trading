@@ -154,7 +154,7 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
 
     await fut_ccxt_exchange.load_symbol_markets(
-        forced_markets=mock_exchanges_data.MOCKED_EXCHANGE_INFO.get(fut_exchange_manager_inst.exchange_name, None)
+        forced_markets=mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(fut_exchange_manager_inst.exchange_name, None)
     )
     # enforce taker and maker values
     set_future_exchange_fees(fut_ccxt_exchange, future_symbol, taker=future_fees_value, maker=future_fees_value)
