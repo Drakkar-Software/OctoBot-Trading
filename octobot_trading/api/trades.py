@@ -41,7 +41,7 @@ def get_completed_pnl_history(exchange_manager, quote=None, symbol=None, since=N
 def _trade_filter(trade, quote=None, symbol=None, timestamp=None, include_cancelled=False) -> bool:
     if trade.status is octobot_trading.enums.OrderStatus.CANCELED and not include_cancelled:
         return False
-    if timestamp is not None and not _is_trade_after(trade, timestamp):
+    if timestamp is not None and not _is_trade_after_or_at(trade, timestamp):
         return False
     if quote is not None and commons_symbols.parse_symbol(trade.symbol).quote != quote:
         return False
@@ -50,8 +50,8 @@ def _trade_filter(trade, quote=None, symbol=None, timestamp=None, include_cancel
     return True
 
 
-def _is_trade_after(trade, timestamp) -> bool:
-    return trade.executed_time > timestamp or trade.canceled_time > timestamp
+def _is_trade_after_or_at(trade, timestamp) -> bool:
+    return trade.executed_time >= timestamp or trade.canceled_time >= timestamp
 
 
 def get_total_paid_trading_fees(exchange_manager) -> dict:
