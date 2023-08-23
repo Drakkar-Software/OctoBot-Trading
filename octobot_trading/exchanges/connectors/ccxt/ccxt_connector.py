@@ -755,6 +755,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # 15 pairs, each on 3 time frames
         return 45
 
+    def supports_markets_as_raw_info(self) -> bool:
+        return ccxt_client_util.supports_markets_as_raw_info(self.client)
+
     def log_ddos_error(self, error):
         self.logger.error(
             f"DDoSProtection triggered [{error} ({error.__class__.__name__})]. "
