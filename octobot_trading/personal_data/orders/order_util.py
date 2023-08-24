@@ -196,7 +196,13 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
                              target_price=None):
     price = target_price or await get_up_to_date_price(exchange_manager, symbol, timeout=timeout)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
+    currency_available, market_available, market_quantity = get_portfolio_amounts(
+        exchange_manager, symbol, price, portfolio_type=portfolio_type
+    )
+    return currency_available, market_available, market_quantity, price, symbol_market
 
+
+def get_portfolio_amounts(exchange_manager, symbol, price, portfolio_type=commons_constants.PORTFOLIO_AVAILABLE):
     currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio
     currency_available = portfolio.get_currency_portfolio(currency).available \
@@ -216,7 +222,8 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
         market_quantity = constants.ZERO  # TODO
     else:
         market_quantity = market_available / price if price else constants.ZERO
-    return currency_available, market_available, market_quantity, price, symbol_market
+    return currency_available, market_available, market_quantity
+
 
 
 def get_futures_max_order_size(exchange_manager, symbol, side, current_price, reduce_only,
