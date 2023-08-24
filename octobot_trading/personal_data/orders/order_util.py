@@ -447,7 +447,7 @@ async def _apply_pending_order_on_existing_orders(pending_order):
 
 
 @contextlib.asynccontextmanager
-async def ensure_orders_relevancy(order=None, position=None):
+async def ensure_orders_relevancy(order=None, position=None, enable_associated_orders_creation=True):
     exchange_manager = order.exchange_manager if position is None else position.exchange_manager
     # part used in futures trading only
     if exchange_manager.exchange_personal_data.positions_manager.positions:
@@ -459,20 +459,22 @@ async def ensure_orders_relevancy(order=None, position=None):
            (position.side != pre_update_position_side or position.is_idle()):
             # when position side is changing (from a non-idle position) or is going back to idle,
             # then associated reduce only orders must be closed
-            await _cancel_reduce_only_orders_on_position_reset(exchange_manager, position.symbol)
+            await _cancel_reduce_only_orders_on_position_reset(
+                exchange_manager, position.symbol, enable_associated_orders_creation
+            )
     else:
         # as a context manager, yield is mandatory
         yield
 
 
-async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol):
+async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol, enable_associated_orders_creation):
     for order in list(exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)):
         # reduce only order are automatically cancelled on exchanges, only cancel simulated orders
         if (exchange_manager.is_trader_simulated or order.is_self_managed()) \
                 and order.is_open() and order.reduce_only:
             try:
                 await order.trader.cancel_order(order)
-                if order.order_group:
+                if order.order_group and enable_associated_orders_creation:
                     await order.order_group.on_cancel(order)
             except (    # pylint: disable=try-except-raise
                 errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError

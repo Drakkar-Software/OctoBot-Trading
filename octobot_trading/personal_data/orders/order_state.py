@@ -24,7 +24,7 @@ import octobot_trading.personal_data.state as state_class
 
 
 class OrderState(state_class.State):
-    def __init__(self, order, is_from_exchange_data):
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
         super().__init__(is_from_exchange_data)
 
         # ensure order has not been cleared
@@ -32,6 +32,8 @@ class OrderState(state_class.State):
 
         # related order
         self.order = order
+
+        self.enable_associated_orders_creation = enable_associated_orders_creation
 
     def is_created(self) -> bool:
         """

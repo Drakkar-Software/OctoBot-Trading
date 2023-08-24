@@ -29,8 +29,8 @@ class TakeProfitOrder(limit_order.LimitOrder):
         # Creates a market order when filled, which is taker
         return enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
 
-    async def on_filled(self):
-        await limit_order.LimitOrder.on_filled(self)
+    async def on_filled(self, enable_associated_orders_creation):
+        await limit_order.LimitOrder.on_filled(self, enable_associated_orders_creation)
         if not self.trader.simulate and self.is_self_managed():
             # TODO replace with chained order ?
             await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET

@@ -25,8 +25,8 @@ class TrailingStopLimitOrder(trailing_stop_order.TrailingStopOrder):
         self.order_type = enums.TraderOrderType.TRAILING_STOP_LIMIT
         self.limit_price = limit_price
 
-    async def on_filled(self):
-        await trailing_stop_order.TrailingStopOrder.on_filled(self)
+    async def on_filled(self, enable_associated_orders_creation):
+        await trailing_stop_order.TrailingStopOrder.on_filled(self, enable_associated_orders_creation)
         # TODO replace with chained order ?
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_LIMIT
                                                   if self.side is enums.TradeOrderSide.SELL else enums.TraderOrderType.BUY_LIMIT,
