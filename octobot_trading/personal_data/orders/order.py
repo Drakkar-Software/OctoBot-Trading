@@ -371,14 +371,17 @@ class Order(util.Initializable):
         except errors.InvalidOrderState as exc:
             logging.get_logger(self.get_logger_name()).exception(exc, True, f"Error when creating order state: {exc}")
 
-    async def on_pending_creation(self, is_from_exchange_data=False):
+    async def on_pending_creation(self, is_from_exchange_data=False, enable_associated_orders_creation=True):
         with self.order_state_creation():
             state_class = orders_states.PendingCreationChainedOrderState if self.is_waiting_for_chained_trigger \
                 else orders_states.PendingCreationOrderState
-            self.state = state_class(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = state_class(
+                self, is_from_exchange_data=is_from_exchange_data,
+                enable_associated_orders_creation=enable_associated_orders_creation
+            )
             await self.state.initialize()
 
-    async def on_open(self, force_open=False, is_from_exchange_data=False):
+    async def on_open(self, force_open=False, is_from_exchange_data=False, enable_associated_orders_creation=True):
         with self.order_state_creation():
             if isinstance(self.state, orders_states.PendingCreationOrderState):
                 await self.state.trigger_terminate()
@@ -388,28 +391,52 @@ class Order(util.Initializable):
                                                                      f"uninitialized OpenOrderState.")
                 # state has already been created and initialized
                 return
-            self.state = orders_states.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = orders_states.OpenOrderState(
+                self, is_from_exchange_data=is_from_exchange_data,
+                enable_associated_orders_creation=enable_associated_orders_creation
+            )
             await self.state.initialize(forced=force_open)
 
-    async def on_fill(self, force_fill=False, is_from_exchange_data=False):
+    async def on_fill(self, force_fill=False, is_from_exchange_data=False, enable_associated_orders_creation=None):
+        enable_associated_orders_creation = self.state.enable_associated_orders_creation \
+            if (self.state and enable_associated_orders_creation is None) \
+            else (enable_associated_orders_creation or True)
         logging.get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
         if (self.is_open() and not self.is_refreshing()) or self.is_pending_creation():
             with self.order_state_creation():
-                self.state = orders_states.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
+                self.state = orders_states.FillOrderState(
+                    self, is_from_exchange_data=is_from_exchange_data,
+                    enable_associated_orders_creation=enable_associated_orders_creation
+                )
                 await self.state.initialize(forced=force_fill)
         else:
             logging.get_logger(self.get_logger_name()).debug(f"Trying to fill a refreshing or previously filled "
                                                              f"or canceled order: "
                                                              f"ignored fill call for {self}")
 
-    async def on_close(self, force_close=False, is_from_exchange_data=False):
+    async def on_close(self, force_close=False, is_from_exchange_data=False, enable_associated_orders_creation=None):
+        enable_associated_orders_creation = self.state.enable_associated_orders_creation \
+            if (self.state and enable_associated_orders_creation is None) \
+            else (enable_associated_orders_creation or True)
         with self.order_state_creation():
-            self.state = orders_states.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = orders_states.CloseOrderState(
+                self, is_from_exchange_data=is_from_exchange_data,
+                enable_associated_orders_creation=enable_associated_orders_creation
+            )
             await self.state.initialize(forced=force_close)
 
-    async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
+    async def on_cancel(
+            self, is_from_exchange_data=False, force_cancel=False, enable_associated_orders_creation=None,
+            ignored_order=None
+    ):
+        enable_associated_orders_creation = self.state.enable_associated_orders_creation \
+            if (self.state and enable_associated_orders_creation is None) \
+            else (enable_associated_orders_creation or True)
         with self.order_state_creation():
-            self.state = orders_states.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = orders_states.CancelOrderState(
+                self, is_from_exchange_data=is_from_exchange_data,
+                enable_associated_orders_creation=enable_associated_orders_creation
+            )
             await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     def on_fill_actions(self):
@@ -418,11 +445,17 @@ class Order(util.Initializable):
         """
         self.status = enums.OrderStatus.FILLED
 
-    async def on_filled(self):
+    async def on_filled(self, enable_associated_orders_creation):
         """
         Filling complete callback
         """
-        await self._trigger_chained_orders()
+        if enable_associated_orders_creation:
+            await self._trigger_chained_orders()
+        else:
+            logging.get_logger(self.get_logger_name()).info(
+                f"Skipped chained orders creation: "
+                f"enable_associated_orders_creation is {enable_associated_orders_creation}"
+            )
 
     def associate_to_entry(self, entry_order_id):
         if self.associated_entry_ids is None:

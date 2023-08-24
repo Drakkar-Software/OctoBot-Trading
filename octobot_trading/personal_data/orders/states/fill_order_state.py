@@ -21,8 +21,10 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class FillOrderState(order_state.OrderState):
-    def __init__(self, order, is_from_exchange_data):
-        super().__init__(order, is_from_exchange_data)
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+        super().__init__(
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+        )
         self.state = enums.OrderStates.FILLING \
             if ((
                     (not self.order.simulated and not self.order.is_self_managed())
@@ -86,7 +88,7 @@ class FillOrderState(order_state.OrderState):
 
             # set executed time
             self.order.executed_time = self.order.generate_executed_time()
-
+            
             # compute trading fees
             try:
                 if self.order.exchange_manager is not None and not self.order.has_exchange_fetched_fees():
@@ -95,9 +97,11 @@ class FillOrderState(order_state.OrderState):
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
             self.ensure_not_cleared(self.order)
-            async with order_util.ensure_orders_relevancy(order=self.order):
+            async with order_util.ensure_orders_relevancy(
+                order=self.order, enable_associated_orders_creation=self.enable_associated_orders_creation
+            ):
                 # Trigger order group
-                if self.order.order_group:
+                if self.order.order_group and self.enable_associated_orders_creation:
                     await self.order.order_group.on_fill(self.order)
 
                 # always make sure this order has not been cleared when the is a risk to avoid AttributeError
@@ -114,7 +118,7 @@ class FillOrderState(order_state.OrderState):
                 )
 
                 # call order on_filled callback
-                await self.order.on_filled()
+                await self.order.on_filled(self.enable_associated_orders_creation)
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?

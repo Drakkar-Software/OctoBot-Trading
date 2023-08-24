@@ -22,8 +22,10 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class CancelOrderState(order_state.OrderState):
-    def __init__(self, order, is_from_exchange_data):
-        super().__init__(order, is_from_exchange_data)
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+        super().__init__(
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+        )
         self.state = enums.OrderStates.CANCELING \
             if ((not self.order.simulated and not self.is_status_cancelled()) or self.is_status_pending()) \
             else enums.OrderStates.CANCELED
@@ -33,7 +35,7 @@ class CancelOrderState(order_state.OrderState):
             self.state = enums.OrderStates.CANCELED
             self.order.status = enums.OrderStatus.CANCELED
 
-        if self.order.order_group:
+        if self.order.order_group and self.enable_associated_orders_creation:
             await self.order.order_group.on_cancel(self.order, ignored_orders=[ignored_order])
 
         await super().initialize_impl()

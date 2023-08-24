@@ -21,8 +21,10 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class OpenOrderState(order_state.OrderState):
-    def __init__(self, order, is_from_exchange_data):
-        super().__init__(order, is_from_exchange_data)
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+        super().__init__(
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+        )
         self.state = enums.States.OPEN if \
             is_from_exchange_data \
             or self.order.simulated \

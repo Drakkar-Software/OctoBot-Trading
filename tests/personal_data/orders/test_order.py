@@ -300,7 +300,7 @@ async def test_trigger_chained_orders(trader_simulator):
 
     base_order = personal_data.Order(trader_inst)
     # does nothing
-    await base_order.on_filled()
+    await base_order.on_filled(True)
 
     # with chained orders
     order_mock_1 = mock.Mock()
@@ -312,8 +312,14 @@ async def test_trigger_chained_orders(trader_simulator):
         base_order.add_chained_order(order_mock_1)
         base_order.add_chained_order(order_mock_2)
 
+        # does not triggers chained orders
+        await base_order.on_filled(False)
+        order_mock_1.should_be_created.assert_not_called()
+        order_mock_2.should_be_created.assert_not_called()
+        create_as_chained_order_mock.assert_not_called()
+
         # triggers chained orders
-        await base_order.on_filled()
+        await base_order.on_filled(True)
         order_mock_1.should_be_created.assert_called_once()
         order_mock_2.should_be_created.assert_called_once()
         create_as_chained_order_mock.assert_called_once_with(order_mock_1)

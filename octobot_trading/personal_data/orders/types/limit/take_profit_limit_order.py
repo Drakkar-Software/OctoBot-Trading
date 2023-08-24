@@ -26,8 +26,8 @@ class TakeProfitLimitOrder(limit_order.LimitOrder):
         super().__init__(trader, side)
         self.limit_price = limit_price
 
-    async def on_filled(self):
-        await limit_order.LimitOrder.on_filled(self)
+    async def on_filled(self, enable_associated_orders_creation):
+        await limit_order.LimitOrder.on_filled(self, enable_associated_orders_creation)
         # TODO replace with chained order ?
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_LIMIT
                                                   if self.side is enums.TradeOrderSide.SELL

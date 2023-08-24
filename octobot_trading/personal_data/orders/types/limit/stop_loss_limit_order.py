@@ -31,8 +31,8 @@ class StopLossLimitOrder(limit_order.LimitOrder):
     def is_counted_in_available_funds(self):
         return False
 
-    async def on_filled(self):
-        await limit_order.LimitOrder.on_filled(self)
+    async def on_filled(self, enable_associated_orders_creation):
+        await limit_order.LimitOrder.on_filled(self, enable_associated_orders_creation)
         # TODO replace with chained order ?
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                   if self.side is enums.TradeOrderSide.SELL
