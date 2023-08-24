@@ -88,6 +88,10 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self._is_ready_to_trade = None
         self.on_reload_config()
 
+        # cleared (awaitable) when inside self.trading_mode_trigger
+        self._is_trigger_completed = asyncio.Event()
+        self._is_trigger_completed.set()
+
     def on_reload_config(self):
         """
         Called at constructor and after the associated trading mode's reload_config.
@@ -314,9 +318,15 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 f"Trading mode is not yet ready to trade, OctoBot is still initializing and fetching required data."
             )
 
+    async def wait_for_trigger_completion(self, timeout):
+        if self._is_trigger_completed.is_set():
+            return
+        await asyncio.wait_for(self._is_trigger_completed.wait(), timeout=timeout)
+
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
         try:
+            self._is_trigger_completed.clear()
             if not self._is_ready_to_trade.is_set():
                 if self.exchange_manager.is_backtesting:
                     raise asyncio.TimeoutError(f"Trading mode producer has to be started in backtesting")
@@ -338,6 +348,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Error when calling trading mode: {e}")
         finally:
+            self._is_trigger_completed.set()
             await self.post_trigger()
 
     async def post_trigger(self):
