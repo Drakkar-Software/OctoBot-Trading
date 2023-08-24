@@ -29,6 +29,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
+import octobot_trading.exchanges.util.symbol_details as symbol_details_import
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
@@ -122,6 +123,18 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 raise octobot_trading.errors.FailedRequest(
                     f"Failed to get_symbol_prices: {err.__class__.__name__} on {err}"
                 ) from err
+
+    def update_symbol_details(self, symbol_details: symbol_details_import.SymbolDetails, symbol: str) -> str:
+        """
+        Update the given symbol_details with connector symbol details
+        :return: the symbol id
+        """
+        market = self.client.markets[symbol]
+        if self.supports_markets_as_raw_info():
+            symbol_details.ccxt.info = market[enums.ExchangeConstantsMarketStatusColumns.INFO.value]
+        else:
+            symbol_details.ccxt.parsed = market
+        return market[enums.ExchangeConstantsMarketStatusColumns.ID.value]
 
     def get_client_symbols(self):
         return ccxt_client_util.get_symbols(self.client)

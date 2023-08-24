@@ -76,12 +76,9 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
 
 
 def _update_symbol_market(exchange_manager, market_details: exchange_data_import.MarketDetails):
-    market = exchange_manager.exchange.connector.client.markets[market_details.symbol]
-    market_details.id = market[enums.ExchangeConstantsMarketStatusColumns.ID.value]
-    if exchange_manager.exchange.connector.supports_markets_as_raw_info():
-        market_details.details.ccxt.info = market[enums.ExchangeConstantsMarketStatusColumns.INFO.value]
-    else:
-        market_details.details.ccxt.parsed = market
+    market_details.id = exchange_manager.exchange.connector.update_symbol_details(
+        market_details.details, market_details.symbol
+    )
 
 
 async def add_symbols_details(
