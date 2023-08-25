@@ -16,13 +16,12 @@
 import dataclasses
 
 
-import octobot_commons.minimizable_dataclass as minimizable_dataclass
-import octobot_commons.updatable_dataclass as updatable_dataclass
+import octobot_commons.dataclasses
 import octobot_trading.exchanges
 
 
 @dataclasses.dataclass
-class ExchangeAuthDetails(updatable_dataclass.UpdatableDataclass):
+class ExchangeAuthDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     api_key: str = ""
     api_secret: str = ""
     api_password: str = ""
@@ -32,12 +31,12 @@ class ExchangeAuthDetails(updatable_dataclass.UpdatableDataclass):
 
 
 @dataclasses.dataclass
-class ExchangeDetails(updatable_dataclass.UpdatableDataclass):
+class ExchangeDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     name: str = ""
 
 
 @dataclasses.dataclass
-class MarketDetails(updatable_dataclass.UpdatableDataclass):
+class MarketDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     id: str = ""
     symbol: str = ""
     details: octobot_trading.exchanges.SymbolDetails = octobot_trading.exchanges.SymbolDetails()
@@ -49,53 +48,36 @@ class MarketDetails(updatable_dataclass.UpdatableDataclass):
     volume: list[float] = dataclasses.field(default_factory=list)
     time: list[float] = dataclasses.field(default_factory=list)
 
-    # pylint: disable=E1134
-    def __post_init__(self):
-        if not isinstance(self.details, octobot_trading.exchanges.SymbolDetails):
-            self.details = octobot_trading.exchanges.SymbolDetails(**self.details) if \
-                self.details else octobot_trading.exchanges.SymbolDetails()
-
     def has_full_candles(self):
         return self.close and self.open and self.high and self.low and self.time
 
 
 @dataclasses.dataclass
-class OrdersDetails(updatable_dataclass.UpdatableDataclass):
+class OrdersDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     open_orders: list[dict] = dataclasses.field(default_factory=list)
     missing_orders: list[dict] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
-class PortfolioDetails(updatable_dataclass.UpdatableDataclass):
+class PortfolioDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     initial_value: float = 0
     content: dict = dataclasses.field(default_factory=dict)
     asset_values: dict = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
-class ExchangeData(minimizable_dataclass.MinimizableDataclass, updatable_dataclass.UpdatableDataclass):
-    auth_details: ExchangeAuthDetails = None
-    exchange_details: ExchangeDetails = None
+class ExchangeData(octobot_commons.dataclasses.MinimizableDataclass, octobot_commons.dataclasses.UpdatableDataclass):
+    auth_details: ExchangeAuthDetails = dataclasses.field(default_factory=ExchangeAuthDetails)
+    exchange_details: ExchangeDetails = dataclasses.field(default_factory=ExchangeDetails)
     markets: list[MarketDetails] = dataclasses.field(default_factory=list)
-    portfolio_details: PortfolioDetails = None
-    orders_details: OrdersDetails = None
+    portfolio_details: PortfolioDetails = dataclasses.field(default_factory=PortfolioDetails)
+    orders_details: OrdersDetails = dataclasses.field(default_factory=OrdersDetails)
     trades: list[dict] = dataclasses.field(default_factory=list)
 
     # pylint: disable=E1134
     def __post_init__(self):
-        if not isinstance(self.auth_details, ExchangeAuthDetails):
-            self.auth_details = ExchangeAuthDetails(**self.auth_details) if \
-                self.auth_details else ExchangeAuthDetails()
-        if not isinstance(self.exchange_details, ExchangeDetails):
-            self.exchange_details = ExchangeDetails(**self.exchange_details) if \
-                self.exchange_details else ExchangeDetails()
         if self.markets and isinstance(self.markets[0], dict):
-            self.markets = [MarketDetails(**market) for market in self.markets] if self.markets else []
-        if not isinstance(self.portfolio_details, PortfolioDetails):
-            self.portfolio_details = PortfolioDetails(**self.portfolio_details) if \
-                self.portfolio_details else PortfolioDetails()
-        if not isinstance(self.orders_details, OrdersDetails):
-            self.orders_details = OrdersDetails(**self.orders_details) if self.orders_details else OrdersDetails()
+            self.markets = [MarketDetails.from_dict(market) for market in self.markets] if self.markets else []
 
     def get_price(self, symbol):
         for market in self.markets:

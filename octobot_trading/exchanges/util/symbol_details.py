@@ -16,20 +16,15 @@
 import dataclasses
 
 
-import octobot_commons.updatable_dataclass as updatable_dataclass
+import octobot_commons.dataclasses
 
 
 @dataclasses.dataclass
-class CCXTDetails(updatable_dataclass.UpdatableDataclass):
+class CCXTDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     info: dict = dataclasses.field(default_factory=dict)
     parsed: dict = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
-class SymbolDetails(updatable_dataclass.UpdatableDataclass):
-    ccxt: CCXTDetails = CCXTDetails()
-
-    # pylint: disable=E1134
-    def __post_init__(self):
-        if not isinstance(self.ccxt, CCXTDetails):
-            self.ccxt = CCXTDetails(**self.ccxt) if self.ccxt else CCXTDetails()
+class SymbolDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
+    ccxt: CCXTDetails = dataclasses.field(default_factory=CCXTDetails)
