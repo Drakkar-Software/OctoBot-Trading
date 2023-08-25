@@ -18,7 +18,7 @@ import octobot_trading.exchanges.util as exchanges_util
 
 def _get_symbol_details(parsed_elements: list[dict]) -> list[exchanges_util.SymbolDetails]:
     return [
-        exchanges_util.SymbolDetails(ccxt={"parsed": parsed})
+        exchanges_util.SymbolDetails.from_dict({"ccxt": {"parsed": parsed}})
         for parsed in parsed_elements
     ]
 
