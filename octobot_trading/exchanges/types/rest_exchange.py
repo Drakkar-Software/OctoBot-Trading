@@ -192,6 +192,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
             raise errors.MissingFunds(e)
         except ccxt.NotSupported:
             raise errors.NotSupported
+        except ccxt.AuthenticationError as err:
+            # invalid api key or missing trading rights
+            raise errors.AuthenticationError(
+                f"Error when handling order {err}. Please make sure that trading permissions are on for this API key."
+            )
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
             if self.should_log_on_ddos_exception(e):
