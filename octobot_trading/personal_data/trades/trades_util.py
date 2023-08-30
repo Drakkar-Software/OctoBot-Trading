@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.enums as trading_enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
@@ -66,3 +68,28 @@ def compute_win_rate(exchange_manager):
     if total_counted_trades > constants.ZERO:
         return won_trades_count / total_counted_trades
     return constants.ZERO
+
+
+def aggregate_trades_by_exchange_order_id(trades: list) -> dict:
+    aggregated_trades_by_exchange_order_id = {}
+    for trade in trades:
+        if trade.exchange_order_id not in aggregated_trades_by_exchange_order_id:
+            # initialise as a new trade that will contain the aggregation
+            aggregated_trades_by_exchange_order_id[trade.exchange_order_id] = personal_data.create_trade_from_dict(
+                trade.trader, trade.to_dict()
+            )
+        else:
+            # include other trades from the same order id into the aggregated trade
+            to_update = aggregated_trades_by_exchange_order_id[trade.exchange_order_id]
+            try:
+                to_update.executed_price = (
+                    to_update.executed_quantity * to_update.executed_price + trade.executed_quantity * trade.executed_price
+                ) / (to_update.executed_quantity + trade.executed_quantity)
+            except decimal.DivisionByZero:
+                to_update.executed_price = constants.ZERO
+            to_update.executed_quantity += trade.executed_quantity
+            to_update.total_cost += trade.total_cost
+            to_update.fee[trading_enums.FeePropertyColumns.COST.value] \
+                += trade.fee[trading_enums.FeePropertyColumns.COST.value]
+            to_update.executed_time = max(to_update.executed_time, trade.executed_time)
+    return aggregated_trades_by_exchange_order_id

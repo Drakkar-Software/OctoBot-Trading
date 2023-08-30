@@ -30,7 +30,8 @@ def create_trade_instance_from_raw(trader, raw_trade):
         else:
             # ensure order is considered filled
             order.consider_as_filled()
-        return create_trade_from_order(order)
+        exchange_trade_id = raw_trade.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value)
+        return create_trade_from_order(order, exchange_trade_id=exchange_trade_id)
     except KeyError:
         # Funding trade candidate
         return None
@@ -40,49 +41,20 @@ def create_trade_from_order(order,
                             close_status=None,
                             creation_time=0,
                             canceled_time=0,
-                            executed_time=0):
+                            executed_time=0,
+                            exchange_trade_id=None):
     if close_status is not None:
         order.status = close_status
     trade = trade_class.Trade(order.trader)
     trade.update_from_order(order,
                             canceled_time=canceled_time,
                             creation_time=creation_time,
-                            executed_time=executed_time)
+                            executed_time=executed_time,
+                            exchange_trade_id=exchange_trade_id)
     if trade.get_time() < constants.MINIMUM_VAL_TRADE_TIME:
         logging.get_logger("TradeFactory").error(f"Trade with invalid trade time ({trade.get_time()}) "
                                                  f"from order: {order}")
     return trade
-
-
-def create_trade_instance(trader,
-                          order_type,
-                          symbol,
-                          status=enums.OrderStatus.CLOSED,
-                          order_id=None,
-                          exchange_order_id=None,
-                          filled_price=constants.ZERO,
-                          quantity_filled=constants.ZERO,
-                          total_cost=constants.ZERO,
-                          canceled_time=0,
-                          creation_time=0,
-                          executed_time=0):
-    order = order_factory.create_order_from_type(trader=trader, order_type=order_type)
-    order.update(order_type=order_type,
-                 symbol=symbol,
-                 current_price=filled_price,
-                 quantity=quantity_filled,
-                 price=filled_price,
-                 order_id=trader.parse_order_id(order_id),
-                 exchange_order_id=trader.parse_order_id(exchange_order_id),
-                 filled_price=filled_price,
-                 quantity_filled=quantity_filled,
-                 fee=None,  # TODO
-                 total_cost=total_cost)
-    return create_trade_from_order(order,
-                                   close_status=status,
-                                   canceled_time=canceled_time,
-                                   creation_time=creation_time,
-                                   executed_time=executed_time)
 
 
 def create_trade_from_dict(trader, trade_dict):

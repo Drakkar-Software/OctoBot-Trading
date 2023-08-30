@@ -197,8 +197,8 @@ class AbstractAdapter:
 
     def fix_trades(self, raw, **kwargs):
         for trade in raw:
-            # id is reserved for octobot managed id. store exchange id in EXCHANGE_ID
-            trade[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = \
+            # id is reserved for octobot managed id. store exchange trade id in EXCHANGE_TRADE_ID
+            trade[enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value] = \
                 trade.pop(enums.ExchangeConstantsOrderColumns.ID.value, None)
             # add generic logic if necessary
         return raw

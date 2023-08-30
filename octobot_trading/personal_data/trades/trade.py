@@ -33,11 +33,11 @@ class Trade:
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
 
         self.trade_id = trader.parse_order_id(None)
-        # One order might create multiple trades when matched to multiple open orders.
-        # Current implementation creates only one trade per order
-        # TODO: update this comment when handling multiple trades per order
         self.origin_order_id = None
         self.exchange_order_id = None
+        # One order might create multiple trades when matched to multiple open orders.
+        # in this case those trades would share the same exchange_order_id
+        self.exchange_trade_id = None
         self.simulated = True
         self.is_closing_order = False
 
@@ -64,7 +64,7 @@ class Trade:
         # raw exchange trade type, used to create trade dict
         self.exchange_trade_type = None
 
-    def update_from_order(self, order, creation_time=0, canceled_time=0, executed_time=0):
+    def update_from_order(self, order, creation_time=0, canceled_time=0, executed_time=0, exchange_trade_id=None):
         self.currency = order.currency
         self.market = order.market
         self.taker_or_maker = order.taker_or_maker
@@ -81,6 +81,7 @@ class Trade:
         self.trade_id = order.order_id
         self.origin_order_id = order.order_id
         self.exchange_order_id = order.exchange_order_id
+        self.exchange_trade_id = exchange_trade_id or self.exchange_trade_id
         self.simulated = order.simulated
         self.side = order.side
         self.creation_time = order.creation_time if order.creation_time > 0 else creation_time
@@ -106,6 +107,7 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.ID.value: self.trade_id,
             enums.ExchangeConstantsOrderColumns.ORDER_ID.value: self.origin_order_id,
             enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: self.exchange_order_id,
+            enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value: self.exchange_trade_id,
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsOrderColumns.MARKET.value: self.market,
             enums.ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
@@ -127,8 +129,9 @@ class Trade:
     @classmethod
     def from_dict(cls, trader, trade_dict):
         trade = cls(trader)
-        trade.trade_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ID.value)
+        trade.trade_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ID.value, trade.trade_id)
         trade.origin_order_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.ORDER_ID.value)
+        trade.exchange_trade_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value)
         trade.exchange_order_id = trade_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value)
         trade.symbol = trade_dict.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value)
         trade.currency, trade.market = commons_symbols.parse_symbol(trade.symbol).base_and_quote()
