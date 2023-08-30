@@ -180,6 +180,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
             try:
                 trade[ecoc.TIMESTAMP.value] = \
                     self.get_uniformized_timestamp(trade[ecoc.TIMESTAMP.value])
+                trade[ecoc.EXCHANGE_ID.value] = trade.get(ecoc.ORDER.value)
                 if trade[enums.ExchangeConstantsOrderColumns.TYPE.value] is None:
                     trade[enums.ExchangeConstantsOrderColumns.TYPE.value] = enums.TradeOrderType.MARKET.value \
                         if trade[ccxt_enums.ExchangeOrderCCXTColumns.TAKER_OR_MAKER.value] \

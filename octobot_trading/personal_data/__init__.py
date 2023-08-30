@@ -170,12 +170,12 @@ from octobot_trading.personal_data.trades import (
     TradesChannel,
     create_trade_instance_from_raw,
     create_trade_from_order,
-    create_trade_instance,
     create_trade_from_dict,
     TradesUpdater,
     Trade,
     TradePnl,
     compute_win_rate,
+    aggregate_trades_by_exchange_order_id,
 )
 from octobot_trading.personal_data import transactions
 from octobot_trading.personal_data.transactions import (
@@ -371,12 +371,12 @@ __all__ = [
     "TradesChannel",
     "create_trade_instance_from_raw",
     "create_trade_from_order",
-    "create_trade_instance",
     "create_trade_from_dict",
     "TradesUpdater",
     "Trade",
     "TradePnl",
     "compute_win_rate",
+    "aggregate_trades_by_exchange_order_id",
     "ExchangePersonalData",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",

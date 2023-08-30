@@ -27,8 +27,7 @@ from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance_from_raw
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 
-from octobot_trading.personal_data.trades import create_trade_instance_from_raw, create_trade_from_order, \
-    create_trade_instance
+from octobot_trading.personal_data.trades import create_trade_instance_from_raw, create_trade_from_order
 
 # All test coroutines will be treated as marked.
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
@@ -65,6 +64,7 @@ class TestTradeFactory:
               "info": {},
               "id": "12345-67890:09876/54321",
               "exchange_id": "plop",
+              "exchange_trade_id": "plop-trade",
               "timestamp": 1502962946216,
               "datetime": "2017-08-17 12:42:48.000",
               "symbol": "ETH/BTC",
@@ -88,6 +88,7 @@ class TestTradeFactory:
         assert trade.trade_id == '12345-67890:09876/54321'
         assert trade.origin_order_id == '12345-67890:09876/54321'
         assert trade.exchange_order_id == 'plop'
+        assert trade.exchange_trade_id == 'plop-trade'
         assert trade.trade_type == TraderOrderType.BUY_LIMIT
         assert trade.symbol == 'ETH/BTC'
         assert trade.total_cost == decimal.Decimal(str(0.10376526))
@@ -145,6 +146,7 @@ class TestTradeFactory:
         assert trade.trade_id == '12345-67890:09876/54321'
         assert trade.origin_order_id == '12345-67890:09876/54321'
         assert trade.exchange_order_id == '12345-67890:09876/1111'
+        assert trade.exchange_trade_id is None
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'
@@ -161,8 +163,9 @@ class TestTradeFactory:
         assert trade.status == OrderStatus.FILLED
 
         exec_time = time.time()
-        trade = create_trade_from_order(order, executed_time=exec_time)
+        trade = create_trade_from_order(order, executed_time=exec_time, exchange_trade_id="plop-trade1")
         assert trade.executed_time == exec_time
+        assert trade.exchange_trade_id == "plop-trade1"
 
         # market order
         raw_order = {
@@ -190,11 +193,12 @@ class TestTradeFactory:
             'fees': []
         }
         order = create_order_instance_from_raw(trader, raw_order)
-        trade = create_trade_from_order(order, close_status=OrderStatus.FILLED)
+        trade = create_trade_from_order(order, close_status=OrderStatus.FILLED, exchange_trade_id="trade_exchange")
 
         assert trade.trade_id == '362550114'
         assert trade.origin_order_id == '362550114'
         assert trade.exchange_order_id == 'AaaaAA'
+        assert trade.exchange_trade_id == 'trade_exchange'
         assert trade.trade_type == TraderOrderType.SELL_MARKET
         assert trade.symbol == 'UNI/USDT'
         assert trade.total_cost == ZERO
@@ -243,6 +247,7 @@ class TestTradeFactory:
         assert trade.trade_id is not None
         assert trade.origin_order_id == trade.trade_id
         assert trade.exchange_order_id == 'plopplip'
+        assert trade.exchange_trade_id is None
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'
@@ -253,23 +258,5 @@ class TestTradeFactory:
         assert trade.executed_price == decimal.Decimal(str(7684))
         assert trade.status == OrderStatus.OPEN
         assert trade.is_closing_order is False
-
-        await self.stop(exchange_manager)
-
-    async def test_create_trade_instance(self):
-        _, exchange_manager, trader = await self.init_default()
-
-        trade = create_trade_instance(trader,
-                                      order_type=TraderOrderType.SELL_MARKET,
-                                      symbol="ETH/USDT",
-                                      quantity_filled=decimal.Decimal(str(1.2)),
-                                      total_cost=decimal.Decimal(str(10)))
-
-        assert trade.trade_id is not None
-
-        assert trade.symbol == "ETH/USDT"
-        assert trade.trade_type == TraderOrderType.SELL_MARKET
-        assert round(trade.executed_quantity, 3) == decimal.Decimal(str(1.2))
-        assert trade.total_cost == decimal.Decimal(str(10))
 
         await self.stop(exchange_manager)

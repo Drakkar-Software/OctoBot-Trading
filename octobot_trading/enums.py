@@ -300,6 +300,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     INFO = "info"
     ID = "id"
     EXCHANGE_ID = "exchange_id"
+    EXCHANGE_TRADE_ID = "exchange_trade_id"
     ORDER_ID = "order_id"
     TIMESTAMP = "timestamp"
     DATETIME = 'datetime'

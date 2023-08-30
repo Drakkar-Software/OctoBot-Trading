@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.personal_data as personal_data
+import octobot_trading.enums
 
 
 def create_trade(trader, exchange_order_id, is_closing_order, origin_order_id):
@@ -32,4 +33,6 @@ def create_executed_trade(trader, side, executed_time, executed_quantity, execut
     trade.symbol = symbol
     trade.fee = fee
     trade.side = side
+    trade.trade_type = octobot_trading.enums.TraderOrderType.BUY_LIMIT
+    trade.exchange_trade_type = octobot_trading.enums.TradeOrderType.LIMIT
     return trade
