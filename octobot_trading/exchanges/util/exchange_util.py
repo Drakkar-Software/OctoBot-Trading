@@ -254,7 +254,13 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         except trading_backend.TimeSyncError:
             return False, False, _get_time_sync_error_message(exchange_name, "backend.is_valid_account")
         except trading_backend.ExchangeAuthError:
-            return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
+            message = f"Invalid {exchange_name.capitalize()} authentication details"
+            if is_sandboxed:
+                message = f"{message}. Warning: exchange sandbox is enabled, " \
+                          f"this means that OctoBot is connecting to the testnet/sandbox version of " \
+                          f"{exchange_name.capitalize()} to trade and validate your api key. " \
+                          f"Disable sandbox in your accounts configuration if this is not intended."
+            return False, False, message
         except trading_backend.APIKeyPermissionsError as err:
             return False, False, f"Please update your API Key permissions: {err}"
         except (AttributeError, Exception) as e:
