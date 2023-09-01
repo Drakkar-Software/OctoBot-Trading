@@ -103,6 +103,9 @@ class CCXTAdapter(adapters.AbstractAdapter):
     def fix_ticker(self, raw, **kwargs):
         fixed = super().fix_ticker(raw, **kwargs)
         # CCXT standard ticker fixing logic
+        if timestamp := fixed.get(enums.ExchangeConstantsTickersColumns.TIMESTAMP.value):
+            fixed[enums.ExchangeConstantsTickersColumns.TIMESTAMP.value] = \
+                int(self.get_uniformized_timestamp(timestamp))
         return fixed
 
     def parse_ticker(self, fixed, **kwargs):
