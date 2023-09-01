@@ -110,6 +110,7 @@ def set_markets_from_forced_markets(client, forced_markets: list[symbol_details.
     client.set_markets([
         client.parse_market(market.ccxt.info) if supports_markets_as_raw_info(client) else market.ccxt.parsed
         for market in forced_markets
+        if market.ccxt.info or market.ccxt.parsed
     ])
 
 
