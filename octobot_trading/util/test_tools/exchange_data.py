@@ -39,7 +39,8 @@ class ExchangeDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_com
 class MarketDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     id: str = ""
     symbol: str = ""
-    details: octobot_trading.exchanges.SymbolDetails = octobot_trading.exchanges.SymbolDetails()
+    details: octobot_trading.exchanges.SymbolDetails = \
+        dataclasses.field(default_factory=octobot_trading.exchanges.SymbolDetails)
     time_frame: str = ""
     close: list[float] = dataclasses.field(default_factory=list)
     open: list[float] = dataclasses.field(default_factory=list)
