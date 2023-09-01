@@ -126,7 +126,11 @@ async def get_portfolio(exchange_manager, as_float=False) -> dict:
     }
 
 
-async def get_open_orders(exchange_manager, exchange_data: exchange_data_import.ExchangeData) -> list:
+async def get_open_orders(
+    exchange_manager,
+    exchange_data: exchange_data_import.ExchangeData,
+    symbols: list = None
+) -> list:
     open_orders = []
 
     async def _get_orders(symbol):
@@ -138,11 +142,16 @@ async def get_open_orders(exchange_manager, exchange_data: exchange_data_import.
             for order in orders
         )
 
-    await asyncio.gather(*(_get_orders(market.symbol) for market in exchange_data.markets))
+    symbols = symbols or [market.symbol for market in exchange_data.markets]
+    await asyncio.gather(*(_get_orders(symbol) for symbol in symbols))
     return open_orders
 
 
-async def get_trades(exchange_manager, exchange_data: exchange_data_import.ExchangeData) -> list:
+async def get_trades(
+    exchange_manager,
+    exchange_data: exchange_data_import.ExchangeData,
+    symbols: list = None
+) -> list:
     trades = []
 
     async def _get_trades(symbol):
@@ -152,7 +161,8 @@ async def get_trades(exchange_manager, exchange_data: exchange_data_import.Excha
             for raw_trade in row_trades
         )
 
-    await asyncio.gather(*(_get_trades(market.symbol) for market in exchange_data.markets))
+    symbols = symbols or [market.symbol for market in exchange_data.markets]
+    await asyncio.gather(*(_get_trades(symbol) for symbol in symbols))
     return trades
 
 
