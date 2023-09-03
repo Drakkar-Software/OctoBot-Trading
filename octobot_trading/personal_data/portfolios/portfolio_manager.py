@@ -46,6 +46,7 @@ class PortfolioManager(util.Initializable):
         self.reference_market = None
         self._is_initialized_event_set = False
         self._forced_portfolio = None
+        self._enable_portfolio_update_from_order = True
 
     async def initialize_impl(self):
         """
@@ -84,7 +85,7 @@ class PortfolioManager(util.Initializable):
         portfolio changes using order data (as in trading simulator)
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled:
+        if self.trader.is_enabled and self._enable_portfolio_update_from_order:
             async with self.portfolio_history_update():
                 if self.trader.simulate or not require_exchange_update:
                     return self._refresh_simulated_trader_portfolio_from_order(order)
@@ -201,6 +202,17 @@ class PortfolioManager(util.Initializable):
         return self.portfolio_profitability. \
             update_profitability(force_recompute_origin_portfolio=self.portfolio_value_holder.
                                  update_origin_crypto_currencies_values(symbol, mark_price))
+
+    @contextlib.contextmanager
+    def disabled_portfolio_update_from_order(self):
+        """
+        Can be used to locally disable portfolio refresh when an order is updated
+        """
+        self._enable_portfolio_update_from_order = False
+        try:
+            yield
+        finally:
+            self._enable_portfolio_update_from_order = True
 
     async def _refresh_real_trader_portfolio(self) -> bool:
         """
