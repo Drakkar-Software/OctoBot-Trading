@@ -331,6 +331,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     TAG = "tag"
     SELF_MANAGED = "self-managed"
     ENTRIES = "entries"
+    VOLUME = "volume"
 
 
 class TradeExtraConstants(enum.Enum):
