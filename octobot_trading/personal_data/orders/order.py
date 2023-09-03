@@ -451,9 +451,9 @@ class Order(util.Initializable):
         """
         if enable_associated_orders_creation:
             await self._trigger_chained_orders()
-        else:
+        elif self.chained_orders:
             logging.get_logger(self.get_logger_name()).info(
-                f"Skipped chained orders creation: "
+                f"Skipped chained orders creation for {len(self.chained_orders)} chained orders: "
                 f"enable_associated_orders_creation is {enable_associated_orders_creation}"
             )
 
