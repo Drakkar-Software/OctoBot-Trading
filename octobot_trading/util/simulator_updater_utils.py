@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import async_channel.channels as channels
-import octobot_commons.channels_name as channels_name
 import octobot_backtesting.api as backtesting_api
 
 
