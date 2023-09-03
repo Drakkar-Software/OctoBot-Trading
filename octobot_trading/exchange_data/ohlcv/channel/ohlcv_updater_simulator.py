@@ -94,14 +94,14 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         if self.future_candle_time_frame is time_frame:
             if ohlcv_data[-1][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
                 # register future candle
-                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = \
+                self.channel.exchange_manager.exchange.get_current_future_candles()[pair][time_frame.value] = \
                     ohlcv_data[-1][-1]
                 # do not push future candle
                 has_future_candle = True
             else:
                 # if no future candle available
                 # (end of backtesting of missing data: reset future candle)
-                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
+                self.channel.exchange_manager.exchange.get_current_future_candles()[pair][time_frame.value] = None
 
             # There should always be at least 2 candles in read data, otherwise this means that
             # the exchange was down for some time. Consider it unreachable
@@ -129,7 +129,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         return api.get_available_symbols(self.exchange_data_importer)
 
     def _get_time_frames(self):
-        return self.channel.exchange.get_time_frames(self.exchange_data_importer)
+        return self.channel.exchange_manager.exchange.get_time_frames(self.exchange_data_importer)
 
     async def _initialize_candles(self, time_frame, pair, should_retry):
         # fetch history

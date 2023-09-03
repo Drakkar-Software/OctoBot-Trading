@@ -83,7 +83,6 @@ class ExchangeChannel(channels.Channel):
         super().__init__()
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{exchange_manager.exchange_name}]")
         self.exchange_manager = exchange_manager
-        self.exchange = exchange_manager.exchange
 
         self.filter_send_counter = 0
         self.should_send_filter = False
