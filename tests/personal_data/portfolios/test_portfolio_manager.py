@@ -63,9 +63,6 @@ async def test_handle_balance_update_from_order(backtesting_trader):
     trader.simulate = False
     order = BuyMarketOrder(trader)
 
-    if os.getenv('CYTHON_IGNORE'):
-        return
-
     with patch.object(portfolio_manager, '_refresh_real_trader_portfolio',
                       new=AsyncMock()) as _refresh_real_trader_portfolio_mock, \
         patch.object(portfolio_manager, '_refresh_simulated_trader_portfolio_from_order',
@@ -75,6 +72,13 @@ async def test_handle_balance_update_from_order(backtesting_trader):
         _refresh_real_trader_portfolio_mock.assert_called_once()
         _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
         _refresh_real_trader_portfolio_mock.reset_mock()
+        with portfolio_manager.disabled_portfolio_update_from_order():
+            await portfolio_manager.handle_balance_update_from_order(order, False)
+            _refresh_real_trader_portfolio_mock.assert_not_called()
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+            await portfolio_manager.handle_balance_update_from_order(order, True)
+            _refresh_real_trader_portfolio_mock.assert_not_called()
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
         await portfolio_manager.handle_balance_update_from_order(order, False)
         _refresh_real_trader_portfolio_mock.assert_not_called()
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
@@ -86,6 +90,11 @@ async def test_handle_balance_update_from_order(backtesting_trader):
         await portfolio_manager.handle_balance_update_from_order(order, True)
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
         _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
+        with portfolio_manager.disabled_portfolio_update_from_order():
+            await portfolio_manager.handle_balance_update_from_order(order, True)
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+            await portfolio_manager.handle_balance_update_from_order(order, False)
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
         # ensure no side effect with require_exchange_update param
         await portfolio_manager.handle_balance_update_from_order(order, False)
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
