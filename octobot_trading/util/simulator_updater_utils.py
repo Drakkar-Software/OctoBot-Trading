@@ -15,6 +15,7 @@
 #  License along with this library.
 import async_channel.channels as channels
 import octobot_commons.channels_name as channels_name
+import octobot_backtesting.api as backtesting_api
 
 
 async def stop_and_pause(producer) -> None:
@@ -36,8 +37,7 @@ async def pause_time_consumer(producer) -> None:
     :param producer: the producer to pause
     """
     if producer.time_consumer is not None:
-        await channels.get_chan(
-            channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(producer.time_consumer)
+        await get_time_channel(producer).remove_consumer(producer.time_consumer)
 
 
 async def resume_time_consumer(producer, producer_time_callback) -> None:
@@ -47,5 +47,10 @@ async def resume_time_consumer(producer, producer_time_callback) -> None:
     :param producer_time_callback: the producer TIME_CHANNEL callback
     """
     if producer.time_consumer is None and not producer.channel.is_paused:
-        producer.time_consumer = await channels.get_chan(
-            channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(producer_time_callback)
+        producer.time_consumer = await get_time_channel(producer).new_consumer(producer_time_callback)
+
+
+def get_time_channel(producer):
+    return channels.get_chan(
+        backtesting_api.get_backtesting_time_channel_name(producer.channel.exchange_manager.exchange.backtesting)
+    )

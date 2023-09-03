@@ -13,10 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import async_channel.channels as channels
-
 import octobot_commons.errors as errors
-import octobot_commons.channels_name as channels_name
 
 import octobot_trading.exchange_data.kline.channel.kline_updater as kline_updater
 import octobot_trading.util as util
@@ -56,13 +53,11 @@ class KlineUpdaterSimulator(kline_updater.KlineUpdater):
 
     async def pause(self):
         if self.time_consumer is not None:
-            await channels.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value) \
-                .remove_consumer(self.time_consumer)
+            await util.get_time_channel(self).remove_consumer(self.time_consumer)
 
     async def stop(self):
         await util.stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await channels.get_chan(channels_name.OctoBotBacktestingChannelsName.
-                                                         TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
+            self.time_consumer = await util.get_time_channel(self).new_consumer(self.handle_timestamp)
