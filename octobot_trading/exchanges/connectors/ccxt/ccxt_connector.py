@@ -293,7 +293,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
 
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
         try:
             with self.error_describer():
                 symbols = kwargs.pop("symbols", None)
