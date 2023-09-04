@@ -61,6 +61,8 @@ def create_order_signal_content(
             None if order.order_group is None else order.order_group.__class__.__name__,
         trading_enums.TradingSignalOrdersAttrs.TAG.value: order.tag,
         trading_enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: order.associated_entry_ids,
+        trading_enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value:
+            order.update_with_triggering_order_fees,
         trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value: order.order_id,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
             None if order.triggered_by is None else order.triggered_by.order_id
