@@ -468,7 +468,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_price_ticker(symbol=symbol, **kwargs)
 
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
     async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
