@@ -65,12 +65,13 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.CHAINED_TO.value: None,
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: None,
+        enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False,
     }
 
     sell_limit_order.add_chained_order(buy_limit_order)
     sell_limit_order.symbol = "BTC/ETH"
     buy_limit_order.associate_to_entry("1")
-    await buy_limit_order.set_as_chained_order(sell_limit_order, True, {}, False)
+    await buy_limit_order.set_as_chained_order(sell_limit_order, True, {}, True)
     assert signals.create_order_signal_content(
         buy_limit_order,
         enums.TradingSignalOrdersActions.CREATE,
@@ -107,6 +108,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.CHAINED_TO.value: sell_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: ["1"],
+        enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: True,
     }
 
     order_group = personal_data.OneCancelsTheOtherOrderGroup(
@@ -116,6 +118,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.add_to_order_group(order_group)
     buy_limit_order.associate_to_entry("2")
     buy_limit_order.associate_to_entry("3")
+    buy_limit_order.update_with_triggering_order_fees = False
     final_order_desc = {
         enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
@@ -145,6 +148,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.CHAINED_TO.value: sell_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: ["1", "2", "3"],
+        enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False
     }
     assert signals.create_order_signal_content(
         buy_limit_order,
