@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import copy
 import os
 import mock
 import pytest
@@ -43,7 +44,15 @@ pytestmark = pytest.mark.asyncio
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
 DEFAULT_EXCHANGE_NAME = "binanceus"
+DEFAULT_LIQUID_EXCHANGE_NAME = "bitget"
 DEFAULT_FUTURE_EXCHANGE_NAME = "bybit"
+
+
+def _load_liquid_exchange_test_config():
+    default_config = load_test_config()
+    default_config[commons_constants.CONFIG_EXCHANGES][DEFAULT_LIQUID_EXCHANGE_NAME] = \
+        copy.deepcopy(default_config[commons_constants.CONFIG_EXCHANGES][DEFAULT_EXCHANGE_NAME])
+    return default_config
 
 
 class MockedCCXTConnector(CCXTConnector):
@@ -108,6 +117,21 @@ class MockedAutoFillRestExchange(MockedRestExchange):
 @pytest_asyncio.fixture
 async def exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = True
+    exchange_manager_instance.is_simulated = False
+    await exchange_manager_instance.initialize()
+    try:
+        yield exchange_manager_instance
+    finally:
+        cancel_ccxt_throttle_task()
+        await exchange_manager_instance.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
+
+
+@pytest_asyncio.fixture
+async def liquid_exchange_manager():
+    exchange_manager_instance = ExchangeManager(_load_liquid_exchange_test_config(), DEFAULT_LIQUID_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = False
     await exchange_manager_instance.initialize()
