@@ -85,7 +85,7 @@ def aggregate_trades_by_exchange_order_id(trades: list) -> dict:
                 to_update.executed_price = (
                     to_update.executed_quantity * to_update.executed_price + trade.executed_quantity * trade.executed_price
                 ) / (to_update.executed_quantity + trade.executed_quantity)
-            except decimal.DivisionByZero:
+            except (decimal.DivisionByZero, decimal.InvalidOperation):
                 to_update.executed_price = constants.ZERO
             to_update.executed_quantity += trade.executed_quantity
             to_update.total_cost += trade.total_cost
