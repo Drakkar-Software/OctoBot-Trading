@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import mock
 import pytest
 import decimal
 
@@ -43,6 +44,22 @@ def test_empty():
         pnl.get_close_price()
     assert pnl.get_paid_regular_fees_in_quote() == constants.ZERO
     assert pnl.get_paid_special_fees_by_currency() == {}
+    with mock.patch.object(pnl, "get_closed_entry_value", mock.Mock(return_value=constants.ZERO)), \
+         mock.patch.object(pnl, "get_close_ratio", mock.Mock(return_value=constants.ZERO)), \
+         mock.patch.object(pnl, "get_closed_close_value", mock.Mock(return_value=constants.ONE_HUNDRED)), \
+         mock.patch.object(pnl, "get_paid_regular_fees_in_quote", mock.Mock(return_value=constants.ONE)):
+        # X/0
+        assert pnl.get_profits() == (
+            constants.ONE_HUNDRED - constants.ONE,
+            constants.ZERO
+        )
+        with mock.patch.object(pnl, "get_closed_close_value", mock.Mock(return_value=constants.ZERO)), \
+             mock.patch.object(pnl, "get_paid_regular_fees_in_quote", mock.Mock(return_value=constants.ZERO)):
+            # 0/0
+            assert pnl.get_profits() == (
+                constants.ZERO,
+                constants.ZERO
+            )
 
 
 def test_with_invalid_values(simulated_trader):

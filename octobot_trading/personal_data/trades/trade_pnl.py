@@ -86,7 +86,7 @@ class TradePnl:
             if self.entries[0].side is enums.TradeOrderSide.BUY:
                 return min(self.get_total_close_quantity() / self.get_total_entry_quantity(), constants.ONE)
             return min(self.get_close_total_cost() / self.get_entry_total_cost(), constants.ONE)
-        except (IndexError, decimal.DivisionByZero) as err:
+        except (IndexError, decimal.DivisionByZero, decimal.InvalidOperation) as err:
             raise errors.IncompletePNLError from err
 
     def get_closed_entry_value(self) -> decimal.Decimal:
@@ -159,7 +159,7 @@ class TradePnl:
         entry_holdings = self.get_closed_entry_value() * self.get_close_ratio()
         try:
             percent_profit = (close_holdings * constants.ONE_HUNDRED / entry_holdings) - constants.ONE_HUNDRED
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             percent_profit = constants.ZERO
         return (
             close_holdings - entry_holdings,

@@ -203,7 +203,7 @@ class ValueConverter:
                 target_currency, current_currency, settlement_asset=settlement_asset
             )
             return quantity / self._get_last_price_data(reversed_symbol)
-        except (KeyError, decimal.DivisionByZero):
+        except (KeyError, decimal.DivisionByZero, decimal.InvalidOperation):
             pass
         raise errors.MissingPriceDataError(
             f"no price data to evaluate {current_currency} price in {target_currency}"
