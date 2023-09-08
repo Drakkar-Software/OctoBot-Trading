@@ -182,7 +182,7 @@ class PortfolioManager(util.Initializable):
                 try:
                     await self.historical_portfolio_value_manager.on_portfolio_update()
                 except Exception as err:
-                    self.logger.exception(f"Error when updating portfolio history: {err}")
+                    self.logger.exception(err, True, f"Error when updating portfolio history: {err}")
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
