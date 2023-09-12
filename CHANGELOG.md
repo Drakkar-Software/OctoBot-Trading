@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.27] - 2023-09-12
+### Fixed
+- [Orders] get_split_orders_count_and_increment: take exchange precision into account
+
 ## [2.4.26] - 2023-09-07
 ### Fixed
 - [PNL] Division error
