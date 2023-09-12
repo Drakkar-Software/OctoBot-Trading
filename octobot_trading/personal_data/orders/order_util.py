@@ -25,6 +25,7 @@ import octobot_commons.timestamp_util as timestamp_util
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
@@ -103,7 +104,9 @@ def check_cost(total_order_price, min_cost):
     return True
 
 
-def get_split_orders_count_and_increment(lower_price, higher_price, quantity, orders_count, symbol_market) \
+def get_split_orders_count_and_increment(
+    lower_price, higher_price, quantity, orders_count, symbol_market, add_increment_to_min_price
+) \
         -> (int, decimal.Decimal):
     """
     :param lower_price: smallest order price
@@ -111,6 +114,7 @@ def get_split_orders_count_and_increment(lower_price, higher_price, quantity, or
     :param quantity: total quantity to handle
     :param orders_count: ideal orders count
     :param symbol_market: description of the market to trade on
+    :param add_increment_to_min_price: when true, uses lower_price + increment to check min values against symbol market
     :return: the exchange compatible orders count and price increment
     """
     min_quantity, max_quantity, min_cost, max_cost, min_price, max_price = get_min_max_amounts(symbol_market)
@@ -124,7 +128,9 @@ def get_split_orders_count_and_increment(lower_price, higher_price, quantity, or
     limit_check = _ensure_orders_size(
         lower_price, higher_price, quantity, orders_count,
         min_quantity, min_cost, min_price,
-        max_quantity, max_cost, max_price)
+        max_quantity, max_cost, max_price,
+        symbol_market, add_increment_to_min_price
+    )
 
     while limit_check > 0:
         if limit_check == 1:
@@ -133,28 +139,31 @@ def get_split_orders_count_and_increment(lower_price, higher_price, quantity, or
             else:
                 # not enough funds to create orders
                 logging.get_logger(LOGGER_NAME).warning(f"Not enough funds to create order.")
-                return 0, 0
+                return 0, constants.ZERO
         elif limit_check == 2:
             if orders_count < 40:
                 orders_count += 1
             else:
                 # too many orders to create, must be a problem
                 logging.get_logger(LOGGER_NAME).error("Too many orders to create.")
-                return 0, 0
+                return 0, constants.ZERO
         limit_check = _ensure_orders_size(
             lower_price, higher_price, quantity, orders_count,
             min_quantity, min_cost, min_price,
-            max_quantity, max_cost, max_price)
+            max_quantity, max_cost, max_price,
+            symbol_market, add_increment_to_min_price
+        )
     return orders_count, (higher_price - lower_price) / orders_count
 
 
 def _ensure_orders_size(lower_price, higher_price, quantity, orders_count,
                         min_quantity, min_cost, min_price,
-                        max_quantity, max_cost, max_price):
+                        max_quantity, max_cost, max_price,
+                        symbol_market, add_increment_to_min_price):
     increment = (higher_price - lower_price) / orders_count
-    first_price = lower_price + increment
+    first_price = (lower_price + increment) if add_increment_to_min_price else lower_price
     last_price = lower_price + (increment * orders_count)
-    order_vol = quantity / orders_count
+    order_vol = decimal_order_adapter.decimal_adapt_quantity(symbol_market, quantity / orders_count)
 
     if _are_orders_too_small(min_quantity, min_cost, min_price, first_price, order_vol):
         return 1
