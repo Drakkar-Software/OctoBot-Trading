@@ -114,7 +114,7 @@ class Trader(util.Initializable):
             created_order = await self._create_new_order(order, params, wait_for_creation=wait_for_creation,
                                                          creation_timeout=creation_timeout)
             if created_order is None:
-                self.logger.warning(f"Order not created order on {self.exchange_manager.exchange_name} "
+                self.logger.warning(f"Order not created on {self.exchange_manager.exchange_name} "
                                     f"(failed attempt to create: {order}). This is likely due to "
                                     f"the order being refused by the exchange.")
         except errors.MissingFunds:
