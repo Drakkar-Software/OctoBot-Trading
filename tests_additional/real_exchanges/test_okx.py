@@ -88,6 +88,14 @@ class TestOkxRealExchangeTester(RealExchangeTester):
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
+        # max candles is 300 (unliked stated on docs which says 100)
+        symbol_prices = await self.get_symbol_prices(limit=1000)
+        assert len(symbol_prices) == 300
+        # check candles order (oldest first)
+        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        # check last candle is the current candle
+        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
         for limit in (50, None):

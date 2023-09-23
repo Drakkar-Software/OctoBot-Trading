@@ -478,8 +478,8 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                 if attempt > 1:
                     self.logger.debug(f"Request retrier success for {request_func.__name__} after {attempt} attempts")
                 return result
-            except errors.FailedRequest:
-                self.logger.debug(f"Request retrier failed for {request_func.__name__} (attempt {attempt})")
+            except errors.FailedRequest as err:
+                self.logger.debug(f"Request retrier failed for {request_func.__name__}({args} {kwargs}) (attempt {attempt}) ({err})")
                 if time.time() - last_request_time < minimal_interval:
                     await asyncio.sleep(minimal_interval)
                 attempt += 1
