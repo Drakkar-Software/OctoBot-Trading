@@ -19,6 +19,7 @@ import decimal
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
 import octobot_commons.asyncio_tools as asyncio_tools
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -73,6 +74,43 @@ class ValueConverter:
             currency, quantity, target_currency, raise_error, init_price_fetchers
         )
         return self._check_currency_initialization(currency, currency_value)
+
+    def get_usd_like_value(self, currency, quantity, raise_error=True, init_price_fetchers=True):
+        if self.is_usd_like_coin(currency):
+            return quantity
+        if symbol := self.get_usd_like_symbol_from_symbols(currency, self.last_prices_by_trading_pair):
+            base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+            usd_like_currency = base if self.is_usd_like_coin(base) else quote
+            return self.evaluate_value(
+                currency, quantity, raise_error=raise_error,
+                target_currency=usd_like_currency, init_price_fetchers=init_price_fetchers
+            )
+        raise errors.MissingPriceDataError(
+            f"Can't convert {currency} to any of {commons_constants.USD_LIKE_COINS} using last_prices_by_trading_pair: "
+            f"{list(self.last_prices_by_trading_pair)}"
+        )
+
+    @staticmethod
+    def get_usd_like_symbol_from_symbols(currency: str, symbols) -> str:
+        # look for symbols using USD_LIKE_COINS priorities
+        for usd_like_coin in commons_constants.USD_LIKE_COINS:
+            for symbol in symbols:
+                base_and_quote = symbol_util.parse_symbol(symbol).base_and_quote()
+                if currency in base_and_quote and usd_like_coin in base_and_quote:
+                    return symbol
+        return None
+
+    @staticmethod
+    def can_convert_symbol_to_usd_like(symbol: str) -> bool:
+        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+        for usd_like_coins in commons_constants.USD_LIKE_COINS:
+            if usd_like_coins == base or usd_like_coins == quote:
+                return True
+        return False
+
+    @staticmethod
+    def is_usd_like_coin(coin) -> bool:
+        return coin in commons_constants.USD_LIKE_COINS
 
     def _check_currency_initialization(self, currency, currency_value):
         """

@@ -18,6 +18,9 @@ import pytest
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.personal_data as trading_personal_data
+
+import octobot_commons.constants as commons_constants
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 
@@ -151,3 +154,31 @@ def test_try_convert_currency_value_using_multiple_pairs_with_nested_bridges(bac
         "ADA", "XRP", decimal.Decimal("0.0001")
     ) == decimal.Decimal("0.0001") * decimal.Decimal(2) / decimal.Decimal(100) / \
         decimal.Decimal("0.1") / decimal.Decimal("0.0000001")
+
+
+def test_get_usd_like_value(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    value_converter = portfolio_manager.portfolio_value_holder.value_converter
+    # no last_prices_by_trading_pair
+    assert value_converter.get_usd_like_value(commons_constants.USD_LIKE_COINS[0], decimal.Decimal("11")) \
+           == decimal.Decimal("11")
+    assert value_converter.get_usd_like_value(commons_constants.USD_LIKE_COINS[-1], decimal.Decimal("11")) \
+           == decimal.Decimal("11")
+    with pytest.raises(errors.MissingPriceDataError):
+        value_converter.get_usd_like_value("BTC", decimal.Decimal("11"))
+
+    value_converter.update_last_price("BTC/USDC", decimal.Decimal("30000"))
+    assert value_converter.get_usd_like_value("BTC", decimal.Decimal("11")) \
+           == decimal.Decimal("11") * decimal.Decimal("30000")
+
+    with pytest.raises(errors.MissingPriceDataError):
+        value_converter.get_usd_like_value("ETH", decimal.Decimal("11"))
+
+
+def test_can_convert_symbol_to_usd_like():
+    assert trading_personal_data.ValueConverter.can_convert_symbol_to_usd_like("BTC/USDT") is True
+    assert trading_personal_data.ValueConverter.can_convert_symbol_to_usd_like(
+        f"{commons_constants.USD_LIKE_COINS[4]}/BTC"
+    ) is True
+    assert trading_personal_data.ValueConverter.can_convert_symbol_to_usd_like("BTC/ETH") is False

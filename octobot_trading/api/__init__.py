@@ -155,6 +155,9 @@ from octobot_trading.api.portfolio import (
     format_portfolio,
     get_draw_down,
     get_coefficient_of_determination,
+    get_usd_like_symbol_from_symbols,
+    can_convert_symbol_to_usd_like,
+    is_usd_like_coin,
     get_global_portfolio_currencies_values,
 )
 from octobot_trading.api.profitability import (
@@ -318,6 +321,9 @@ __all__ = [
     "refresh_real_trader_portfolio",
     "get_draw_down",
     "get_coefficient_of_determination",
+    "get_usd_like_symbol_from_symbols",
+    "can_convert_symbol_to_usd_like",
+    "is_usd_like_coin",
     "get_global_portfolio_currencies_values",
     "get_origin_portfolio_value",
     "get_profitability_stats",
