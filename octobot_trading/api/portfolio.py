@@ -86,3 +86,15 @@ def get_draw_down(exchange_manager) -> decimal.Decimal:
 async def get_coefficient_of_determination(exchange_manager, use_high_instead_of_end_balance=True):
     return await personal_data.get_coefficient_of_determination(exchange_manager,
                                                                 use_high_instead_of_end_balance)
+
+
+def get_usd_like_symbol_from_symbols(currency: str, symbols) -> str:
+    return personal_data.ValueConverter.get_usd_like_symbol_from_symbols(currency, symbols)
+
+
+def can_convert_symbol_to_usd_like(symbol: str) -> bool:
+    return personal_data.ValueConverter.can_convert_symbol_to_usd_like(symbol)
+
+
+def is_usd_like_coin(coin) -> bool:
+    return personal_data.ValueConverter.is_usd_like_coin(coin)

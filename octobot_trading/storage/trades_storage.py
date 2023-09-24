@@ -17,8 +17,10 @@ import octobot_commons.channels_name as channels_name
 import octobot_commons.enums as commons_enums
 import octobot_commons.authentication as authentication
 import octobot_commons.databases as commons_databases
+import octobot_commons.symbols as commons_symbols
 
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.storage.abstract_storage as abstract_storage
 import octobot_trading.storage.util as storage_util
@@ -57,7 +59,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
     async def _update_auth_data(self, reset):
         authenticator = authentication.Authenticator.instance()
         history = [
-            trade.to_dict()
+            self._get_trade_dict_with_usd_like_volume(trade)
             for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
             if trade.status is not enums.OrderStatus.CANCELED and trade.trade_id in self._to_update_auth_data_ids_buffer
         ]
@@ -86,6 +88,19 @@ class TradesStorage(abstract_storage.AbstractStorage):
             cache=False,
         )
         await database.flush()
+
+    def _get_trade_dict_with_usd_like_volume(self, trade) -> dict:
+        trade_dict = trade.to_dict()
+        parsed_symbol = commons_symbols.parse_symbol(trade.symbol)
+        cost_currency = parsed_symbol.quote if parsed_symbol.is_linear() else parsed_symbol.base
+        try:
+            usd_volume = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+                value_converter.get_usd_like_value(cost_currency, trade.total_cost)
+        except errors.MissingPriceDataError:
+            # can't evaluate USD-like volume
+            usd_volume = constants.ZERO
+        trade_dict[enums.ExchangeConstantsOrderColumns.VOLUME.value] = usd_volume
+        return trade_dict
 
     def _get_db(self):
         return commons_databases.RunDatabasesProvider.instance().get_trades_db(
