@@ -21,6 +21,7 @@ import octobot_commons.channels_name as channels_name
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
 import octobot_commons.logging as commons_logging
+import octobot_commons.authentication as authentication
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -39,11 +40,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
                          use_live_consumer_in_backtesting=use_live_consumer_in_backtesting, is_historical=is_historical)
         self.startup_orders = {}
 
-    def should_register_live_consumer(self):
-        # live orders should only be stored on real trading
-        return self.should_store_date()
-
-    def should_store_date(self):
+    def should_store_data(self):
         return not self.exchange_manager.is_trader_simulated \
             and not self.exchange_manager.is_backtesting
 
@@ -60,11 +57,13 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         update_type: str,
         is_from_bot: bool,
     ):
+        await self.trigger_debounced_update_auth_data(False)
         # only store the current snapshot of open orders when order updates are received
-        await self._update_history()
-        if self.ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE:
-            await self._add_historical_open_orders(order, update_type)
-        await self.trigger_debounced_flush()
+        if self.should_store_data():
+            await self._update_history()
+            if self.ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE:
+                await self._add_historical_open_orders(order, update_type)
+            await self.trigger_debounced_flush()
 
     @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def _update_history(self):
@@ -85,6 +84,16 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             cache=False,
         )
 
+    async def _update_auth_data(self, _):
+        authenticator = authentication.Authenticator.instance()
+        snapshot = [
+            _format_order(order, self.exchange_manager)
+            for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
+        ]
+        if authenticator.is_initialized():
+            # also update when history is empty to reset trade history
+            await authenticator.update_orders(snapshot, self.exchange_manager.exchange_name)
+
     async def _store_history(self):
         await self._update_history()
         await self._get_db().flush()
@@ -103,7 +112,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         return self.startup_orders.get(order_exchange__id, None)
 
     async def _load_startup_orders(self):
-        if self.should_store_date():
+        if self.should_store_data():
             self.startup_orders = {
                 _get_startup_order_key(order): _from_order_document(order)
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))

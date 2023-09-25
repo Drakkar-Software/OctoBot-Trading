@@ -24,7 +24,7 @@ LOGGER_NAME = "orders_storage_operations"
 async def apply_order_storage_details_if_any(order, exchange_manager, pending_groups):
     # only real orders can be updated by stored orders
     if not exchange_manager.storage_manager.orders_storage \
-            or not exchange_manager.storage_manager.orders_storage.should_store_date():
+            or not exchange_manager.storage_manager.orders_storage.should_store_data():
         return
     order_details = await exchange_manager.storage_manager.orders_storage.get_startup_order_details(
         order.exchange_order_id
