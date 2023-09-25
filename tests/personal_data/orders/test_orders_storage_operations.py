@@ -44,7 +44,7 @@ def initialized_mocked_order_storage(trader_simulator):
 async def test_apply_order_storage_details_if_any(initialized_mocked_order_storage):
     mocked_order_storage, exchange_manager_inst, trader_inst = initialized_mocked_order_storage
     mocked_order_storage.get_startup_order_details = mock.AsyncMock(return_value={})
-    mocked_order_storage.should_store_date = mock.Mock(return_value=False)
+    mocked_order_storage.should_store_data = mock.Mock(return_value=False)
 
     order = personal_data.BuyLimitOrder(trader_inst)
     order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
@@ -57,7 +57,7 @@ async def test_apply_order_storage_details_if_any(initialized_mocked_order_stora
     # disabled in trader simulator
     mocked_order_storage.get_startup_order_details.assert_not_awaited()
 
-    mocked_order_storage.should_store_date = mock.Mock(return_value=True)
+    mocked_order_storage.should_store_data = mock.Mock(return_value=True)
     await personal_data.apply_order_storage_details_if_any(order, exchange_manager_inst, {})
     mocked_order_storage.get_startup_order_details.assert_awaited_once_with("plop exchange_id")
 
