@@ -31,8 +31,8 @@ class AbstractStorage:
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
     HISTORY_TABLE = None
-    AUTH_UPDATE_DEBOUNCE_DURATION = 1
-    FLUSH_DEBOUNCE_DURATION = 0.5   # avoid disc spam on multiple quick live updated
+    AUTH_UPDATE_DEBOUNCE_DURATION = 10
+    FLUSH_DEBOUNCE_DURATION = 5   # avoid disc spam on multiple quick live updated
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
