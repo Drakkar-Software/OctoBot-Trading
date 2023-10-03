@@ -21,6 +21,7 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc,
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
 import octobot_trading.errors as errors
+import octobot_trading.exchanges.connectors.ccxt.constants as ccxt_constants
 from tests_additional.real_exchanges.real_futures_exchange_tester import RealFuturesExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
@@ -71,6 +72,8 @@ class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
             self.check_market_status_limits(market_status,
                                             expect_invalid_price_limit_values=True,
                                             enable_price_and_cost_comparison=False)
+            # ensure no "minFunds" in futures
+            assert "minFunds" not in market_status[ccxt_constants.CCXT_INFO]
 
     async def test_get_symbol_prices(self):
         # without limit

@@ -19,6 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
+import octobot_trading.exchanges.connectors.ccxt.constants as ccxt_constants
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
@@ -67,6 +68,10 @@ class TestKucoinRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_COST.value))
             # invalid values (should be much lower for XRP/BTC => remove price limit in tentacle
             self.check_market_status_limits(market_status, has_price_limits=False)
+            # kucoin special value to handle to market status min cost (https://docs.kucoin.com/#get-symbols-list)
+            min_funds = market_status[ccxt_constants.CCXT_INFO].get("minFunds")
+            assert min_funds is not None
+            assert float(min_funds) > 0
 
     async def test_get_symbol_prices(self):
         # without limit
