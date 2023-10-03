@@ -162,10 +162,13 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         # Initialize mark price with last candle close to allow trading low liquidity markets. Those that might
         # take some time to produce a trade and therefore initialize their mark price, which is
         # required to create orders and might block the trading initialization
+        price = decimal.Decimal(str(candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value]))
         self.channel.exchange_manager.get_symbol_data(pair).handle_mark_price_update(
-            decimal.Decimal(str(candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value])),
+            price,
             enums.MarkPriceSources.TICKER_CLOSE_PRICE.value
         )
+        self.channel.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.value_converter.\
+            update_last_price(pair, price)
 
     async def _push_initial_candles(self, initial_candles_data):
         self.logger.debug("Pushing completed initialization candles")
