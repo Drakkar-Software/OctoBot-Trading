@@ -416,12 +416,20 @@ async def create_as_chained_order(order):
         # set uninitialized to allow second initialization from create_order
         order.is_initialized = False
         order.creation_time = order.exchange_manager.exchange.get_exchange_current_time()
-        await order.trader.create_order(
-            order,
-            loaded=False,
-            params=order.exchange_creation_params,
-            **order.trader_creation_kwargs
-        )
+        try:
+            await order.trader.create_order(
+                order,
+                loaded=False,
+                params=order.exchange_creation_params,
+                **order.trader_creation_kwargs
+            )
+        except Exception as err:
+            # log warning to be sure to keep track of the failed order details
+            logging.get_logger(LOGGER_NAME).warning(
+                f"Failed to create chained order {order.to_dict()}: {err} ({err.__class__.__name__})"
+            )
+            # propagate
+            raise
 
 
 def is_associated_pending_order(pending_order, created_order):
