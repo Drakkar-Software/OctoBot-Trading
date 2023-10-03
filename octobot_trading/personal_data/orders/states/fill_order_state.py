@@ -81,10 +81,14 @@ class FillOrderState(order_state.OrderState):
         `force_close = True` because we know that the order is successfully filled.
         """
         try:
+            self.ensure_not_cleared(self.order)
+
             self.log_event_message(enums.StatesMessages.FILLED)
 
             # call filling actions
             self.order.on_fill_actions()
+            
+            self.ensure_not_cleared(self.order)
 
             # set executed time
             self.order.executed_time = self.order.generate_executed_time()
@@ -96,7 +100,6 @@ class FillOrderState(order_state.OrderState):
             except KeyError:
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
-            self.ensure_not_cleared(self.order)
             async with order_util.ensure_orders_relevancy(
                 order=self.order, enable_associated_orders_creation=self.enable_associated_orders_creation
             ):
