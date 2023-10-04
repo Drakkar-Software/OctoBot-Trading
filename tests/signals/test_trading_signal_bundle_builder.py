@@ -49,6 +49,34 @@ def test_build(trading_signal_bundle_builder):
         _pack_referenced_orders_together_mock.assert_called_once()
 
 
+def test_sort(trading_signal_bundle_builder, buy_limit_order):
+    assert trading_signal_bundle_builder.signals == []
+    assert trading_signal_bundle_builder.sort_signals().signals == []
+    order_ids = [
+        f"order_id_{i}"
+        for i in range(5)
+    ]
+    buy_limit_order.order_id = order_ids[0]
+    trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
+    # add new order (orders are based on order_id)
+    buy_limit_order.order_id = order_ids[1]
+    trading_signal_bundle_builder.add_cancelled_order(buy_limit_order, buy_limit_order.exchange_manager)
+    buy_limit_order.order_id = order_ids[2]
+    trading_signal_bundle_builder.add_cancelled_order(buy_limit_order, buy_limit_order.exchange_manager)
+    buy_limit_order.order_id = order_ids[3]
+    trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="2%")
+    buy_limit_order.order_id = order_ids[4]
+    trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="3%")
+
+    origin_signals = copy.copy(trading_signal_bundle_builder.signals)
+    assert order_ids == [signal.content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] for signal in origin_signals]
+    builder = trading_signal_bundle_builder.sort_signals()
+    assert builder is trading_signal_bundle_builder
+    sorted_signals = builder.signals
+    sorted_ids = [order_ids[1], order_ids[2], order_ids[0], order_ids[3], order_ids[4]]
+    assert sorted_ids == [signal.content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] for signal in sorted_signals]
+
+
 def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     with pytest.raises(errors.InvalidArgumentError):
         trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager)
