@@ -50,6 +50,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     # maximum seconds before sending a trading signal if orders are slow to create on exchange
     TRADING_SIGNAL_TIMEOUT = 10
     REQUIRE_TRADES_HISTORY = False   # set True when this trading mode needs the trade history to operate
+    ALLOW_CANCEL_BEFORE_BUY_SIGNALS = True  # set False if trade signals from this trading mode should NOT be
+    # reordered to process cancel signals first
 
     def __init__(self, config, exchange_manager):
         super().__init__()

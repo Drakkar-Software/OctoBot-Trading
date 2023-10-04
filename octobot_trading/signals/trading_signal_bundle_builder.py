@@ -32,6 +32,16 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
         self._pack_referenced_orders_together()
         return super().build()
 
+    def sort_signals(self):
+        # https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts
+        # move cancelled order signals at the beginning of the list, leave others as is while keeping initial order
+        def _sort_key(signal):
+            return 0 if signal.content[trading_enums.TradingSignalCommonsAttrs.ACTION.value] == \
+                trading_enums.TradingSignalOrdersActions.CANCEL.value else 1
+
+        self.signals = sorted(self.signals, key=_sort_key)
+        return self
+
     def add_created_order(self, order, exchange_manager, target_amount=None, target_position=None):
         if target_amount is None and target_position is None:
             raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")
