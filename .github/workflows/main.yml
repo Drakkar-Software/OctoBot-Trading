@@ -26,8 +26,8 @@ jobs:
     uses: Drakkar-Software/.github/.github/workflows/python3_sdist_workflow.yml@master
     secrets:
       PYPI_OFFICIAL_UPLOAD_URL: ${{ secrets.PYPI_OFFICIAL_UPLOAD_URL }}
-      PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      PYPI_USERNAME: __token__
+      PYPI_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
   notify:
     if: ${{ failure() }}
