@@ -52,6 +52,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     REQUIRE_TRADES_HISTORY = False   # set True when this trading mode needs the trade history to operate
     ALLOW_CANCEL_BEFORE_BUY_SIGNALS = True  # set False if trade signals from this trading mode should NOT be
     # reordered to process cancel signals first
+    SUPPORTS_INITIAL_PORTFOLIO_OPTIMIZATION = False  # set True when self._optimize_initial_portfolio is implemented
 
     def __init__(self, config, exchange_manager):
         super().__init__()
@@ -261,6 +262,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await modes_util.clear_plotting_cache(self)
         elif action == common_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
             await modes_util.clear_simulated_orders_cache(self)
+        elif action == common_enums.UserCommands.OPTIMIZE_INITIAL_PORTFOLIO.value:
+            if self.SUPPORTS_INITIAL_PORTFOLIO_OPTIMIZATION:
+                await self.optimize_initial_portfolio([])
 
     async def _manual_trigger(self, data):
         kwargs = {
@@ -269,6 +273,20 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         kwargs.update(data.get("kwargs", {}))
         for producer in self.producers:
             await producer.trigger(**kwargs)
+
+    async def optimize_initial_portfolio(self, sellable_assets):
+        raise NotImplemented("_optimize_initial_portfolio is not implemented")
+
+    @classmethod
+    def get_user_commands(cls) -> dict:
+        """
+        Return the dict of user commands for this tentacle
+        :return: the commands dict
+        """
+        commands = {}
+        if cls.SUPPORTS_INITIAL_PORTFOLIO_OPTIMIZATION:
+            commands[common_enums.UserCommands.OPTIMIZE_INITIAL_PORTFOLIO.value] = {}
+        return commands
 
     async def _create_mode_consumer(self, mode_consumer_class):
         """
