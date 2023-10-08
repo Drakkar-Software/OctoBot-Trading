@@ -391,3 +391,14 @@ def apply_trades_fees(raw_order, raw_trades_by_exchange_order_id):
                 trade[enums.ExchangeConstantsOrderColumns.FEE.value][
                     enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value]
         raw_order[enums.ExchangeConstantsOrderColumns.FEE.value] = order_fee
+
+
+def get_common_traded_quote(exchange_manager):
+    quote = None
+    for symbol in exchange_manager.exchange_config.traded_symbols:
+        if quote is None:
+            quote = symbol.quote
+        elif quote != symbol.quote:
+            return None
+    return quote
+

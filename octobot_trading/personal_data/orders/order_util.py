@@ -234,7 +234,6 @@ def get_portfolio_amounts(exchange_manager, symbol, price, portfolio_type=common
     return currency_available, market_available, market_quantity
 
 
-
 def get_futures_max_order_size(exchange_manager, symbol, side, current_price, reduce_only,
                                current_symbol_holding, market_quantity):
     # use position margin when trading futures and reducing the position
