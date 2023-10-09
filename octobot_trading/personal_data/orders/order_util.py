@@ -27,6 +27,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
+import octobot_trading.personal_data.orders.states.fill_order_state as fill_order_state
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -536,3 +537,30 @@ async def get_order_size_portfolio_percent(exchange_manager, order_amount, side,
 
 def generate_order_id():
     return str(uuid.uuid4())
+
+
+async def wait_for_order_fill(order, timeout, wait_for_portfolio_update):
+    if order.is_open():
+        if order.state is None:
+            logging.get_logger(LOGGER_NAME).error(
+                f"None state on created order, impossible to wait for fill, order: {order}"
+            )
+        else:
+            try:
+                await order.state.wait_for_next_state(timeout)
+            except asyncio.TimeoutError:
+                logging.get_logger(LOGGER_NAME).error(
+                    f"Timeout while waiting for rebalance marker open order fill, order {order}"
+                )
+            if wait_for_portfolio_update and isinstance(order.state, fill_order_state.FillOrderState):
+                # portfolio is updated in FillOrderState: wait for this state to complete
+                try:
+                    await order.state.wait_for_next_state(timeout)
+                except asyncio.TimeoutError:
+                    logging.get_logger(LOGGER_NAME).error(
+                        f"Timeout while waiting for rebalance marker filled order state to complete, order {order}"
+                    )
+    if order.is_open():
+        logging.get_logger(LOGGER_NAME).error(f"Unexpected: order is still open, order {order}")
+    else:
+        logging.get_logger(LOGGER_NAME).info("Successfully filled order.")

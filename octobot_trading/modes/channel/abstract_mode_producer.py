@@ -25,6 +25,8 @@ import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.configuration as commons_configuration
+import octobot_commons.asyncio_tools as asyncio_tools
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -47,6 +49,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     }
     CONFIG_INIT_TIMEOUT = 1 * common_constants.MINUTE_TO_SECONDS    # let time for orders to be fetched before
     # declaring timeout at first trigger
+    PRODUCER_LOCKS_BY_EXCHANGE_ID = {}  # use to identify exchange-wide actions
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
@@ -245,6 +248,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     await exchanges_channel.get_chan(channel_name, self.exchange_manager.id).remove_consumer(consumer)
                 except (KeyError, ImportError):
                     self.logger.error(f"Can't unregister {channel_name} channel on {self.exchange_name}")
+            self.delete_producer_exchange_wide_lock(self.exchange_manager)
         self.flush()
 
     def flush(self) -> None:
@@ -480,3 +484,19 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 await util.wait_for_topic_init(self.exchange_manager, self.CONFIG_INIT_TIMEOUT,
                                                common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
             await script_keywords.set_leverage(context, await script_keywords.user_select_leverage(context))
+
+    @classmethod
+    def producer_exchange_wide_lock(cls, exchange_manager) -> asyncio_tools.RLock():
+        try:
+            return cls.PRODUCER_LOCKS_BY_EXCHANGE_ID[exchange_manager.id]
+        except KeyError:
+            lock = asyncio_tools.RLock()
+            cls.PRODUCER_LOCKS_BY_EXCHANGE_ID[exchange_manager.id] = lock
+            return lock
+
+    @classmethod
+    def delete_producer_exchange_wide_lock(cls, exchange_manager):
+        if exchange_manager.id in cls.PRODUCER_LOCKS_BY_EXCHANGE_ID:
+            cls.PRODUCER_LOCKS_BY_EXCHANGE_ID.pop(
+                exchange_manager.id, None
+            )

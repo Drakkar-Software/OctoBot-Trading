@@ -274,7 +274,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for producer in self.producers:
             await producer.trigger(**kwargs)
 
-    async def optimize_initial_portfolio(self, sellable_assets):
+    async def optimize_initial_portfolio(self, sellable_assets) -> list:
         raise NotImplemented("_optimize_initial_portfolio is not implemented")
 
     @classmethod
