@@ -61,7 +61,9 @@ from octobot_trading.modes.modes_factory import (
 from octobot_trading.modes import modes_util
 from octobot_trading.modes.modes_util import (
     get_required_candles_count,
-    convert_to_target_asset,
+    convert_assets_to_target_asset,
+    convert_asset_to_target_asset,
+    notify_portfolio_optimization_complete,
 )
 
 __all__ = [
@@ -85,5 +87,7 @@ __all__ = [
     "get_order_amount_value_desc",
     "get_user_selected_order_amount",
     "get_required_candles_count",
-    "convert_to_target_asset",
+    "convert_assets_to_target_asset",
+    "convert_asset_to_target_asset",
+    "notify_portfolio_optimization_complete",
 ]
