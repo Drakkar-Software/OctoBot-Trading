@@ -55,83 +55,74 @@ async def clear_plotting_cache(trading_mode):
     )
 
 
-async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, target_asset: str, tickers: dict) \
-        -> (list, dict):
+def get_assets_requiring_extra_price_data_to_convert(exchange_manager, sellable_assets: list, target_asset: str) -> set:
+    missing_price_assets = set()
+    for asset in sellable_assets:
+        portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+        if asset in portfolio and portfolio[asset].available:
+            try:
+                if exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+                   value_converter.evaluate_value(
+                       asset, constants.ONE, raise_error=True, target_currency=target_asset, init_price_fetchers=False
+                   ) == constants.ZERO:
+                    # 0 is default value in backtesting
+                    missing_price_assets.add(asset)
+            except errors.MissingPriceDataError:
+                # converter is not enough
+                missing_price_assets.add(asset)
+    return missing_price_assets
+
+
+async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, target_asset: str, tickers: dict) -> list:
     created_orders = []
     for asset in sellable_assets:
-        new_orders, tickers = await convert_asset_to_target_asset(
-            trading_mode, asset, target_asset, asset_amount=None, tickers=tickers
+        new_orders = await convert_asset_to_target_asset(
+            trading_mode, asset, target_asset, tickers, asset_amount=None
         )
         created_orders += new_orders
-    return created_orders, tickers
+    return created_orders
 
 
 async def convert_asset_to_target_asset(
-    trading_mode, asset: str, target_asset: str, asset_amount=None, tickers=None
-) -> (list, dict):
+    trading_mode, asset: str, target_asset: str, tickers: dict, asset_amount=None
+) -> list:
     if asset == target_asset:
-        return [], tickers
+        return []
     created_orders = []
     tickers = tickers or {}
     portfolio = trading_mode.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
     if asset in portfolio and portfolio[asset].available:
-        symbol = symbol_util.merge_currencies(asset, target_asset)
-        order_type = trading_enums.TraderOrderType.SELL_MARKET
-        if symbol not in trading_mode.exchange_manager.client_symbols:
-            # try reversed
-            reversed_symbol = symbol_util.merge_currencies(target_asset, asset)
-            if reversed_symbol not in trading_mode.exchange_manager.client_symbols:
-                # can't convert asset into target_asset
-                trading_mode.logger.error(
-                    f"Impossible to convert {asset} into {target_asset}: no {symbol} or "
-                    f"{reversed_symbol} trading pair on {trading_mode.exchange_manager.exchange_name}"
-                )
-                return created_orders, tickers
-            symbol = reversed_symbol
-            order_type = trading_enums.TraderOrderType.BUY_MARKET
-        # 1. try with converter
-        try:
-            price = trading_mode.exchange_manager.exchange_personal_data.portfolio_manager.\
-                portfolio_value_holder.value_converter.evaluate_value(
-                    asset, constants.ONE, raise_error=True, target_currency=target_asset, init_price_fetchers=False
-                )
-            if order_type is trading_enums.TraderOrderType.BUY_MARKET:
-                price = constants.ONE / price
-        except errors.MissingPriceDataError:
-            # 2. try with tickers
-            if not tickers:
-                # price not available, fetch it once with ticker
-                tickers = await trading_mode.exchange_manager.exchange.get_all_currencies_price_ticker()
-            try:
-                price = decimal.Decimal(str(
-                    tickers[symbol][trading_enums.ExchangeConstantsTickersColumns.CLOSE.value]
-                    or tickers[symbol][trading_enums.ExchangeConstantsTickersColumns.PREVIOUS_CLOSE.value]
-                ))
-            except KeyError:
-                # can't get price, should not happen as symbol is in client_symbols
-                trading_mode.logger.error(
-                    f"Impossible to convert {asset} into {target_asset}: {symbol} ticker can't be fetched"
-                )
-                return created_orders, tickers
-        symbol_market = trading_mode.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
-        if asset_amount is None:
-            currency_available, market_available, market_quantity = trading_personal_data.get_portfolio_amounts(
-                trading_mode.exchange_manager, symbol, price, portfolio_type=common_constants.PORTFOLIO_AVAILABLE
+        # get symbol of the order
+        symbol, order_type = _get_associated_symbol_and_order_type(trading_mode, asset, target_asset)
+        if symbol is None:
+            # can't convert asset into target_asset
+            trading_mode.logger.error(
+                f"Impossible to convert {asset} into {target_asset}: no associated trading pair "
+                f"on {trading_mode.exchange_manager.exchange_name}"
             )
-            quantity = currency_available if order_type is trading_enums.TraderOrderType.SELL_MARKET \
-                else market_quantity
-        else:
-            try:
-                quantity = asset_amount if order_type is trading_enums.TraderOrderType.SELL_MARKET \
-                    else (asset_amount / price)
-            except (decimal.DivisionByZero, decimal.InvalidOperation):
-                quantity = constants.ZERO
+            return created_orders
+
+        # get symbol price
+        price = _get_asset_price_from_converter_or_tickers(
+            trading_mode, asset, target_asset, symbol, order_type, tickers
+        )
+        if not price:
+            # can't get price, should not happen as symbol is in client_symbols
+            trading_mode.logger.error(
+                f"Impossible to convert {asset} into {target_asset}: {symbol} ticker can't be fetched"
+            )
+            return created_orders
+
+        # get order quantity
+        quantity = _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount)
+        symbol_market = trading_mode.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
         for order_quantity, order_price in \
                 trading_personal_data.decimal_check_and_adapt_order_details_if_necessary(
                     quantity,
                     price,
                     symbol_market
                 ):
+            # create order
             order = trading_personal_data.create_order_instance(
                 trader=trading_mode.exchange_manager.trader,
                 order_type=order_type,
@@ -141,7 +132,62 @@ async def convert_asset_to_target_asset(
                 price=price
             )
             created_orders.append(await trading_mode.create_order(order))
-    return created_orders, tickers
+    return created_orders
+
+
+def _get_associated_symbol_and_order_type(trading_mode, asset: str, target_asset: str) \
+     -> (str, trading_enums.TraderOrderType):
+    symbol = symbol_util.merge_currencies(asset, target_asset)
+    order_type = trading_enums.TraderOrderType.SELL_MARKET
+    if symbol not in trading_mode.exchange_manager.client_symbols:
+        # try reversed
+        reversed_symbol = symbol_util.merge_currencies(target_asset, asset)
+        if reversed_symbol not in trading_mode.exchange_manager.client_symbols:
+            return None, None
+        symbol = reversed_symbol
+        order_type = trading_enums.TraderOrderType.BUY_MARKET
+    return symbol, order_type
+
+
+def _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount) -> decimal.Decimal:
+    if asset_amount is None:
+        currency_available, market_available, market_quantity = trading_personal_data.get_portfolio_amounts(
+            trading_mode.exchange_manager, symbol, price, portfolio_type=common_constants.PORTFOLIO_AVAILABLE
+        )
+        quantity = currency_available if order_type is trading_enums.TraderOrderType.SELL_MARKET \
+            else market_quantity
+    else:
+        try:
+            quantity = asset_amount if order_type is trading_enums.TraderOrderType.SELL_MARKET \
+                else (asset_amount / price)
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            quantity = constants.ZERO
+    return quantity
+
+
+def _get_asset_price_from_converter_or_tickers(
+    trading_mode, asset: str, target_asset: str, symbol: str, order_type: trading_enums.TraderOrderType, tickers: dict
+):
+    # 1. try with converter
+    try:
+        price = trading_mode.exchange_manager.exchange_personal_data.portfolio_manager. \
+            portfolio_value_holder.value_converter.evaluate_value(
+                asset, constants.ONE, raise_error=True, target_currency=target_asset, init_price_fetchers=False
+            )
+        if price == constants.ZERO:
+            raise errors.MissingPriceDataError
+        if order_type is trading_enums.TraderOrderType.BUY_MARKET:
+            price = constants.ONE / price
+    except errors.MissingPriceDataError:
+        # 2. try with tickers
+        try:
+            price = decimal.Decimal(str(
+                tickers[symbol][trading_enums.ExchangeConstantsTickersColumns.CLOSE.value]
+                or tickers[symbol][trading_enums.ExchangeConstantsTickersColumns.PREVIOUS_CLOSE.value]
+            ))
+        except KeyError:
+            price = None
+    return price
 
 
 async def notify_portfolio_optimization_complete():

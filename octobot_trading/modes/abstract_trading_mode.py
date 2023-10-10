@@ -272,7 +272,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await modes_util.clear_simulated_orders_cache(self)
         elif action == common_enums.UserCommands.OPTIMIZE_INITIAL_PORTFOLIO.value:
             if self.SUPPORTS_INITIAL_PORTFOLIO_OPTIMIZATION:
-                await self.optimize_initial_portfolio([])
+                await self.optimize_initial_portfolio([], {})
 
     async def _manual_trigger(self, data):
         kwargs = {
@@ -282,7 +282,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for producer in self.producers:
             await producer.trigger(**kwargs)
 
-    async def optimize_initial_portfolio(self, sellable_assets, tickers: dict = None) -> (list, dict):
+    async def optimize_initial_portfolio(self, sellable_assets, tickers: dict) -> (list, dict):
         raise NotImplemented("_optimize_initial_portfolio is not implemented")
 
     @classmethod
