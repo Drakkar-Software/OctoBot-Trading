@@ -35,7 +35,8 @@ class ExchangeBuilder:
 
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
-        self.trading_config_by_trading_mode: dict = None
+        self.trading_config_by_trading_mode: dict = True
+        self.auto_start_trading_modes: bool = True
 
     async def build(self):
         """
@@ -113,11 +114,11 @@ class ExchangeBuilder:
                     self.logger.warning(f"There wont be any order created on {self.exchange_name}: neither "
                                         f"simulated nor real trader has been activated.")
                 else:
-                    self.exchange_manager.trading_modes = await self._build_trading_modes(trading_mode_class)
+                    self.exchange_manager.trading_modes = await self.build_trading_modes(trading_mode_class)
             else:
                 self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
 
-    async def _build_trading_modes(self, trading_mode_class):
+    async def build_trading_modes(self, trading_mode_class):
         try:
             self._ensure_trading_mode_compatibility(trading_mode_class)
             return await modes.create_trading_modes(
@@ -125,7 +126,8 @@ class ExchangeBuilder:
                 self.exchange_manager,
                 trading_mode_class,
                 self.exchange_manager.bot_id,
-                trading_config_by_trading_mode=self.trading_config_by_trading_mode
+                trading_config_by_trading_mode=self.trading_config_by_trading_mode,
+                auto_start=self.auto_start_trading_modes,
             )
         except errors.TradingModeIncompatibility as e:
             raise e
@@ -250,6 +252,10 @@ class ExchangeBuilder:
 
     def use_trading_config_by_trading_mode(self, trading_config_by_trading_mode):
         self.trading_config_by_trading_mode = trading_config_by_trading_mode
+        return self
+
+    def set_auto_start_trading_modes(self, auto_start_trading_modes):
+        self.auto_start_trading_modes = auto_start_trading_modes
         return self
 
 
