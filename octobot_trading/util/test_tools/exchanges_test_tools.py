@@ -75,7 +75,7 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
     await asyncio_tools.wait_asyncio_next_cycle()
 
 
-def _update_symbol_market(exchange_manager, market_details: exchange_data_import.MarketDetails):
+def update_symbol_market(exchange_manager, market_details: exchange_data_import.MarketDetails):
     market_details.id = exchange_manager.exchange.connector.update_symbol_details(
         market_details.details, market_details.symbol
     )
@@ -108,7 +108,7 @@ async def add_symbols_details(
             time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
         )
         if not close_price_only:
-            _update_symbol_market(exchange_manager, details)
+            update_symbol_market(exchange_manager, details)
         exchange_data.markets.append(details)
 
     await exchange_manager.exchange.connector.load_symbol_markets(forced_markets=forced_markets)

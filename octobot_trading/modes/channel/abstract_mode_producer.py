@@ -127,12 +127,23 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     # noinspection PyArgumentList
     async def start(self) -> None:
-        self._is_ready_to_trade = asyncio.Event()
+        self._is_ready_to_trade = self._is_ready_to_trade or asyncio.Event()
         try:
             await self.inner_start()
         finally:
             self.logger.debug("Ready to trade")
             self._is_ready_to_trade.set()
+
+    def force_is_ready_to_trade(self):
+        if self._is_ready_to_trade is None:
+            self._is_ready_to_trade = asyncio.Event()
+        self._is_ready_to_trade.set()
+
+    def unset_is_ready_to_trade(self):
+        if self._is_ready_to_trade is None:
+            self._is_ready_to_trade = asyncio.Event()
+        if self._is_ready_to_trade.is_set():
+            self._is_ready_to_trade.clear()
 
     async def inner_start(self) -> None:
         """

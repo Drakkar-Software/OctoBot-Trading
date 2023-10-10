@@ -181,12 +181,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         return True
 
-    async def initialize(self, trading_config=None) -> None:
+    async def initialize(self, trading_config=None, auto_start=True) -> None:
         """
         Triggers producers and consumers creation
         """
         await self.reload_config(self.exchange_manager.bot_id, trading_config=trading_config)
-        self.producers = await self.create_producers()
+        self.producers = await self.create_producers(auto_start)
         self.consumers = await self.create_consumers()
 
     async def stop(self) -> None:
@@ -199,17 +199,17 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await consumer.stop()
         self.exchange_manager = None
 
-    async def create_producers(self) -> list:
+    async def create_producers(self, auto_start) -> list:
         """
         Creates the instance of producers listed in MODE_PRODUCER_CLASSES
         :return: the list of producers created
         """
         return [
-            await self._create_mode_producer(mode_producer_class)
+            await self._create_mode_producer(mode_producer_class, auto_start)
             for mode_producer_class in self.get_mode_producer_classes()
         ]
 
-    async def _create_mode_producer(self, mode_producer_class):
+    async def _create_mode_producer(self, mode_producer_class, auto_start):
         """
         Creates a new :mode_producer_class: instance and starts it
         :param mode_producer_class: the trading mode producer class to create
@@ -218,8 +218,16 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         mode_producer = mode_producer_class(
             exchanges_channel.get_chan(constants.MODE_CHANNEL, self.exchange_manager.id),
             self.config, self, self.exchange_manager)
-        await mode_producer.run()
+        if auto_start:
+            await mode_producer.run()
         return mode_producer
+
+    async def start_producers(self):
+        """
+        Should be used if producers got created with auto_start=False
+        """
+        for producer in self.producers:
+            await producer.run()
 
     async def create_consumers(self) -> list:
         """
@@ -274,7 +282,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for producer in self.producers:
             await producer.trigger(**kwargs)
 
-    async def optimize_initial_portfolio(self, sellable_assets) -> list:
+    async def optimize_initial_portfolio(self, sellable_assets, tickers: dict = None) -> (list, dict):
         raise NotImplemented("_optimize_initial_portfolio is not implemented")
 
     @classmethod

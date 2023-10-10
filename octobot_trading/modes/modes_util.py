@@ -55,15 +55,15 @@ async def clear_plotting_cache(trading_mode):
     )
 
 
-async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, target_asset: str) -> list:
+async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, target_asset: str, tickers: dict) \
+        -> (list, dict):
     created_orders = []
-    tickers = {}
     for asset in sellable_assets:
         new_orders, tickers = await convert_asset_to_target_asset(
             trading_mode, asset, target_asset, asset_amount=None, tickers=tickers
         )
         created_orders += new_orders
-    return created_orders
+    return created_orders, tickers
 
 
 async def convert_asset_to_target_asset(
