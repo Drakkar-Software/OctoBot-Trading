@@ -550,7 +550,7 @@ async def wait_for_order_fill(order, timeout, wait_for_portfolio_update):
                 await order.state.wait_for_next_state(timeout)
             except asyncio.TimeoutError:
                 logging.get_logger(LOGGER_NAME).error(
-                    f"Timeout while waiting for rebalance marker open order fill, order {order}"
+                    f"Timeout while waiting for {order.order_type.value} open order fill, order {order}"
                 )
             if wait_for_portfolio_update and isinstance(order.state, fill_order_state.FillOrderState):
                 # portfolio is updated in FillOrderState: wait for this state to complete
@@ -558,9 +558,10 @@ async def wait_for_order_fill(order, timeout, wait_for_portfolio_update):
                     await order.state.wait_for_next_state(timeout)
                 except asyncio.TimeoutError:
                     logging.get_logger(LOGGER_NAME).error(
-                        f"Timeout while waiting for rebalance marker filled order state to complete, order {order}"
+                        f"Timeout while waiting for {order.order_type.value} filled order state to "
+                        f"complete, order {order}"
                     )
     if order.is_open():
         logging.get_logger(LOGGER_NAME).error(f"Unexpected: order is still open, order {order}")
     else:
-        logging.get_logger(LOGGER_NAME).info("Successfully filled order.")
+        logging.get_logger(LOGGER_NAME).info(f"Successfully filled order: {order}.")
