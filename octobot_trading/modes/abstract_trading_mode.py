@@ -313,7 +313,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     async def single_exchange_process_optimize_initial_portfolio(
         self, sellable_assets, target_asset: str, tickers: dict
     ) -> list:
-        raise NotImplemented("single_exchange_process_optimize_initial_portfolio is not implemented")
+        raise NotImplementedError("single_exchange_process_optimize_initial_portfolio is not implemented")
 
     @classmethod
     def get_user_commands(cls) -> dict:

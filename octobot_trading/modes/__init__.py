@@ -88,7 +88,7 @@ __all__ = [
     "get_order_amount_value_desc",
     "get_user_selected_order_amount",
     "get_required_candles_count",
-    "get_assets_requiring_extra_price_data_to_convert"
+    "get_assets_requiring_extra_price_data_to_convert",
     "convert_assets_to_target_asset",
     "convert_asset_to_target_asset",
     "notify_portfolio_optimization_complete",

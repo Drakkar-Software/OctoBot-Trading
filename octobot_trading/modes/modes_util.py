@@ -18,7 +18,6 @@ import decimal
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.constants as common_constants
-import octobot_commons.symbols as symbol_util
 
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_trading.errors as errors
@@ -27,6 +26,7 @@ import octobot_trading.storage as storage
 import octobot_trading.enums as trading_enums
 import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
 import octobot_trading.personal_data as trading_personal_data
+import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 
 def get_required_candles_count(trading_mode_class, tentacles_setup_config):
@@ -103,9 +103,16 @@ async def convert_asset_to_target_asset(
             return created_orders
 
         # get symbol price
-        price = _get_asset_price_from_converter_or_tickers(
-            trading_mode, asset, target_asset, symbol, order_type, tickers
+        price_base = asset
+        price_target = target_asset
+        if order_type is trading_enums.TraderOrderType.BUY_MARKET:
+            price_base = target_asset
+            price_target = asset
+
+        price = trading_personal_data.get_asset_price_from_converter_or_tickers(
+            trading_mode.exchange_manager, price_base, price_target, symbol, tickers
         )
+
         if not price:
             # can't get price, should not happen as symbol is in client_symbols
             trading_mode.logger.error(
@@ -129,7 +136,7 @@ async def convert_asset_to_target_asset(
                 symbol=symbol,
                 current_price=price,
                 quantity=order_quantity,
-                price=price
+                price=order_price
             )
             created_orders.append(await trading_mode.create_order(order))
     return created_orders
@@ -137,21 +144,15 @@ async def convert_asset_to_target_asset(
 
 def _get_associated_symbol_and_order_type(trading_mode, asset: str, target_asset: str) \
      -> (str, trading_enums.TraderOrderType):
-    symbol = symbol_util.merge_currencies(asset, target_asset)
-    order_type = trading_enums.TraderOrderType.SELL_MARKET
-    if symbol not in trading_mode.exchange_manager.client_symbols:
-        # try reversed
-        reversed_symbol = symbol_util.merge_currencies(target_asset, asset)
-        if reversed_symbol not in trading_mode.exchange_manager.client_symbols:
-            return None, None
-        symbol = reversed_symbol
-        order_type = trading_enums.TraderOrderType.BUY_MARKET
+    symbol, reversed_symbol = exchange_util.get_associated_symbol(trading_mode.exchange_manager, asset, target_asset)
+    order_type = trading_enums.TraderOrderType.BUY_MARKET if reversed_symbol else \
+        trading_enums.TraderOrderType.SELL_MARKET
     return symbol, order_type
 
 
 def _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount) -> decimal.Decimal:
     if asset_amount is None:
-        currency_available, market_available, market_quantity = trading_personal_data.get_portfolio_amounts(
+        currency_available, _, market_quantity = trading_personal_data.get_portfolio_amounts(
             trading_mode.exchange_manager, symbol, price, portfolio_type=common_constants.PORTFOLIO_AVAILABLE
         )
         quantity = currency_available if order_type is trading_enums.TraderOrderType.SELL_MARKET \
@@ -163,31 +164,6 @@ def _get_available_or_target_quantity(trading_mode, symbol, order_type, price, a
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             quantity = constants.ZERO
     return quantity
-
-
-def _get_asset_price_from_converter_or_tickers(
-    trading_mode, asset: str, target_asset: str, symbol: str, order_type: trading_enums.TraderOrderType, tickers: dict
-):
-    # 1. try with converter
-    try:
-        price = trading_mode.exchange_manager.exchange_personal_data.portfolio_manager. \
-            portfolio_value_holder.value_converter.evaluate_value(
-                asset, constants.ONE, raise_error=True, target_currency=target_asset, init_price_fetchers=False
-            )
-        if price == constants.ZERO:
-            raise errors.MissingPriceDataError
-        if order_type is trading_enums.TraderOrderType.BUY_MARKET:
-            price = constants.ONE / price
-    except errors.MissingPriceDataError:
-        # 2. try with tickers
-        try:
-            price = decimal.Decimal(str(
-                tickers[symbol][trading_enums.ExchangeConstantsTickersColumns.CLOSE.value]
-                or tickers[symbol][trading_enums.ExchangeConstantsTickersColumns.PREVIOUS_CLOSE.value]
-            ))
-        except KeyError:
-            price = None
-    return price
 
 
 async def notify_portfolio_optimization_complete():
