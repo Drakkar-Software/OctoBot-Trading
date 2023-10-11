@@ -36,6 +36,7 @@ import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_pro
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.modes.mode_config as mode_config
 import octobot_trading.modes.modes_util as modes_util
+import octobot_trading.exchanges.util.exchange_util as exchange_util
 import octobot_trading.signals as signals
 
 
@@ -282,8 +283,37 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for producer in self.producers:
             await producer.trigger(**kwargs)
 
-    async def optimize_initial_portfolio(self, sellable_assets, tickers: dict) -> (list, dict):
-        raise NotImplemented("_optimize_initial_portfolio is not implemented")
+    async def optimize_initial_portfolio(self, sellable_assets: list, tickers: dict) -> list:
+        if not self.producers:
+            # nothing to do
+            return []
+        # first acquire trading mode lock to be sure we are not in during trading mode iteration
+        async with self.producers[0].trading_mode_trigger():
+            if self.producers[0].producer_exchange_wide_lock(self.exchange_manager).locked():
+                # already locked by another trading mode instance: this other trading mode will do the rebalancing
+                self.logger.info(
+                    f"Skipping portfolio optimization for trading mode with symbol {self.symbol}: "
+                    f"portfolio optimization already in progress"
+                )
+                return []
+            async with self.producers[0].producer_exchange_wide_lock(self.exchange_manager):
+                target_asset = exchange_util.get_common_traded_quote(self.exchange_manager)
+                if target_asset is None:
+                    self.logger.error(f"Impossible to optimize initial portfolio with different quotes in traded pairs")
+                    return []
+                self.logger.info(f"Starting portfolio optimization using trading mode with symbol {self.symbol}")
+                created_orders = await self.single_exchange_process_optimize_initial_portfolio(
+                    sellable_assets, target_asset, tickers
+                )
+                if not created_orders:
+                    self.logger.info("Optimizing portfolio: no order to create")
+                await modes_util.notify_portfolio_optimization_complete()
+            return created_orders
+
+    async def single_exchange_process_optimize_initial_portfolio(
+        self, sellable_assets, target_asset: str, tickers: dict
+    ) -> list:
+        raise NotImplemented("single_exchange_process_optimize_initial_portfolio is not implemented")
 
     @classmethod
     def get_user_commands(cls) -> dict:

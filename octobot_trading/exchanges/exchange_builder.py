@@ -35,7 +35,7 @@ class ExchangeBuilder:
 
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
-        self.trading_config_by_trading_mode: dict = True
+        self.trading_config_by_trading_mode: dict = None
         self.auto_start_trading_modes: bool = True
 
     async def build(self):
