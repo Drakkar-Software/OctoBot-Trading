@@ -14,12 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import typing
+
 import ccxt
 import trading_backend
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
+import octobot_commons.symbols as common_symbols
 import octobot_commons.tentacles_management as tentacles_management
 
 import octobot_tentacles_manager.api as api
@@ -393,7 +396,7 @@ def apply_trades_fees(raw_order, raw_trades_by_exchange_order_id):
         raw_order[enums.ExchangeConstantsOrderColumns.FEE.value] = order_fee
 
 
-def get_common_traded_quote(exchange_manager):
+def get_common_traded_quote(exchange_manager) -> typing.Union[str, None]:
     quote = None
     for symbol in exchange_manager.exchange_config.traded_symbols:
         if quote is None:
@@ -402,3 +405,15 @@ def get_common_traded_quote(exchange_manager):
             return None
     return quote
 
+
+def get_associated_symbol(exchange_manager, asset: str, target_asset: str) -> (typing.Union[str, None], bool):
+    symbol = common_symbols.merge_currencies(asset, target_asset)
+    is_reversed_symbol = False
+    if symbol not in exchange_manager.client_symbols:
+        # try reversed
+        reversed_symbol = common_symbols.merge_currencies(target_asset, asset)
+        if reversed_symbol not in exchange_manager.client_symbols:
+            return None, is_reversed_symbol
+        symbol = reversed_symbol
+        is_reversed_symbol = True
+    return symbol, is_reversed_symbol

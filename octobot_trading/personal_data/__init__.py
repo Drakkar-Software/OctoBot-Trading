@@ -141,6 +141,7 @@ from octobot_trading.personal_data.portfolios import (
     create_historical_asset_value_from_dict_like_object,
     get_draw_down,
     get_coefficient_of_determination,
+    get_asset_price_from_converter_or_tickers,
     HistoricalAssetValue,
     HistoricalPortfolioValueManager,
 )
@@ -380,6 +381,7 @@ __all__ = [
     "compute_win_rate",
     "aggregate_trades_by_exchange_order_id",
     "ExchangePersonalData",
+    "get_asset_price_from_converter_or_tickers",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",
     "TraderOrderTypeClasses",
