@@ -16,6 +16,7 @@
 import decimal
 import pytest
 import mock
+import asyncio
 
 # prevent circular import
 import octobot_trading.api
@@ -24,7 +25,9 @@ import octobot_trading.signals as signals
 import octobot_trading.constants as constants
 import octobot_commons.constants as common_constants
 import octobot_commons.errors as common_errors
+import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.signals.signals_emitter as signals_emitter
+import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 from tests import event_loop
 from tests.exchanges import simulated_exchange_manager, simulated_trader
@@ -37,11 +40,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 def trading_mode(simulated_trader):
-    config, exchange_manager_inst, trader_inst = simulated_trader
-    mode = modes.AbstractTradingMode(config, exchange_manager_inst)
-    exchange_manager_inst.trading_modes = [mode]
-    mode.trading_config = {}
-    return mode
+    return _get_trading_mode(simulated_trader)
 
 
 async def test_remote_signal_publisher(trading_mode):
@@ -247,3 +246,58 @@ async def test_edit_order(trading_mode, buy_limit_order):
                 should_emit_trading_signal_mock.reset_mock()
                 edit_order_mock.reset_mock()
         emit_signal_bundle_mock.assert_not_called()
+
+
+async def test_optimize_initial_portfolio_single_call(trading_mode):
+    mode_1 = trading_mode
+    mode_2 = _get_other_trading_mode(mode_1)
+    mode_1.producers = [_get_ready_producer(mode_1)]
+    mode_2.producers = [_get_ready_producer(mode_2)]
+
+    async def waiter(sellable_assets, target_asset, tickers):
+        for _ in range(1):
+            # let other task run
+            await asyncio_tools.wait_asyncio_next_cycle()
+        return ["order_1"]
+
+    with mock.patch.object(
+        modes.AbstractTradingMode, "single_exchange_process_optimize_initial_portfolio", mock.AsyncMock(side_effect=waiter)
+    ) as single_exchange_process_optimize_initial_portfolio_mock, mock.patch.object(
+        exchange_util, "get_common_traded_quote", mock.Mock(return_value="USDT")
+    ) as get_common_traded_quote_mock:
+        mode_1_orders, mode_2_orders = await asyncio.gather(
+            mode_1.optimize_initial_portfolio(["BTC"], {}),
+            mode_2.optimize_initial_portfolio(["BTC"], {}),
+        )
+        # mode_2 did not call get_common_traded_quote_mock nor single_exchange_process_optimize_initial_portfolio_mock
+        # as mode_1 was already in process
+        get_common_traded_quote_mock.assert_called_once()
+        single_exchange_process_optimize_initial_portfolio_mock.assert_called_once_with(["BTC"], "USDT", {})
+        assert mode_1_orders == ["order_1"]
+        assert mode_2_orders == []
+
+
+def _get_trading_mode(simulated_trader):
+    config, exchange_manager_inst, trader_inst = simulated_trader
+    mode = modes.AbstractTradingMode(config, exchange_manager_inst)
+    exchange_manager_inst.trading_modes.append(mode)
+    mode.trading_config = {}
+    return mode
+
+
+def _get_other_trading_mode(first_trading_mode):
+    return _get_trading_mode(
+        (first_trading_mode.exchange_manager.config, first_trading_mode.exchange_manager, first_trading_mode.exchange_manager.trader)
+    )
+
+
+def _get_ready_producer(trading_mode):
+    producer = modes.AbstractTradingModeProducer(
+        mock.Mock(),
+        trading_mode.config,
+        trading_mode,
+        trading_mode.exchange_manager
+    )
+    producer.force_is_ready_to_trade()
+    return producer
+
