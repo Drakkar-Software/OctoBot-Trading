@@ -54,11 +54,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             self.previous_call_error_per_symbol[symbol] = None
         except errors.MissingMinimalExchangeTradeVolume as err:
             self.previous_call_error_per_symbol[symbol] = err
-            market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
-            self.logger.info(f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
-                             f"{self.exchange_manager.exchange_name} exchange minimal order "
-                             f"volume has not been reached. "
-                             f"Exchanges requirements are: {market_status.get(Ecmsc.LIMITS.value)}")
+            self.logger.info(self.get_minimal_funds_error(symbol, final_note))
         except errors.UnhandledContractError as err:
             self.previous_call_error_per_symbol[symbol] = err
             self.logger.error(f"Unhandled contract error on {self.exchange_manager.exchange_name}: {err}. "
@@ -71,6 +67,21 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             self.logger.info(f"Failed {symbol} order creation on: {self.exchange_manager.exchange_name} "
                              f"an unexpected error happened when creating order. This is likely due to "
                              f"the order being refused by the exchange.")
+
+    def get_minimal_funds_error(self, symbol, final_note):
+        market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
+        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+        portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
+        funds = {
+            base: portfolio.get_currency_portfolio(base),
+            quote: portfolio.get_currency_portfolio(base)
+        }
+        return (
+            f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
+            f"{self.exchange_manager.exchange_name} exchange minimal order "
+            f"volume has not been reached. Funds: {funds} "
+            f"Exchanges requirements: {market_status.get(Ecmsc.LIMITS.value)}."
+        )
 
     async def init_user_inputs(self, should_clear_inputs):
         pass
