@@ -59,7 +59,7 @@ def get_assets_requiring_extra_price_data_to_convert(exchange_manager, sellable_
     missing_price_assets = set()
     for asset in sellable_assets:
         portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
-        if asset in portfolio and portfolio[asset].available:
+        if asset != target_asset and asset in portfolio and portfolio[asset].available:
             try:
                 if exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
                    value_converter.evaluate_value(
