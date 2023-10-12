@@ -74,7 +74,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
         funds = {
             base: portfolio.get_currency_portfolio(base),
-            quote: portfolio.get_currency_portfolio(base)
+            quote: portfolio.get_currency_portfolio(quote)
         }
         return (
             f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
