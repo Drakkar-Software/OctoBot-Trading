@@ -70,12 +70,16 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
 
     def get_minimal_funds_error(self, symbol, final_note):
         market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
-        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
-        portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
-        funds = {
-            base: portfolio.get_currency_portfolio(base),
-            quote: portfolio.get_currency_portfolio(quote)
-        }
+        try:
+            base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+            portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
+            funds = {
+                base: portfolio.get_currency_portfolio(base),
+                quote: portfolio.get_currency_portfolio(quote)
+            }
+        except Exception as err:
+            self.logger.error(f"Error when getting funds for {symbol}: {err}")
+            funds = {}
         return (
             f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
             f"{self.exchange_manager.exchange_name} exchange minimal order "
