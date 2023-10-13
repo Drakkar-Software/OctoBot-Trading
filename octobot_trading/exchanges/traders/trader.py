@@ -508,7 +508,7 @@ class Trader(util.Initializable):
                         cancelled_orders.append(order)
                     all_cancelled = cancelled and all_cancelled
                 except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
-                    self.logger.warning(f"Skipping order cancel: {err}")
+                    self.logger.warning(f"Skipping order cancel: {err} ({err.__class__.__name__})")
         return all_cancelled, cancelled_orders
 
     async def cancel_all_open_orders_with_currency(
@@ -561,7 +561,7 @@ class Trader(util.Initializable):
                             wait_for_cancelling=wait_for_cancelling,
                             cancelling_timeout=cancelling_timeout, ) and all_cancelled
                 except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
-                    self.logger.warning(f"Skipping order cancel: {err}")
+                    self.logger.warning(f"Skipping order cancel: {err} ({err.__class__.__name__})")
                     all_cancelled = False
         return all_cancelled
 
