@@ -83,7 +83,7 @@ def update_symbol_market(exchange_manager, market_details: exchange_data_import.
 
 async def add_symbols_details(
         exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-        history_size=1, forced_markets=None, start_time=0, end_time=0, close_price_only=False
+        history_size=1, forced_markets=None, start_time=0, end_time=0, close_price_only=False, include_symbol_markets=True
 ) -> exchange_data_import.ExchangeData:
     parsed_tf = common_enums.TimeFrames(time_frame)
 
@@ -107,7 +107,7 @@ async def add_symbols_details(
             volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if not close_price_only else [],
             time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
         )
-        if not close_price_only:
+        if not close_price_only and include_symbol_markets:
             update_symbol_market(exchange_manager, details)
         exchange_data.markets.append(details)
 
