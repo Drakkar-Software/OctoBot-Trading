@@ -40,7 +40,7 @@ class TestExchangeManager:
         exchange_manager.is_simulated = simulated
         exchange_manager.is_backtesting = backtesting
         if backtesting:
-            exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [])
+            exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [], False)
         exchange_manager.rest_only = True
 
         await exchange_manager.initialize()

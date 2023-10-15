@@ -248,6 +248,9 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
                                                         set(self.exchange_manager.exchange_config.available_time_frames)),
                                                    reverse=True)
 
+    def use_accurate_price_time_frame(self) -> bool:
+        return self.backtesting.use_accurate_price_time_frame()
+
     def get_split_pair_from_exchange(self, pair) -> (str, str):
         return symbol_util.parse_symbol(pair).base_and_quote()
 
