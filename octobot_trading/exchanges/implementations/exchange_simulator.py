@@ -73,6 +73,9 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     def get_time_frames(self, importer):
         return self.connector.get_time_frames(importer)
 
+    def use_accurate_price_time_frame(self) -> bool:
+        return self.connector.use_accurate_price_time_frame()
+
     def get_current_future_candles(self):
         return self.connector.current_future_candles
 
