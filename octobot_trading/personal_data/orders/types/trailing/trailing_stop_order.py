@@ -35,7 +35,7 @@ class TrailingStopOrder(order_class.Order):
         self.wait_for_stop_price_hit_event_task = None
         self.wait_for_price_hit_event_task = None
         self.trailing_percent = trailing_percent
-        self.allow_instant_fill = True
+        self.allow_instant_fill = constants.ALLOW_SIMULATED_ORDERS_INSTANT_FILL
 
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):

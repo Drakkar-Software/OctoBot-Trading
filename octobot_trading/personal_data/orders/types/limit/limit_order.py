@@ -26,7 +26,7 @@ class LimitOrder(order_class.Order):
         self.limit_price_hit_event = None
         self.wait_for_hit_event_task = None
         self.trigger_above = self.side is enums.TradeOrderSide.SELL
-        self.allow_instant_fill = True
+        self.allow_instant_fill = constants.ALLOW_SIMULATED_ORDERS_INSTANT_FILL
 
     def update_from_raw(self, raw_order):
         updated = super(LimitOrder, self).update_from_raw(raw_order)
