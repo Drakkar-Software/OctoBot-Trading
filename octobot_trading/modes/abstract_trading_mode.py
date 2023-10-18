@@ -92,6 +92,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         # True when this trading mode is waken up only after full candles close
         self.is_triggered_after_candle_close = False
 
+        # True when initialization orders are waiting to be created
+        self.are_initialization_orders_pending = False
+
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
     def get_current_state(self) -> tuple:
