@@ -80,17 +80,19 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                         ),
                         self.PRICE_INIT_TIMEOUT
                     )
+            # skip portfolio history on simulated trading
+            histories = {} if self.exchange_manager.is_trader_simulated else {
+                history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]:
+                    history_val[portfolio_history.HistoricalAssetValue.VALUES_KEY]
+                for history_val in history
+            }
             await authenticator.update_portfolio(
                 full_history[-1][portfolio_history.HistoricalAssetValue.VALUES_KEY],
                 full_history[0][portfolio_history.HistoricalAssetValue.VALUES_KEY],
                 float(hist_portfolio_values_manager.portfolio_manager.portfolio_profitability.profitability_percent),
                 hist_portfolio_values_manager.portfolio_manager.reference_market,
                 hist_portfolio_values_manager.ending_portfolio,
-                {
-                    history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]:
-                        history_val[portfolio_history.HistoricalAssetValue.VALUES_KEY]
-                    for history_val in history
-                },
+                histories,
                 hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.current_crypto_currencies_values,
                 reset
             )

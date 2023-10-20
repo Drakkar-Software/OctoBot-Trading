@@ -57,11 +57,16 @@ class TradesStorage(abstract_storage.AbstractStorage):
             await self.trigger_debounced_update_auth_data(False)
 
     async def _update_auth_data(self, reset):
+        # skip trades history on simulated trading
+        if self.exchange_manager.is_trader_simulated:
+            return
         authenticator = authentication.Authenticator.instance()
         history = [
             self._get_trade_dict_with_usd_like_volume(trade)
             for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
-            if trade.status is not enums.OrderStatus.CANCELED and trade.trade_id in self._to_update_auth_data_ids_buffer
+            if trade.status is not enums.OrderStatus.CANCELED
+            and trade.is_from_this_octobot
+            and trade.trade_id in self._to_update_auth_data_ids_buffer
         ]
         if (history or reset) and authenticator.is_initialized():
             # also update when history is empty to reset trade history

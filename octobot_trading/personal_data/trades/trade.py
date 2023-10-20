@@ -40,6 +40,7 @@ class Trade:
         self.exchange_trade_id = None
         self.simulated = True
         self.is_closing_order = False
+        self.is_from_this_octobot = True
 
         self.symbol = None
         self.currency = None
@@ -89,6 +90,7 @@ class Trade:
         self.executed_time = order.executed_time if order.executed_time > 0 else executed_time
         self.symbol = order.symbol
         self.is_closing_order = order.status in self.CLOSING_TRADE_ORDER_STATUS
+        self.is_from_this_octobot = order.is_from_this_octobot
         self.reduce_only = order.reduce_only
         self.tag = order.tag
         self.associated_entry_ids = order.associated_entry_ids
