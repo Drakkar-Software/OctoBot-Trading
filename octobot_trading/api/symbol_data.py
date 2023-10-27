@@ -49,6 +49,13 @@ def are_symbol_candles_initialized(exchange_manager, symbol, time_frame) -> bool
         return False
 
 
+def get_candles_as_list(candles_arrays) -> list:
+    return [
+        exchange_data.get_candle_as_list(candles_arrays, index)
+        for index in range(len(candles_arrays[0]))
+    ]
+
+
 def get_candle_as_list(candles_arrays, candle_index=0) -> list:
     return exchange_data.get_candle_as_list(candles_arrays, candle_index)
 
