@@ -91,9 +91,10 @@ def get_symbol_types_counts(config, enabled_only) -> dict:
 def get_all_currencies(config, enabled_only=False) -> set:
     currencies = set()
     for symbol in get_symbols(config, enabled_only):
-        quote, base = symbol_util.parse_symbol(symbol).base_and_quote()
-        currencies.add(quote)
+        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
         currencies.add(base)
+        if quote is not None:
+            currencies.add(quote)
     return currencies
 
 
