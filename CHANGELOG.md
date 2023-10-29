@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.38] - 2023-10-29
+### Fixed
+- [Config] handle malformed pairs in get_all_currencies
+
 ## [2.4.37] - 2023-10-27
 ### Added
 - [API] get_candles_as_list
