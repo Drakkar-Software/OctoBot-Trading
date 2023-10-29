@@ -80,7 +80,7 @@ async def test_is_compatible_account_with_checked_exchange(exchange_config, tent
 
 
 def test_get_partners_explanation_message():
-    assert ".info" in exchanges.get_partners_explanation_message()
+    assert ".cloud/guides" in exchanges.get_partners_explanation_message()
 
 
 def test_log_time_sync_error():
@@ -90,7 +90,7 @@ def test_log_time_sync_error():
     assert "exchange_name".capitalize() in args
     assert "error" in args
     assert "hello call" in args
-    assert ".info" in args
+    assert ".cloud/guides" in args
 
 
 @pytest.mark.asyncio
