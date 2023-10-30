@@ -270,8 +270,10 @@ class ExchangeConfig(util.Initializable):
         for time_frame in time_frame_manager.get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.available_required_time_frames.append(time_frame)
-        if (self.exchange_manager.is_backtesting and self.exchange_manager.exchange.use_accurate_price_time_frame()) \
-           or not self.available_required_time_frames:
+        if (
+            not self.exchange_manager.is_backtesting or
+            (self.exchange_manager.is_backtesting and self.exchange_manager.exchange.use_accurate_price_time_frame())
+        ) or not self.available_required_time_frames:
             # add shortest time frame for realtime evaluators
             client_shortest_time_frame = time_frame_manager.find_min_time_frame(
                 self.exchange_manager.client_time_frames,
