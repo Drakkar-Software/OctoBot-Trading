@@ -20,6 +20,7 @@ import decimal
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
+import octobot_commons.tree as common_tree
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
@@ -36,8 +37,9 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     OHLCV_MIN_REFRESH_TIME = 1
     OHLCV_REFRESH_TIME_THRESHOLD = 1.5  # to prevent spamming at candle closing
     OHLCV_MISSING_DATA_REFRESH_RETRY_MAX_DELAY = 30 * common_constants.MINUTE_TO_SECONDS
+    DEPENDENCIES_TIMEOUT = 2 * common_constants.MINUTE_TO_SECONDS
 
-    OHLCV_INITIALIZATION_TIMEOUT = 60
+    OHLCV_INITIALIZATION_TIMEOUT = 3 * common_constants.MINUTE_TO_SECONDS
     OHLCV_INITIALIZATION_RETRY_DELAY = 10
 
     def __init__(self, channel):
@@ -83,6 +85,17 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
     async def _initialize(self, push_initialization_candles):
         try:
+            # ensure open orders are initialized before fetching candles
+            await self.wait_for_dependencies(
+                [
+                    common_tree.get_exchange_path(
+                        self.channel.exchange_manager.exchange_name,
+                        common_enums.InitializationEventExchangeTopics.ORDERS.value
+                    ),
+                ],
+                self.DEPENDENCIES_TIMEOUT
+            )
+            self.logger.info(f"Starting OHLCV initialisation for {self.channel.exchange_manager.exchange_name}")
             initial_candles_data = await asyncio.gather(*[
                 self._initialize_candles(time_frame, pair, True)
                 for time_frame in self._get_time_frames()
