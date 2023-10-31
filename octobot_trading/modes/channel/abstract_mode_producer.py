@@ -131,7 +131,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         try:
             await self.inner_start()
         finally:
-            self.logger.debug("Ready to trade")
+            self.logger.debug(
+                f"Ready to trade on {self.exchange_manager.exchange_name}, symbol: {self.trading_mode.symbol}"
+            )
             self._is_ready_to_trade.set()
 
     def force_is_ready_to_trade(self):
@@ -313,7 +315,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             return
         await self.trigger(matrix_id, cryptocurrency, symbol, time_frame, trigger_source)
 
-    async def trigger(self, matrix_id: str = None, cryptocurrency: str = None, symbol: str = None, time_frame = None,
+    async def trigger(self, matrix_id: str = None, cryptocurrency: str = None, symbol: str = None, time_frame=None,
                       trigger_source: str = common_enums.TriggerSource.UNDEFINED.value) -> None:
         """
         Called by finalize and MANUAL_TRIGGER user command. Override if necessary
@@ -329,7 +331,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             self.logger.exception(
                 e,
                 True,
-                f"Ignored signal: "
+                f"Ignored signal: exchange: {self.exchange_manager.exchange_name} symbol: {symbol}, "
+                f"time_frame: {time_frame}. "
                 f"Trading mode is not yet ready to trade, OctoBot is still initializing and fetching required data."
             )
 
