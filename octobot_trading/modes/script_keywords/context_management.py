@@ -45,10 +45,9 @@ def get_full_context(trading_mode, matrix_id, cryptocurrency, symbol, time_frame
         trading_mode.exchange_manager,
         trading_mode.exchange_manager.trader,
         trading_mode.exchange_manager.exchange_name,
-        trading_mode.symbol,
+        symbol or trading_mode.symbol,
         matrix_id,
         cryptocurrency,
-        symbol or trading_mode.symbol,
         time_frame,
         trading_mode.logger,
         trading_mode.__class__,
@@ -72,7 +71,6 @@ class Context(databases.CacheClient):
         traded_pair,
         matrix_id,
         cryptocurrency,
-        signal_symbol,
         time_frame,
         logger,
         trading_mode_class,
@@ -98,7 +96,6 @@ class Context(databases.CacheClient):
         self.trader = trader
         self.matrix_id = matrix_id
         self.cryptocurrency = cryptocurrency
-        self.signal_symbol = signal_symbol
         self.logger = logger
         bot_id = exchange_manager.bot_id if \
             (exchange_manager is not None) \
@@ -232,7 +229,6 @@ class Context(databases.CacheClient):
             None,
             None,
             None,
-            None,
             logger,
             trading_mode_class,
             None,
@@ -254,7 +250,6 @@ class Context(databases.CacheClient):
             self.symbol,
             self.matrix_id,
             self.cryptocurrency,
-            self.signal_symbol,
             self.time_frame,
             self.logger,
             self.trading_mode_class,
