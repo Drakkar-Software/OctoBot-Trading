@@ -40,6 +40,9 @@ class CloseOrderState(order_state.OrderState):
         """
         Verify the order is properly closed
         """
+        if self.order is None or self.order.is_cleared():
+            self.get_logger().debug("Skipping on_refresh_successful as order is cleared")
+            return
         if self.order.status is enums.OrderStatus.CLOSED:
             self.state = enums.States.CLOSED
             await self.update()
