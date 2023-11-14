@@ -338,7 +338,7 @@ def parse_order_status(raw_order):
     try:
         return enums.OrderStatus(raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value])
     except KeyError:
-        return KeyError("Could not parse new order status")
+        return enums.OrderStatus.UNKNOWN
     except ValueError:
         if raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value] == "cancelled":
             # few exchanges use "cancelled" which is not in enums.ExchangeConstantsOrderColumns.STATUS
