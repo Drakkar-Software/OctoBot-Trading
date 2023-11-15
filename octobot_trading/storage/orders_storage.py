@@ -114,7 +114,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     async def _load_startup_orders(self):
         if self.should_store_data():
             self.startup_orders = {
-                _get_startup_order_key(order): _from_order_document(order)
+                _get_startup_order_key(order): from_order_document(order)
                 for order in copy.deepcopy(await self._get_db().all(self.HISTORY_TABLE))
                 if order    # skip empty order details (error when serializing)
             }
@@ -209,12 +209,12 @@ def _format_order_update(exchange_manager, order_dict, update_type, update_time)
     return order_update
 
 
-def _from_order_document(order_document):
+def from_order_document(order_document):
     order_dict = dict(order_document)
     try:
         restore_order_storage_origin_value(order_dict[constants.STORAGE_ORIGIN_VALUE])
         for chained_order in order_dict.get(enums.StoredOrdersAttr.CHAINED_ORDERS.value, []):
-            _from_order_document(chained_order)
+            from_order_document(chained_order)
     except Exception as err:
         commons_logging.get_logger(OrdersStorage.__name__).exception(
             err, True, f"Error when reading: {err} order: {order_document}"
