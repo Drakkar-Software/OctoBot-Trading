@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.40] - 2023-10-01
+## [2.4.41] - 2023-11-15
+### Fixed
+- [Orders] Fix parsing issues
+
+## [2.4.40] - 2023-11-01
 ### Fixed
 - [Context] Fix rare desynched symbol attribute and remove signal_symbol 
 
