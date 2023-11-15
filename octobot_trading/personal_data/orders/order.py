@@ -136,7 +136,7 @@ class Order(util.Initializable):
         changed: bool = False
         should_update_total_cost = False
 
-        price = current_price if self.use_current_price_as_origin_price() else price
+        price = current_price if (current_price and self.use_current_price_as_origin_price()) else price
 
         if order_id and self.order_id != order_id:
             self.order_id = order_id
