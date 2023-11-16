@@ -65,7 +65,7 @@ class OpenOrderState(order_state.OrderState):
         # skip refresh process if the current order state is not the same as the one triggering this
         # on_refresh_successful to avoid synchronization issues (state already got refreshed by another mean)
         if self.order is None:
-            self.get_logger().warning(f"on_refresh_successful triggered on cleared order: ignoring update.")
+            self.get_logger().debug(f"on_refresh_successful triggered on cleared order: ignoring update.")
         elif self.state is self.order.state.state:
             if self.order.status is enums.OrderStatus.OPEN:
                 self.state = enums.States.OPEN
