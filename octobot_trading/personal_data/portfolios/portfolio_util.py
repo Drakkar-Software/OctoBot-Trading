@@ -27,7 +27,7 @@ import octobot_commons.symbols as symbol_util
 import numpy as numpy
 
 
-def parse_decimal_portfolio(portfolio):
+def parse_decimal_portfolio(portfolio, as_decimal=True):
     decimal_portfolio = {}
     for symbol, symbol_balance in portfolio.items():
         if isinstance(symbol_balance, dict):
@@ -35,7 +35,8 @@ def parse_decimal_portfolio(portfolio):
             portfolio_to_fill = decimal_portfolio[symbol]
             for balance_type, balance_val in symbol_balance.items():
                 if isinstance(balance_val, (int, float, decimal.Decimal)):
-                    portfolio_to_fill[balance_type] = decimal.Decimal(str(balance_val))
+                    portfolio_to_fill[balance_type] = decimal.Decimal(str(balance_val)) \
+                        if as_decimal else float(balance_val)
     return decimal_portfolio
 
 
