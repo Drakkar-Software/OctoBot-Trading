@@ -63,21 +63,20 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         # set exchange manager attributes
         self.exchange_manager.client_symbols = list(self.symbols)
 
-        # init _forced_market_statuses when available
-        if self.exchange_manager.forced_markets is not None:
-            self._init_forced_market_statuses(self.exchange_manager.forced_markets)
+        # init _forced_market_statuses when allowed
+        if self.exchange_manager.use_cached_markets:
+            self._init_forced_market_statuses()
 
     def get_adapter_class(self, adapter_class):
         return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
 
-    def _init_forced_market_statuses(self, forced_markets: list[util.SymbolDetails]):
+    def _init_forced_market_statuses(self):
         self._forced_market_statuses = ccxt_client_simulation.parse_markets(
-            self.exchange_manager.exchange_class_string,
-            forced_markets
+            self.exchange_manager.exchange_class_string
         )
 
     def should_adapt_market_statuses(self) -> bool:
-        return bool(self.exchange_manager.forced_markets)
+        return self.exchange_manager.use_cached_markets
 
     @classmethod
     def load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config):

@@ -26,6 +26,7 @@ from octobot_backtesting.constants import CONFIG_BACKTESTING
 import octobot_backtesting.time as backtesting_time
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.enums import TimeFrames
+import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
@@ -60,12 +61,13 @@ class MockedCCXTConnector(CCXTConnector):
     def get_name(cls):
         return DEFAULT_EXCHANGE_NAME
 
-    async def load_symbol_markets(self, reload=False, forced_markets=None):
-        if forced_markets is None:
-            forced_markets = mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(self.exchange_manager.exchange_name, None)
+    async def load_symbol_markets(self, reload=False):
+        if forced_markets := mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(
+            self.exchange_manager.exchange_name, None
+        ):
+            ccxt_clients_cache.set_exchange_parsed_markets(self.exchange_manager.exchange_name, forced_markets)
         await super().load_symbol_markets(
             reload=reload,
-            forced_markets=forced_markets
         )
 
     def _should_authenticate(self):
@@ -277,6 +279,7 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
         config = backtesting_config
     exchange_manager_instance = ExchangeManager(config, exchange_name)
     exchange_manager_instance.is_backtesting = True
+    exchange_manager_instance.use_cached_markets = False
     exchange_manager_instance.is_spot_only = is_spot
     exchange_manager_instance.is_margin = is_margin
     exchange_manager_instance.is_future = is_future

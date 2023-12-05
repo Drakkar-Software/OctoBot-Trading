@@ -218,8 +218,8 @@ class ExchangeBuilder:
         self.exchange_manager.exchange_only = True
         return self
 
-    def has_forced_markets(self, forced_markets: list[symbol_details.SymbolDetails]):
-        self.exchange_manager.forced_markets = forced_markets
+    def use_cached_markets(self, use_cached_markets: bool):
+        self.exchange_manager.use_cached_markets = use_cached_markets
         return self
 
     def is_ignoring_config(self, ignore_config=True):

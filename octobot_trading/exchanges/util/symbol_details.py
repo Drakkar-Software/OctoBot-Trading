@@ -21,8 +21,8 @@ import octobot_commons.dataclasses
 
 @dataclasses.dataclass
 class CCXTDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
-    info: dict = dataclasses.field(default_factory=dict)
-    parsed: dict = dataclasses.field(default_factory=dict)
+    info: dict = dataclasses.field(default_factory=dict)    # deprecated, will be removed soon
+    parsed: dict = dataclasses.field(default_factory=dict)  # deprecated, will be removed soon
 
 
 @dataclasses.dataclass

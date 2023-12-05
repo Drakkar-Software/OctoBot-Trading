@@ -21,6 +21,7 @@ from mock import patch
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data.contracts as contracts
+import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import pytest
 
 import tests.exchanges.connectors.ccxt.mock_exchanges_data as mock_exchanges_data
@@ -43,17 +44,23 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(ccxt_connector):
         def __init__(self):
             self.symbols = None
             self.timeframes = None
+            self.markets = {}
+            self.set_markets_calls = []
 
         async def load_markets(self, reload=False):
             pass
 
+        def set_markets(self, markets):
+            self.set_markets_calls.append(markets)
+
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_connector, 'client', new=MockCCXT()):
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt:
         await ccxt_connector.initialize_impl()
         assert ccxt_connector.symbols == set()
         assert ccxt_connector.time_frames == set()
+        assert mocked_ccxt.set_markets_calls in ([[]], [])  # depends on call order
 
 
 async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector):
@@ -62,17 +69,23 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector)
         def __init__(self):
             self.symbols = []
             self.timeframes = []
+            self.markets = {}
+            self.set_markets_calls = []
 
         async def load_markets(self, reload=False):
             pass
 
+        def set_markets(self, markets):
+            self.set_markets_calls.append(markets)
+
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_connector, 'client', new=MockCCXT()):
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt:
         await ccxt_connector.initialize_impl()
         assert ccxt_connector.symbols == set()
         assert ccxt_connector.time_frames == set()
+        assert mocked_ccxt.set_markets_calls in ([[]], [])  # depends on call order
 
 
 async def test_initialize_impl(ccxt_connector):
@@ -91,14 +104,19 @@ async def test_initialize_impl(ccxt_connector):
                 "4h",
                 "2h"
             ]
+            self.markets = {}
+            self.set_markets_calls = []
 
         async def load_markets(self, reload=False):
             pass
 
+        def set_markets(self, markets):
+            self.set_markets_calls.append(markets)
+
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_connector, 'client', new=MockCCXT()):
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt:
         await ccxt_connector.initialize_impl()
         assert ccxt_connector.symbols == {
             "BTC/USDT",
@@ -110,6 +128,7 @@ async def test_initialize_impl(ccxt_connector):
             "2h",
             "4h",
         }
+        assert mocked_ccxt.set_markets_calls in ([[]], [])  # depends on call order
 
 
 async def test_set_symbol_partial_take_profit_stop_loss(ccxt_connector):
@@ -153,9 +172,13 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     # future trading
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
 
-    await fut_ccxt_exchange.load_symbol_markets(
-        forced_markets=mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(fut_exchange_manager_inst.exchange_name, None)
-    )
+    if forced_markets := mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(
+        fut_exchange_manager_inst.exchange_name, None
+    ):
+        ccxt_clients_cache.set_exchange_parsed_markets(
+            fut_exchange_manager_inst.exchange_name, forced_markets
+        )
+    await fut_ccxt_exchange.load_symbol_markets()
     # enforce taker and maker values
     set_future_exchange_fees(fut_ccxt_exchange, future_symbol, taker=future_fees_value, maker=future_fees_value)
     assert future_fees_value / 5 <= fut_ccxt_exchange.client.markets[future_symbol]['taker'] <= future_fees_value * 5

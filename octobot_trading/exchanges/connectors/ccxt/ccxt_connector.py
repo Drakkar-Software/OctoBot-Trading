@@ -92,7 +92,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 await self._ensure_auth()
 
             with self.error_describer():
-                await self.load_symbol_markets(forced_markets=self.exchange_manager.forced_markets)
+                await self.load_symbol_markets(reload=not self.exchange_manager.use_cached_markets)
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
@@ -111,30 +111,21 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
-    async def load_symbol_markets(self, reload=False, forced_markets=None):
-        if forced_markets is not None:
-            if forced_markets:
-                # only set markets if there are markets to be set
-                ccxt_client_util.set_markets_from_forced_markets(self.client, forced_markets)
-        else:
+    async def load_symbol_markets(self, reload=False):
+        load_markets = reload
+        if not load_markets:
+            try:
+                ccxt_client_util.load_markets_from_cache(self.client)
+            except KeyError:
+                load_markets = True
+        if load_markets:
             try:
                 await self.client.load_markets(reload=reload)
+                ccxt_client_util.set_markets_cache(self.client)
             except ccxt.ExchangeNotAvailable as err:
                 raise octobot_trading.errors.FailedRequest(
                     f"Failed to get_symbol_prices: {err.__class__.__name__} on {err}"
                 ) from err
-
-    def update_symbol_details(self, symbol_details: symbol_details_import.SymbolDetails, symbol: str) -> str:
-        """
-        Update the given symbol_details with connector symbol details
-        :return: the symbol id
-        """
-        market = self.client.markets[symbol]
-        if self.supports_markets_as_raw_info():
-            symbol_details.ccxt.info = market[enums.ExchangeConstantsMarketStatusColumns.INFO.value]
-        else:
-            symbol_details.ccxt.parsed = market
-        return market[enums.ExchangeConstantsMarketStatusColumns.ID.value]
 
     def get_client_symbols(self):
         return ccxt_client_util.get_symbols(self.client)
@@ -770,8 +761,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # 15 pairs, each on 3 time frames
         return 45
 
-    def supports_markets_as_raw_info(self) -> bool:
-        return ccxt_client_util.supports_markets_as_raw_info(self.client)
+    # def supports_markets_as_raw_info(self) -> bool:
+    #     return ccxt_client_util.supports_markets_as_raw_info(self.client)
 
     def log_ddos_error(self, error):
         self.logger.error(

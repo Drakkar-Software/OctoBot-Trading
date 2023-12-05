@@ -15,11 +15,13 @@
 #  License along with this library.
 import contextlib
 
+import ccxt.async_support
 from ccxt import Exchange
 
 import octobot_commons.constants as constants
 import octobot_commons.enums as commons_enums
 import octobot_trading.enums as trading_enums
+import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 from octobot_trading.enums import ExchangeConstantsTickersColumns as Ectc, \
     ExchangeConstantsMarketStatusColumns as Ecmsc
 from tests_additional.real_exchanges import get_exchange_manager
@@ -120,9 +122,15 @@ class RealExchangeTester:
         # return 2 different market status with different traded pairs to reduce possible
         # side effects using only one pair.
         async with self.get_exchange_manager() as exchange_manager:
+            self._ensure_market_status_cachability(exchange_manager)
             return exchange_manager.exchange.get_market_status(self.SYMBOL), \
                 exchange_manager.exchange.get_market_status(self.SYMBOL_2), \
                 exchange_manager.exchange.get_market_status(self.SYMBOL_3)
+
+    def _ensure_market_status_cachability(self, exchange_manager):
+        client_using_cached_markets = getattr(ccxt.async_support, self.EXCHANGE_NAME)()
+        ccxt_client_util.load_markets_from_cache(client_using_cached_markets)
+        assert exchange_manager.exchange.connector.client.markets == client_using_cached_markets.markets
 
     async def get_symbol_prices(self, limit=None, **kwargs):
         async with self.get_exchange_manager() as exchange_manager:

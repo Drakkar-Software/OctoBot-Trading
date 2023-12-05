@@ -13,15 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import ccxt.async_support
-import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
+import cachetools
+
+import octobot_commons.constants as commons_constants
 
 
-def parse_markets(exchange_name) -> dict:
-    client = getattr(ccxt.async_support, exchange_name)()
-    ccxt_client_util.load_markets_from_cache(client)
-    return client.markets
+_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=commons_constants.DAYS_TO_SECONDS*7)
 
 
-def get_fees(market_status) -> dict:
-    return ccxt_client_util.get_fees(market_status)
+def get_client_key(client) -> str:
+    return client.__class__.__name__
+
+
+def get_exchange_parsed_markets(exchange: str):
+    return _MARKETS_BY_EXCHANGE[exchange]
+
+
+def set_exchange_parsed_markets(exchange: str, markets):
+    _MARKETS_BY_EXCHANGE[exchange] = markets

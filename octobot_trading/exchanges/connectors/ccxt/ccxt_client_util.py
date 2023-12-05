@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
 import logging
 import ccxt
 import ccxt.pro as ccxt_pro
@@ -21,6 +22,7 @@ import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
+import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 import octobot_trading.exchanges.util.symbol_details as symbol_details
 
@@ -106,16 +108,17 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
     return None
 
 
-def set_markets_from_forced_markets(client, forced_markets: list[symbol_details.SymbolDetails]):
-    client.set_markets([
-        client.parse_market(market.ccxt.info) if supports_markets_as_raw_info(client) else market.ccxt.parsed
-        for market in forced_markets
-        if market.ccxt.info or market.ccxt.parsed
-    ])
+def load_markets_from_cache(client):
+    client.set_markets(
+        ccxt_clients_cache.get_exchange_parsed_markets(ccxt_clients_cache.get_client_key(client))
+    )
 
 
-def supports_markets_as_raw_info(client):
-    return hasattr(client, "parse_market")
+def set_markets_cache(client):
+    if client.markets:
+        ccxt_clients_cache.set_exchange_parsed_markets(
+            ccxt_clients_cache.get_client_key(client), copy.deepcopy(list(client.markets.values()))
+        )
 
 
 def get_ccxt_client_login_options(exchange_manager):

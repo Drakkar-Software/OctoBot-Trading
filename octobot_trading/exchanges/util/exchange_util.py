@@ -206,7 +206,7 @@ def get_enabled_exchanges(config):
 @contextlib.asynccontextmanager
 async def get_local_exchange_manager(
     exchange_name: str, exchange_config: dict, tentacles_setup_config,
-    is_sandboxed: bool, ignore_config=False, builder=None, forced_markets=None,
+    is_sandboxed: bool, ignore_config=False, builder=None, use_cached_markets=True,
 ):
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
     builder = builder or exchange_builder.ExchangeBuilder(
@@ -219,7 +219,7 @@ async def get_local_exchange_manager(
         .is_using_exchange_type(exchange_type) \
         .is_exchange_only() \
         .is_rest_only() \
-        .has_forced_markets(forced_markets) \
+        .use_cached_markets(use_cached_markets) \
         .is_ignoring_config(ignore_config) \
         .disable_trading_mode() \
         .build()
@@ -241,7 +241,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     :return: (True if compatible, True if successful login, error explanation if any)
     """
     async with get_local_exchange_manager(
-        exchange_name, exchange_config, tentacles_setup_config, is_sandboxed, ignore_config=False, forced_markets=[]
+        exchange_name, exchange_config, tentacles_setup_config, is_sandboxed, ignore_config=False
     ) as local_exchange_manager:
         backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
         try:
