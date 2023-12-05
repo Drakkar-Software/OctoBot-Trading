@@ -47,6 +47,7 @@ async def _get_tools():
     # use backtesting not to spam exchanges apis
     exchange_manager.is_simulated = True
     exchange_manager.is_backtesting = True
+    exchange_manager.use_cached_markets = False
     exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [], False)
 
     await exchange_manager.initialize()

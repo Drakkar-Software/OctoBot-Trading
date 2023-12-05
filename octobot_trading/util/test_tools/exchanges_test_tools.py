@@ -75,16 +75,10 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
     await asyncio_tools.wait_asyncio_next_cycle()
 
 
-def update_symbol_market(exchange_manager, market_details: exchange_data_import.MarketDetails):
-    market_details.id = exchange_manager.exchange.connector.update_symbol_details(
-        market_details.details, market_details.symbol
-    )
-
-
 async def add_symbols_details(
         exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-        history_size=1, forced_markets=None, start_time=0, end_time=0, close_price_only=False,
-        include_symbol_markets=True, include_latest_candle=True
+        history_size=1, start_time=0, end_time=0, close_price_only=False,
+        include_latest_candle=True, reload_markets=False
 ) -> exchange_data_import.ExchangeData:
     parsed_tf = common_enums.TimeFrames(time_frame)
 
@@ -110,13 +104,16 @@ async def add_symbols_details(
             volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if not close_price_only else [],
             time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
         )
-        if not close_price_only and include_symbol_markets:
-            update_symbol_market(exchange_manager, details)
         exchange_data.markets.append(details)
 
-    await exchange_manager.exchange.connector.load_symbol_markets(forced_markets=forced_markets)
+    await ensure_symbol_markets(exchange_manager, reload=reload_markets)
     await asyncio.gather(*(_update_ohlcv(symbol) for symbol in symbols))
     return exchange_data
+
+
+async def ensure_symbol_markets(exchange_manager, reload=False):
+    #todo call in backtesting
+    await exchange_manager.exchange.connector.load_symbol_markets(reload=reload)
 
 
 async def get_portfolio(exchange_manager, as_float=False) -> dict:
