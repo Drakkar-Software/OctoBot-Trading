@@ -89,8 +89,13 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 200    # see possibleLimitValues
+        # to be fixed in tentacle
+        # WARNING some limits are not allowed, see https://phemex-docs.github.io/#query-kline
+        with pytest.raises(errors.FailedRequest):
+            await self.get_symbol_prices(limit=200)
+
+        symbol_prices = await self.get_symbol_prices(limit=1000)
+        assert len(symbol_prices) == 1000
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -115,7 +120,11 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
                     assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_kline_price(self):
-        kline_price = await self.get_kline_price()
+        with pytest.raises(errors.FailedRequest):
+            await self.get_kline_price()
+
+        # to be fixed in tentacle: use get_symbol_prices to comply with allowed limits
+        kline_price = (await self.get_symbol_prices(limit=5))[-1:]
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
         kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]

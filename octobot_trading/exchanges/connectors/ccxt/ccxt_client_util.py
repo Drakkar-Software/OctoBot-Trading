@@ -24,7 +24,6 @@ import octobot_trading.enums as enums
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import octobot_trading.exchanges.util.exchange_util as exchange_util
-import octobot_trading.exchanges.util.symbol_details as symbol_details
 
 
 def create_client(exchange_class, exchange_manager, logger,

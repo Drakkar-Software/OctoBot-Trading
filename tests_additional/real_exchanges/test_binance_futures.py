@@ -37,25 +37,6 @@ class TestBinanceFuturesRealExchangeTester(RealFuturesExchangeTester):
     SYMBOL_2 = "BTC/USD:BTC"
     SYMBOL_3 = "XRP/USD:XRP"
 
-    @contextlib.asynccontextmanager
-    async def get_exchange_manager(self):
-        # allows to fetch both linear and inverse markets
-        # (same as having bot ccxt binanceusdm and binancecoinm
-        # to add in tentacles
-        additional_config = {
-            ccxt_constants.CCXT_OPTIONS: {
-                'fetchMarkets': [
-                    'linear',
-                    'inverse',
-                ],
-            }
-        }
-        with mock.patch.object(
-            exchanges.RestExchange, "get_additional_connector_config", mock.Mock(return_value=additional_config)
-        ):
-            async with super().get_exchange_manager() as exchange_manager:
-                yield exchange_manager
-
     async def test_time_frames(self):
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (

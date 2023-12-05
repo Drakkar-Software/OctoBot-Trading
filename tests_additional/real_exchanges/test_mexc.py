@@ -83,7 +83,7 @@ class TestMEXCRealExchangeTester(RealExchangeTester):
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-    async def test_get_historical_symbol_prices(self):  #todo
+    async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
         for limit in (50, None):
             symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
@@ -97,10 +97,7 @@ class TestMEXCRealExchangeTester(RealExchangeTester):
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
-                with pytest.raises(AssertionError):
-                    # candles are not respecting the since + limit param (candles are too early)
-                    assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()

@@ -86,10 +86,10 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "bingx",
     "hollaex",
     "huobi",
-    "huobipro",
     "kucoin",
     "okcoin",
     "okx",
+    "mexc",
 ]
 
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
