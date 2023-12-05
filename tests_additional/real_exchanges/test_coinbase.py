@@ -74,28 +74,48 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 5
+        assert len(symbol_prices) == 300
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
-        # max value is 299
-        with pytest.raises(octobot_trading.errors.FailedRequest):
-            await self.get_symbol_prices(**self._get_ohlcv_params(300))
-        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(299))
-        assert len(symbol_prices) == 299
+        # max value is 300, larger value fetch candles from the past
+        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(500))
+        assert len(symbol_prices) == 300
+        # ensure data from the past
+        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] < self.get_time() - self.get_allowed_time_delta()
+
+        # ensure data within limit value
+        symbol_prices = await self.get_symbol_prices(**self._get_ohlcv_params(300))
+        assert len(symbol_prices) == 300
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_historical_symbol_prices(self):
+        # not supported because of limit param not supported properly
         # try with since and limit (used in data collector)
         for limit in (50, None):
-            with pytest.raises(octobot_trading.errors.FailedRequest):
-                await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)    # not supported
+            symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
+            if limit:
+                assert len(symbol_prices) == limit
+            else:
+                assert len(symbol_prices) > 5
+            # check candles order (oldest first)
+            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            # check that fetched candles are historical candles
+            max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
+            assert max_candle_time <= self.get_time()
+            for candle in symbol_prices:
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                if limit is None:
+                    assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                else:
+                    # invalid (limit param breaks it)
+                    assert candle[PriceIndexes.IND_PRICE_TIME.value] > max_candle_time
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()

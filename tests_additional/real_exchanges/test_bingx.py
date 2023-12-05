@@ -33,6 +33,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "SHIB/USDT"
+    CANDLE_SINCE = 1672534800000  # Sunday 1 January 2023 01:00:00  (large differences not supported)
 
     async def _test_time_frames(self):
         time_frames = await self.time_frames()
@@ -75,7 +76,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 50
+        assert len(symbol_prices) == 500
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -91,6 +92,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_historical_symbol_prices(self):
+        # Not supported (since param not respected)
         # try with since and limit (used in data collector)
         for limit in (50, None):
             symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
@@ -104,7 +106,10 @@ class TestBingxRealExchangeTester(RealExchangeTester):
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+
+                # invalid (since param not respected)
+                assert candle[PriceIndexes.IND_PRICE_TIME.value] > max_candle_time
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
@@ -128,14 +133,10 @@ class TestBingxRealExchangeTester(RealExchangeTester):
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
     async def test_get_price_ticker(self):
-        # get_price_ticker is not support on spot market :
-        # to be fixed in this exchange tentacle using create_ticker_from_kline
-        with pytest.raises(octobot_trading.errors.FailedRequest):
-            ticker = await self.get_price_ticker()
-            # self._check_ticker(ticker, self.SYMBOL, check_content=True)
+        ticker = await self.get_price_ticker()
+        self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        # warning: fetches swap tickers
         tickers = await self.get_all_currencies_price_ticker()
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
@@ -165,7 +166,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
-            assert ticker[Ectc.PREVIOUS_CLOSE.value]
+            assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
             assert ticker[Ectc.TIMESTAMP.value]
             RealExchangeTester.check_ticker_typing(ticker)

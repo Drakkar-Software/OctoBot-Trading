@@ -144,10 +144,9 @@ class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        with pytest.raises(errors.NotSupported):
-            tickers = await self.get_all_currencies_price_ticker()
-            for symbol, ticker in tickers.items():
-                self._check_ticker(ticker, symbol)
+        tickers = await self.get_all_currencies_price_ticker()
+        for symbol, ticker in tickers.items():
+            self._check_ticker(ticker, symbol)
 
     async def test_get_funding_rate(self):
         funding_rate, ticker_funding_rate = await self.get_funding_rate()

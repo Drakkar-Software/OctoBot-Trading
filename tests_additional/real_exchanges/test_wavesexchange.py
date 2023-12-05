@@ -74,10 +74,7 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
             # todo set RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True in exchange tentacle
             exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True
             # without limit
-            # broken because last X candles have None prices (raising TypeError)
-            with pytest.raises(errors.UnexpectedAdapterError):
-                symbol_prices = await self.get_symbol_prices()
-            return
+            symbol_prices = await self.get_symbol_prices()
             assert len(symbol_prices) == 1440 - 1 or len(symbol_prices) == 1440  # last candle might be removed
             # check candles order (oldest first)
             self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)

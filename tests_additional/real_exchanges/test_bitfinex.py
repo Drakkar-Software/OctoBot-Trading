@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-
+import time
 import pytest
 
 from octobot_commons.enums import TimeFrames, PriceIndexes
@@ -34,11 +34,10 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USD"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
-    DEFAULT_CANDLE_LIMIT = 100
+    DEFAULT_CANDLE_LIMIT = 500
     SLEEP_TIME = 10
 
     async def test_time_frames(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (
             TimeFrames.ONE_MINUTE.value,
@@ -55,7 +54,6 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_get_market_status(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         for market_status in await self.get_market_statuses():
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
@@ -79,20 +77,20 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
                                             )
 
     async def test_get_symbol_prices(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         # without limit
-        symbol_prices = await self.get_symbol_prices()
-        # no idea why 4 candles less than asked for but it seems to be a bitfinex issue
-        candle_limit_error = 4
-        assert self.DEFAULT_CANDLE_LIMIT >= len(symbol_prices) >= self.DEFAULT_CANDLE_LIMIT - candle_limit_error
+        # since is required not to fetch 2014 candle, to be fixed in tentacle
+        since = self.get_timeframe_ms_delta(self.DEFAULT_CANDLE_LIMIT)
+        symbol_prices = await self.get_symbol_prices(since=since, limit=self.DEFAULT_CANDLE_LIMIT)
+        assert self.DEFAULT_CANDLE_LIMIT == len(symbol_prices)
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=200)
-        assert 200 >= len(symbol_prices) >= 200 - candle_limit_error
+        since = self.get_timeframe_ms_delta(200)
+        symbol_prices = await self.get_symbol_prices(since=since, limit=200)
+        assert 200 == len(symbol_prices)
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -111,12 +109,23 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
             # check that fetched candles are historical candles
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
+            # issue: some candles are missing (fetching 10k candles), allow for delta in max time
+            allowed_delta = len(symbol_prices) // 1000 * self.get_timeframe_seconds()
+            max_candle_time += allowed_delta
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_kline_price(self):
         # await asyncio.sleep(10) # prevent rate api limit
         kline_price = await self.get_kline_price()
+        kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
+        assert kline_start_time < 1364970800  # 3 April 2013 06:33:20
+
+        # to be fixed in tentacle: fetch kline from get_symbol_prices
+        since = self.get_timeframe_ms_delta(1)
+        kline_price = (await self.get_symbol_prices(since=since, limit=1))[-1:]
+
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
         kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
@@ -124,7 +133,6 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         # bitfinex2 only supports 1, 25 and 100 size
         # https://docs.bitfinex.com/reference#rest-public-book
         order_book = await self.get_order_book(limit=25)
@@ -134,19 +142,16 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         recent_trades = await self.get_recent_trades()
-        assert len(recent_trades) == 50  # broken after ccxt 2.4.60 (trade symbol parsing issue), still the case in 2.8.4
+        assert len(recent_trades) == 50
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
     async def test_get_price_ticker(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         ticker = await self.get_price_ticker()
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         tickers = await self.get_all_currencies_price_ticker()
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
@@ -170,9 +175,9 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.HIGH.value]
             assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value]
-            assert ticker[Ectc.BID_VOLUME.value] is None
+            assert ticker[Ectc.BID_VOLUME.value]
             assert ticker[Ectc.ASK.value]
-            assert ticker[Ectc.ASK_VOLUME.value] is None
+            assert ticker[Ectc.ASK_VOLUME.value]
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
@@ -180,4 +185,4 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.BASE_VOLUME.value]
             assert ticker[Ectc.TIMESTAMP.value]
             # open is None on this exchange
-            RealExchangeTester.check_ticker_typing(ticker, check_open=False)
+            RealExchangeTester.check_ticker_typing(ticker)

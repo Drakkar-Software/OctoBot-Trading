@@ -176,6 +176,9 @@ class RealExchangeTester:
     def get_time_after_time_frames(self, start, time_frames_count):
         return start + self.get_timeframe_seconds() * time_frames_count
 
+    def get_timeframe_ms_delta(self, time_frames_count):
+        return self.get_ms_time() - (self.get_timeframe_seconds() * time_frames_count * constants.MSECONDS_TO_SECONDS)
+
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
         assert sorted(elements, key=lambda x: x[sort_key], reverse=reverse) == elements
