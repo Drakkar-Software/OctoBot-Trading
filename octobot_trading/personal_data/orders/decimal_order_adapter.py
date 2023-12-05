@@ -117,7 +117,7 @@ def decimal_adapt_order_quantity_because_fees(
         computed_fee = exchange_manager.exchange.get_trade_fee(
             symbol, order_type, quantity, price, taker_or_maker.value
         )
-        base, quote = commons_symbols.parse_symbol(symbol).base_and_quote()
+        quote = commons_symbols.parse_symbol(symbol).quote
         # if fee paid in quote, ensure enough remaining quote asset in available portfolio
         if currency_fee := personal_data.get_fees_for_currency(computed_fee, quote):
             fees_in_base = currency_fee / price if price else constants.ZERO
