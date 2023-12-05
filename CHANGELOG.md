@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.43] - 2023-12-06
+### Added
+- [Exchanges] Market status cache
+- [Orders] decimal_adapt_order_quantity_because_fees
+### Updated
+- [CCXT] 4.1.77
+
 ## [2.4.42] - 2023-11-17
 ### Added
 - [Portfolio] parse_decimal_portfolio: as_decimal param
