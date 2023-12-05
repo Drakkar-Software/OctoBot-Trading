@@ -20,7 +20,6 @@ import octobot_commons.constants as commons_constants
 import octobot_trading.errors as errors
 import octobot_trading.modes as modes
 import octobot_trading.exchanges as exchanges
-import octobot_trading.exchanges.util.symbol_details as symbol_details
 import octobot_trading.constants as constants
 import octobot_trading.util as util
 

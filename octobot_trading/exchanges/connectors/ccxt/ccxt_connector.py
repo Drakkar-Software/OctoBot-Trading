@@ -29,7 +29,6 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
-import octobot_trading.exchanges.util.symbol_details as symbol_details_import
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
@@ -334,8 +333,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                         await self.client.fetch_order(exchange_order_id, symbol, params=kwargs),
                         symbol=symbol
                     )
-            except ccxt.OrderNotFound:
-                # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
+            except (ccxt.OrderNotFound, ccxt.InvalidOrder):
+                # some exchanges are throwing this error when an order
+                #   - is cancelled (ex: coinbase pro): ccxt.OrderNotFound
+                #   - or not yet created (ex: kucoin): ccxt.InvalidOrder
                 pass
             except ccxt.NotSupported as e:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
