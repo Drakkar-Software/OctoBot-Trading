@@ -389,7 +389,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         return order_type not in self.get_supported_elements(enums.ExchangeSupportedElements.UNSUPPORTED_ORDERS)
 
-    def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
+    def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
         """
         Calculates fees resulting to a trade
         :param symbol: the symbol
