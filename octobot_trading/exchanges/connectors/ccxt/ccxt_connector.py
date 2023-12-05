@@ -124,8 +124,30 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 ccxt_client_util.set_markets_cache(self.client)
             except ccxt.ExchangeNotAvailable as err:
                 raise octobot_trading.errors.FailedRequest(
-                    f"Failed to get_symbol_prices: {err.__class__.__name__} on {err}"
+                    f"Failed to load_symbol_markets: {err.__class__.__name__} on {err}"
                 ) from err
+            except ccxt.AuthenticationError:
+                if not self.force_authentication:
+                    self.logger.debug(
+                        f"Credentials check enabled when fetching exchange market status, trying with "
+                        f"unauthenticated client."
+                    )
+                    # auth invalid but not required: fetch markets from another client
+                    unauth_client = None
+                    try:
+                        unauth_client = self._client_factory(True)[0]
+                        await unauth_client.load_markets(reload=reload)
+                        ccxt_client_util.set_markets_cache(unauth_client)
+                        # apply markets to target client
+                        ccxt_client_util.load_markets_from_cache(self.client)
+                        self.logger.debug(
+                            f"Fetched exchange market status from unauthenticated client."
+                        )
+                    finally:
+                        if unauth_client:
+                            await unauth_client.close()
+                else:
+                    raise
 
     def get_client_symbols(self):
         return ccxt_client_util.get_symbols(self.client)
@@ -171,11 +193,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             # Is probably handled in exchange tentacles, important thing here is that authentication worked
             self.logger.debug(f"Error when checking exchange connection: {e}. This should not be an issue.")
 
-    def _create_client(self):
-        self.client, self.is_authenticated = ccxt_client_util.create_client(
+    def _create_client(self, force_unauth=False):
+        self.client, self.is_authenticated = self._client_factory(force_unauth)
+
+    def _client_factory(self, force_unauth) -> tuple:
+        return ccxt_client_util.create_client(
             self.exchange_type, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
-            self._should_authenticate(), self.unauthenticated_exchange_fallback
+            False if force_unauth else self._should_authenticate(), self.unauthenticated_exchange_fallback
         )
 
     def _should_authenticate(self):
