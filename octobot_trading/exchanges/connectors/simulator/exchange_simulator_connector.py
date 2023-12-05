@@ -221,18 +221,17 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     #     'cost': feePaid, // the fee cost (amount * fee rate)
     #     'is_from_exchange': False, // simulated fees
     # }
-    def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
+    def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
         if not taker_or_maker:
             taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+        fee_currency = self._get_fees_currency(base, quote, order_type)
+
         symbol_fees = self.get_fees(symbol)
         rate = symbol_fees[taker_or_maker]
-        currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
-        fee_currency = currency
         cost = quantity * decimal.Decimal(str(rate))
-
-        if util.get_order_side(order_type) == enums.TradeOrderSide.SELL.value:
+        if fee_currency == quote:
             cost = cost * price
-            fee_currency = market
 
         return {
             enums.FeePropertyColumns.TYPE.value: taker_or_maker,
@@ -241,6 +240,11 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
             enums.FeePropertyColumns.COST.value: cost,
             enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
         }
+
+    def _get_fees_currency(self, base, quote, order_type: enums.TraderOrderType):
+        if util.get_order_side(order_type) is enums.TradeOrderSide.SELL.value:
+            return quote
+        return base
 
     def get_time_frames(self, importer):
         return time_frame_manager.sort_time_frames(list(set(backtesting_api.get_available_time_frames(importer)) &

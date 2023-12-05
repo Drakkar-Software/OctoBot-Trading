@@ -16,8 +16,11 @@
 import math
 import decimal
 
+import octobot_commons.symbols as commons_symbols
+
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
@@ -102,6 +105,29 @@ def decimal_adapt_order_quantity_because_price(limiting_value, max_value, price,
     valid_other_orders_quantity = decimal_adapt_quantity(symbol_market, other_orders_quantity)
     orders += [(valid_other_orders_quantity, price)] * int(nb_full_orders)
     return orders
+
+
+def decimal_adapt_order_quantity_because_fees(
+    exchange_manager, symbol: str, order_type: enums.TraderOrderType, quantity: decimal.Decimal, price: decimal.Decimal,
+    taker_or_maker: enums.ExchangeConstantsMarketPropertyColumns, side: enums.TradeOrderSide,
+    quote_available_funds: decimal.Decimal
+) -> decimal.Decimal:
+    if side == enums.TradeOrderSide.BUY:
+        # only buy orders are affected
+        computed_fee = exchange_manager.exchange.get_trade_fee(
+            symbol, order_type, quantity, price, taker_or_maker.value
+        )
+        base, quote = commons_symbols.parse_symbol(symbol).base_and_quote()
+        # if fee paid in quote, ensure enough remaining quote asset in available portfolio
+        if currency_fee := personal_data.get_fees_for_currency(computed_fee, quote):
+            fees_in_base = currency_fee / price if price else constants.ZERO
+            base_quantity_from_quote = quote_available_funds / price
+            required_base_fees = fees_in_base * 2  # use 2x the fees to be sure exchanges won't refuse it
+            total_required_quote_quantity = (required_base_fees + quantity) * price
+            if quote_available_funds < total_required_quote_quantity:
+                # use maximum quantity considering fees
+                quantity = max(base_quantity_from_quote - required_base_fees, constants.ZERO)
+    return quantity
 
 
 def decimal_split_orders(total_order_price, max_cost, valid_quantity, max_quantity, price, quantity, symbol_market):

@@ -14,12 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import math
+import mock
 import pytest
 import decimal
 
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -518,3 +520,82 @@ async def test_decimal_trunc_with_n_decimal_digits():
            decimal.Decimal('0.1111111')
 
     assert math.isnan(personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(math.nan), 12))
+
+
+async def test_decimal_adapt_order_quantity_because_fees():
+    fees = {
+        enums.FeePropertyColumns.TYPE.value: enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
+        enums.FeePropertyColumns.CURRENCY.value: "BTC",
+        enums.FeePropertyColumns.RATE.value: 0.001,
+        enums.FeePropertyColumns.COST.value: decimal.Decimal("0.000001"),
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
+    }
+    def _get_trade_fee(symbol: str, order_type, quantity, price, taker_or_maker):
+        return fees
+
+    exchange_manager = mock.Mock(
+        exchange=mock.Mock(
+            get_trade_fee=mock.Mock(side_effect=_get_trade_fee)
+        )
+    )
+    symbol = "BTC/USDT"
+
+    origin_quantity = decimal.Decimal("1")
+    price = decimal.Decimal("30000")
+    taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER
+    quote_available_funds = decimal.Decimal("40000")
+
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.SELL, quote_available_funds
+    )
+    # sell: no effect
+    assert adapted is origin_quantity
+
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
+    )
+    # buy but fees in BTC, quantity unchanged
+    assert adapted is origin_quantity
+
+    fees[enums.FeePropertyColumns.CURRENCY.value] = "USDT"
+    fees[enums.FeePropertyColumns.COST.value] = 40
+
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.SELL, quote_available_funds
+    )
+    # sell: no still effect
+    assert adapted is origin_quantity
+
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
+    )
+    # buy and fees in USDT but enough in quote_available_funds, quantity kept
+    assert adapted is origin_quantity
+
+    quote_available_funds = origin_quantity * price
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
+    )
+    # buy and fees in USDT and not enough in quote_available_funds, quantity updated
+    assert adapted == origin_quantity - 2 * fees[enums.FeePropertyColumns.COST.value] / price
+
+    quote_available_funds = decimal.Decimal(100)
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
+    )
+    # buy and fees in USDT and not enough in quote_available_funds, quantity greatly reduced
+    assert adapted == decimal.Decimal(100) / price - 2 * (fees[enums.FeePropertyColumns.COST.value] / price)
+
+    quote_available_funds = decimal.Decimal(10)
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
+    )
+    # buy and fees in USDT and not enough in quote_available_funds to pay fees, quantity set to 0
+    assert adapted == constants.ZERO
