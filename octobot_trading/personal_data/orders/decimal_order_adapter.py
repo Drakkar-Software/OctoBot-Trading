@@ -120,7 +120,7 @@ def decimal_adapt_order_quantity_because_fees(
         quote = commons_symbols.parse_symbol(symbol).quote
         # if fee paid in quote, ensure enough remaining quote asset in available portfolio
         if currency_fee := personal_data.get_fees_for_currency(computed_fee, quote):
-            fees_in_base = currency_fee / price if price else constants.ZERO
+            fees_in_base = (currency_fee / price) if price else constants.ZERO
             base_quantity_from_quote = quote_available_funds / price
             required_base_fees = fees_in_base * 2  # use 2x the fees to be sure exchanges won't refuse it
             total_required_quote_quantity = (required_base_fees + quantity) * price
