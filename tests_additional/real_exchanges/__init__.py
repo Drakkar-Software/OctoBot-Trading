@@ -30,7 +30,7 @@ LOADED_EXCHANGE_CREDS_ENV_VARIABLES = False
 
 
 @contextlib.asynccontextmanager
-async def get_exchange_manager(exchange_name, config=None, authenticated=False):
+async def get_exchange_manager(exchange_name, config=None, authenticated=False, market_filter=None):
     config = {**test_config.load_test_config(), **config} if config else test_config.load_test_config()
     if exchange_name not in config[commons_constants.CONFIG_EXCHANGES]:
         config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {}
@@ -39,6 +39,7 @@ async def get_exchange_manager(exchange_name, config=None, authenticated=False):
             exchange_name
         ))
     exchange_manager_instance = exchanges.ExchangeManager(config, exchange_name)
+    exchange_manager_instance.market_filter = market_filter
     if config[commons_constants.CONFIG_EXCHANGES][exchange_name]. \
        get(commons_constants.CONFIG_EXCHANGE_TYPE, enums.ExchangeTypes.SPOT.value) == enums.ExchangeTypes.FUTURE.value:
         exchange_manager_instance.is_future = True

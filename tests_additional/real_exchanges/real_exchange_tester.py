@@ -40,6 +40,7 @@ class RealExchangeTester:
     CANDLE_SINCE = 1661990400000  # 1 September 2022 00:00:00
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
     REQUIRES_AUTH = False  # set True when even normally public apis require authentication
+    MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.SPOT.value
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -109,9 +110,11 @@ class RealExchangeTester:
         }
     
     @contextlib.asynccontextmanager
-    async def get_exchange_manager(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME, config=self.get_config(),
-                                        authenticated=self.REQUIRES_AUTH) as exchange_manager:
+    async def get_exchange_manager(self, market_filter=None):
+        async with get_exchange_manager(
+            self.EXCHANGE_NAME, config=self.get_config(),
+            authenticated=self.REQUIRES_AUTH, market_filter=market_filter
+        ) as exchange_manager:
             yield exchange_manager
 
     async def time_frames(self):
@@ -153,9 +156,18 @@ class RealExchangeTester:
         async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_price_ticker(self.SYMBOL)
 
-    async def get_all_currencies_price_ticker(self, **kwargs):
-        async with self.get_exchange_manager() as exchange_manager:
+    async def get_all_currencies_price_ticker(self, market_filter=None, **kwargs):
+        async with self.get_exchange_manager(market_filter=market_filter) as exchange_manager:
             return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
+
+    def get_market_filter(self):
+        def market_filter(market):
+            return (
+                market[trading_enums.ExchangeConstantsMarketStatusColumns.SYMBOL.value]
+                in (self.SYMBOL, self.SYMBOL_2)
+            )
+
+        return market_filter
 
     def get_allowed_time_delta(self):
         return (self.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1) * \

@@ -207,6 +207,7 @@ def get_enabled_exchanges(config):
 async def get_local_exchange_manager(
     exchange_name: str, exchange_config: dict, tentacles_setup_config,
     is_sandboxed: bool, ignore_config=False, builder=None, use_cached_markets=True,
+    market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
 ):
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
     builder = builder or exchange_builder.ExchangeBuilder(
@@ -220,6 +221,7 @@ async def get_local_exchange_manager(
         .is_exchange_only() \
         .is_rest_only() \
         .use_cached_markets(use_cached_markets) \
+        .use_market_filter(market_filter) \
         .is_ignoring_config(ignore_config) \
         .disable_trading_mode() \
         .build()

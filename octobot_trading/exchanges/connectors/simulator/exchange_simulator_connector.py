@@ -71,8 +71,11 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
 
     def _init_forced_market_statuses(self):
+        def market_filter(market):
+            return market[enums.ExchangeConstantsMarketStatusColumns.SYMBOL.value] in self.symbols
+
         self._forced_market_statuses = ccxt_client_simulation.parse_markets(
-            self.exchange_manager.exchange_class_string
+            self.exchange_manager.exchange_class_string, market_filter
         )
 
     def should_adapt_market_statuses(self) -> bool:

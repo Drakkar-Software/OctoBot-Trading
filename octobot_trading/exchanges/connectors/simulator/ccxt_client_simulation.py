@@ -17,9 +17,9 @@ import ccxt.async_support
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 
 
-def parse_markets(exchange_name) -> dict:
+def parse_markets(exchange_name, market_filter) -> dict:
     client = getattr(ccxt.async_support, exchange_name)()
-    ccxt_client_util.load_markets_from_cache(client)
+    ccxt_client_util.load_markets_from_cache(client, market_filter)
     return client.markets
 
 

@@ -249,7 +249,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             # can be raised when exchange precision/limits rules change
             self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
-            await self.connector.load_symbol_markets(reload=True)
+            await self.connector.load_symbol_markets(reload=True, market_filter=self.exchange_manager.market_filter)
             # retry order creation with updated markets (ccxt will use the updated market values)
             return await self._create_specific_order(order_type, symbol, quantity, price=price, 
                                                      stop_price=stop_price, side=side,
