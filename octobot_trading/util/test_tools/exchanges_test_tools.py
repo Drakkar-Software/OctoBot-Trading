@@ -112,7 +112,6 @@ async def add_symbols_details(
 
 
 async def ensure_symbol_markets(exchange_manager, reload=False):
-    #todo call in backtesting
     await exchange_manager.exchange.connector.load_symbol_markets(reload=reload)
 
 
