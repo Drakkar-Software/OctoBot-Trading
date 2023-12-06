@@ -91,7 +91,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 await self._ensure_auth()
 
             with self.error_describer():
-                await self.load_symbol_markets(reload=not self.exchange_manager.use_cached_markets)
+                await self.load_symbol_markets(
+                    reload=not self.exchange_manager.use_cached_markets,
+                    market_filter=self.exchange_manager.market_filter,
+                )
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
@@ -110,11 +113,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
-    async def load_symbol_markets(self, reload=False):
+    async def load_symbol_markets(
+        self,
+        reload=False,
+        market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
+    ):
         load_markets = reload
         if not load_markets:
             try:
-                ccxt_client_util.load_markets_from_cache(self.client)
+                ccxt_client_util.load_markets_from_cache(self.client, market_filter=market_filter)
             except KeyError:
                 load_markets = True
         if load_markets:
@@ -138,7 +145,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                         await unauth_client.load_markets(reload=reload)
                         ccxt_client_util.set_markets_cache(unauth_client)
                         # apply markets to target client
-                        ccxt_client_util.load_markets_from_cache(self.client)
+                        ccxt_client_util.load_markets_from_cache(self.client, market_filter=market_filter)
                         self.logger.debug(
                             f"Fetched exchange market status from unauthenticated client."
                         )
@@ -702,6 +709,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def get_rate_limit(self):
         return self.exchange_type.rateLimit / 1000
 
+    def has_markets(self):
+        return bool(self.client.markets)
+
     def supports_trading_type(self, symbol, trading_type: enums.FutureContractType) -> bool:
         trading_type_to_ccxt_property = {
             enums.FutureContractType.LINEAR_PERPETUAL: "linear",
@@ -786,9 +796,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         """
         # 15 pairs, each on 3 time frames
         return 45
-
-    # def supports_markets_as_raw_info(self) -> bool:
-    #     return ccxt_client_util.supports_markets_as_raw_info(self.client)
 
     def log_ddos_error(self, error):
         self.logger.error(

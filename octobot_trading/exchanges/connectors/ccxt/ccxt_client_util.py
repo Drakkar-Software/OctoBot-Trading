@@ -15,6 +15,7 @@
 #  License along with this library.
 import copy
 import logging
+import typing
 import ccxt
 import ccxt.pro as ccxt_pro
 
@@ -107,9 +108,11 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
     return None
 
 
-def load_markets_from_cache(client):
+def load_markets_from_cache(client, market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None):
     client.set_markets(
-        ccxt_clients_cache.get_exchange_parsed_markets(ccxt_clients_cache.get_client_key(client))
+        market
+        for market in ccxt_clients_cache.get_exchange_parsed_markets(ccxt_clients_cache.get_client_key(client))
+        if market_filter is None or market_filter(market)
     )
 
 

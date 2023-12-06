@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
 import uuid
 
 import octobot_commons.configuration as configuration
@@ -48,6 +49,7 @@ class ExchangeManager(util.Initializable):
         self.rest_only: bool = False
         self.ignore_config: bool = False
         self.use_cached_markets: bool = True
+        self.market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
         self.is_spot_only: bool = False
         self.is_margin: bool = False
         self.is_future: bool = False

@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
 
@@ -219,6 +220,10 @@ class ExchangeBuilder:
 
     def use_cached_markets(self, use_cached_markets: bool):
         self.exchange_manager.use_cached_markets = use_cached_markets
+        return self
+
+    def use_market_filter(self, market_filter: typing.Union[None, typing.Callable[[dict], bool]]):
+        self.exchange_manager.market_filter = market_filter
         return self
 
     def is_ignoring_config(self, ignore_config=True):

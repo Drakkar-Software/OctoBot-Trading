@@ -54,6 +54,7 @@ class TestOkxRealExchangeTester(RealExchangeTester):
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             assert market_status
+            assert market_status[Ecmsc.TYPE.value] == self.MARKET_STATUS_TYPE
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
             assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
@@ -139,6 +140,20 @@ class TestOkxRealExchangeTester(RealExchangeTester):
 
     async def test_get_all_currencies_price_ticker(self):
         tickers = await self.get_all_currencies_price_ticker()
+        for symbol, ticker in tickers.items():
+            self._check_ticker(ticker, symbol)
+
+    async def test_get_all_currencies_price_ticker_with_market_filter(self):
+        tickers = await self.get_all_currencies_price_ticker(market_filter=self.get_market_filter())
+        assert len(tickers) > 2    # all tickers
+        assert self.SYMBOL in tickers
+        assert self.SYMBOL_2 in tickers
+        assert self.SYMBOL_3 in tickers  # symbol not correctly parsed as not in available markets (but luckily okx also uses the same syntax)
+        tickers = await self.get_all_currencies_price_ticker(
+            symbols=[self.SYMBOL, self.SYMBOL_2],
+            market_filter=self.get_market_filter()
+        )
+        assert list(tickers) == [self.SYMBOL, self.SYMBOL_2]    # ticker for self.SYMBOL, self.SYMBOL_2
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
 

@@ -16,6 +16,7 @@
 import asyncio
 import decimal
 import time
+import typing
 
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as common_enums
@@ -76,9 +77,10 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
 
 
 async def add_symbols_details(
-        exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
-        history_size=1, start_time=0, end_time=0, close_price_only=False,
-        include_latest_candle=True, reload_markets=False
+    exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
+    history_size=1, start_time=0, end_time=0, close_price_only=False,
+    include_latest_candle=True, reload_markets=False,
+    market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
 ) -> exchange_data_import.ExchangeData:
     parsed_tf = common_enums.TimeFrames(time_frame)
 
@@ -106,13 +108,18 @@ async def add_symbols_details(
         )
         exchange_data.markets.append(details)
 
-    await ensure_symbol_markets(exchange_manager, reload=reload_markets)
+    await ensure_symbol_markets(exchange_manager, reload=reload_markets, market_filter=market_filter)
     await asyncio.gather(*(_update_ohlcv(symbol) for symbol in symbols))
     return exchange_data
 
 
-async def ensure_symbol_markets(exchange_manager, reload=False):
-    await exchange_manager.exchange.connector.load_symbol_markets(reload=reload)
+async def ensure_symbol_markets(
+    exchange_manager,
+    reload=False,
+    market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
+):
+    if reload or not exchange_manager.exchange.connector.has_markets():
+        await exchange_manager.exchange.connector.load_symbol_markets(reload=reload, market_filter=market_filter)
 
 
 async def get_portfolio(exchange_manager, as_float=False) -> dict:

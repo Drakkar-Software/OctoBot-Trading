@@ -61,7 +61,7 @@ class MockedCCXTConnector(CCXTConnector):
     def get_name(cls):
         return DEFAULT_EXCHANGE_NAME
 
-    async def load_symbol_markets(self, reload=False):
+    async def load_symbol_markets(self, reload=False, market_filter=None):
         if forced_markets := mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(
             self.exchange_manager.exchange_name, None
         ):

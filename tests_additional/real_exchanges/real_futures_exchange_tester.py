@@ -22,6 +22,7 @@ from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTes
 
 class RealFuturesExchangeTester(RealExchangeTester):
     EXCHANGE_TYPE = enums.ExchangeTypes.FUTURE.value
+    MARKET_STATUS_TYPE = "swap"
 
     async def test_get_funding_rate(self):
         pass
