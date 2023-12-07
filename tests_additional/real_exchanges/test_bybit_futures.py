@@ -14,8 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import decimal
 
 from octobot_commons.enums import TimeFrames, PriceIndexes
+import octobot_commons.constants as commons_constants
+import octobot_trading.enums as enums
+import octobot_trading.constants as constants
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
+import octobot_trading.exchanges.connectors.ccxt.constants as ccxt_constants
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
@@ -149,11 +155,32 @@ class TestBybitRealExchangeTester(RealFuturesExchangeTester):
 
     async def test_get_funding_rate(self):
         funding_rate, ticker_funding_rate = await self.get_funding_rate()
-        # patch FUNDING_RATE and LAST_FUNDING_TIME in tentacle
-        self._check_funding_rate(funding_rate, has_rate=False, has_last_time=False)
+        # patch LAST_FUNDING_TIME in tentacle
+        self._check_funding_rate(funding_rate, has_last_time=False)
         # missing PREDICTED_FUNDING_RATE, find order info in info (exchange tentacle)
         self._check_funding_rate(ticker_funding_rate, has_rate=False, has_last_time=False,
                                  has_next_rate=False, has_next_time=False)
+        ticker_funding = self._get_adapted_funding_from_ticker(ticker_funding_rate)
+        self._check_funding_rate(ticker_funding)
+
+    def _get_adapted_funding_from_ticker(self, ticker):
+        tentacle_funding_from_ticker = {}
+        funding_dict = ticker[ccxt_constants.CCXT_INFO]
+        funding_next_timestamp = (
+            float(funding_dict.get(ccxt_enums.ExchangeFundingCCXTColumns.NEXT_FUNDING_TIME.value, 0)) /
+            commons_constants.MSECONDS_TO_SECONDS
+        )
+        funding_rate = decimal.Decimal(
+            str(funding_dict.get(ccxt_enums.ExchangeFundingCCXTColumns.FUNDING_RATE.value, constants.NaN))
+        )
+        tentacle_funding_from_ticker.update({
+            enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value:
+                max(funding_next_timestamp - 8 * commons_constants.HOURS_TO_SECONDS, 0),
+            enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value: funding_rate,
+            enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value: funding_next_timestamp,
+            enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value: funding_rate
+        })
+        return tentacle_funding_from_ticker
 
     @staticmethod
     def _check_ticker(ticker, symbol, check_content=False):
