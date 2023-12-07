@@ -110,11 +110,16 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                         raise
                     except errors.MissingFunds:
                         try:
+                            self.logger.debug(f"Missing funds error: force refreshing portfolio")
                             # second chance: force portfolio update and retry
                             await exchange_channel.get_chan(constants.BALANCE_CHANNEL,
                                                             self.exchange_manager.id).get_internal_producer(). \
                                 refresh_real_trader_portfolio(True)
-
+                            self.logger.debug(f"Forced portfolio refresh success")
+                            self.logger.debug(
+                                f"Second call to self.create_new_orders with symbol: {symbol}, final_note: "
+                                f"{final_note}, state: {state}, kwargs: {kwargs}"
+                            )
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
                         except errors.MissingFunds as err:
                             self.previous_call_error_per_symbol[symbol] = err

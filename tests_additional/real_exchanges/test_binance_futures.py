@@ -144,8 +144,8 @@ class TestBinanceFuturesRealExchangeTester(RealFuturesExchangeTester):
 
     async def test_get_funding_rate(self):
         funding_rate, ticker_funding_rate = await self.get_funding_rate()
-        # patch NEXT_FUNDING_TIME in tentacle
-        self._check_funding_rate(funding_rate)
+        # patch LAST_FUNDING_TIME in tentacle
+        self._check_funding_rate(funding_rate, has_last_time=False)
         # no funding info in ticker
         self._check_funding_rate(ticker_funding_rate, has_rate=False, has_last_time=False,
                                  has_next_rate=False, has_next_time=False)

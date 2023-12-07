@@ -128,6 +128,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
             # When non-inverse contract, decrease directly market quantity
             else:
                 self._update_future_portfolio_data(position.market, wallet_value=-funding_fee)
+            self.logger.debug(f"Updated position from funding fees ({str(-funding_fee)}) : {position}")
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from funding : {position} ({e})")
 
