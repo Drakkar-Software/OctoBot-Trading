@@ -286,6 +286,19 @@ class Trader(util.Initializable):
             await updated_order.state.wait_for_terminate(creation_timeout)
         return updated_order
 
+    def get_take_profit_order_type(self, base_order, order_type: enums.TraderOrderType) -> enums.TraderOrderType:
+        """
+        Returns the adapted take profit order enums.TraderOrderType.
+        :return: enums.TraderOrderType.TAKE_PROFIT when order can be bundled and considered as a real take profit
+        from exchange and the given order_type otherwise
+        """
+        if not self.simulate and self.exchange_manager.exchange.supports_bundled_order_on_order_creation(
+            base_order, enums.TraderOrderType.TAKE_PROFIT
+        ):
+            # use take profit order type for bundled orders, use default order type otherwise
+            return enums.TraderOrderType.TAKE_PROFIT
+        return order_type
+
     async def bundle_chained_order_with_uncreated_order(
         self, order, chained_order, update_with_triggering_order_fees, **kwargs
     ) -> dict:
