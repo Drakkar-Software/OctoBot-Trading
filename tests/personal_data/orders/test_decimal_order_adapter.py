@@ -534,6 +534,7 @@ async def test_decimal_adapt_order_quantity_because_fees():
         return fees
 
     exchange_manager = mock.Mock(
+        is_future=False,
         exchange=mock.Mock(
             get_trade_fee=mock.Mock(side_effect=_get_trade_fee)
         )
@@ -564,7 +565,7 @@ async def test_decimal_adapt_order_quantity_because_fees():
 
     adapted = personal_data.decimal_adapt_order_quantity_because_fees(
         exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.SELL, quote_available_funds
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
     )
     # sell: no still effect
     assert adapted is origin_quantity
@@ -599,3 +600,14 @@ async def test_decimal_adapt_order_quantity_because_fees():
     )
     # buy and fees in USDT and not enough in quote_available_funds to pay fees, quantity set to 0
     assert adapted == constants.ZERO
+
+    exchange_manager.is_future = True
+    quote_available_funds = decimal.Decimal(10)
+    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
+        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
+    )
+    # futures trading: no effect
+    assert adapted is origin_quantity
+
+    exchange_manager.is_future = False

@@ -112,7 +112,7 @@ def decimal_adapt_order_quantity_because_fees(
     taker_or_maker: enums.ExchangeConstantsMarketPropertyColumns, side: enums.TradeOrderSide,
     quote_available_funds: decimal.Decimal
 ) -> decimal.Decimal:
-    if side == enums.TradeOrderSide.BUY:
+    if not exchange_manager.is_future and side == enums.TradeOrderSide.BUY:
         # only buy orders are affected
         computed_fee = exchange_manager.exchange.get_trade_fee(
             symbol, order_type, quantity, price, taker_or_maker.value
