@@ -158,7 +158,6 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
             # number of decimal digits "after the dot"
             enums.ExchangeConstantsMarketStatusColumns.PRECISION.value: {
                 enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value: 8,
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_COST.value: 8,
                 enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value: 8,
             },
             enums.ExchangeConstantsMarketStatusColumns.LIMITS.value: {
