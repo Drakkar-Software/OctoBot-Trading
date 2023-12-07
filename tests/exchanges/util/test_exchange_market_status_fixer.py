@@ -46,7 +46,6 @@ class TestExchangeMarketStatusFixer:
     def _get_precision(precision_amount=None, precision_cost=None, precision_price=None):
         return {
             Ecmsc.PRECISION_AMOUNT.value: precision_amount,
-            Ecmsc.PRECISION_COST.value: precision_cost,
             Ecmsc.PRECISION_PRICE.value: precision_price,
         }
 

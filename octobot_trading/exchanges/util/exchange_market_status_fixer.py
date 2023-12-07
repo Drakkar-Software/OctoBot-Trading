@@ -159,7 +159,7 @@ class ExchangeMarketStatusFixer:
         self._convert_values_to_float(
             self.market_status,
             [Ecmsc.PRECISION.value, ],
-            [Ecmsc.PRECISION_AMOUNT.value, Ecmsc.PRECISION_COST.value, Ecmsc.PRECISION_PRICE.value],
+            [Ecmsc.PRECISION_AMOUNT.value, Ecmsc.PRECISION_PRICE.value],
         )
         self._convert_values_to_float(
             self.market_status,
@@ -181,13 +181,15 @@ class ExchangeMarketStatusFixer:
         if Ecmsc.PRECISION.value not in self.market_status:
             self.market_status[Ecmsc.PRECISION.value] = {
                 Ecmsc.PRECISION_AMOUNT.value: None,
-                Ecmsc.PRECISION_COST.value: None,
                 Ecmsc.PRECISION_PRICE.value: None,
             }
 
         market_precision = self.market_status[Ecmsc.PRECISION.value]
 
-        if not check_market_status_values(market_precision.values(), zero_valid=True):
+        if not check_market_status_values(
+            (market_precision.get(Ecmsc.PRECISION_AMOUNT.value), market_precision.get(Ecmsc.PRECISION_PRICE.value)),
+            zero_valid=True
+         ):
             if self.price_example is not None:
                 self._fix_market_status_precision_with_price()
 
@@ -277,11 +279,17 @@ class ExchangeMarketStatusFixer:
 
     def _fix_market_status_precision_with_price(self):
         precision = self._get_price_precision()
-        self.market_status[Ecmsc.PRECISION.value] = {
-            Ecmsc.PRECISION_AMOUNT.value: precision,
-            Ecmsc.PRECISION_COST.value: precision,
-            Ecmsc.PRECISION_PRICE.value: precision,
-        }
+        # only patch value when necessary
+        if not is_ms_valid(
+            self.market_status[Ecmsc.PRECISION.value].get(Ecmsc.PRECISION_AMOUNT.value),
+            zero_valid=True
+        ):
+            self.market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] = precision
+        if not is_ms_valid(
+            self.market_status[Ecmsc.PRECISION.value].get(Ecmsc.PRECISION_PRICE.value),
+            zero_valid=True
+        ):
+            self.market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] = precision
 
     def _fix_market_status_precision_with_specific(self):
         # binance specific
