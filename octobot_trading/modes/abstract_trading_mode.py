@@ -55,6 +55,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     # reordered to process cancel signals first
     SUPPORTS_INITIAL_PORTFOLIO_OPTIMIZATION = False  # set True when self._optimize_initial_portfolio is implemented
     SUPPORTS_HEALTH_CHECK = False   # set True when self.health_check is implemented
+    ENABLE_HEALTH_CHECK = "enable_health_check"
+    HEALTH_CHECK_INTERVAL = common_constants.DAYS_TO_SECONDS
 
     def __init__(self, config, exchange_manager):
         super().__init__()
@@ -95,6 +97,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # True when initialization orders are waiting to be created
         self.are_initialization_orders_pending = False
+
+        # When True, health check will be performed when calling trading_mode_trigger
+        self.is_health_check_enabled = False
+        self._last_health_check_time = 0
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -290,7 +296,22 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for producer in self.producers:
             await producer.trigger(**kwargs)
 
+    def enabled_health_check_in_config(self) -> bool:
+        try:
+            return self.trading_config.get(self.ENABLE_HEALTH_CHECK, False)
+        except AttributeError:
+            # when self.trading_config is None, should not happen
+            return False
+
+    def _health_check_interval_expired(self) -> bool:
+        return self.exchange_manager.exchange.get_exchange_current_time() - self._last_health_check_time \
+            > self.HEALTH_CHECK_INTERVAL
+
+    def is_health_check_required(self) -> bool:
+        return self.SUPPORTS_HEALTH_CHECK and self.is_health_check_enabled and self._health_check_interval_expired()
+
     async def health_check(self, chained_orders: list, tickers: dict) -> list:
+        self._last_health_check_time = self.exchange_manager.exchange.get_exchange_current_time()
         if not self.producers:
             # nothing to do
             return []
@@ -306,21 +327,23 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         if not self.producers:
             # nothing to do
             return []
-        async with self._single_exchange_operation("portfolio optimization") as continue_operation:
-            if not continue_operation:
-                return []
-            target_asset = exchange_util.get_common_traded_quote(self.exchange_manager)
-            if target_asset is None:
-                self.logger.error(f"Impossible to optimize initial portfolio with different quotes in traded pairs")
-                return []
-            self.logger.info(f"Starting portfolio optimization using trading mode with symbol {self.symbol}")
-            created_orders = await self.single_exchange_process_optimize_initial_portfolio(
-                sellable_assets, target_asset, tickers
-            )
-            if not created_orders:
-                self.logger.info("Optimizing portfolio: no order to create")
-            await modes_util.notify_portfolio_optimization_complete()
-            return created_orders
+        # first acquire trading mode lock to be sure we are not in during trading mode iteration
+        async with self.producers[0].trading_mode_trigger():
+            async with self._single_exchange_operation("portfolio optimization") as continue_operation:
+                if not continue_operation:
+                    return []
+                target_asset = exchange_util.get_common_traded_quote(self.exchange_manager)
+                if target_asset is None:
+                    self.logger.error(f"Impossible to optimize initial portfolio with different quotes in traded pairs")
+                    return []
+                self.logger.info(f"Starting portfolio optimization using trading mode with symbol {self.symbol}")
+                created_orders = await self.single_exchange_process_optimize_initial_portfolio(
+                    sellable_assets, target_asset, tickers
+                )
+                if not created_orders:
+                    self.logger.info("Optimizing portfolio: no order to create")
+                await modes_util.notify_portfolio_optimization_complete()
+                return created_orders
 
     async def single_exchange_process_optimize_initial_portfolio(
         self, sellable_assets, target_asset: str, tickers: dict
@@ -329,18 +352,22 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     @contextlib.asynccontextmanager
     async def _single_exchange_operation(self, operation_name):
-        # first acquire trading mode lock to be sure we are not in during trading mode iteration
-        async with self.producers[0].trading_mode_trigger():
-            if self.producers[0].producer_exchange_wide_lock(self.exchange_manager).locked():
-                # already locked by another trading mode instance: this other trading mode will do the operation
-                self.logger.info(
-                    f"Skipping {operation_name} for trading mode with symbol {self.symbol}: "
-                    f"{operation_name} already in progress"
-                )
-                yield False
-                return
-            async with self.producers[0].producer_exchange_wide_lock(self.exchange_manager):
-                yield True
+        is_the_single_operation = not self.producers[0].producer_exchange_wide_lock(self.exchange_manager).locked()
+        if is_the_single_operation:
+            # already locked by another trading mode instance: this other trading mode will do the operation
+            self.logger.debug(
+                f"[Single exchange operation]: triggering '{operation_name}' for trading mode with symbol "
+                f"{self.symbol} [{self.exchange_manager.exchange_name}]."
+            )
+        else:
+            # already locked by another trading mode instance: this other trading mode will do the operation
+            self.logger.debug(
+                f"[Single exchange operation]: skipping '{operation_name}' for trading mode with symbol {self.symbol} "
+                f"[{self.exchange_manager.exchange_name}]: "
+                f"{operation_name} already in progress. Waiting for initial {operation_name} to complete."
+            )
+        async with self.producers[0].producer_exchange_wide_lock(self.exchange_manager):
+            yield is_the_single_operation
 
     @classmethod
     def get_user_commands(cls) -> dict:

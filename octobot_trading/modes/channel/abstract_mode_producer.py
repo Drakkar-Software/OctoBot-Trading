@@ -342,7 +342,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         await asyncio.wait_for(self._is_trigger_completed.wait(), timeout=timeout)
 
     @contextlib.asynccontextmanager
-    async def trading_mode_trigger(self):
+    async def trading_mode_trigger(self, skip_health_check=False):
         try:
             self._is_trigger_completed.clear()
             if not self._is_ready_to_trade.is_set():
@@ -354,6 +354,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 except asyncio.TimeoutError as e:
                     raise errors.InitializingError() from e
                 self.logger.debug("Order initialized")
+            if self.trading_mode.is_health_check_required() and not skip_health_check:
+                await self.trading_mode.health_check([], {})
             yield
         except errors.InitializingError:
             raise
