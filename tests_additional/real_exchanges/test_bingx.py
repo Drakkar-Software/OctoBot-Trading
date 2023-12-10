@@ -19,7 +19,6 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-import octobot_trading.errors
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
@@ -64,14 +63,23 @@ class TestBingxRealExchangeTester(RealExchangeTester):
                    market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
             assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]) == \
                    market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]
+
+            assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] > 1
+            if market_status[Ecmsc.SYMBOL.value] == self.SYMBOL_3:
+                assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] == 0
+            else:
+                assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] > 2
+
+
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(
                 market_status,
-                low_cost_max=10, low_cost_min=1,    # no suitable /BTC pair for now
-                has_price_limits=False
+                has_price_limits=False,
+                low_cost_max=5 if market_status[Ecmsc.SYMBOL.value] == self.SYMBOL_3 else 1e-03,
+                expect_invalid_price_limit_values=False
             )
 
     async def test_get_symbol_prices(self):
