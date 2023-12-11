@@ -297,9 +297,9 @@ async def get_historical_ohlcv(
             while candles and candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000 > end_time:
                 candles.pop(-1)
                 reached_max = True
-            if candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] >= max_theoretical_time:
-                reached_max = True
             if candles:
+                if candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] >= max_theoretical_time:
+                    reached_max = True
                 yield candles
                 start_time = candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000
                 # avoid fetching the last element twice
