@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.46] - 2023-12-11
+### Updated
+- [Kline] always updated database
+- [Candles] fix fetch issues
+
 ## [2.4.45] - 2023-12-10
 ### Updated
 - [CCXT] 4.1.82
