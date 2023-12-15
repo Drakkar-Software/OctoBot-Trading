@@ -27,12 +27,12 @@ import octobot_commons.constants as common_constants
 
 
 class CCXTAdapter(adapters.AbstractAdapter):
-    def fix_order(self, raw, **kwargs):
+    def fix_order(self, raw, symbol=None, **kwargs):
         fixed = super().fix_order(raw, **kwargs)
         try:
             exchange_timestamp = fixed[ecoc.TIMESTAMP.value]
-            fixed[ecoc.TIMESTAMP.value] = \
-                self.get_uniformized_timestamp(exchange_timestamp)
+            fixed[ecoc.TIMESTAMP.value] = self.get_uniformized_timestamp(exchange_timestamp)
+            self.adapt_quantities_with_contract_size(fixed, symbol)
         except KeyError as e:
             self.logger.error(f"Fail to cleanup order dict ({e})")
         self._register_exchange_fees(fixed)
@@ -41,6 +41,22 @@ class CCXTAdapter(adapters.AbstractAdapter):
     def parse_order(self, fixed, **kwargs):
         # CCXT standard order parsing logic
         return fixed
+
+    def adapt_quantities_with_contract_size(self, order_or_trade, symbol):
+        if self.connector.exchange_manager.is_future:
+            symbol = symbol or order_or_trade.get(ecoc.SYMBOL.value)
+            if symbol is None:
+                # can't get contract size
+                return
+            # amount is in contacts, multiply by contract value to get the currency amount (displayed to the user)
+            contract_size = self.connector.get_contract_size(symbol)
+            if contract_size == constants.ONE:
+                # nothing to do
+                return
+            if amount := order_or_trade.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value):
+                order_or_trade[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = amount * float(contract_size)
+            if filled := order_or_trade.get(enums.ExchangeConstantsOrderColumns.FILLED.value):
+                order_or_trade[enums.ExchangeConstantsOrderColumns.FILLED.value] = filled * float(contract_size)
 
     def _register_exchange_fees(self, order_or_trade):
         try:
@@ -189,6 +205,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                         if trade[ccxt_enums.ExchangeOrderCCXTColumns.TAKER_OR_MAKER.value] \
                         == enums.ExchangeConstantsMarketPropertyColumns.TAKER.value \
                         else enums.TradeOrderType.LIMIT.value
+                self.adapt_quantities_with_contract_size(trade, None)
             except KeyError as e:
                 self.logger.error(f"Fail to clean trade dict ({e})")
             self._register_exchange_fees(trade)
