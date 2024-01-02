@@ -135,6 +135,9 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         self._set_initialized(pair, time_frame, False)
         # fetch history
         candles = None
+        if self.channel.exchange_manager.exchange_config is None:
+            # exchange stopped
+            return None
         try:
             candles: list = await self._get_init_candles(time_frame, pair)
         except errors.FailedRequest as e:
