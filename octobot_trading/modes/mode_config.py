@@ -100,7 +100,8 @@ def get_order_amount_value_desc():
            f"holdings associated to the current traded symbol; " \
         f"5{dsl.QuantityType.TRADED_SYMBOLS_ASSETS_PERCENT.value} to trade 5% of the available " \
            f"holdings associated to all configured trading pairs. " \
-        f"Leave empty to auto-compute the amount."
+        f"Leave empty to auto-compute the amount. Checkout the order amounts syntax from trading modes guides " \
+        f"for more details."
 
 
 def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, include_sell=True,
