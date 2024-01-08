@@ -28,8 +28,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestHuobiRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "huobi"
+class TestHTXRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "htx"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
