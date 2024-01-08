@@ -84,18 +84,21 @@ class TestGateIORealExchangeTester(RealExchangeTester):
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
         for limit in (50, None):
-            symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
-            if limit:
-                assert len(symbol_prices) == limit
-            else:
-                assert len(symbol_prices) > 5
-            # check candles order (oldest first)
-            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
-            # check that fetched candles are historical candles
-            max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
-            assert max_candle_time <= self.get_time()
-            for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+            with pytest.raises(errors.FailedRequest):
+                await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
+            # not supported anymore (Candlestick too long ago. Maximum 10000 points ago are allowed)
+            # symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
+            # if limit:
+            #     assert len(symbol_prices) == limit
+            # else:
+            #     assert len(symbol_prices) > 5
+            # # check candles order (oldest first)
+            # self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            # # check that fetched candles are historical candles
+            # max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
+            # assert max_candle_time <= self.get_time()
+            # for candle in symbol_prices:
+            #     assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
