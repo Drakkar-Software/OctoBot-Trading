@@ -548,7 +548,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def _ensure_order_completeness(
         self, raw_order, symbol, since=None, limit=None, trades_by_exchange_order_id=None, **kwargs
     ):
-        if not self.REQUIRE_ORDER_FEES_FROM_TRADES or not exchanges_util.is_missing_trading_fees(raw_order):
+        if (
+            raw_order is None
+            or not self.REQUIRE_ORDER_FEES_FROM_TRADES
+            or not exchanges_util.is_missing_trading_fees(raw_order)
+        ):
             return raw_order
         trades_by_exchange_order_id = trades_by_exchange_order_id or await self._get_trades_by_exchange_order_id(
             symbol=symbol, since=since, limit=limit, **kwargs

@@ -101,7 +101,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.time_frames = self.get_client_time_frames()
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
-            raise octobot_trading.errors.UnreachableExchange() from e
+            raise octobot_trading.errors.UnreachableExchange(e) from e
         except ccxt.AuthenticationError:
             raise ccxt.AuthenticationError
 
@@ -347,10 +347,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 pass
             except ccxt.NotSupported as e:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
-                raise octobot_trading.errors.NotSupported from e
+                raise octobot_trading.errors.NotSupported(e) from e
             except ccxt.ExchangeError as e:
                 # something went wrong and ccxt did not expect it
-                raise octobot_trading.errors.FailedRequest from e
+                raise octobot_trading.errors.FailedRequest(e) from e
         else:
             # When fetch_order is not supported, uses get_open_orders and extract order id
             open_orders = await self.get_open_orders(symbol=symbol)
@@ -391,7 +391,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 )
         except ccxt.NotSupported as e:
             # fetch_closed_orders is not supported
-            raise octobot_trading.errors.NotSupported from e
+            raise octobot_trading.errors.NotSupported(e) from e
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:
@@ -543,9 +543,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return enums.OrderStatus.CANCELED
         except ccxt.OrderNotFound as e:
             self.logger.debug(f"Trying to cancel order with id {exchange_order_id} but order was not found")
-            raise octobot_trading.errors.OrderCancelError from e
+            raise octobot_trading.errors.OrderCancelError(e) from e
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
-            raise octobot_trading.errors.NotSupported from e
+            raise octobot_trading.errors.NotSupported(e) from e
         except Exception as e:
             self.logger.exception(e, True, f"Unexpected error when cancelling order with exchange id: "
                                            f"{exchange_order_id} failed to cancel | {e} ({e.__class__.__name__})")
@@ -817,6 +817,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             # use 2 index to get the caller of the context manager
             caller_function_name = inspect.stack()[2].function
             exchanges.log_time_sync_error(self.logger, self.name, err, caller_function_name)
-            raise octobot_trading.errors.FailedRequest from err
+            raise octobot_trading.errors.FailedRequest(err) from err
         except ccxt.RequestTimeout as e:
             raise octobot_trading.errors.FailedRequest(f"Request timeout: {e}") from e
