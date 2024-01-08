@@ -82,7 +82,6 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "bitfinex2",
     "bitstamp",
     "bybit",
-    "gateio",
     "bingx",
     "hollaex",
     "huobi",

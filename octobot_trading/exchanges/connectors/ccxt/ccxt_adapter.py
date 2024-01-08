@@ -66,6 +66,18 @@ class CCXTAdapter(adapters.AbstractAdapter):
         except (KeyError, TypeError):
             pass
 
+    def _ensure_fees(self, order_or_trade):
+        # call if necessary
+        if order_or_trade.get(enums.ExchangeConstantsOrderColumns.FEE.value) is None:
+            order_or_trade[enums.ExchangeConstantsOrderColumns.FEE.value] = {
+                enums.FeePropertyColumns.COST.value: constants.ZERO,
+                enums.FeePropertyColumns.EXCHANGE_ORIGINAL_COST.value: constants.ZERO,
+                enums.FeePropertyColumns.CURRENCY.value: None,
+                enums.FeePropertyColumns.RATE.value: None,
+                enums.FeePropertyColumns.TYPE.value: ccxt_enums.ExchangeOrderCCXTColumns.TAKER_OR_MAKER.value,
+                enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
+            }
+
     def _fix_ohlcv_prices(self, ohlcv):
         for index, value in enumerate(ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value + 1:]):
             ohlcv[index + 1] = float(value)
