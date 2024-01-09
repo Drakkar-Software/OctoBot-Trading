@@ -599,6 +599,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     f"Stopping it. Please report to the OctoBot team if you see this error"
                 )
                 return
+            except ccxt.ExchangeClosedByUser as err:
+                self.logger.debug(f"{ws_des} connection closed ({err})")
             except Exception as err:
                 error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
                 error_message = f"Unexpected error when handling {ws_des} feed: {err} ({err.__class__.__name__}) " \
