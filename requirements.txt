@@ -1,4 +1,4 @@
-numpy==1.24.3
+numpy==1.26.3
 
 # Drakkar-Software requirements
 OctoBot-Backtesting>=1.9, <1.10
