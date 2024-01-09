@@ -164,7 +164,7 @@ def _get_exchanges_docs_url():
         import octobot.constants
         return octobot.constants.EXCHANGES_DOCS_URL
     except ImportError:
-        return "https://www.octobot.cloud/guides/exchanges"
+        return "https://www.octobot.cloud/en/guides/exchanges"
 
 
 def _get_time_sync_error_message(exchange_name, caller_name):
