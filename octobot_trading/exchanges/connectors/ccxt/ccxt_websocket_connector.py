@@ -536,13 +536,18 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         ws_des = f"{watch_func.__name__} {g_kwargs}"
         subsequent_disconnections = 0
         already_got_feed_stopping_error = False
+        already_got_closed_by_user_error = False
         spamming_logs_warning_interval = 5000
         spamming_logs_debug_interval = 1000
         while not self.should_stop:
             try:
                 update_data = await watch_func(*g_args, **g_kwargs)
+
                 self._last_message_time = time.time()
+                if subsequent_disconnections > 0:
+                    self.logger.debug(f"Reconnected to {ws_des}")
                 subsequent_disconnections = 0
+                already_got_closed_by_user_error = False
                 if update_data:
                     # Use a copy of the update data as it will be edited by adapters.
                     # We should avoid editing the original object since it is also used in ccxt internally buffers
@@ -599,18 +604,35 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     f"Stopping it. Please report to the OctoBot team if you see this error"
                 )
                 return
-            except ccxt.ExchangeClosedByUser as err:
-                self.logger.debug(f"{ws_des} connection closed ({err})")
             except Exception as err:
-                error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
-                error_message = f"Unexpected error when handling {ws_des} feed: {err} ({err.__class__.__name__}) " \
-                                f"({error_count} times)"
-                if error_count == 1:
-                    self.logger.exception(err, True, error_message)
-                elif error_count % spamming_logs_warning_interval == 0:
-                    self.logger.warning(error_message)
-                elif error_count % spamming_logs_debug_interval == 0:
-                    self.logger.debug(error_message)
+                count_error = True
+                if isinstance(err, ccxt.ExchangeClosedByUser):
+                    if self.should_stop:
+                        # normal when stopping websocket
+                        self.logger.debug(
+                            f"Disconnected {ws_des}: connection closed as {self.get_name()} is stopping ({err})"
+                        )
+                        return
+                    # happening when auto-stopping websocket (calling self._close_exchange_to_force_reconnect)
+                    # from another task: current task also raised ccxt.ExchangeClosedByUser
+                    # this is normal as long as it happens only once after a reconnection
+                    if not already_got_closed_by_user_error:
+                        count_error = False
+                        self.logger.debug(
+                            f"{ws_des} connection automatically closed, reconnecting in {self.LONG_RECONNECT_DELAY} "
+                            f"seconds ({err})"
+                        )
+                        already_got_closed_by_user_error = True
+                if count_error:
+                    error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
+                    error_message = f"Unexpected error when handling {ws_des} feed: {err} ({err.__class__.__name__}) " \
+                                    f"({error_count} times)"
+                    if error_count == 1:
+                        self.logger.exception(err, True, error_message)
+                    elif error_count % spamming_logs_warning_interval == 0:
+                        self.logger.warning(error_message)
+                    elif error_count % spamming_logs_debug_interval == 0:
+                        self.logger.debug(error_message)
                 await asyncio.sleep(self.LONG_RECONNECT_DELAY)  # avoid spamming
                 subsequent_disconnections += 1  # wait for a longer time before the next reconnect
                 # self.client might have changed
