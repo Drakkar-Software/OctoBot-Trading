@@ -94,23 +94,26 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 TESTED_EXCHANGES = [
     "binance",
+    "kucoin",
     "okx",
-    "gateio",
+] + sorted([
+    "coinbase",
+    "cryptocom",
     "htx",
     "bitget",
+    "gateio",
     "ascendex",
-    "kucoin",
-    "coinbase",
     "bybit",
-    "cryptocom",
     "phemex",
     "hollaex",
     "mexc",
-]
-DEFAULT_FUTURE_EXCHANGES = ["bybit"]
-SIMULATOR_TESTED_EXCHANGES = ["bingx", "bitfinex2", "bithumb", "bitstamp", "bittrex", "coinex",
+    "bingx",
+    "coinex",
+])
+DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
+SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex2", "bithumb", "bitstamp", "bittrex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
-                              "wavesexchange"]
+                              "wavesexchange"])
 
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
