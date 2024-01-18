@@ -109,7 +109,7 @@ def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, inclu
     if include_buy:
         trading_mode.UI.user_input(
             constants.CONFIG_BUY_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
-            title=_get_order_amount_title("buy"),
+            title=_get_order_amount_title("buy/entry"),
             other_schema_values={"minLength": 0},
             editor_options={
                 common_enums.UserInputOtherSchemaValuesTypes.DEPENDENCIES.value: buy_dependencies
@@ -118,7 +118,7 @@ def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, inclu
     if include_sell:
         trading_mode.UI.user_input(
             constants.CONFIG_SELL_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
-            title=_get_order_amount_title("sell"),
+            title=_get_order_amount_title("sell/exit"),
             other_schema_values={"minLength": 0},
             editor_options={
                 common_enums.UserInputOtherSchemaValuesTypes.DEPENDENCIES.value: sell_dependencies
