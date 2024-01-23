@@ -105,7 +105,7 @@ class TestCryptoComRealExchangeTester(RealExchangeTester):
 
     async def test_get_historical_ohlcv(self):
         # not supported
-        await self.get_historical_ohlcv() == []
+        assert await self.get_historical_ohlcv() == []
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
