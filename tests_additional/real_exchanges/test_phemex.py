@@ -120,6 +120,10 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
                 with pytest.raises(AssertionError):  # not supported: candles are after the max time requested
                     assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
+    async def test_get_historical_ohlcv(self):
+        # not supported
+        await self.get_historical_ohlcv() == []
+
     async def test_get_kline_price(self):
         with pytest.raises(errors.FailedRequest):
             await self.get_kline_price()

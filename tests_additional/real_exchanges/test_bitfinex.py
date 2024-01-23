@@ -117,6 +117,9 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
                 assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
                 assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
+    async def test_get_historical_ohlcv(self):
+        await super().test_get_historical_ohlcv()
+
     async def test_get_kline_price(self):
         # await asyncio.sleep(10) # prevent rate api limit
         kline_price = await self.get_kline_price()

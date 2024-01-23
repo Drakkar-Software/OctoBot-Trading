@@ -32,7 +32,8 @@ class TestBingxRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "SHIB/USDT"
-    CANDLE_SINCE = 1672534800000  # Sunday 1 January 2023 01:00:00  (large differences not supported)
+    CANDLE_SINCE = 1674918000000  # Saturday 28 January 2023 15:00:00 UTC (large differences not supported)
+    CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     async def _test_time_frames(self):
         time_frames = await self.time_frames()
@@ -101,24 +102,43 @@ class TestBingxRealExchangeTester(RealExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_historical_symbol_prices(self):
-        # Not supported (since param not respected)
         # try with since and limit (used in data collector)
-        for limit in (50, None):
-            symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
-            if limit:
-                assert len(symbol_prices) == limit
-            else:
-                assert len(symbol_prices) > 5
-            # check candles order (oldest first)
-            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
-            # check that fetched candles are historical candles
-            max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
-            assert max_candle_time <= self.get_time()
-            for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
+        # try with since and no limit (used in get_historical_ohlcv)
 
-                # invalid (since param not respected)
-                assert candle[PriceIndexes.IND_PRICE_TIME.value] > max_candle_time
+        for since_value in (self.CANDLE_SINCE, super().CANDLE_SINCE):
+            candle_since_sec = since_value / 1000
+            for limit in (50, None):
+                symbol_prices = await self.get_symbol_prices(since=since_value, limit=limit)
+                if limit:
+                    assert len(symbol_prices) == limit
+                else:
+                    assert len(symbol_prices) > 5
+                # check candles order (oldest first)
+                self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+                # check that fetched candles are historical candles
+                max_candle_time = self.get_time_after_time_frames(candle_since_sec, len(symbol_prices))
+                assert max_candle_time <= self.get_time()
+                for candle in symbol_prices:
+                    if since_value == super().CANDLE_SINCE:
+                        assert candle_since_sec <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                        # ensure that still can't fetch candle before self.CANDLE_SINCE (january 2023)
+                        # this fails if fetch works
+                        assert max_candle_time < candle[PriceIndexes.IND_PRICE_TIME.value]
+                        max_theoretical_bingx_candle_time = self.get_time_after_time_frames(
+                            self.CANDLE_SINCE_SEC, len(symbol_prices)
+                        )
+                        # ensure fetch data are just moved to the 1st available candles but are still making sense
+                        assert (
+                            self.CANDLE_SINCE_SEC
+                            <= candle[PriceIndexes.IND_PRICE_TIME.value]
+                            <= max_theoretical_bingx_candle_time
+                        )
+                    else:
+                        # when fetching after january 2023, it works
+                        assert candle_since_sec <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+
+    async def test_get_historical_ohlcv(self):
+        await super().test_get_historical_ohlcv()
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
