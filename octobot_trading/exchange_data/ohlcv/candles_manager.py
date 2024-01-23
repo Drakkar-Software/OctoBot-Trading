@@ -20,10 +20,11 @@ import octobot_commons.enums as enums
 import octobot_commons.logging as logging
 
 import octobot_trading.util as util
+import octobot_trading.constants as constants
 
 
 class CandlesManager(util.Initializable):
-    MAX_CANDLES_COUNT = 1000
+    MAX_CANDLES_COUNT = constants.MAX_CANDLES_IN_RAM
 
     def __init__(self, max_candles_count=None):
         super().__init__()
