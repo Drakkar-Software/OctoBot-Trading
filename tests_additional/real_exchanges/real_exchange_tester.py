@@ -22,6 +22,7 @@ import octobot_commons.constants as constants
 import octobot_commons.enums as commons_enums
 import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
+import octobot_trading.exchanges.util as exchanges_util
 from octobot_trading.enums import ExchangeConstantsTickersColumns as Ectc, \
     ExchangeConstantsMarketStatusColumns as Ecmsc
 from tests_additional.real_exchanges import get_exchange_manager
@@ -41,6 +42,7 @@ class RealExchangeTester:
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
     REQUIRES_AUTH = False  # set True when even normally public apis require authentication
     MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.SPOT.value
+    HISTORICAL_CANDLES_TO_FETCH_COUNT = 650
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -100,6 +102,25 @@ class RealExchangeTester:
     # async def test_create_order(self):
     #     pass
 
+    async def test_get_historical_ohlcv(self):
+        # common implementation, should always work if candles history is supported
+        historical_ohlcv = await self.get_historical_ohlcv()
+        assert len(historical_ohlcv) > 500  # should be around 650
+        self.ensure_elements_order(historical_ohlcv, commons_enums.PriceIndexes.IND_PRICE_TIME.value)
+        self.ensure_unique_elements(historical_ohlcv, commons_enums.PriceIndexes.IND_PRICE_TIME.value)
+        start, end = self.get_historical_ohlcv_start_and_end_times()
+        max_candle_time = self.get_time_after_time_frames(start, len(historical_ohlcv))
+        assert max_candle_time <= end
+        assert max_candle_time <= self.get_time()
+        # on some exchanges, a lot of candles are missing, ensure more than 1 fetch succeeded
+        assert (
+            self.HISTORICAL_CANDLES_TO_FETCH_COUNT * 0.85
+            < len(historical_ohlcv)
+            <= self.HISTORICAL_CANDLES_TO_FETCH_COUNT
+        )
+        for candle in historical_ohlcv:
+            assert start <= candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] <= end
+
     def get_config(self):
         return {
             constants.CONFIG_EXCHANGES: {
@@ -108,7 +129,7 @@ class RealExchangeTester:
                 }
             }
         }
-    
+
     @contextlib.asynccontextmanager
     async def get_exchange_manager(self, market_filter=None):
         async with get_exchange_manager(
@@ -139,6 +160,22 @@ class RealExchangeTester:
         async with self.get_exchange_manager() as exchange_manager:
             return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME,
                                                                      limit=limit, **kwargs)
+
+    async def get_historical_ohlcv(self, **kwargs) -> list:
+        async with self.get_exchange_manager() as exchange_manager:
+            start, end = self.get_historical_ohlcv_start_and_end_times()
+            start_ms, end_ms = start * 1000, end * 1000
+            ohlcvs = []
+            async for ohlcv in exchanges_util.get_historical_ohlcv(
+                exchange_manager, self.SYMBOL, self.TIME_FRAME, start_ms, end_ms, request_retry_timeout=2, **kwargs
+            ):
+                ohlcvs.extend(ohlcv)
+            return ohlcvs
+
+    def get_historical_ohlcv_start_and_end_times(self):
+        start = self.get_time() - (self.get_timeframe_seconds() * self.HISTORICAL_CANDLES_TO_FETCH_COUNT * 2)
+        end = self.get_time_after_time_frames(start, self.HISTORICAL_CANDLES_TO_FETCH_COUNT)
+        return start, end
 
     async def get_kline_price(self, **kwargs):
         async with self.get_exchange_manager() as exchange_manager:
@@ -194,6 +231,10 @@ class RealExchangeTester:
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
         assert sorted(elements, key=lambda x: x[sort_key], reverse=reverse) == elements
+
+    @staticmethod
+    def ensure_unique_elements(elements, key):
+        assert len(elements) == len(set(element[key] for element in elements))
 
     def check_market_status_limits(self, market_status,
                                    normal_price_max=10000, normal_price_min=1e-06,

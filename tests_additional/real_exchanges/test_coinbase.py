@@ -118,6 +118,9 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
                     # invalid (limit param breaks it)
                     assert candle[PriceIndexes.IND_PRICE_TIME.value] > max_candle_time
 
+    async def test_get_historical_ohlcv(self):
+        await super().test_get_historical_ohlcv()
+
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
         assert len(kline_price) == 1
