@@ -105,7 +105,8 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
 
     async def test_get_historical_ohlcv(self):
         # not supported
-        await self.get_historical_ohlcv() == []
+        ohlcv = await self.get_historical_ohlcv()
+        assert 0 < len(ohlcv) < 100
 
     async def test_get_kline_price(self):
         # kline_price = await self.get_kline_price()

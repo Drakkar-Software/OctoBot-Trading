@@ -122,7 +122,8 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
 
     async def test_get_historical_ohlcv(self):
         # not supported
-        await self.get_historical_ohlcv() == []
+        ohlcv = await self.get_historical_ohlcv()
+        assert 0 < len(ohlcv) < 400
 
     async def test_get_kline_price(self):
         with pytest.raises(errors.FailedRequest):
