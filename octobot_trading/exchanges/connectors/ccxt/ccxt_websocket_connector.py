@@ -276,6 +276,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         """
         try:
             self.initialized_event = asyncio.Event()
+            self.logger.info(f"Loading {self.exchange_manager.exchange_name} websocket exchange markets")
             await self.client.load_markets()
             self._filter_exchange_pairs_and_timeframes()
             self._subscribe_feeds()
