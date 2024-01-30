@@ -27,6 +27,7 @@ class ExchangeAuthDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot
     api_password: str = ""
     exchange_type: str = ""
     sandboxed: bool = False
+    broker_enabled: bool = False
     encrypted: str = ""
 
 
