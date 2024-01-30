@@ -57,8 +57,13 @@ class BalanceUpdater(portfolios_channel.BalanceProducer):
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
                 )
                 await self.pause()
+            except errors.AuthenticationError as err:
+                self.logger.exception(
+                    err, True, f"Authentication error when fetching balance: {err}. Retrying in the next update cycle"
+                )
+                await asyncio.sleep(self.BALANCE_REFRESH_TIME)
             except Exception as e:
-                self.logger.error(f"Failed to update balance : {e}")
+                self.logger.exception(e, True, f"Failed to update balance : {e}")
 
     async def fetch_and_push(self):
         await self.push((await self.fetch_portfolio()))
