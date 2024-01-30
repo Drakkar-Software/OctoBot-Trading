@@ -50,7 +50,24 @@ def _trade_filter(trade, quote=None, symbol=None, timestamp=None, include_cancel
     return True
 
 
-def _is_trade_after_or_at(trade, timestamp) -> bool:
+def is_executed_trade(trade: dict) -> bool:
+    try:
+        return trade[octobot_trading.enums.ExchangeConstantsOrderColumns.STATUS.value] not in (
+            octobot_trading.enums.OrderStatus.CANCELED.value,
+            octobot_trading.enums.OrderStatus.EXPIRED.value,
+        )
+    except KeyError:
+        return False
+
+
+def is_trade_after_or_at(trade: dict, timestamp: float) -> bool:
+    try:
+        return trade[octobot_trading.enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] >= timestamp
+    except KeyError:
+        return False
+
+
+def _is_trade_after_or_at(trade: personal_data.Trade, timestamp: float) -> bool:
     return trade.executed_time >= timestamp or trade.canceled_time >= timestamp
 
 

@@ -230,6 +230,10 @@ class ExchangeBuilder:
         self.exchange_manager.ignore_config = ignore_config
         return self
 
+    def is_broker_enabled(self, is_broker_enabled=False):
+        self.exchange_manager.is_broker_enabled = is_broker_enabled
+        return self
+
     def is_without_auth(self):
         self.exchange_manager.without_auth = True
         return self

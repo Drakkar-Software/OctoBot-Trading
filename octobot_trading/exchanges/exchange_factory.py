@@ -90,11 +90,12 @@ async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
             and not exchange_manager.is_trader_simulated:
         exchange_manager.logger.debug(await exchange_manager.exchange_backend.initialize())
+        initial_is_broker_enabled = exchange_manager.is_broker_enabled
         try:
             exchange_manager.is_broker_enabled, _ = await exchange_manager.exchange_backend.is_valid_account()
             exchange_manager.logger.debug(f"Broker rebate enabled: {exchange_manager.is_broker_enabled}")
         except Exception as err:
-            exchange_manager.is_broker_enabled = False
+            exchange_manager.is_broker_enabled = initial_is_broker_enabled
             exchange_manager.logger.debug(f"Error when checking account broker state: {err}")
 
 
