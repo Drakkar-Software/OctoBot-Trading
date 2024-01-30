@@ -132,8 +132,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 raise octobot_trading.errors.FailedRequest(
                     f"Failed to load_symbol_markets: {err.__class__.__name__} on {err}"
                 ) from err
-            except ccxt.AuthenticationError:
-                if not self.force_authentication:
+            except ccxt.ExchangeError:
+                # includes AuthenticationError but also auth error not identified as such by ccxt
+                if not self.force_authentication and self.is_authenticated:
                     self.logger.debug(
                         f"Credentials check enabled when fetching exchange market status, trying with "
                         f"unauthenticated client."
