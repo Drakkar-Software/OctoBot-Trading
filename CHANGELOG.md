@@ -4,15 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.51] - 2023-01-18
+## [2.4.52] - 2024-01-30
+### Added
+- [API] Trades utility
+### Fixed
+- [Exchanges] Unidentified auth error in market status loading
+- [Exchanges] Fetch balance error spam on auth error
+
+## [2.4.51] - 2024-01-18
 ### Added
 - [CoinEx] Support CoinEx exchange
 
-## [2.4.50] - 2023-01-18
+## [2.4.50] - 2024-01-18
 ### Updated
 - [Websocket] Fix websocket reconnection after binance auto disconnect
 
-## [2.4.49] - 2023-01-08
+## [2.4.49] - 2024-01-08
 ### Updated
 - [Exchanges] replace Huobi by HTX
 - [CCXT] 4.2.10
