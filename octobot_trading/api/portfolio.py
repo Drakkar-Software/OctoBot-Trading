@@ -73,6 +73,10 @@ def format_portfolio(portfolio, as_decimal) -> dict:
     return personal_data.portfolio_to_float(portfolio)
 
 
+def parse_decimal_portfolio(portfolio, as_decimal) -> dict:
+    return personal_data.parse_decimal_portfolio(portfolio, as_decimal=as_decimal)
+
+
 async def refresh_real_trader_portfolio(exchange_manager) -> bool:
     return await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL, exchange_manager.id). \
         get_internal_producer(). \
