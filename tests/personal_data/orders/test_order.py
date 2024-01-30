@@ -393,6 +393,7 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.exchange_order_id is origin_exchange_order_id
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
+    assert order.broker_applied is False
     assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
 
     # partial update
@@ -414,6 +415,7 @@ async def test_update_from_order_storage(trader_simulator):
             enums.ExchangeConstantsOrderColumns.TAG.value: "t1",
             enums.ExchangeConstantsOrderColumns.ID.value: "11a",
             enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: "eee1",
+            enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: True,
         },
         enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop2": 1},
         enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value: {"ex": 2, "gg": "yesyes"},
@@ -425,6 +427,7 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.trader_creation_kwargs == {"plop2": 1} != origin_trader_creation_kwargs
     assert order.exchange_creation_params == {"ex": 2, "gg": "yesyes"} != origin_exchange_creation_params
     assert order.order_id == "11a" != origin_order_id
+    assert order.broker_applied is True
     assert order.exchange_order_id == "eee1" != origin_exchange_order_id
     assert order.has_been_bundled is True is not origin_has_been_bundled
     assert order.associated_entry_ids == ["ABC", "2"] != origin_associated_entry_ids

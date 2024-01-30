@@ -257,7 +257,7 @@ class Trader(util.Initializable):
 
             # get real order from exchange
             updated_order = order_factory.create_order_instance_from_raw(
-                self, created_order, force_open_or_pending_creation=True
+                self, created_order, force_open_or_pending_creation=True, has_just_been_created=True
             )
             is_pending_creation = updated_order.status == enums.OrderStatus.PENDING_CREATION
 
