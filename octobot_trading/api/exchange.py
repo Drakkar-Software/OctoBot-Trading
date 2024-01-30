@@ -281,8 +281,8 @@ def is_sponsoring(exchange_name: str) -> bool:
     return trading_backend.is_sponsoring(exchange_name)
 
 
-def is_valid_account(exchange_manager) -> bool:
-    return exchange_manager.is_valid_account
+def is_broker_enabled(exchange_manager) -> bool:
+    return exchange_manager.is_broker_enabled
 
 
 def get_historical_ohlcv(

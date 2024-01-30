@@ -61,6 +61,7 @@ class Trade:
         self.tag = None
         self.quantity_currency = None
         self.associated_entry_ids = None
+        self.broker_applied = False
 
         # raw exchange trade type, used to create trade dict
         self.exchange_trade_type = None
@@ -94,6 +95,7 @@ class Trade:
         self.reduce_only = order.reduce_only
         self.tag = order.tag
         self.associated_entry_ids = order.associated_entry_ids
+        self.broker_applied = order.broker_applied
 
     def get_time(self):
         return self.executed_time if self.has_been_executed() else self.canceled_time
@@ -125,6 +127,7 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
             enums.ExchangeConstantsOrderColumns.ENTRIES.value: self.associated_entry_ids,
+            enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: self.broker_applied,
             enums.TradeExtraConstants.CREATION_TIME.value: self.creation_time,
         }
 
@@ -165,6 +168,9 @@ class Trade:
         trade.reduce_only = trade_dict.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value)
         trade.tag = trade_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value)
         trade.associated_entry_ids = trade_dict.get(enums.ExchangeConstantsOrderColumns.ENTRIES.value)
+        trade.broker_applied = trade_dict.get(
+            enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value, trade.broker_applied
+        )
         trade.creation_time = trade_dict.get(enums.TradeExtraConstants.CREATION_TIME.value)
         return trade
 

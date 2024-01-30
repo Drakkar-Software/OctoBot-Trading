@@ -58,6 +58,7 @@ class Order(util.Initializable):
         self.side = side
         self.tag = None
         self.associated_entry_ids = None
+        self.broker_applied = False
 
         # original order attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -281,6 +282,10 @@ class Order(util.Initializable):
         await orders_states.create_order_state(self, **kwargs)
         if self.is_created() and not self.is_closed():
             await self.update_order_status()
+
+    def register_broker_applied_if_enabled(self):
+        if not self.simulated and self.trader and self.trader.exchange_manager:
+            self.broker_applied = self.trader.exchange_manager.is_broker_enabled
 
     def _on_origin_price_change(self, previous_price, price_time):
         """
@@ -674,6 +679,10 @@ class Order(util.Initializable):
         # rebind order attributes that are not stored on exchange
         order_dict = order_details.get(constants.STORAGE_ORIGIN_VALUE, {})
         self.tag = order_dict.get(enums.ExchangeConstantsOrderColumns.TAG.value, self.tag)
+        self.broker_applied = order_dict.get(
+            enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value,
+            self.broker_applied
+        )
         self.order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.ID.value, self.order_id)
         self.exchange_order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value,
                                                 self.exchange_order_id)
@@ -768,6 +777,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
             enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
+            enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: self.broker_applied,
         }
 
     def clear(self):

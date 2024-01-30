@@ -23,9 +23,13 @@ def create_order_from_raw(trader, raw_order):
     return create_order_from_type(trader, order_type)
 
 
-def create_order_instance_from_raw(trader, raw_order, force_open_or_pending_creation=False):
+def create_order_instance_from_raw(
+    trader, raw_order, force_open_or_pending_creation=False, has_just_been_created=False
+):
     order = create_order_from_raw(trader, raw_order)
     order.update_from_raw(raw_order)
+    if has_just_been_created:
+        order.register_broker_applied_if_enabled()
     if force_open_or_pending_creation \
             and order.status not in (enums.OrderStatus.OPEN, enums.OrderStatus.PENDING_CREATION):
         order.status = enums.OrderStatus.OPEN

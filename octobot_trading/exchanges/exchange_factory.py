@@ -59,7 +59,6 @@ async def create_real_exchange(exchange_manager) -> None:
         if exchange_manager.exchange_only:
             return
         await _initialize_exchange_backend(exchange_manager)
-        _ensure_exchange_validity(exchange_manager)
     except errors.AuthenticationError:
         exchange_manager.logger.error("Authentication error, retrying without authentication...")
         exchange_manager.without_auth = True
@@ -78,21 +77,6 @@ async def initialize_real_exchange(exchange_manager):
             await exchanges.search_and_create_websocket(exchange_manager)
 
 
-def _ensure_exchange_validity(exchange_manager):
-    if exchange_manager.is_future and \
-            not exchange_manager.is_trader_simulated and \
-            not exchange_manager.is_valid_account:
-        error_message = f"Impossible to check exchange sponsoring due to" \
-                        f" {exchange_manager.init_error.__class__.__name__}." \
-            if isinstance(exchange_manager.init_error, trading_backend.TimeSyncError) \
-            else \
-            f"Impossible to start futures trading for {exchange_manager.exchange.name.capitalize()}: " \
-            f"incompatible account with no registered donation. Your OctoBot will work normally " \
-            f"for spot trading but will be *limited to backtesting for futures trading. " \
-            f"Please select spot trading on your exchange configuration."
-        raise errors.NotSupported(error_message)
-
-
 def _create_exchange_backend(exchange_manager):
     try:
         exchange_manager.exchange_backend = trading_backend.exchange_factory.create_exchange_backend(
@@ -106,32 +90,12 @@ async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
             and not exchange_manager.is_trader_simulated:
         exchange_manager.logger.debug(await exchange_manager.exchange_backend.initialize())
-        return
-        # disabled
-        try:    # pylint: disable=W0101
-            exchange_manager.is_valid_account = await _is_supporting_octobot()
-            if exchange_manager.is_valid_account:
-                return True
-            exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
-            if not exchange_manager.is_valid_account:
-                exchange_manager.logger.error(
-                    f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use futures trading: "
-                    f"{message}. OctoBot relies on exchanges profits sharing to remain 100% free, please create a "
-                    f"new {exchange_manager.exchange.name.capitalize()} account or register a donation to support "
-                    f"the project. {exchanges.get_partners_explanation_message()}")
-        except trading_backend.TimeSyncError as err:
-            exchanges.log_time_sync_error(exchange_manager.logger, exchange_manager.exchange.name,
-                                          err, "exchange_backend.is_valid_account")
-            exchange_manager.is_valid_account = False
-            exchange_manager.init_error = err
+        try:
+            exchange_manager.is_broker_enabled, _ = await exchange_manager.exchange_backend.is_valid_account()
+            exchange_manager.logger.debug(f"Broker rebate enabled: {exchange_manager.is_broker_enabled}")
         except Exception as err:
-            exchange_manager.is_valid_account = False
-            exchange_manager.init_error = err
-            exchange_manager.logger.exception(err, True, f"Error when loading exchange account: {err}")
-        finally:
-            if exchange_manager.is_valid_account:
-                exchange_manager.logger.info("On behalf of the OctoBot team, thank you for "
-                                             "actively supporting the project !")
+            exchange_manager.is_broker_enabled = False
+            exchange_manager.logger.debug(f"Error when checking account broker state: {err}")
 
 
 async def _is_supporting_octobot() -> bool:
