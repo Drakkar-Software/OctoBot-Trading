@@ -447,7 +447,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
         raise NotImplementedError(f"get_account_id is not implemented on {self.exchange_manager.exchange_name}")
 
     async def get_balance(self, **kwargs: dict):
-        return await self.connector.get_balance(**kwargs)
+        try:
+            return await self.connector.get_balance(**kwargs)
+        except ccxt.AuthenticationError as err:
+            raise errors.AuthenticationError(err) from err
 
     async def get_symbol_prices(self, symbol: str, time_frame: commons_enums.TimeFrames, limit: int = None,
                                 **kwargs: dict) -> typing.Optional[list]:
