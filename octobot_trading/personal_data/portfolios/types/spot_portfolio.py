@@ -17,6 +17,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.assets.spot_asset as spot_asset
 import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
+import octobot_trading.personal_data.orders.order_util as order_util
 
 
 class SpotPortfolio(portfolio_class.Portfolio):
@@ -28,20 +29,23 @@ class SpotPortfolio(portfolio_class.Portfolio):
         Call update_portfolio_data for order currency and market
         :param order: the order that updated the portfolio
         """
-        # update currency
+        base_fees = order.get_total_fees(order.currency)
+        quote_fees = order.get_total_fees(order.market)
+
+        # update base
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = order.filled_quantity - order.get_total_fees(order.currency)
+            new_quantity = order.filled_quantity - base_fees
             self._update_portfolio_data(order.currency, total_value=new_quantity, available_value=new_quantity)
         else:
-            new_quantity = -order.filled_quantity
+            new_quantity = -order.filled_quantity - base_fees
             self._update_portfolio_data(order.currency, total_value=new_quantity)
 
-        # update market
+        # update quote
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = -(order.filled_quantity * order.filled_price)
+            new_quantity = -(order.filled_quantity * order.filled_price) - quote_fees
             self._update_portfolio_data(order.market, total_value=new_quantity)
         else:
-            new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(order.market)
+            new_quantity = (order.filled_quantity * order.filled_price) - quote_fees
             self._update_portfolio_data(order.market, total_value=new_quantity, available_value=new_quantity)
 
     def update_portfolio_data_from_withdrawal(self, amount, currency):
@@ -56,18 +60,26 @@ class SpotPortfolio(portfolio_class.Portfolio):
         """
         Realise portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param is_new_order: True when the order is being created
+        :param is_new_order: True when the order is being created, False when cancelled
         """
+        multiplier = constants.ONE if is_new_order else -constants.ONE
+
+        # take fees into account when in locked asset
+        # ( a BTC/USDT order with USDT fees need to lock USDT fees to be able to pay them)
+        forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=not order.is_filled())
+        base_fees = order_util.get_fees_for_currency(forecasted_fees, order.currency)
+        quote_fees = order_util.get_fees_for_currency(forecasted_fees, order.market)
+
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if is_new_order else -constants.ONE)
+            new_quantity = - (order.origin_quantity * order.origin_price + quote_fees) * multiplier
             self._update_portfolio_data(order.market,
                                         available_value=new_quantity,
                                         total_value=constants.ZERO)
 
         # when sell order
         else:
-            new_quantity = - order.origin_quantity * (constants.ONE if is_new_order else -constants.ONE)
+            new_quantity = - (order.origin_quantity + base_fees) * multiplier
             self._update_portfolio_data(order.currency,
                                         available_value=new_quantity,
                                         total_value=constants.ZERO)

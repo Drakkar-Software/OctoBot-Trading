@@ -136,7 +136,7 @@ class Portfolio:
         """
         Realize portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param is_new_order: True when the order is being created
+        :param is_new_order: True when the order is being created, False when cancelled
         """
         raise NotImplementedError("update_portfolio_available_from_order is not implemented")
 

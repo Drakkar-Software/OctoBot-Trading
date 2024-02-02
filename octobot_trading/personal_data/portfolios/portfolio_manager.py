@@ -266,6 +266,7 @@ class PortfolioManager(util.Initializable):
             if order.is_filled():
                 self.portfolio.update_portfolio_from_filled_order(order)
             else:
+                # order cancelled
                 self.portfolio.update_portfolio_available(order, is_new_order=False)
             return True
         except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
