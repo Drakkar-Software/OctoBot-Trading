@@ -637,10 +637,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                                          price=float(price),
                                          takerOrMaker=taker_or_maker)
         fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = False
-        fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
+        fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(
+            str(fees.get(enums.FeePropertyColumns.COST.value) or 0)
+        )
         if self.exchange_manager.is_future:
             # fees on futures are wrong
-            rate = fees[enums.FeePropertyColumns.RATE.value]
+            rate = fees.get(enums.FeePropertyColumns.RATE.value, 0) or 0
             # avoid using ccxt computed fees as they are often wrong
             # see https://docs.ccxt.com/en/latest/manual.html#trading-fees
             parsed_symbol = commons_symbols.parse_symbol(symbol)

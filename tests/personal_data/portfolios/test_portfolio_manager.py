@@ -112,6 +112,7 @@ async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader)
     if os.getenv('CYTHON_IGNORE'):
         return
     order = BuyLimitOrder(trader)
+    order.symbol = "BTC/USDT"
     await order.initialize()
     with patch.object(portfolio_manager.portfolio, 'update_portfolio_available',
                       new=Mock()) as update_portfolio_available_mock:

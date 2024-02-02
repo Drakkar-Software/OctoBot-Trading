@@ -41,6 +41,7 @@ async def order_simulator(trader_simulator):
 def created_order(order_type, order_type_enum, *args, **kwargs):
     order = order_type(*args, **kwargs)
     order.order_type = order_type_enum
+    order.symbol = "BTC/USDT"
     return order
 
 
