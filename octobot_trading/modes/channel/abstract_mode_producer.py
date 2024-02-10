@@ -407,6 +407,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
         cancelled = False
+        failed_to_cancel = False
         if self.exchange_manager.trader.is_enabled:
             for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol):
                 if (
@@ -414,8 +415,11 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     and (cancel_loaded_orders or order.is_from_this_octobot)
                     and (side is None or (side is order.side))
                 ):
-                    cancelled = await self.trading_mode.cancel_order(order) and cancelled
-        return cancelled
+                    if await self.trading_mode.cancel_order(order):
+                        cancelled = True
+                    else:
+                        failed_to_cancel = True
+        return cancelled and not failed_to_cancel
 
     def all_databases(self):
         provider = databases.RunDatabasesProvider.instance()
