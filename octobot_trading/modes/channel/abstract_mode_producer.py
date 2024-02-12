@@ -401,7 +401,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
 
-    async def cancel_symbol_open_orders(self, symbol, side=None) -> bool:
+    async def cancel_symbol_open_orders(self, symbol, side=None, tag=None) -> bool:
         """
         Cancel all symbol open orders
         """
@@ -414,6 +414,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     not (order.is_cancelled() or order.is_closed())
                     and (cancel_loaded_orders or order.is_from_this_octobot)
                     and (side is None or (side is order.side))
+                    and (tag is None or (tag == order.tag))
                 ):
                     if await self.trading_mode.cancel_order(order):
                         cancelled = True
