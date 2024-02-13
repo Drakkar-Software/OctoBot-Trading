@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.54] - 2024-02-13
+### Updated
+- [TradingMode] integrate tags in orders creation
+### Fixed
+- [Orders] cancel_symbol_open_orders return value
+
 ## [2.4.53] - 2024-02-02
 ### Fixed
 - [Orders] Handle quote-based fees in exchange simulator
