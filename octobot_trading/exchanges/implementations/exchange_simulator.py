@@ -25,6 +25,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     def __init__(self, config, exchange_manager, backtesting):
         self.backtesting = backtesting
         self.exchange_importers = []
+        self.exchange_tentacle = None
         super().__init__(config, exchange_manager)
 
     def _create_connector(self, config, exchange_manager, connector_class):
@@ -37,24 +38,34 @@ class ExchangeSimulator(rest_exchange.RestExchange):
 
     async def initialize_impl(self):
         await super().initialize_impl()
-        self._set_market_status_params()
         self.exchange_importers = self.connector.exchange_importers
+        if self.connector.should_adapt_market_statuses():
+            await self._init_exchange_tentacle()
+
+    async def _init_exchange_tentacle(self):
+        origin_ignore_config = self.exchange_manager.ignore_config
+        try:
+            self.exchange_tentacle = None
+            self.exchange_manager.ignore_config = True
+            # initialize a locale exchange_tentacle to be able to access adapters for market statuses
+            if exchange_class := exchange_util.get_rest_exchange_class(
+                self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config
+            ):
+                self.exchange_tentacle = exchange_class(self.exchange_manager.config, self.exchange_manager)
+        finally:
+            self.exchange_manager.ignore_config = origin_ignore_config
+            # reset ignore_config as soon as possible
+        if self.exchange_tentacle:
+            if adapter_class := self.exchange_tentacle.get_adapter_class():
+                self.connector.adapter.set_tentacles_adapter_proxy(adapter_class)
+            # do not keep the created ccxt exchange
+            await self.exchange_tentacle.stop()
 
     async def stop(self) -> None:
         await super().stop()
         self.backtesting = None
         self.exchange_importers = None
-
-    def _set_market_status_params(self):
-        params_source = rest_exchange.RestExchange
-        if self.connector.should_adapt_market_statuses():
-            params_source = exchange_util.get_rest_exchange_class(
-                self.exchange_manager.exchange_name, None
-            ) or params_source
-        # update params
-        self.FIX_MARKET_STATUS = params_source.FIX_MARKET_STATUS
-        self.REMOVE_MARKET_STATUS_PRICE_LIMITS = params_source.REMOVE_MARKET_STATUS_PRICE_LIMITS
-        self.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE = params_source.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE
+        self.exchange_tentacle = None
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -66,6 +77,15 @@ class ExchangeSimulator(rest_exchange.RestExchange):
 
     async def create_backtesting_exchange_producers(self):
         return await self.connector.create_backtesting_exchange_producers()
+
+    def _should_fix_market_status(self):
+        return (self.exchange_tentacle or self).FIX_MARKET_STATUS
+
+    def _should_remove_market_status_limits(self):
+        return (self.exchange_tentacle or self).REMOVE_MARKET_STATUS_PRICE_LIMITS
+
+    def _should_adapt_market_status_for_contract_size(self):
+        return (self.exchange_tentacle or self).ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE
 
     def get_available_time_frames(self):
         return self.connector.get_available_time_frames()

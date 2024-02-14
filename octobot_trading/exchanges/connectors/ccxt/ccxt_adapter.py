@@ -24,6 +24,7 @@ import octobot_trading.enums as enums
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_commons.enums as common_enums
 import octobot_commons.constants as common_constants
+import octobot_commons.number_util as number_util
 
 
 class CCXTAdapter(adapters.AbstractAdapter):
@@ -400,11 +401,29 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard mark_price parsing logic
         return fixed
 
-    def fix_market_status(self, raw, **kwargs):
-        fixed = super().fix_market_status(raw, **kwargs)
+    def fix_market_status(self, raw, remove_price_limits=False, **kwargs):
+        fixed = super().fix_market_status(raw, remove_price_limits=remove_price_limits, **kwargs)
         # CCXT standard market_status fixing logic
+        fixed[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
+            fixed[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
+        )
+        fixed[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
+            fixed[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
+        )
+        if remove_price_limits:
+            fixed[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
+            fixed[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
+
         return fixed
 
-    def parse_market_status(self, fixed, **kwargs):
+    def parse_market_status(self, fixed, remove_price_limits=False, **kwargs):
         # CCXT standard market_status parsing logic
         return fixed

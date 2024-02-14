@@ -125,9 +125,9 @@ class AbstractAdapter:
         return self.parse_mark_price(fixed, **kwargs)
 
     @_adapter
-    def adapt_market_status(self, raw, **kwargs):
-        fixed = self.fix_market_status(raw, **kwargs)
-        return self.parse_market_status(fixed, **kwargs)
+    def adapt_market_status(self, raw, remove_price_limits=False, **kwargs):
+        fixed = self.fix_market_status(raw, remove_price_limits=remove_price_limits, **kwargs)
+        return self.parse_market_status(fixed, remove_price_limits=remove_price_limits, **kwargs)
 
     def get_uniformized_timestamp(self, timestamp):
         # override if the exchange time is not a second timestamp or millisecond
@@ -248,9 +248,9 @@ class AbstractAdapter:
     def parse_mark_price(self, fixed, **kwargs):
         raise NotImplementedError("parse_mark_price is not implemented")
 
-    def fix_market_status(self, raw, **kwargs):
+    def fix_market_status(self, raw, remove_price_limits=False, **kwargs):
         # add generic logic if necessary
         return raw
 
-    def parse_market_status(self, fixed, **kwargs):
+    def parse_market_status(self, fixed, remove_price_limits=False, **kwargs):
         raise NotImplementedError("parse_market_status is not implemented")

@@ -15,11 +15,13 @@
 #  License along with this library.
 import decimal
 
+import mock
 import pytest
 import octobot_trading.constants as constants
 import octobot_commons.constants as commons_constants
 from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, TraderOrderType
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
+import octobot_trading.exchanges.util as exchange_util
 
 # Import required fixtures
 from tests import event_loop
@@ -97,3 +99,58 @@ async def test_stop(backtesting_trader):
     cancel_ccxt_throttle_task()
     assert not exchange_manager.exchange.backtesting
     assert not exchange_manager.exchange.exchange_importers
+
+
+async def test_init_exchange_tentacle(backtesting_trader):
+    _, exchange_manager, trader_inst = backtesting_trader
+
+    rest_simulator = exchange_manager.exchange
+    # no registered tentacle
+    with mock.patch.object(exchange_util, "get_rest_exchange_class", mock.Mock(return_value=None)) \
+            as get_rest_exchange_class_mock:
+        assert rest_simulator.exchange_tentacle is None
+        await rest_simulator._init_exchange_tentacle()
+        assert rest_simulator.exchange_tentacle is None
+        get_rest_exchange_class_mock.assert_called_once()
+
+    init_adapter = mock.Mock()
+
+    class AdapterTentacle:
+        def __init__(self, *_, **__):
+            self.get_adapter_class = mock.Mock(
+                return_value=init_adapter
+            )
+            self.stop = mock.AsyncMock()
+
+    class NoAdapterTentacle:
+        def __init__(self, *_, **__):
+            self.get_adapter_class = mock.Mock(
+                return_value=None
+            )
+            self.stop=mock.AsyncMock()
+
+    rest_simulator.connector.adapter.set_tentacles_adapter_proxy = mock.Mock()
+    # no registered adapter
+    with mock.patch.object(exchange_util, "get_rest_exchange_class", mock.Mock(return_value=NoAdapterTentacle)) \
+            as get_rest_exchange_class_mock:
+        assert rest_simulator.exchange_tentacle is None
+        await rest_simulator._init_exchange_tentacle()
+        assert isinstance(rest_simulator.exchange_tentacle, NoAdapterTentacle)
+        rest_simulator.exchange_tentacle.get_adapter_class.assert_called_once()
+        rest_simulator.exchange_tentacle.stop.assert_called_once()
+        rest_simulator.connector.adapter.set_tentacles_adapter_proxy.assert_not_called()
+        get_rest_exchange_class_mock.assert_called_once()
+
+    rest_simulator.exchange_tentacle = None
+    # registered adapter
+    with mock.patch.object(exchange_util, "get_rest_exchange_class", mock.Mock(return_value=AdapterTentacle)) \
+            as get_rest_exchange_class_mock:
+        assert rest_simulator.exchange_tentacle is None
+        await rest_simulator._init_exchange_tentacle()
+        assert isinstance(rest_simulator.exchange_tentacle, AdapterTentacle)
+        rest_simulator.exchange_tentacle.get_adapter_class.assert_called_once()
+        rest_simulator.exchange_tentacle.stop.assert_called_once()
+        rest_simulator.connector.adapter.set_tentacles_adapter_proxy.assert_called_once_with(
+            init_adapter
+        )
+        get_rest_exchange_class_mock.assert_called_once()

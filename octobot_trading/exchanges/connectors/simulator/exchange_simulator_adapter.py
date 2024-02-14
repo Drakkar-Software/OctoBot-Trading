@@ -18,4 +18,20 @@ import octobot_trading.exchanges.adapters as adapters
 
 
 class ExchangeSimulatorAdapter(adapters.AbstractAdapter):
-    pass
+
+    def __init__(self, connector):
+        super().__init__(connector)
+        self._tentacle_adapter_proxy = None
+
+    def _get_tentacle_adapter_proxy(self):
+        if self._tentacle_adapter_proxy is None:
+            return self
+        return self._tentacle_adapter_proxy
+
+    def set_tentacles_adapter_proxy(self, adapter_class):
+        self._tentacle_adapter_proxy = adapter_class(self.connector)
+
+    def adapt_market_status(self, raw, remove_price_limits=False, **kwargs):
+        return self._get_tentacle_adapter_proxy().adapt_market_status(
+            raw, remove_price_limits=remove_price_limits, **kwargs
+        )
