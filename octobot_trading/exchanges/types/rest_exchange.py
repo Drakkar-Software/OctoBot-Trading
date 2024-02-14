@@ -364,17 +364,26 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def get_uniform_timestamp(self, timestamp):
         return self.connector.get_uniform_timestamp(timestamp)
 
+    def _should_fix_market_status(self):
+        return self.FIX_MARKET_STATUS
+
+    def _should_remove_market_status_limits(self):
+        return self.REMOVE_MARKET_STATUS_PRICE_LIMITS
+
+    def _should_adapt_market_status_for_contract_size(self):
+        return self.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE
+
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         """
         Override using get_fixed_market_status in exchange tentacle if the default market status is not as expected
         """
-        if self.FIX_MARKET_STATUS:
+        if self._should_fix_market_status():
             return self.get_fixed_market_status(
                 symbol,
                 price_example=price_example,
                 with_fixer=with_fixer,
-                remove_price_limits=self.REMOVE_MARKET_STATUS_PRICE_LIMITS,
-                adapt_for_contract_size=self.ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE
+                remove_price_limits=self._should_remove_market_status_limits(),
+                adapt_for_contract_size=self._should_adapt_market_status_for_contract_size()
             )
         return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
@@ -387,7 +396,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         (use number of digits instead of price example) by default.
         Override _fix_market_status to change other elements
         """
-        market_status = self._fix_market_status(
+        market_status = self.connector.adapter.adapt_market_status(
             copy.deepcopy(
                 self.connector.get_market_status(symbol, with_fixer=False)
             ),
@@ -397,30 +406,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
             self._adapt_market_status_for_contract_size(market_status, self.get_contract_size(symbol))
         if with_fixer:
             return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
-        return market_status
-
-    def _fix_market_status(self, market_status, remove_price_limits=False):  # todo move to adapter
-        """
-        Overrite if necessary
-        """
-        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
-            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
-        )
-        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
-            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
-        )
-        if remove_price_limits:
-            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
-            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
-
         return market_status
 
     def _apply_contract_size(self, value, contract_size):

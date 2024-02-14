@@ -307,6 +307,18 @@ def get_max_order_quantity_for_price(position, available_quantity, price, side, 
         (two_way_fees + price)
 
 
+def get_locked_funds(order):
+    forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=not order.is_filled())
+    if order.side == enums.TradeOrderSide.BUY:
+        # locking quote to buy
+        quote_fees = get_fees_for_currency(forecasted_fees, order.market)
+        return order.origin_quantity * order.origin_price + quote_fees
+    else:
+        # locking base to sell
+        base_fees = get_fees_for_currency(forecasted_fees, order.currency)
+        return order.origin_quantity + base_fees
+
+
 def total_fees_from_order_dict(order_dict, currency):
     return get_fees_for_currency(order_dict[enums.ExchangeConstantsOrderColumns.FEE.value], currency)
 
