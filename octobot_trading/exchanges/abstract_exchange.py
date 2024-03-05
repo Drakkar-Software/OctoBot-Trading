@@ -471,6 +471,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         t0 = time.time()
         minimal_interval = 0.1
         attempt = 1
+        latest_error = None
         while (timeout != 0 and time.time() - t0 < timeout) or (n_times != 0 and attempt <= n_times + 1):
             last_request_time = time.time()
             try:
@@ -479,12 +480,18 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                     self.logger.debug(f"Request retrier success for {request_func.__name__} after {attempt} attempts")
                 return result
             except errors.FailedRequest as err:
-                self.logger.debug(f"Request retrier failed for {request_func.__name__}({args} {kwargs}) (attempt {attempt}) ({err})")
+                latest_error = err
+                self.logger.debug(
+                    f"Request retrier failed for {request_func.__name__}({args} {kwargs}) (attempt {attempt}) ({err})"
+                )
                 if time.time() - last_request_time < minimal_interval:
                     await asyncio.sleep(minimal_interval)
                 attempt += 1
-        raise errors.FailedRequest(f"Failed to successfully run {request_func.__name__} request after {attempt} "
-                                   f"attempts.")
+        latest_error = latest_error or RuntimeError("unknown error, this is unexpected, latest_error should be set")
+        raise errors.FailedRequest(
+            f"Failed to successfully run {request_func.__name__} request after {attempt} attempts. "
+            f"Latest error: {latest_error} ({latest_error.__class__.__name__})"
+        ) from latest_error
 
     """
     Parsers
