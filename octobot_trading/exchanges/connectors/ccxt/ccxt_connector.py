@@ -808,6 +808,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             f"Last json response: {self.client.last_json_response}"
         )
 
+    def get_latest_request_url(self) -> str:
+        return self.client.last_request_url
+
     @contextlib.contextmanager
     def error_describer(self):
         try:

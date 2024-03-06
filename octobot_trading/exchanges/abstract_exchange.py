@@ -472,6 +472,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         minimal_interval = 0.1
         attempt = 1
         latest_error = None
+        latest_request_url = None
         while (timeout != 0 and time.time() - t0 < timeout) or (n_times != 0 and attempt <= n_times + 1):
             last_request_time = time.time()
             try:
@@ -481,6 +482,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                 return result
             except errors.FailedRequest as err:
                 latest_error = err
+                latest_request_url = self.get_latest_request_url()
                 self.logger.debug(
                     f"Request retrier failed for {request_func.__name__}({args} {kwargs}) (attempt {attempt}) ({err})"
                 )
@@ -489,8 +491,9 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                 attempt += 1
         latest_error = latest_error or RuntimeError("unknown error, this is unexpected, latest_error should be set")
         raise errors.FailedRequest(
-            f"Failed to successfully run {request_func.__name__} request after {attempt} attempts. "
-            f"Latest error: {latest_error} ({latest_error.__class__.__name__})"
+            f"Failed to successfully run {request_func.__name__}(args={args}, kwargs={kwargs}) request after {attempt} "
+            f"attempts. Latest error: {latest_error} ({latest_error.__class__.__name__}). "
+            f"Last request url: {latest_request_url}"
         ) from latest_error
 
     """
@@ -591,6 +594,12 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: the AccountTypes related to the account
         """
         raise NotImplementedError("parse_account is not implemented")
+
+    def get_latest_request_url(self) -> str:
+        """
+        :return: the URL of the last request
+        """
+        return self.connector.get_latest_request_url()
 
     """
     Uniformization
