@@ -484,12 +484,23 @@ class Order(util.Initializable):
             logger.debug(f"Updating chained order quantity with triggering order fees. {fees_str}")
         return True
 
+    async def update_price_if_outdated(self):
+        """
+        Implement if necessary
+        """
+
+    async def _adapt_chained_order_before_creation(self, chained_order):
+        can_be_created = True
+        if chained_order.update_with_triggering_order_fees:
+            can_be_created = chained_order.update_quantity_with_order_fees(self)
+        # ensure price is not outdated
+        await chained_order.update_price_if_outdated()
+        return can_be_created
+
     async def _trigger_chained_orders(self):
         logger = logging.get_logger(self.get_logger_name())
         for index, order in enumerate(self.chained_orders):
-            can_be_created = True
-            if order.update_with_triggering_order_fees:
-                can_be_created = order.update_quantity_with_order_fees(self)
+            can_be_created = await self._adapt_chained_order_before_creation(order)
             if can_be_created and order.should_be_created():
                 logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
                 await order_util.create_as_chained_order(order)

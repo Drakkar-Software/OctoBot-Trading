@@ -45,6 +45,16 @@ def created_order(order_type, order_type_enum, *args, **kwargs):
     return order
 
 
+
+@pytest.fixture()
+def backtesting_buy_and_sell_limit_orders(event_loop, backtesting_trader):
+    _, _, trader_instance = backtesting_trader
+    return (
+        created_order(BuyLimitOrder, TraderOrderType.BUY_LIMIT, trader_instance),
+        created_order(SellLimitOrder, TraderOrderType.SELL_LIMIT, trader_instance)
+    )
+
+
 @pytest.fixture()
 def buy_limit_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader

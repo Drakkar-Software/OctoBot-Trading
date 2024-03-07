@@ -26,6 +26,9 @@ class TakeProfitLimitOrder(limit_order.LimitOrder):
         super().__init__(trader, side)
         self.limit_price = limit_price
 
+    async def update_price_if_outdated(self):
+        pass
+
     async def on_filled(self, enable_associated_orders_creation):
         await limit_order.LimitOrder.on_filled(self, enable_associated_orders_creation)
         # TODO replace with chained order ?

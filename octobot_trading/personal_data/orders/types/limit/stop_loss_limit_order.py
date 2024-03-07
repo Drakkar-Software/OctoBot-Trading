@@ -31,6 +31,9 @@ class StopLossLimitOrder(limit_order.LimitOrder):
     def is_counted_in_available_funds(self):
         return False
 
+    async def update_price_if_outdated(self):
+        pass
+
     async def on_filled(self, enable_associated_orders_creation):
         await limit_order.LimitOrder.on_filled(self, enable_associated_orders_creation)
         # TODO replace with chained order ?
