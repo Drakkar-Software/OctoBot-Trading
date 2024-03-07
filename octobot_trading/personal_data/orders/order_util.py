@@ -551,6 +551,46 @@ def generate_order_id():
     return str(uuid.uuid4())
 
 
+def _get_possible_filled_price(
+    exchange_manager, symbol: str, side: enums.TradeOrderSide, ideal_price: decimal.Decimal
+) -> decimal.Decimal:
+    try:
+        min_price, max_price = exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).\
+            price_events_manager.get_min_and_max_prices()
+        if side is enums.TradeOrderSide.SELL:
+            if ideal_price < min_price:
+                return min_price
+        if side is enums.TradeOrderSide.BUY:
+            if ideal_price > max_price:
+                return max_price
+    except IndexError:
+        # no available price data
+        pass
+    return ideal_price
+
+
+def get_valid_filled_price(order, ideal_price: decimal.Decimal):
+    # ensure filled price based on ideal_price makes sense according to the current candle
+    # instead of blindly using ideal_price as this could
+    # potentially buy higher than the candle high or sell lower than the candle low,
+    # which can't happen on real conditions
+
+    if order.exchange_manager.is_backtesting:
+        # in backtesting: ensure ideal_price is with in current candle price.
+        return _get_possible_filled_price(order.exchange_manager, order.symbol, order.side, ideal_price)
+    # not in backtesting: price desync can't happen
+    return ideal_price
+
+
+async def adapt_chained_order_before_creation(base_order, chained_order):
+    can_be_created = True
+    if chained_order.update_with_triggering_order_fees:
+        can_be_created = chained_order.update_quantity_with_order_fees(base_order)
+    # ensure price is not outdated
+    await chained_order.update_price_if_outdated()
+    return can_be_created
+
+
 async def wait_for_order_fill(order, timeout, wait_for_portfolio_update):
     if order.is_open():
         if order.state is None:
