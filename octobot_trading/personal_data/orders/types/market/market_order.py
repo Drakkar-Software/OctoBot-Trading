@@ -30,9 +30,7 @@ class MarketOrder(order_class.Order):
     def on_fill_actions(self):
         self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         self.origin_price = self.created_last_price
-        self.filled_price = self.created_last_price
-        self.filled_quantity = self.origin_quantity
-        self._update_total_cost()
+        self.update_order_filled_values(self.created_last_price)
         order_class.Order.on_fill_actions(self)
 
     def can_be_edited(self):

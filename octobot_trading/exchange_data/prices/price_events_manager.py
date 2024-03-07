@@ -49,6 +49,12 @@ class PriceEventsManager:
         self.clear_recent_prices()
         self.events.clear()
 
+    def get_min_and_max_prices(self) -> (float, float):
+        if len(self._last_recent_prices) < 2:
+            raise IndexError("Not enough data")
+        prices = sorted([element[self.PRICE_KEY] for element in self._last_recent_prices])
+        return prices[0], prices[-1]
+
     def handle_recent_trades(self, recent_trades):
         """
         Handle new recent trades prices

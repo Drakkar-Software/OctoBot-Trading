@@ -489,18 +489,10 @@ class Order(util.Initializable):
         Implement if necessary
         """
 
-    async def _adapt_chained_order_before_creation(self, chained_order):
-        can_be_created = True
-        if chained_order.update_with_triggering_order_fees:
-            can_be_created = chained_order.update_quantity_with_order_fees(self)
-        # ensure price is not outdated
-        await chained_order.update_price_if_outdated()
-        return can_be_created
-
     async def _trigger_chained_orders(self):
         logger = logging.get_logger(self.get_logger_name())
         for index, order in enumerate(self.chained_orders):
-            can_be_created = await self._adapt_chained_order_before_creation(order)
+            can_be_created = await order_util.adapt_chained_order_before_creation(self, order)
             if can_be_created and order.should_be_created():
                 logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
                 await order_util.create_as_chained_order(order)
@@ -731,6 +723,15 @@ class Order(util.Initializable):
         else:
             # quantity in USDT for BTC/USDT => cost = price(BTC in USDT)
             self.total_cost = quantity
+
+    def update_order_filled_values(self, ideal_price: decimal.Decimal):
+        if not self.filled_price:
+            # keep order.filled_price if already set (!= 0)
+            self.filled_price = order_util.get_valid_filled_price(self, ideal_price)
+        if not self.filled_quantity or self.exchange_manager.trader.simulate:
+            # keep self.filled_quantity if already set (!= 0) in real trading
+            self.filled_quantity = self.origin_quantity
+        self._update_total_cost()
 
     def consider_as_canceled(self):
         self.status = enums.OrderStatus.CANCELED
