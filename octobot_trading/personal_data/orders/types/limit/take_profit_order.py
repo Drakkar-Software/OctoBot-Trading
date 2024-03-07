@@ -25,6 +25,9 @@ class TakeProfitOrder(limit_order.LimitOrder):
     def is_counted_in_available_funds(self):
         return False
 
+    async def update_price_if_outdated(self):
+        pass
+
     def _filled_maker_or_taker(self):
         # Creates a market order when filled, which is taker
         return enums.ExchangeConstantsMarketPropertyColumns.TAKER.value

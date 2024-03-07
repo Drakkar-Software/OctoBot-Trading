@@ -303,10 +303,16 @@ async def test_trigger_chained_orders(trader_simulator):
     await base_order.on_filled(True)
 
     # with chained orders
-    order_mock_1 = mock.Mock()
-    order_mock_1.should_be_created = mock.Mock(return_value=True)
-    order_mock_2 = mock.Mock()
-    order_mock_2.should_be_created = mock.Mock(return_value=False)
+    order_mock_1 = mock.Mock(
+        update_price_if_outdated=mock.AsyncMock(),
+        update_quantity_with_order_fees=mock.AsyncMock(return_value=True),
+        should_be_created=mock.Mock(return_value=True)
+    )
+    order_mock_2 = mock.Mock(
+        update_price_if_outdated=mock.AsyncMock(),
+        update_quantity_with_order_fees=mock.AsyncMock(return_value=True),
+        should_be_created=mock.Mock(return_value=False)
+    )
     with mock.patch.object(order_util, "create_as_chained_order", mock.AsyncMock()) as create_as_chained_order_mock:
 
         base_order.add_chained_order(order_mock_1)
@@ -316,12 +322,20 @@ async def test_trigger_chained_orders(trader_simulator):
         await base_order.on_filled(False)
         order_mock_1.should_be_created.assert_not_called()
         order_mock_2.should_be_created.assert_not_called()
+        order_mock_1.update_price_if_outdated.assert_not_called()
+        order_mock_2.update_price_if_outdated.assert_not_called()
+        order_mock_1.update_quantity_with_order_fees.assert_not_called()
+        order_mock_2.update_quantity_with_order_fees.assert_not_called()
         create_as_chained_order_mock.assert_not_called()
 
         # triggers chained orders
         await base_order.on_filled(True)
         order_mock_1.should_be_created.assert_called_once()
         order_mock_2.should_be_created.assert_called_once()
+        order_mock_1.update_price_if_outdated.assert_called_once()
+        order_mock_2.update_price_if_outdated.assert_called_once()
+        order_mock_1.update_quantity_with_order_fees.assert_called_once()
+        order_mock_2.update_quantity_with_order_fees.assert_called_once()
         create_as_chained_order_mock.assert_called_once_with(order_mock_1)
 
 

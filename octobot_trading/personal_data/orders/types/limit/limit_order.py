@@ -18,6 +18,7 @@ import asyncio
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order as order_class
+import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 
 
 class LimitOrder(order_class.Order):
@@ -35,6 +36,38 @@ class LimitOrder(order_class.Order):
             updated = True
             self.trigger_above = raw_order[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value]
         return updated
+
+    async def update_price_if_outdated(self):
+        # price is outdated if it would trigger and instantly filled order with more than the allowed tolerance
+        try:
+            current_price = await self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(self.symbol) \
+                .prices_manager.get_mark_price(timeout=constants.CHAINED_ORDER_PRICE_FETCHING_TIMEOUT)
+            self._update_limit_price_if_necessary(current_price)
+        except asyncio.TimeoutError:
+            # price can't be checked
+            return
+
+    def _update_limit_price_if_necessary(self, current_price):
+        updated_price = self.origin_price
+        if self.side is enums.TradeOrderSide.BUY:
+            highest_accepted_buy_price = (
+                current_price * (constants.ONE + constants.CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE)
+            )
+            if self.origin_price > highest_accepted_buy_price:
+                # buy price is more than CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE % higher than the current price
+                # => Reduce it to the highest allowed price
+                updated_price = highest_accepted_buy_price
+        if self.side is enums.TradeOrderSide.SELL:
+            lowest_accepted_sell_price = (
+                current_price * (constants.ONE - constants.CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE)
+            )
+            if self.origin_price < lowest_accepted_sell_price:
+                # sell price is more than CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE % lower than the current price
+                # => Increase it to the current price
+                updated_price = lowest_accepted_sell_price
+        if self.origin_price != updated_price:
+            symbol_market = self.exchange_manager.exchange.get_market_status(self.symbol, with_fixer=False)
+            self.origin_price = decimal_order_adapter.decimal_adapt_price(symbol_market, updated_price)
 
     async def update_order_status(self, force_refresh=False):
         if self.limit_price_hit_event is None:

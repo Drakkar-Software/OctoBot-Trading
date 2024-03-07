@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.enums
 
 import octobot_trading.enums
@@ -105,7 +107,7 @@ def create_new_candles_manager(candles=None, max_candles_count=None) -> exchange
 
 def force_set_mark_price(exchange_manager, symbol, price):
     exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.\
-        set_mark_price(price, octobot_trading.enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value)
+        set_mark_price(decimal.Decimal(str(price)), octobot_trading.enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value)
 
 
 def is_mark_price_initialized(exchange_manager, symbol: str) -> bool:
