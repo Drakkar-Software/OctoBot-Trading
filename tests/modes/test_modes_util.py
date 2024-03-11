@@ -195,6 +195,54 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
+    orders = await modes_util.convert_asset_to_target_asset(
+        trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(1000)
+    )
+    assert len(orders) == 1
+    order = orders[0]
+    assert order.order_type == trading_enums.TraderOrderType.BUY_MARKET
+    assert order.symbol == "ETH/USDT"
+    assert order.origin_quantity == decimal.Decimal("0.66666666")
+    assert order.created_last_price == decimal.Decimal(1500)
+    trading_mode.create_order.assert_called_once()
+    trading_mode.create_order.reset_mock()
+
+    # with fees paid in quote
+    fees = {
+        trading_enums.FeePropertyColumns.COST.value: "2",
+        trading_enums.FeePropertyColumns.CURRENCY.value: "USDT",
+    }
+    with mock.patch.object(exchange_manager.exchange, "get_trade_fee", mock.Mock(return_value=fees)) \
+         as get_trade_fee_mock:
+        # cast 1: enough funds in pf to cover fees
+        orders = await modes_util.convert_asset_to_target_asset(
+            trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(450)
+        )
+        assert len(orders) == 1
+        order = orders[0]
+        assert order.order_type == trading_enums.TraderOrderType.BUY_MARKET
+        assert order.symbol == "ETH/USDT"
+        assert order.origin_quantity == decimal.Decimal("0.3")
+        assert order.created_last_price == decimal.Decimal(1500)
+        get_trade_fee_mock.assert_called_once()
+        get_trade_fee_mock.reset_mock()
+        trading_mode.create_order.assert_called_once()
+        trading_mode.create_order.reset_mock()
+
+        # cast 2: reduce amount to cover fees
+        orders = await modes_util.convert_asset_to_target_asset(
+            trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(1000)
+        )
+        assert len(orders) == 1
+        order = orders[0]
+        assert order.order_type == trading_enums.TraderOrderType.BUY_MARKET
+        assert order.symbol == "ETH/USDT"
+        assert order.origin_quantity == decimal.Decimal("0.66400000")   # lower than 0.66666666 when fees is 0 USDT
+        assert order.created_last_price == decimal.Decimal(1500)
+        get_trade_fee_mock.assert_called_once()
+        trading_mode.create_order.assert_called_once()
+        trading_mode.create_order.reset_mock()
+
 
 def _get_trading_mode(exchange_manager):
     return mock.Mock(
