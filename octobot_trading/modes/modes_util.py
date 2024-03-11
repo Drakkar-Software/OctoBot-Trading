@@ -151,19 +151,29 @@ def _get_associated_symbol_and_order_type(trading_mode, asset: str, target_asset
 
 
 def _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount) -> decimal.Decimal:
+    side = (
+        trading_enums.TradeOrderSide.SELL
+        if order_type in (trading_enums.TraderOrderType.SELL_MARKET, trading_enums.TraderOrderType.SELL_LIMIT)
+        else trading_enums.TradeOrderSide.BUY
+    )
+
+    currency_available, market_available, market_quantity = trading_personal_data.get_portfolio_amounts(
+        trading_mode.exchange_manager, symbol, price, portfolio_type=common_constants.PORTFOLIO_AVAILABLE
+    )
     if asset_amount is None:
-        currency_available, _, market_quantity = trading_personal_data.get_portfolio_amounts(
-            trading_mode.exchange_manager, symbol, price, portfolio_type=common_constants.PORTFOLIO_AVAILABLE
-        )
-        quantity = currency_available if order_type is trading_enums.TraderOrderType.SELL_MARKET \
-            else market_quantity
+        quantity = currency_available if side is trading_enums.TradeOrderSide.SELL else market_quantity
     else:
         try:
-            quantity = asset_amount if order_type is trading_enums.TraderOrderType.SELL_MARKET \
-                else (asset_amount / price)
+            quantity = asset_amount if side is trading_enums.TradeOrderSide.SELL else (asset_amount / price)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             quantity = constants.ZERO
-    return quantity
+
+    adapted_quantity = trading_personal_data.decimal_adapt_order_quantity_because_fees(
+        trading_mode.exchange_manager, symbol, order_type, quantity, price,
+        trading_enums.ExchangeConstantsMarketPropertyColumns.TAKER, side,
+        currency_available if side is trading_enums.TradeOrderSide.SELL else market_available
+    )
+    return adapted_quantity
 
 
 async def notify_portfolio_optimization_complete():
