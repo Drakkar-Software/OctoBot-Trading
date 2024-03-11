@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.59] - 2024-03-11
+### Fixed
+- [TradingModes] Fix convert_asset_to_target_asset to properly handle fees
+
 ## [2.4.58] - 2024-03-07
 ### Fixed
 - [ChainedOrders] Outdated limit price
