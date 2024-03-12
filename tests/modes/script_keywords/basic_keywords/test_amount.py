@@ -45,14 +45,16 @@ async def test_get_amount_from_input_amount(null_context):
 
     with mock.patch.object(account_balance, "adapt_amount_to_holdings",
                            mock.AsyncMock(return_value=decimal.Decimal(1))) as adapt_amount_to_holdings_mock:
-        with mock.patch.object(dsl, "parse_quantity",
-                               mock.Mock(return_value=(script_keywords.QuantityType.DELTA, decimal.Decimal(2)))) \
-                as parse_quantity_mock:
-            assert await script_keywords.get_amount_from_input_amount(null_context, "1", "buy") == decimal.Decimal(1)
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
-                                                                  False, True, False, target_price=None)
-            parse_quantity_mock.assert_called_once_with("1")
-            adapt_amount_to_holdings_mock.reset_mock()
+        for quantity_delta in (script_keywords.QuantityType.DELTA, script_keywords.QuantityType.DELTA_BASE):
+            with mock.patch.object(dsl, "parse_quantity",
+                                   mock.Mock(return_value=(quantity_delta, decimal.Decimal(2)))) \
+                    as parse_quantity_mock:
+                assert await script_keywords.get_amount_from_input_amount(null_context, "1", "buy") \
+                       == decimal.Decimal(1)
+                adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
+                                                                      False, True, False, target_price=None)
+                parse_quantity_mock.assert_called_once_with("1")
+                adapt_amount_to_holdings_mock.reset_mock()
 
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(script_keywords.QuantityType.DELTA_QUOTE, decimal.Decimal(2)))) \

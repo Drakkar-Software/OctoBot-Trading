@@ -24,9 +24,10 @@ def test_parse_quantity_types():
     assert script_keywords.parse_quantity(None) == (script_keywords.QuantityType.DELTA, None)
     assert script_keywords.parse_quantity(10) == (script_keywords.QuantityType.DELTA, decimal.Decimal(10))
     assert script_keywords.parse_quantity(-10) == (script_keywords.QuantityType.DELTA, decimal.Decimal(-10))
-    assert script_keywords.parse_quantity(1.366666663347877) == (
-        script_keywords.QuantityType.DELTA, decimal.Decimal("1.366666663347877"))
+    assert script_keywords.parse_quantity(1.366666663347877) == \
+           (script_keywords.QuantityType.DELTA, decimal.Decimal("1.366666663347877"))
     assert script_keywords.parse_quantity("-10") == (script_keywords.QuantityType.DELTA, decimal.Decimal(-10))
+    assert script_keywords.parse_quantity("-10b") == (script_keywords.QuantityType.DELTA_BASE, decimal.Decimal(-10))
 
     assert script_keywords.parse_quantity("q") == (script_keywords.QuantityType.DELTA_QUOTE, None)
     assert script_keywords.parse_quantity("123q") == (
@@ -87,10 +88,12 @@ def test_parse_quantity_types():
 
 def test_parse_quantity_edge_numbers():
     assert script_keywords.parse_quantity(0) == (script_keywords.QuantityType.DELTA, decimal.Decimal(0))
-    assert script_keywords.parse_quantity(0.000000001) == (
-        script_keywords.QuantityType.DELTA, decimal.Decimal("0.000000001"))
+    assert script_keywords.parse_quantity(0.000000001) == \
+           (script_keywords.QuantityType.DELTA, decimal.Decimal("0.000000001"))
     assert script_keywords.parse_quantity(100000000000000000000) \
            == (script_keywords.QuantityType.DELTA, decimal.Decimal("100000000000000000000"))
+    assert script_keywords.parse_quantity("100000000000000000000b") \
+           == (script_keywords.QuantityType.DELTA_BASE, decimal.Decimal("100000000000000000000"))
     assert script_keywords.parse_quantity("-1e-09e%") == (
         script_keywords.QuantityType.ENTRY_PERCENT, decimal.Decimal("-1e-09"))
     assert script_keywords.parse_quantity("1e09%e") == (
