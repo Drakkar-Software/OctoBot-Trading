@@ -339,6 +339,63 @@ async def test_trigger_chained_orders(trader_simulator):
         create_as_chained_order_mock.assert_called_once_with(order_mock_1)
 
 
+def test_update_quantity_with_order_fees(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.Order(trader_inst)
+    base_order.symbol = "BTC/USDT"
+
+    other_order = personal_data.Order(trader_inst)
+    other_order.symbol = base_order.symbol
+    other_order.origin_quantity = decimal.Decimal(1)
+
+    # case 1: quantity_currency is not the amount unit: nothing changes
+    base_order.fee = {
+        enums.FeePropertyColumns.CURRENCY.value: "USDT",
+        enums.FeePropertyColumns.COST.value: decimal.Decimal("1")
+    }
+    other_order.quantity_currency = "BTC"
+    assert other_order.update_quantity_with_order_fees(base_order) is True
+    assert other_order.origin_quantity == decimal.Decimal(1)    # nothing changed
+
+    # case 2: quantity_currency is the amount unit: other_order quantity is reduced
+    base_order.fee = {
+        enums.FeePropertyColumns.CURRENCY.value: "BTC",
+        enums.FeePropertyColumns.COST.value: decimal.Decimal("0.1")
+    }
+    other_order.quantity_currency = "BTC"
+    assert other_order.update_quantity_with_order_fees(base_order) is True
+    assert other_order.origin_quantity == decimal.Decimal("0.9")    # 1 - 0.1
+    other_order.origin_quantity = decimal.Decimal(1)
+
+    # case 3: quantity_currency is the amount unit and is too large: return False
+    base_order.fee = {
+        enums.FeePropertyColumns.CURRENCY.value: "BTC",
+        enums.FeePropertyColumns.COST.value: decimal.Decimal("1")
+    }
+    other_order.quantity_currency = "BTC"
+    assert other_order.update_quantity_with_order_fees(base_order) is False
+    assert other_order.origin_quantity == decimal.Decimal(1)    # nothing changed
+    base_order.fee = {
+        enums.FeePropertyColumns.CURRENCY.value: "BTC",
+        enums.FeePropertyColumns.COST.value: decimal.Decimal("1.1")
+    }
+    other_order.quantity_currency = "BTC"
+    assert other_order.update_quantity_with_order_fees(base_order) is False
+    assert other_order.origin_quantity == decimal.Decimal(1)    # nothing changed
+
+    # case 4: quantity_currency is the amount unit: other_order quantity is reduced and adapted
+    base_order.fee = {
+        enums.FeePropertyColumns.CURRENCY.value: "BTC",
+        enums.FeePropertyColumns.COST.value: decimal.Decimal("0.111111111111111111111111")
+    }
+    other_order.quantity_currency = "BTC"
+    assert other_order.update_quantity_with_order_fees(base_order) is True
+    # 1 - 0.111111111111111111111111 with truncated digits
+    assert other_order.origin_quantity == decimal.Decimal("0.88888")
+    other_order.origin_quantity = decimal.Decimal(1)
+
+
 async def test_update_from_order(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 

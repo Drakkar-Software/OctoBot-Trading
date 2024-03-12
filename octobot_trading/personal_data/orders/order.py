@@ -25,6 +25,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
 import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.util as util
 
 
@@ -476,11 +477,15 @@ class Order(util.Initializable):
             logger = logging.get_logger(self.get_logger_name())
             fees_str = f"Paid {self.quantity_currency} fees: {relevant_fees_amount}, " \
                        f"initial order size: {self.origin_quantity}"
-            if relevant_fees_amount > self.origin_quantity:
+            if relevant_fees_amount >= self.origin_quantity:
                 logger.error(f"Impossible to update chained order amount according to triggering order fees: "
                              f"fees are larger than then chained order size. {fees_str}")
                 return False
-            self.origin_quantity -= relevant_fees_amount
+            self.origin_quantity = decimal_order_adapter.decimal_adapt_quantity(
+                self.exchange_manager.exchange.get_market_status(self.symbol, with_fixer=False),
+                self.origin_quantity - relevant_fees_amount
+            )
+            fees_str = f"{fees_str}, updated size: {self.origin_quantity}"
             logger.debug(f"Updating chained order quantity with triggering order fees. {fees_str}")
         return True
 
