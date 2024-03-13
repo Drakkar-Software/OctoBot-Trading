@@ -29,7 +29,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
 
     async def perform(self, orders, is_from_bot=False, are_closed=False):
         try:
-            self.logger.debug(f"Received order update for {len(orders)} orders.")
+            self.logger.debug(f"Received order update for {len(orders)} {'closed' if are_closed else ''} orders.")
             has_new_order = False
             waiting_complete_init_orders = []
             symbols = set()
