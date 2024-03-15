@@ -33,6 +33,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_get_price_with_offset(null_context):
+    null_context.symbol = "blop/plop"
     null_context.exchange_manager = mock.Mock(
         exchange=mock.Mock(
             get_market_status=mock.Mock(return_value={
@@ -56,12 +57,36 @@ async def test_get_price_with_offset(null_context):
                 null_context.exchange_manager, null_context.symbol, timeout=constants.ORDER_DATA_FETCHING_TIMEOUT
             )
             parse_quantity_mock.assert_called_once_with(10)
+            null_context.exchange_manager.exchange.get_market_status.assert_called_once_with(
+                "blop/plop", with_fixer=False
+            )
             current_price_mock.reset_mock()
             parse_quantity_mock.reset_mock()
 
             assert await script_keywords.get_price_with_offset(null_context, 10, use_delta_type_as_flat_value=True) \
                    == decimal.Decimal(10)
             current_price_mock.assert_not_called()
+            parse_quantity_mock.assert_called_once_with(10)
+            current_price_mock.reset_mock()
+            parse_quantity_mock.reset_mock()
+
+        with mock.patch.object(dsl, "parse_quantity",
+                               mock.Mock(return_value=(script_keywords.QuantityType.DELTA_EXPLICIT, decimal.Decimal(10)))) \
+                as parse_quantity_mock:
+            assert await script_keywords.get_price_with_offset(null_context, 10) == decimal.Decimal(210)
+            current_price_mock.assert_called_once_with(
+                null_context.exchange_manager, null_context.symbol, timeout=constants.ORDER_DATA_FETCHING_TIMEOUT
+            )
+            parse_quantity_mock.assert_called_once_with(10)
+            current_price_mock.reset_mock()
+            parse_quantity_mock.reset_mock()
+
+            # DELTA_EXPLICIT ignores use_delta_type_as_flat_value
+            assert await script_keywords.get_price_with_offset(null_context, 10, use_delta_type_as_flat_value=True) \
+                   == decimal.Decimal(210)
+            current_price_mock.assert_called_once_with(
+                null_context.exchange_manager, null_context.symbol, timeout=constants.ORDER_DATA_FETCHING_TIMEOUT
+            )
             parse_quantity_mock.assert_called_once_with(10)
             current_price_mock.reset_mock()
             parse_quantity_mock.reset_mock()

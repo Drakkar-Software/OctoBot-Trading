@@ -27,6 +27,12 @@ def test_parse_quantity_types():
     assert script_keywords.parse_quantity(1.366666663347877) == \
            (script_keywords.QuantityType.DELTA, decimal.Decimal("1.366666663347877"))
     assert script_keywords.parse_quantity("-10") == (script_keywords.QuantityType.DELTA, decimal.Decimal(-10))
+
+    assert script_keywords.parse_quantity("-10d") == (script_keywords.QuantityType.DELTA_EXPLICIT, decimal.Decimal(-10))
+    assert script_keywords.parse_quantity("d-10") == (script_keywords.QuantityType.DELTA_EXPLICIT, decimal.Decimal(-10))
+    assert script_keywords.parse_quantity("d+10") == (script_keywords.QuantityType.DELTA_EXPLICIT, decimal.Decimal(10))
+    assert script_keywords.parse_quantity("d10") == (script_keywords.QuantityType.DELTA_EXPLICIT, decimal.Decimal(10))
+
     assert script_keywords.parse_quantity("-10b") == (script_keywords.QuantityType.DELTA_BASE, decimal.Decimal(-10))
 
     assert script_keywords.parse_quantity("q") == (script_keywords.QuantityType.DELTA_QUOTE, None)
