@@ -51,7 +51,7 @@ async def get_price_with_offset(context, offset_input, use_delta_type_as_flat_va
         average_open_pos_entry_val = await position.average_open_pos_entry(context, side)
         computed_price = average_open_pos_entry_val + offset_value
 
-    elif is_delta_type_considered_as_flat or offset_type is dsl.QuantityType.FLAT:
+    elif is_delta_type_considered_as_flat or offset_type in (dsl.QuantityType.FLAT, dsl.QuantityType.DELTA_QUOTE):
         computed_price = offset_value
     else:
         raise errors.InvalidArgumentError(

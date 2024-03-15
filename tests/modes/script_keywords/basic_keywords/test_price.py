@@ -130,6 +130,10 @@ async def test_get_price_with_offset(null_context):
         assert await script_keywords.get_price_with_offset(null_context, 10) == decimal.Decimal(50)
 
     with mock.patch.object(dsl, "parse_quantity",
+                           mock.Mock(return_value=(script_keywords.QuantityType.DELTA_QUOTE, decimal.Decimal(50)))):
+        assert await script_keywords.get_price_with_offset(null_context, 10) == decimal.Decimal(50)
+
+    with mock.patch.object(dsl, "parse_quantity",
                            mock.Mock(return_value=(script_keywords.QuantityType.UNKNOWN, decimal.Decimal(-50)))):
         with pytest.raises(errors.InvalidArgumentError):
             await script_keywords.get_price_with_offset(null_context, 10)
