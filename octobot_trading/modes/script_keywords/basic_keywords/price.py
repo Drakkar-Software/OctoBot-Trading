@@ -28,7 +28,7 @@ async def get_price_with_offset(context, offset_input, use_delta_type_as_flat_va
     # when use_delta_type_as_flat_value is True, consider a simple price input as a flat target instead of an offset
     is_delta_type_considered_as_flat = offset_type is dsl.QuantityType.DELTA and use_delta_type_as_flat_value
 
-    if offset_type is dsl.QuantityType.DELTA_BASE or (
+    if offset_type is dsl.QuantityType.DELTA_EXPLICIT or (
         offset_type is dsl.QuantityType.DELTA and not is_delta_type_considered_as_flat
     ):
         current_price_val = await personal_data.get_up_to_date_price(
@@ -55,9 +55,10 @@ async def get_price_with_offset(context, offset_input, use_delta_type_as_flat_va
         computed_price = offset_value
     else:
         raise errors.InvalidArgumentError(
-            "Make sure to use a supported syntax for price, supported parameters are: "
-            "1.2, -0.222, -0.222b, @65100, 5%, e5%, e500"
+            f"'{offset_input}' is not supported. "
+            f"Make sure to use a supported syntax for price, supported parameters are: "
+            f"1.2, -0.222, -0.222d, @65100, 5%, e5%, e500"
         )
 
-    symbol_market = context.exchange_manager.exchange.get_market_status(context, with_fixer=False)
+    symbol_market = context.exchange_manager.exchange.get_market_status(context.symbol, with_fixer=False)
     return personal_data.decimal_adapt_price(symbol_market, computed_price)
