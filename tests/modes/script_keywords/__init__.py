@@ -64,6 +64,7 @@ async def mock_context(backtesting_trader):
         mock.Mock(),
     )
     context.signal_builder = mock.Mock()
+    context.is_trading_signal_emitter = mock.Mock(return_value=False)
     context.orders_writer = mock.Mock(log_many=mock.AsyncMock())
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     # init portfolio with 0.5 BTC, 20 ETH and 30000 USDT and only 0.1 available BTC

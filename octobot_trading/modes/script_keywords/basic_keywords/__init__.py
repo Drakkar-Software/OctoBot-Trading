@@ -36,6 +36,16 @@ from octobot_trading.modes.script_keywords.basic_keywords.amount import (
     get_amount_from_input_amount,
 )
 
+from octobot_trading.modes.script_keywords.basic_keywords.price import (
+    get_price_with_offset,
+)
+
+from octobot_trading.modes.script_keywords.basic_keywords.position import (
+    get_position,
+    average_open_pos_entry,
+    is_in_one_way_position_mode,
+)
+
 from octobot_trading.modes.script_keywords.basic_keywords.account_balance import (
     total_account_balance,
     available_account_balance,
@@ -71,6 +81,10 @@ __all__ = [
     "set_leverage",
     "set_partial_take_profit_stop_loss",
     "get_amount_from_input_amount",
+    "get_price_with_offset",
+    "get_position",
+    "average_open_pos_entry",
+    "is_in_one_way_position_mode",
     "total_account_balance",
     "available_account_balance",
     "adapt_amount_to_holdings",
