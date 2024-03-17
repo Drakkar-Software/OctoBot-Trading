@@ -54,7 +54,46 @@ async def test_get_amount_from_input_amount(null_context):
                 adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
                                                                       False, True, False, target_price=None)
                 parse_quantity_mock.assert_called_once_with("1")
+                parse_quantity_mock.reset_mock()
                 adapt_amount_to_holdings_mock.reset_mock()
+
+                with pytest.raises(errors.MissingFunds):
+                    # raises as 1 != 2
+                    await script_keywords.get_amount_from_input_amount(
+                        null_context, "1", "buy", allow_holdings_adaptation=False
+                    )
+                adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
+                                                                      False, True, False, target_price=None)
+                parse_quantity_mock.assert_called_once_with("1")
+                adapt_amount_to_holdings_mock.reset_mock()
+
+            with mock.patch.object(dsl, "parse_quantity",
+                                   mock.Mock(return_value=(quantity_delta, decimal.Decimal(1)))) \
+                    as parse_quantity_mock:
+                for allow_holdings_adaptation in (True, False):
+                    # doesn't raise as 1 == 1
+                    assert await script_keywords.get_amount_from_input_amount(
+                        null_context, "1", "buy", allow_holdings_adaptation=allow_holdings_adaptation
+                    ) == decimal.Decimal(1)
+                    adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(1), "buy",
+                                                                          False, True, False, target_price=None)
+                    parse_quantity_mock.assert_called_once_with("1")
+                    parse_quantity_mock.reset_mock()
+                    adapt_amount_to_holdings_mock.reset_mock()
+
+            with mock.patch.object(dsl, "parse_quantity",
+                                   mock.Mock(return_value=(quantity_delta, decimal.Decimal("0.5")))) \
+                    as parse_quantity_mock:
+                for allow_holdings_adaptation in (True, False):
+                    # doesn't raise as 1 > 0.5
+                    assert await script_keywords.get_amount_from_input_amount(
+                        null_context, "1", "buy", allow_holdings_adaptation=allow_holdings_adaptation
+                    ) == decimal.Decimal(1)
+                    adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("0.5"), "buy",
+                                                                          False, True, False, target_price=None)
+                    parse_quantity_mock.assert_called_once_with("1")
+                    parse_quantity_mock.reset_mock()
+                    adapt_amount_to_holdings_mock.reset_mock()
 
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(script_keywords.QuantityType.DELTA_QUOTE, decimal.Decimal(2)))) \
@@ -79,12 +118,24 @@ async def test_get_amount_from_input_amount(null_context):
                 get_up_to_date_price_mock.reset_mock()
                 # with target_price
                 assert await script_keywords.get_amount_from_input_amount(
-                    null_context, "1", "buy", target_price=decimal.Decimal(23)
+                    null_context, "1", "buy", target_price=decimal.Decimal(23), allow_holdings_adaptation=False
                 ) == decimal.Decimal(1)
                 get_up_to_date_price_mock.assert_not_called()
                 adapt_amount_to_holdings_mock.assert_called_once_with(
                     null_context, decimal.Decimal(2) / decimal.Decimal(23), "buy",
                     False, True, False, target_price=decimal.Decimal(23)
+                )
+                parse_quantity_mock.assert_called_once_with("1")
+                adapt_amount_to_holdings_mock.reset_mock()
+                parse_quantity_mock.reset_mock()
+
+                with pytest.raises(errors.MissingFunds):
+                    # raises as 1 < 4
+                    await script_keywords.get_amount_from_input_amount(
+                        null_context, "1", "buy",  target_price=decimal.Decimal("0.5"), allow_holdings_adaptation=False
+                    )
+                adapt_amount_to_holdings_mock.assert_called_once_with(
+                    null_context, decimal.Decimal(4), "buy", False, True, False, target_price=decimal.Decimal("0.5")
                 )
                 parse_quantity_mock.assert_called_once_with("1")
                 adapt_amount_to_holdings_mock.reset_mock()
