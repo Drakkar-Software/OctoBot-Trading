@@ -31,6 +31,7 @@ async def get_amount_from_input_amount(
     is_stop_order=False,
     use_total_holding=False,
     target_price=None,
+    allow_holdings_adaptation=True,
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
 
@@ -75,6 +76,12 @@ async def get_amount_from_input_amount(
         raise NotImplementedError(amount_type)
     else:
         raise trading_errors.InvalidArgumentError(f"Unsupported input: {input_amount} make sure to use a supported syntax for amount")
-    return await account_balance.adapt_amount_to_holdings(context, amount_value, side,
-                                                          use_total_holding, reduce_only, is_stop_order,
-                                                          target_price=target_price)
+    adapted_amount = await account_balance.adapt_amount_to_holdings(
+        context, amount_value, side, use_total_holding, reduce_only, is_stop_order, target_price=target_price
+    )
+    if adapted_amount < amount_value and not allow_holdings_adaptation:
+        raise trading_errors.MissingFunds(
+            f"Not enough funds for {amount_value} amount: maximum available amount is {adapted_amount} and "
+            f"allow_holdings_adaptation is {allow_holdings_adaptation}"
+        )
+    return adapted_amount
