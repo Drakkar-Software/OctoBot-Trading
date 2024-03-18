@@ -67,7 +67,8 @@ class TestHTXRealExchangeTester(RealExchangeTester):
 
     async def test_get_symbol_prices(self):
         # without limit
-        symbol_prices = await self.get_symbol_prices()
+        # useHistoricalEndpointForSpot is required to handle limit => to add in tentacle
+        symbol_prices = await self.get_symbol_prices(useHistoricalEndpointForSpot=False)
         assert len(symbol_prices) == 150
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
@@ -75,12 +76,16 @@ class TestHTXRealExchangeTester(RealExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
-        symbol_prices = await self.get_symbol_prices(limit=200)
+        symbol_prices = await self.get_symbol_prices(limit=200, useHistoricalEndpointForSpot=False)
         assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+
+        # without useHistoricalEndpointForSpot=False
+        useHistoricalEndpointForSpot_symbol_prices = await self.get_symbol_prices(limit=200)
+        assert len(useHistoricalEndpointForSpot_symbol_prices) == 150
 
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)

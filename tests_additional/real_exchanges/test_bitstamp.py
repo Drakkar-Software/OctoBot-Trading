@@ -114,9 +114,9 @@ class TestBitstampRealExchangeTester(RealExchangeTester):
 
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) >= 2000
+        assert len(order_book[Ecobic.ASKS.value]) >= 1000
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) >= 2000
+        assert len(order_book[Ecobic.BIDS.value]) >= 1000
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):

@@ -43,7 +43,8 @@ class RealFuturesExchangeTester(RealExchangeTester):
         has_rate=True,
         has_last_time=True,
         has_next_rate=True,
-        has_next_time=True
+        has_next_time=True,
+        has_next_time_in_the_past=False
     ):
         """
         Used data are
@@ -67,7 +68,9 @@ class RealFuturesExchangeTester(RealExchangeTester):
                    and not funding_rate[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value].is_nan()
         else:
             assert funding_rate[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value].is_nan()
-        if has_next_time:
+        if has_next_time_in_the_past:
+            assert funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value] < self.get_time()
+        elif has_next_time:
             assert funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value] >= self.get_time()
         else:
             assert funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value] == constants.ZERO

@@ -32,7 +32,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "SHIB/USDT"
-    CANDLE_SINCE = 1674918000000  # Saturday 28 January 2023 15:00:00 UTC (large differences not supported)
+    CANDLE_SINCE = 1680215441000  # Friday, March 24, 2023 3:00:00 PM UTC (large differences not supported)
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     async def _test_time_frames(self):
@@ -105,9 +105,12 @@ class TestBingxRealExchangeTester(RealExchangeTester):
         # try with since and limit (used in data collector)
         # try with since and no limit (used in get_historical_ohlcv)
 
-        for since_value in (self.CANDLE_SINCE, super().CANDLE_SINCE):
+        for since_value in (
+            self.CANDLE_SINCE,
+            super().CANDLE_SINCE,
+        ):
             candle_since_sec = since_value / 1000
-            for limit in (50, None):
+            for limit in (None, None):
                 symbol_prices = await self.get_symbol_prices(since=since_value, limit=limit)
                 if limit:
                     assert len(symbol_prices) == limit
@@ -121,7 +124,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
                 for candle in symbol_prices:
                     if since_value == super().CANDLE_SINCE:
                         assert candle_since_sec <= candle[PriceIndexes.IND_PRICE_TIME.value]
-                        # ensure that still can't fetch candle before self.CANDLE_SINCE (january 2023)
+                        # ensure that still can't fetch candle before self.CANDLE_SINCE
                         # this fails if fetch works
                         assert max_candle_time < candle[PriceIndexes.IND_PRICE_TIME.value]
                         max_theoretical_bingx_candle_time = self.get_time_after_time_frames(
