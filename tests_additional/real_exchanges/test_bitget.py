@@ -100,11 +100,6 @@ class TestBitgetRealExchangeTester(RealExchangeTester):
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
         for limit in (50, None):
-            if limit is None:
-                with pytest.raises(errors.FailedRequest):
-                    # not supported
-                    await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
-                continue
             symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
             if limit:
                 assert len(symbol_prices) == limit
@@ -116,15 +111,10 @@ class TestBitgetRealExchangeTester(RealExchangeTester):
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
-
-                # invalid (since param not respected)
-                assert candle[PriceIndexes.IND_PRICE_TIME.value] > max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
-        # not supported
-        with pytest.raises(errors.FailedRequest):
-            await self.get_historical_ohlcv()
+        await self.get_historical_ohlcv()
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()

@@ -97,7 +97,6 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_historical_symbol_prices(self):
-        # not supported because of limit param not supported properly
         # try with since and limit (used in data collector)
         for limit in (50, None):
             symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
@@ -111,12 +110,7 @@ class TestCoinbaseRealExchangeTester(RealExchangeTester):
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             for candle in symbol_prices:
-                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value]
-                if limit is None:
-                    assert candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
-                else:
-                    # invalid (limit param breaks it)
-                    assert candle[PriceIndexes.IND_PRICE_TIME.value] > max_candle_time
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
         await super().test_get_historical_ohlcv()
