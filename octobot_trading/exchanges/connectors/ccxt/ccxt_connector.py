@@ -338,10 +338,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client.has['fetchOrder']:
             try:
                 with self.error_describer():
-                    return self.adapter.adapt_order(
-                        await self.client.fetch_order(exchange_order_id, symbol, params=kwargs),
-                        symbol=symbol
-                    )
+                    order = await self.client.fetch_order(exchange_order_id, symbol, params=kwargs)
+                    if order.get(ccxt_constants.CCXT_INFO):
+                        return self.adapter.adapt_order(order, symbol=symbol)
+                    return None
             except (ccxt.OrderNotFound, ccxt.InvalidOrder):
                 # some exchanges are throwing this error when an order
                 #   - is cancelled (ex: coinbase pro): ccxt.OrderNotFound
