@@ -354,11 +354,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 # something went wrong and ccxt did not expect it
                 raise octobot_trading.errors.FailedRequest(e) from e
         else:
-            # When fetch_order is not supported, uses get_open_orders and extract order id
-            open_orders = await self.get_open_orders(symbol=symbol)
-            for order in open_orders:
-                if order.get(ecoc.EXCHANGE_ID.value, None) == exchange_order_id:
-                    return order
+            # When fetch_order is not supported, uses get_open_orders or get_closed_orders and extract order id
+            for method in (self.get_open_orders, self.get_closed_orders):
+                orders = await method(symbol=symbol)
+                for order in orders:
+                    if order.get(ecoc.EXCHANGE_ID.value, None) == exchange_order_id:
+                        return order
+
         return None  # OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None,
