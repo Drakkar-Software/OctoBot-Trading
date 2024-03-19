@@ -276,23 +276,23 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 # next values are always 0 when the position empty (0 contracts)
                 enums.ExchangeConstantsPositionColumns.COLLATERAL.value: constants.ZERO if is_empty else
                 decimal.Decimal(
-                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
+                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.NOTIONAL.value: constants.ZERO if is_empty else
                 decimal.Decimal(
-                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
+                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: constants.ZERO if is_empty else
                 decimal.Decimal(
-                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.INITIAL_MARGIN.value, 0)}"),
+                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.INITIAL_MARGIN.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: constants.ZERO if is_empty else
                 decimal.Decimal(
-                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0)}"),
+                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: constants.ZERO if is_empty else
                 decimal.Decimal(
                     f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.REALISED_PNL.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: liquidation_price,
                 enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: constants.ZERO if is_empty else
                 decimal.Decimal(
-                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0)}"),
+                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: constants.ZERO if is_empty else
                 decimal.Decimal(
                     f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0)}"),

@@ -704,10 +704,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
         if symbols is None:
             raise NotImplementedError(f"The symbols param is required to get multiple positions at once")
         # force get_position when symbols is set as ccxt get_positions is only returning open positions
-        return [
-            await self.get_position(symbol, **kwargs)
-            for symbol in symbols
-        ]
+        return list(
+            await asyncio.gather(*(
+                self.get_position(symbol, **kwargs)
+                for symbol in symbols
+            ))
+        )
 
     async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
         """
