@@ -170,8 +170,15 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             price,
             enums.MarkPriceSources.TICKER_CLOSE_PRICE.value
         )
-        self.channel.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.value_converter.\
-            update_last_price(pair, price)
+        if self.channel.exchange_manager.exchange_personal_data.portfolio_manager is None:
+            if self.channel.exchange_manager.is_trading:
+                self.logger.error(
+                    f"Trading exchange manager without portfolio_manager "
+                    f"on {self.channel.exchange_manager.exchange_name}"
+                )
+        else:
+            self.channel.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+                value_converter.update_last_price(pair, price)
 
     async def _push_initial_candles(self, initial_candles_data):
         self.logger.debug("Pushing completed initialization candles")
