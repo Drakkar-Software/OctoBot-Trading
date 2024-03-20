@@ -135,6 +135,9 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
 
     # Can be overwritten
     async def can_create_order(self, symbol, state):
+        if symbol is None:
+            # can't check
+            return True
         currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 

@@ -26,6 +26,10 @@ def get_trading_mode_symbol(trading_mode) -> list:
     return trading_mode.symbol
 
 
+def is_trading_mode_symbol_wildcard(trading_mode) -> bool:
+    return trading_mode.get_is_symbol_wildcard()
+
+
 def get_trading_mode_followed_strategy_signals_identifier(trading_mode) -> str:
     if trading_mode.is_following_trading_signals():
         return trading_mode.trading_config.get(commons_constants.CONFIG_TRADING_SIGNALS_STRATEGY, "")
