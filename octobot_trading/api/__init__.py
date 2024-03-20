@@ -126,6 +126,7 @@ from octobot_trading.api.exchange import (
 from octobot_trading.api.modes import (
     get_trading_modes,
     get_trading_mode_symbol,
+    is_trading_mode_symbol_wildcard,
     get_trading_mode_followed_strategy_signals_identifier,
     get_trading_mode_current_state,
     get_activated_trading_mode,
@@ -301,6 +302,7 @@ __all__ = [
     "stop_exchange",
     "get_trading_modes",
     "get_trading_mode_symbol",
+    "is_trading_mode_symbol_wildcard",
     "get_trading_mode_followed_strategy_signals_identifier",
     "get_trading_mode_current_state",
     "get_activated_trading_mode",
