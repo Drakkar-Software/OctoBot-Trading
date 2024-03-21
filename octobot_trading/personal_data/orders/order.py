@@ -784,7 +784,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsOrderColumns.PRICE.value: filled_price,
             enums.ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
-            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: self.timestamp,
+            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: self.creation_time or self.timestamp,
             enums.ExchangeConstantsOrderColumns.TYPE.value: self.exchange_order_type.value
             if self.exchange_order_type else None,
             enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
