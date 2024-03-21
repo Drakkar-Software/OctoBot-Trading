@@ -15,6 +15,8 @@
 #  License along with this library.
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.util as util
 import octobot_trading.constants as constants
@@ -66,13 +68,24 @@ class PortfolioProfitability:
         """
         self._reset_before_profitability_calculation()
         try:
+            set_init_event = self.portfolio_manager.portfolio_value_holder.portfolio_current_value == constants.ZERO
             self.portfolio_manager.handle_profitability_recalculation(force_recompute_origin_portfolio)
             self._update_profitability_calculation()
+            if set_init_event:
+                self._set_initialized_event()
             return self.profitability_diff != constants.ZERO
         except KeyError as missing_data_exception:
             self.logger.warning(f"Missing {missing_data_exception} ticker data to calculate profitability")
         except Exception as missing_data_exception:
             self.logger.exception(missing_data_exception, True, str(missing_data_exception))
+
+    def _set_initialized_event(self):
+        commons_tree.EventProvider.instance().trigger_event(
+            self.portfolio_manager.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.portfolio_manager.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.PROFITABILITY.value
+            )
+        )
 
     def _reset_before_profitability_calculation(self):
         """
