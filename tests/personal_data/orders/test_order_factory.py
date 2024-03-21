@@ -118,31 +118,55 @@ class TestOrderFactory:
         await self.stop(exchange_manager)
 
     async def test_create_order_from_order_storage_details_with_simple_order(self):
-        _, exchange_manager, trader_inst = await self.init_default()    
+        _, exchange_manager, trader_inst = await self.init_default()
+        try:
         
-        order = personal_data.BuyLimitOrder(trader_inst)
-        order.update(order_type=TraderOrderType.BUY_LIMIT,
-                     symbol="BTC/USDT",
-                     current_price=decimal.Decimal("70"),
-                     quantity=decimal.Decimal("10"),
-                     price=decimal.Decimal("70"))
-        order_storage_details = orders_storage._format_order(order, exchange_manager)
-        order_storage_details[StoredOrdersAttr.ENTRIES.value] = ["11111"]
-    
-        pending_groups = {}
-        created_order = await personal_data.create_order_from_order_storage_details(
-            order_storage_details, exchange_manager, pending_groups
-        )
-        assert pending_groups == {}
-    
-        assert created_order.exchange_manager is exchange_manager
-        assert created_order.origin_quantity == order.origin_quantity
-        assert created_order.origin_price == order.origin_price
-        assert created_order.__class__ is order.__class__
-        # associated_entry_ids are added from order_storage_details but not in original order
-        assert created_order.associated_entry_ids == ["11111"]
-        assert order.associated_entry_ids is None
-        await self.stop(exchange_manager)
+            order = personal_data.BuyLimitOrder(trader_inst)
+            order.update(order_type=TraderOrderType.BUY_LIMIT,
+                         symbol="BTC/USDT",
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
+            order_storage_details = orders_storage._format_order(order, exchange_manager)
+            order_storage_details[StoredOrdersAttr.ENTRIES.value] = ["11111"]
+
+            pending_groups = {}
+            created_order = await personal_data.create_order_from_order_storage_details(
+                order_storage_details, exchange_manager, pending_groups
+            )
+            assert pending_groups == {}
+
+            assert created_order.exchange_manager is exchange_manager
+            assert created_order.origin_quantity == order.origin_quantity
+            assert created_order.timestamp == order.timestamp
+            assert created_order.creation_time == order.creation_time
+            assert created_order.origin_price == order.origin_price
+            assert created_order.__class__ is order.__class__
+            # associated_entry_ids are added from order_storage_details but not in original order
+            assert created_order.associated_entry_ids == ["11111"]
+            assert order.associated_entry_ids is None
+
+            # updated creation_time (as with chained orders): creation_time is used to restore order
+            assert created_order.creation_time != 123
+            order.creation_time = 123
+
+            order_storage_details = orders_storage._format_order(order, exchange_manager)
+            created_order = await personal_data.create_order_from_order_storage_details(
+                order_storage_details, exchange_manager, pending_groups
+            )
+            assert pending_groups == {}
+            assert created_order.exchange_manager is exchange_manager
+            assert created_order.origin_quantity == order.origin_quantity
+            assert created_order.timestamp == 123   # aligned with creation time
+            assert created_order.creation_time == 123   # aligned with creation time
+            assert created_order.origin_price == order.origin_price
+            assert created_order.__class__ is order.__class__
+            # associated_entry_ids are added from order_storage_details but not in original order
+            assert created_order.associated_entry_ids is None
+            assert order.associated_entry_ids is None
+
+        finally:
+            await self.stop(exchange_manager)
     
     async def test_create_order_from_order_storage_details_with_groups(self):
         _, exchange_manager, trader_inst = await self.init_default()  
