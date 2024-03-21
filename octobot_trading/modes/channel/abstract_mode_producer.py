@@ -508,6 +508,16 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                                                common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
             await script_keywords.set_leverage(context, await script_keywords.user_select_leverage(context))
 
+    async def _wait_for_symbol_prices_and_profitability_init(self, timeout) -> bool:
+        try:
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.PRICE.value)
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.PROFITABILITY.value)
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Symbol price initialization took more than {timeout} seconds")
+        return False
+
     @classmethod
     def producer_exchange_wide_lock(cls, exchange_manager) -> asyncio_tools.RLock():
         try:

@@ -195,6 +195,7 @@ CANCEL_ORDER_STATUS_SCOPE = [enums.OrderStatus.PENDING_CANCEL,
 
 DEFAULT_INITIALIZATION_EVENT_TOPICS = [
     commons_enums.InitializationEventExchangeTopics.BALANCE,
+    commons_enums.InitializationEventExchangeTopics.PROFITABILITY,
     commons_enums.InitializationEventExchangeTopics.ORDERS,
     commons_enums.InitializationEventExchangeTopics.TRADES,
     commons_enums.InitializationEventExchangeTopics.CANDLES,
