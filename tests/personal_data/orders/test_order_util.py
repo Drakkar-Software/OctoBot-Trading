@@ -346,15 +346,24 @@ async def test_create_as_chained_order_regular_order(trader_simulator):
                       quantity=decimal.Decimal("10"),
                       price=decimal.Decimal("70"))
     base_order.is_waiting_for_chained_trigger = True
+    base_order.creation_time = 123
+    origin_time = base_order.creation_time
+    assert base_order.to_dict()[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] \
+           == origin_time
     # base_order.state is None since no state has been associated to it (not initiliazed)
     assert base_order.state is None
     assert base_order.is_initialized is False
 
     await personal_data.create_as_chained_order(base_order)
+    assert base_order.creation_time > origin_time   # creation_time got update using current time
     assert base_order.is_waiting_for_chained_trigger is False
     assert base_order.is_created() is True
     assert base_order.is_initialized is True
     assert isinstance(base_order.state, personal_data.OpenOrderState)
+
+    # use chained order creation time
+    assert base_order.to_dict()[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] \
+           == base_order.creation_time
 
 
 @pytest.mark.asyncio
