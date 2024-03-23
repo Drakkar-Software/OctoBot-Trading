@@ -69,17 +69,24 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                              f"the order being refused by the exchange.")
 
     def get_minimal_funds_error(self, symbol, final_note):
-        market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
-        try:
-            base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
-            portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
-            funds = {
-                base: portfolio.get_currency_portfolio(base),
-                quote: portfolio.get_currency_portfolio(quote)
-            }
-        except Exception as err:
-            self.logger.error(f"Error when getting funds for {symbol}: {err}")
-            funds = {}
+        if symbol is None:
+            return (
+                f"Not enough funds to create new orders after {final_note} evaluation: "
+                f"{self.exchange_manager.exchange_name} exchange minimal order "
+                f"volume has not been reached."
+            )
+        else:
+            market_status = self.exchange_manager.exchange.get_market_status(symbol, price_example=None, with_fixer=False)
+            try:
+                base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
+                portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
+                funds = {
+                    base: portfolio.get_currency_portfolio(base),
+                    quote: portfolio.get_currency_portfolio(quote)
+                }
+            except Exception as err:
+                self.logger.error(f"Error when getting funds for {symbol}: {err}")
+                funds = {}
         return (
             f"Not enough funds to create a new {symbol} order after {final_note} evaluation: "
             f"{self.exchange_manager.exchange_name} exchange minimal order "
@@ -213,7 +220,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             )
             return current_holdings_value / total_holdings_value
         # only take actual holdings into account
-        return portfolio_manager.portfolio_value_holder .get_currency_holding_ratio(currency)
+        return portfolio_manager.portfolio_value_holder.get_currency_holding_ratio(currency)
 
     def get_number_of_traded_assets(self):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder
