@@ -20,6 +20,7 @@ import octobot_commons.symbols as symbol_util
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.value_converter as value_converter
 
 
@@ -116,17 +117,49 @@ class PortfolioValueHolder:
             for currency in holdings.keys()
         }
 
-    def get_currency_holding_ratio(self, currency):
-        """
-        Return the holdings ratio for the specified currency
-        :return: the holdings ratio
-        """
-        if self.portfolio_current_value:
-            return self.value_converter.evaluate_value(
-                currency,
-                self.portfolio_manager.portfolio.get_currency_portfolio(currency).total
-            ) / self.portfolio_current_value
-        return constants.ZERO
+    def get_assets_holdings_value(self, assets, target_unit, init_price_fetchers=False):
+        total_value = constants.ZERO
+        for asset, asset_holdings in self.portfolio_manager.portfolio.portfolio.items():
+            if asset not in assets:
+                continue
+            try:
+                total_value += self.value_converter.evaluate_value(
+                    asset, asset_holdings.total, raise_error=True,
+                    target_currency=target_unit, init_price_fetchers=init_price_fetchers
+                )
+            except errors.MissingPriceDataError:
+                self.logger.info(f"Missing {asset} price conversion, ignoring {float(asset_holdings.total)} holdings.")
+        return total_value
+
+    def get_holdings_ratio(self, currency, traded_symbols_only=False, include_assets_in_open_orders=False):
+        if traded_symbols_only:
+            # only consider traded assets for total_holdings_value
+            assets = set()
+            for symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
+                assets.add(symbol.base)
+                assets.add(symbol.quote)
+            total_holdings_value = self.get_assets_holdings_value(
+                assets, self.portfolio_manager.reference_market
+            )
+        else:
+            # consider all assets for total_holdings_value
+            total_holdings_value = self.portfolio_current_value
+        if not total_holdings_value:
+            return constants.ZERO
+        currency_holdings = self.portfolio_manager.portfolio.get_currency_portfolio(currency).total
+        if include_assets_in_open_orders:
+            # add assets in open orders to currency_holdings
+            assets_in_open_orders = constants.ZERO
+            for order in self.portfolio_manager.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
+                symbol = symbol_util.parse_symbol(order.symbol)
+                if order.side is enums.TradeOrderSide.BUY and symbol.base == currency:
+                    assets_in_open_orders += order.origin_quantity
+                elif order.side is enums.TradeOrderSide.SELL and symbol.quote == currency:
+                    assets_in_open_orders += order.total_cost
+            currency_holdings += assets_in_open_orders
+        # compute ration
+        current_holdings_value = self.value_converter.evaluate_value(currency, currency_holdings)
+        return current_holdings_value / total_holdings_value
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """

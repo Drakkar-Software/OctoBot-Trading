@@ -14,10 +14,17 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import mock
 import os
 import pytest
 
+import octobot_commons.asyncio_tools as asyncio_tools
+import octobot_commons.symbols as commons_symbols
+
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
+import octobot_trading.enums as enums
+import octobot_trading.personal_data as personal_data
 from tests.test_utils.random_numbers import decimal_random_quantity, decimal_random_price
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
@@ -213,3 +220,149 @@ async def test_update_origin_crypto_currencies_values(backtesting_trader):
     # USDT is now priced and BTC is the reference market
     assert portfolio_value_holder.update_origin_crypto_currencies_values("DOT/ETH", decimal.Decimal(str(0.015))) \
            is False
+
+
+async def test_get_holdings_ratio(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+    symbol = "BTC/USDT"
+    exchange_manager.client_symbols = [symbol]
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        value_converter.last_prices_by_trading_pair[symbol] = decimal.Decimal("1000")
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        portfolio_current_value = decimal.Decimal("11")
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {}
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["BTC"] = \
+        personal_data.SpotAsset(name="BTC", available=decimal.Decimal("10"), total=decimal.Decimal("10"))
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["USDT"] = \
+        personal_data.SpotAsset(name="USDT", available=decimal.Decimal("1000"), total=decimal.Decimal("1000"))
+
+    assert portfolio_value_holder.get_holdings_ratio("BTC") == decimal.Decimal('0.9090909090909090909090909091')
+    assert portfolio_value_holder.get_holdings_ratio("BTC", include_assets_in_open_orders=False) \
+           == decimal.Decimal('0.9090909090909090909090909091')
+    assert portfolio_value_holder.get_holdings_ratio("USDT") == decimal.Decimal('0.09090909090909090909090909091')
+
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio.pop("USDT")
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        portfolio_current_value = decimal.Decimal("10")
+    assert portfolio_value_holder.get_holdings_ratio("BTC") == constants.ONE
+    # add ETH and try to get ratio without symbol price
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
+        get_currency_portfolio("ETH").total = decimal.Decimal(10)
+    # force not backtesting mode
+    exchange_manager.is_backtesting = False
+    # force add symbol in exchange symbols
+    exchange_manager.client_symbols.append("ETH/BTC")
+    with pytest.raises(errors.MissingPriceDataError):
+        ratio = portfolio_value_holder.get_holdings_ratio("ETH")
+    # let channel register proceed
+    await asyncio_tools.wait_asyncio_next_cycle()
+    assert portfolio_value_holder.get_holdings_ratio("BTC") == constants.ONE
+    assert portfolio_value_holder.get_holdings_ratio("USDT") == constants.ZERO
+    assert portfolio_value_holder.get_holdings_ratio("XYZ") == constants.ZERO
+
+    # without traded_symbols
+    assert portfolio_value_holder.get_holdings_ratio("BTC", traded_symbols_only=True) == constants.ZERO
+
+    # with traded_symbols
+    exchange_manager.exchange_config.traded_symbols.extend([
+        commons_symbols.parse_symbol("BTC/USDT"), commons_symbols.parse_symbol("ETH/USDT")
+    ])
+    assert portfolio_value_holder.get_holdings_ratio("BTC", traded_symbols_only=True) == constants.ONE
+
+async def test_get_holdings_ratio_with_include_assets_in_open_orders(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+    symbol = "BTC/USDT"
+    exchange_manager.client_symbols = [symbol]
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        value_converter.last_prices_by_trading_pair[symbol] = decimal.Decimal("1000")
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        value_converter.last_prices_by_trading_pair["ETH/USDT"] = decimal.Decimal("100")
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        portfolio_current_value = decimal.Decimal("11")
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {}
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["BTC"] = \
+        personal_data.SpotAsset(name="BTC", available=decimal.Decimal("10"), total=decimal.Decimal("10"))
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["USDT"] = \
+        personal_data.SpotAsset(name="USDT", available=decimal.Decimal("1000"), total=decimal.Decimal("1000"))
+
+    assert portfolio_value_holder.get_holdings_ratio("BTC", include_assets_in_open_orders=False) \
+           == decimal.Decimal('0.9090909090909090909090909091')
+    assert portfolio_value_holder.get_holdings_ratio("USDT", include_assets_in_open_orders=False) \
+           == decimal.Decimal('0.09090909090909090909090909091')
+
+    # no open order
+    assert portfolio_value_holder.get_holdings_ratio("BTC", include_assets_in_open_orders=True) \
+           == decimal.Decimal('0.9090909090909090909090909091')
+    assert portfolio_value_holder.get_holdings_ratio("USDT", include_assets_in_open_orders=True) \
+           == decimal.Decimal('0.09090909090909090909090909091')
+
+    order_1 = mock.Mock(
+        order_id="1", symbol="BTC/USDT", origin_quantity=decimal.Decimal("1"), total_cost=decimal.Decimal('1000'),
+        status=enums.OrderStatus.OPEN, side=enums.TradeOrderSide.BUY
+    )
+    order_2 = mock.Mock(
+        order_id="2", symbol="ETH/USDT", origin_quantity=decimal.Decimal("2"), total_cost=decimal.Decimal('100'),
+        status=enums.OrderStatus.OPEN, side=enums.TradeOrderSide.BUY
+    )
+    order_3 = mock.Mock(
+        order_id="3", symbol="XRP/ETH", origin_quantity=decimal.Decimal("100"), total_cost=decimal.Decimal('0.001'),
+        status=enums.OrderStatus.OPEN, side=enums.TradeOrderSide.SELL
+    )
+    # open orders
+    await exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order_1)
+    await exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order_2)
+    assert portfolio_value_holder.get_holdings_ratio("BTC", include_assets_in_open_orders=False) \
+           == decimal.Decimal('0.9090909090909090909090909091')
+    assert portfolio_value_holder.get_holdings_ratio("ETH", include_assets_in_open_orders=False) \
+           == decimal.Decimal('0')
+    assert portfolio_value_holder.get_holdings_ratio("USDT", include_assets_in_open_orders=False) \
+           == decimal.Decimal('0.09090909090909090909090909091')
+
+    assert portfolio_value_holder.get_holdings_ratio("BTC", include_assets_in_open_orders=True) \
+           == decimal.Decimal('1')
+    assert portfolio_value_holder.get_holdings_ratio("ETH", include_assets_in_open_orders=True) \
+           == decimal.Decimal('0.01818181818181818181818181818')
+    assert portfolio_value_holder.get_holdings_ratio("USDT", include_assets_in_open_orders=True) \
+           == decimal.Decimal('0.09090909090909090909090909091')
+
+    await exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order_3)
+    assert portfolio_value_holder.get_holdings_ratio("BTC", include_assets_in_open_orders=True) \
+           == decimal.Decimal('1')
+    assert portfolio_value_holder.get_holdings_ratio("ETH", include_assets_in_open_orders=True) \
+           == decimal.Decimal('0.01819090909090909090909090909')
+    assert portfolio_value_holder.get_holdings_ratio("USDT", include_assets_in_open_orders=True) \
+           == decimal.Decimal('0.09090909090909090909090909091')
+
+    # without traded_symbols
+    assert portfolio_value_holder.get_holdings_ratio(
+        "BTC", traded_symbols_only=True, include_assets_in_open_orders=True
+    ) == constants.ZERO
+
+    # with traded_symbols
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"] = \
+        personal_data.SpotAsset(name="ETH", available=decimal.Decimal("10"), total=decimal.Decimal("10"))
+    exchange_manager.exchange_config.traded_symbols.extend([
+        commons_symbols.parse_symbol("BTC/USDT")
+    ])
+    assert portfolio_value_holder.get_holdings_ratio(
+        "BTC", traded_symbols_only=True, include_assets_in_open_orders=True
+    ) == constants.ONE
+    assert portfolio_value_holder.get_holdings_ratio(
+        "ETH", traded_symbols_only=True, include_assets_in_open_orders=True
+    ) == decimal.Decimal('0.1091')
+
+    # ETH now in traded assets
+    exchange_manager.exchange_config.traded_symbols.extend([
+        commons_symbols.parse_symbol("ETH/USDT")
+    ])
+    assert portfolio_value_holder.get_holdings_ratio(
+        "ETH", traded_symbols_only=True, include_assets_in_open_orders=True
+    ) == decimal.Decimal('0.1000083333333333333333333333')  # ETH now taken into account in total value
+    # ETH now taken into account in total value: BTC % of holdings is not 1 anymore (as ETH takes a part of this %)
+    assert portfolio_value_holder.get_holdings_ratio(
+        "BTC", traded_symbols_only=True, include_assets_in_open_orders=True
+    ) == decimal.Decimal('0.9166666666666666666666666667')
