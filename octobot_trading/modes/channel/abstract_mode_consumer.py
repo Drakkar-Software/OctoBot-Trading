@@ -201,27 +201,6 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         self.logger.debug("can_create_order: return False")
         return False
 
-    def get_holdings_ratio(self, currency, include_assets_in_open_orders=False):
-        portfolio_manager = self.exchange_manager.exchange_personal_data.portfolio_manager
-        if include_assets_in_open_orders:
-            total_holdings_value = portfolio_manager.portfolio_value_holder.portfolio_current_value
-            if not total_holdings_value:
-                return constants.ZERO
-            assets_in_open_orders = constants.ZERO
-            for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
-                symbol = symbol_util.parse_symbol(order.symbol)
-                if order.side is enums.TradeOrderSide.BUY and symbol.base == currency:
-                    assets_in_open_orders += order.origin_quantity
-                elif order.side is enums.TradeOrderSide.SELL and symbol.quote == currency:
-                    assets_in_open_orders += order.total_cost
-            current_holdings_value = portfolio_manager.portfolio_value_holder.value_converter.evaluate_value(
-                currency,
-                portfolio_manager.portfolio.get_currency_portfolio(currency).total + assets_in_open_orders
-            )
-            return current_holdings_value / total_holdings_value
-        # only take actual holdings into account
-        return portfolio_manager.portfolio_value_holder.get_currency_holding_ratio(currency)
-
     def get_number_of_traded_assets(self):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder
                    .origin_crypto_currencies_values)
