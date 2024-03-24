@@ -95,6 +95,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self._is_trigger_completed = asyncio.Event()
         self._is_trigger_completed.set()
 
+        self.last_activity = None
+
     def on_reload_config(self):
         """
         Called at constructor and after the associated trading mode's reload_config.
