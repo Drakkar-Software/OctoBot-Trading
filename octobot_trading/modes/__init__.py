@@ -58,6 +58,11 @@ from octobot_trading.modes.modes_factory import (
     create_temporary_trading_mode_with_local_config,
 )
 
+from octobot_trading.modes import mode_activity
+from octobot_trading.modes.mode_activity import (
+    TradingModeActivity,
+)
+
 from octobot_trading.modes import modes_util
 from octobot_trading.modes.modes_util import (
     get_required_candles_count,
@@ -81,6 +86,7 @@ __all__ = [
     "create_trading_modes",
     "create_trading_mode",
     "create_temporary_trading_mode_with_local_config",
+    "TradingModeActivity",
     "get_activated_trading_mode",
     "should_emit_trading_signals_user_input",
     "is_trading_signal_emitter",

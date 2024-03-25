@@ -575,3 +575,9 @@ class OrderUpdateType(enum.Enum):
 class ExchangeSupportedElements(enum.Enum):
     UNSUPPORTED_ORDERS = "unsupported_orders"
     SUPPORTED_BUNDLED_ORDERS = "supported_bundled_orders"
+
+
+class TradingModeActivityType(enum.Enum):
+    CREATED_ORDERS = "created_orders"
+    NOTHING_TO_DO = "nothing_to_do"
+    NO_ACTIVITY = None

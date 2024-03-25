@@ -131,16 +131,18 @@ class PortfolioValueHolder:
                 self.logger.info(f"Missing {asset} price conversion, ignoring {float(asset_holdings.total)} holdings.")
         return total_value
 
+    def get_traded_assets_holdings_value(self, unit):
+        assets = set()
+        for symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
+            assets.add(symbol.base)
+            assets.add(symbol.quote)
+        return self.get_assets_holdings_value(
+            assets, unit
+        )
+
     def get_holdings_ratio(self, currency, traded_symbols_only=False, include_assets_in_open_orders=False):
         if traded_symbols_only:
-            # only consider traded assets for total_holdings_value
-            assets = set()
-            for symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
-                assets.add(symbol.base)
-                assets.add(symbol.quote)
-            total_holdings_value = self.get_assets_holdings_value(
-                assets, self.portfolio_manager.reference_market
-            )
+            total_holdings_value = self.get_traded_assets_holdings_value(self.portfolio_manager.reference_market)
         else:
             # consider all assets for total_holdings_value
             total_holdings_value = self.portfolio_current_value
@@ -157,7 +159,7 @@ class PortfolioValueHolder:
                 elif order.side is enums.TradeOrderSide.SELL and symbol.quote == currency:
                     assets_in_open_orders += order.total_cost
             currency_holdings += assets_in_open_orders
-        # compute ration
+        # compute ratio
         current_holdings_value = self.value_converter.evaluate_value(currency, currency_holdings)
         return current_holdings_value / total_holdings_value
 
