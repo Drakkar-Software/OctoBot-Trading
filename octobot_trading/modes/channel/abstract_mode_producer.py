@@ -35,6 +35,7 @@ import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.script_keywords as script_keywords
+import octobot_trading.modes.mode_activity as mode_activity
 import octobot_trading.storage.util as storage_util
 
 
@@ -95,7 +96,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self._is_trigger_completed = asyncio.Event()
         self._is_trigger_completed.set()
 
-        self.last_activity = None
+        self.last_activity: mode_activity.TradingModeActivity = mode_activity.TradingModeActivity()
 
     def on_reload_config(self):
         """

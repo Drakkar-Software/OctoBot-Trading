@@ -71,8 +71,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         # The id of the OctoBot using this trading mode
         self.bot_id: str = None
 
-        # Evaluator specific config (Is loaded from tentacle specific file)
+        # Trading Mode specific config (Is loaded from tentacle specific file)
         self.trading_config: dict = None
+
+        # Trading Mode specific config snapshot before a config update
+        self.previous_trading_config: dict = None
 
         # If this mode is enabled
         self.enabled: bool = True
