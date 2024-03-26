@@ -13,22 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal
 import mock
 import pytest
 
 import octobot_commons.constants as commons_constants
 from octobot_backtesting.backtesting import Backtesting
-from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.modes.channel.abstract_mode_consumer import AbstractTradingModeConsumer
-from octobot_trading.enums import EvaluatorStates
-import octobot_trading.constants as constants
-import octobot_trading.errors as errors
-import octobot_trading.enums as enums
+from octobot_trading.enums import EvaluatorStates, TradingModeActivityType
+from octobot_trading.constants import TRADING_MODE_ACTIVITY_REASON
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.modes import AbstractTradingMode
-import octobot_trading.personal_data.portfolios.assets as portfolio_assets
+from octobot_trading.modes import AbstractTradingMode, AbstractTradingModeProducer, TradingModeActivity
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from tests import event_loop
 
@@ -144,3 +139,21 @@ async def test_get_number_of_traded_assets():
             "aaa": 3
         }
     assert consumer.get_number_of_traded_assets() == 3
+
+
+async def test_update_producer_last_activity():
+    exchange_manager, symbol, consumer = await _get_tools()
+    mode = consumer.trading_mode
+    producer = AbstractTradingModeProducer(
+        mock.Mock(exchange_manager=exchange_manager), exchange_manager.config, mode, exchange_manager
+    )
+    mode.producers.append(producer)
+    assert producer.last_activity == TradingModeActivity()
+    consumer._update_producer_last_activity(TradingModeActivityType.NOTHING_TO_DO, "plop")
+    assert producer.last_activity == TradingModeActivity(
+        TradingModeActivityType.NOTHING_TO_DO, {TRADING_MODE_ACTIVITY_REASON: "plop"}
+    )
+    consumer._update_producer_last_activity(TradingModeActivityType.CREATED_ORDERS, "11")
+    assert producer.last_activity == TradingModeActivity(
+        TradingModeActivityType.CREATED_ORDERS, {TRADING_MODE_ACTIVITY_REASON: "11"}
+    )

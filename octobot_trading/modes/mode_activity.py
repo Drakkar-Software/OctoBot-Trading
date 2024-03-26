@@ -16,9 +16,13 @@
 import dataclasses
 import enum
 import octobot_trading.enums
+import octobot_trading.constants
 
 
 @dataclasses.dataclass
 class TradingModeActivity:
     type: enum.Enum = octobot_trading.enums.TradingModeActivityType.NO_ACTIVITY
     details: dict = dataclasses.field(default_factory=dict)
+
+    def set_reason(self, reason):
+        self.details = {octobot_trading.constants.TRADING_MODE_ACTIVITY_REASON: reason}
