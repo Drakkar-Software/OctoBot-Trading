@@ -21,6 +21,7 @@ import octobot_commons.constants as commons_constants
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.modes.channel as modes_channel
+import octobot_trading.modes.mode_activity as mode_activity
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
@@ -204,6 +205,15 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
     def get_number_of_traded_assets(self):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder
                    .origin_crypto_currencies_values)
+
+    def _update_producer_last_activity(self, activity_type: enums, reason):
+        for producer in self.trading_mode.producers:
+            if isinstance(producer, modes_channel.AbstractTradingModeProducer):
+                if producer.last_activity is None:
+                    producer.last_activity = mode_activity.TradingModeActivity(activity_type)
+                else:
+                    producer.last_activity.type = activity_type
+                producer.last_activity.set_reason(reason)
 
     async def wait_for_active_position(self, symbol, timeout, side=None) -> bool:
         """
