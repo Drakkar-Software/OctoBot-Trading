@@ -80,3 +80,9 @@ def get_order_profitability(exchange_manager, order_id) -> float:
     except KeyError:
         # try in trades (order might be filled and stored in trades)
         return exchange_manager.exchange_personal_data.trades_manager.get_trade(order_id).trade_profitability
+
+
+def get_minimal_order_cost(exchange_manager, symbol) -> float:
+    return personal_data.get_minimal_order_cost(
+        exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
+    )

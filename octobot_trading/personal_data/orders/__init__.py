@@ -122,6 +122,7 @@ from octobot_trading.personal_data.orders.order_adapter import (
 )
 from octobot_trading.personal_data.orders.decimal_order_adapter import (
     get_minimal_order_amount,
+    get_minimal_order_cost,
     decimal_adapt_price,
     decimal_adapt_quantity,
     decimal_trunc_with_n_decimal_digits,
@@ -181,6 +182,7 @@ __all__ = [
     "OrdersUpdater",
     "adapt_price",
     "get_minimal_order_amount",
+    "get_minimal_order_cost",
     "decimal_adapt_price",
     "adapt_quantity",
     "decimal_adapt_quantity",
