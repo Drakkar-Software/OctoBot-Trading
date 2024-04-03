@@ -44,6 +44,7 @@ from octobot_trading.exchanges.util.exchange_util import (
     get_exchange_class_from_name,
     get_auto_filled_exchange_names,
     get_exchange_details,
+    is_api_permission_error,
 )
 from octobot_trading.exchanges.util import websockets_util
 from octobot_trading.exchanges.util.websockets_util import (
@@ -76,6 +77,7 @@ __all__ = [
     "get_exchange_class_from_name",
     "get_auto_filled_exchange_names",
     "get_exchange_details",
+    "is_api_permission_error",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",

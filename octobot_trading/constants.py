@@ -15,6 +15,7 @@
 #  License along with this library
 import decimal
 import os
+import typing
 
 import octobot_trading.enums as enums
 import octobot_commons.enums as commons_enums
@@ -119,6 +120,16 @@ DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
 SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex2", "bithumb", "bitstamp", "bittrex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
                               "wavesexchange"])
+
+# when ccxt is raising ccxt.ExchangeError instead of ccxt.AuthenticationError on api key permissions issue
+EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
+    # OKX ex: okx {"msg":"API key doesn't exist","code":"50119"}
+    ("api", "key"),
+
+    # coinbase ex: coinbase {"error":"PERMISSION_DENIED",
+    # "error_details":"Missing required scopes","message":"Missing required scopes"}
+    ("permission_denied", )
+]
 
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0

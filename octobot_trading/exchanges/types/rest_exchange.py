@@ -203,6 +203,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 self.connector.log_ddos_error(e)
             raise errors.FailedRequest(f"Failed to order operation: {e.__class__.__name__} {e}") from e
         except Exception as e:
+            if exchanges_util.is_api_permission_error(e):
+                # invalid api key or missing trading rights
+                raise errors.AuthenticationError(
+                    f"Error when handling order {e}. Please make sure that trading permissions are on for this API key."
+                )
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             print(traceback.format_exc(), file=sys.stderr)
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")

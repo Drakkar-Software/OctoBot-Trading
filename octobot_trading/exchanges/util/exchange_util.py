@@ -426,3 +426,11 @@ def get_associated_symbol(exchange_manager, asset: str, target_asset: str) -> (t
         symbol = reversed_symbol
         is_reversed_symbol = True
     return symbol, is_reversed_symbol
+
+
+def is_api_permission_error(error: BaseException) -> bool:
+    lower_error = str(error).lower()
+    for identifiers in constants.EXCHANGE_PERMISSION_ERRORS:
+        if all(identifier in lower_error for identifier in identifiers):
+            return True
+    return False
