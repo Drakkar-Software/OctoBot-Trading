@@ -100,6 +100,10 @@ class PricesManager(util.Initializable):
             try:
                 self.exchange_manager.ensure_reachability()
                 if self.exchange_manager.is_backtesting:
+                    if self.exchange_manager.exchange.is_skipping_empty_candles_in_ohlcv_fetch():
+                        # missing candles can happen if no traded took place in their time frame. Don't raise and use
+                        # last set price
+                        return self.mark_price
                     # should never happen in backtesting: mark price is either available
                     # or exchange should be unreachable
                     raise asyncio.TimeoutError()

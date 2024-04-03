@@ -27,7 +27,7 @@ import octobot_trading.exchanges.util as exchange_util
 from tests import event_loop
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_config, backtesting_exchange_manager, \
     DEFAULT_BACKTESTING_SYMBOL, DEFAULT_BACKTESTING_TF, DEFAULT_BACKTESTING_SPLIT_SYMBOL, DEFAULT_BACKTESTING_CURRENCY, \
-    DEFAULT_BACKTESTING_MARKET, fake_backtesting
+    DEFAULT_BACKTESTING_MARKET, fake_backtesting, MockedRestExchange
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -108,6 +108,8 @@ async def test_init_exchange_tentacle(backtesting_trader):
     # no registered tentacle
     with mock.patch.object(exchange_util, "get_rest_exchange_class", mock.Mock(return_value=None)) \
             as get_rest_exchange_class_mock:
+        assert rest_simulator.exchange_tentacle_class is MockedRestExchange
+        await rest_simulator.initialize_impl()
         assert rest_simulator.exchange_tentacle is None
         await rest_simulator._init_exchange_tentacle()
         assert rest_simulator.exchange_tentacle is None
@@ -134,6 +136,7 @@ async def test_init_exchange_tentacle(backtesting_trader):
     with mock.patch.object(exchange_util, "get_rest_exchange_class", mock.Mock(return_value=NoAdapterTentacle)) \
             as get_rest_exchange_class_mock:
         assert rest_simulator.exchange_tentacle is None
+        await rest_simulator.initialize_impl()
         await rest_simulator._init_exchange_tentacle()
         assert isinstance(rest_simulator.exchange_tentacle, NoAdapterTentacle)
         rest_simulator.exchange_tentacle.get_adapter_class.assert_called_once()
@@ -146,6 +149,7 @@ async def test_init_exchange_tentacle(backtesting_trader):
     with mock.patch.object(exchange_util, "get_rest_exchange_class", mock.Mock(return_value=AdapterTentacle)) \
             as get_rest_exchange_class_mock:
         assert rest_simulator.exchange_tentacle is None
+        await rest_simulator.initialize_impl()
         await rest_simulator._init_exchange_tentacle()
         assert isinstance(rest_simulator.exchange_tentacle, AdapterTentacle)
         rest_simulator.exchange_tentacle.get_adapter_class.assert_called_once()

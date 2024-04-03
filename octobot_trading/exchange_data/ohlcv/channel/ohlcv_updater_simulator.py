@@ -75,7 +75,11 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                             [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                             partial=True)
                             pushed_data = True
-            self.channel.exchange_manager.exchange.is_unreachable = not pushed_data
+            if (
+                not self.channel.exchange_manager.exchange.is_skipping_empty_candles_in_ohlcv_fetch()
+                and not pushed_data
+            ):
+                self.channel.exchange_manager.exchange.is_unreachable = True
 
         except errors.DatabaseNotFoundError as e:
             self.logger.warning(f"Not enough data : {e}")
@@ -105,7 +109,11 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
 
             # There should always be at least 2 candles in read data, otherwise this means that
             # the exchange was down for some time. Consider it unreachable
-            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
+            if (
+                len(ohlcv_data) < 2 and
+                not self.channel.exchange_manager.exchange.is_skipping_empty_candles_in_ohlcv_fetch()
+            ):
+                self.channel.exchange_manager.exchange.is_unreachable = True
         if not has_future_candle or len(ohlcv_data) > 1:
             # push current candle(s)
             candles = ohlcv_data[:-1] if has_future_candle else ohlcv_data
