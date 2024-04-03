@@ -67,6 +67,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
     HAS_FETCHED_DETAILS = False  # set True when this exchange details (urls etc) have to be fetched before
     # starting the exchange
+    IS_SKIPPING_EMPTY_CANDLES_IN_OHLCV_FETCH = False    # set True when the exchange is known for not returning any
+    # candle when no traded happened during a candle time frame. In this case, a missing candle in backtesting won't
+    # trigger an error
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -854,6 +857,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: True if the symbol is related to a contract having an expiration date
         """
         return self.connector.is_expirable_symbol(symbol)
+
+    def is_skipping_empty_candles_in_ohlcv_fetch(self):
+        return self.IS_SKIPPING_EMPTY_CANDLES_IN_OHLCV_FETCH
 
     """
     Auto fetched and filled exchanges

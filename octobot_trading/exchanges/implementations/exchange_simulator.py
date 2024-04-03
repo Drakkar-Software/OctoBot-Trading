@@ -25,6 +25,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     def __init__(self, config, exchange_manager, backtesting):
         self.backtesting = backtesting
         self.exchange_importers = []
+        self.exchange_tentacle_class = None
         self.exchange_tentacle = None
         super().__init__(config, exchange_manager)
 
@@ -39,6 +40,9 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     async def initialize_impl(self):
         await super().initialize_impl()
         self.exchange_importers = self.connector.exchange_importers
+        self.exchange_tentacle_class = exchange_util.get_rest_exchange_class(
+            self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config
+        )
         if self.connector.should_adapt_market_statuses():
             await self._init_exchange_tentacle()
 
@@ -48,10 +52,10 @@ class ExchangeSimulator(rest_exchange.RestExchange):
             self.exchange_tentacle = None
             self.exchange_manager.ignore_config = True
             # initialize a locale exchange_tentacle to be able to access adapters for market statuses
-            if exchange_class := exchange_util.get_rest_exchange_class(
-                self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config
-            ):
-                self.exchange_tentacle = exchange_class(self.exchange_manager.config, self.exchange_manager)
+            if self.exchange_tentacle_class:
+                self.exchange_tentacle = self.exchange_tentacle_class(
+                    self.exchange_manager.config, self.exchange_manager
+                )
         finally:
             self.exchange_manager.ignore_config = origin_ignore_config
             # reset ignore_config as soon as possible
@@ -70,6 +74,9 @@ class ExchangeSimulator(rest_exchange.RestExchange):
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return exchange_simulator_connector.ExchangeSimulatorConnector.is_supporting_exchange(exchange_candidate_name)
+
+    def is_skipping_empty_candles_in_ohlcv_fetch(self):
+        return (self.exchange_tentacle_class or self).IS_SKIPPING_EMPTY_CANDLES_IN_OHLCV_FETCH
 
     @classmethod
     def is_simulated_exchange(cls) -> bool:
