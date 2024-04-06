@@ -104,6 +104,7 @@ TESTED_EXCHANGES = [
     "kucoin",
     "okx",
 ] + sorted([
+    "binanceus",
     "coinbase",
     "cryptocom",
     "htx",
@@ -115,7 +116,6 @@ TESTED_EXCHANGES = [
     "hollaex",
     "mexc",
     "bingx",
-    "bitget",
     "coinex",
 ])
 DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
