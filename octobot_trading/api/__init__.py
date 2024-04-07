@@ -121,6 +121,7 @@ from octobot_trading.api.exchange import (
     get_auto_filled_exchange_names,
     get_exchange_details,
     is_api_permission_error,
+    is_exchange_rules_compliancy_error,
     cancel_ccxt_throttle_task,
     stop_exchange,
 )
@@ -301,6 +302,7 @@ __all__ = [
     "get_auto_filled_exchange_names",
     "get_exchange_details",
     "is_api_permission_error",
+    "is_exchange_rules_compliancy_error",
     "cancel_ccxt_throttle_task",
     "stop_exchange",
     "get_trading_modes",

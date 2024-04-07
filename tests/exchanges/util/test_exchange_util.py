@@ -19,7 +19,9 @@ import mock
 import trading_backend.exchanges
 import octobot_commons.constants as commons_constants
 import octobot_commons.configuration as commons_configuration
+import octobot_trading.constants as constants
 import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 from tests import event_loop
 from tests.exchanges import MockedRestExchange, MockedAutoFillRestExchange
@@ -240,3 +242,28 @@ async def test_get_exchange_details(tentacles_setup_config, supported_exchanges)
             )
             assert details == supported_exchanges["blip"]
             get_tentacle_config_mock.assert_called_once()
+
+
+def test_is_api_permission_error():
+    with mock.patch.object(exchange_util, "_is_error_on_this_type") as _is_error_on_this_type_mock:
+        err = Exception("plop")
+        exchanges.is_api_permission_error(err)
+        _is_error_on_this_type_mock.assert_called_once_with(
+            err, constants.EXCHANGE_PERMISSION_ERRORS
+        )
+
+
+def test_is_exchange_rules_compliancy_error():
+    with mock.patch.object(exchange_util, "_is_error_on_this_type") as _is_error_on_this_type_mock:
+        err = Exception("plop")
+        exchanges.is_exchange_rules_compliancy_error(err)
+        _is_error_on_this_type_mock.assert_called_once_with(
+            err, constants.EXCHANGE_COMPLIANCY_ERRORS
+        )
+
+
+def test_is_error_on_this_type():
+    assert exchange_util._is_error_on_this_type(Exception("plop"), constants.EXCHANGE_PERMISSION_ERRORS) is False
+    assert exchange_util._is_error_on_this_type(Exception("api key"), constants.EXCHANGE_PERMISSION_ERRORS) is True
+    assert exchange_util._is_error_on_this_type(Exception("api"), constants.EXCHANGE_PERMISSION_ERRORS) is False
+    assert exchange_util._is_error_on_this_type(Exception("api"), constants.EXCHANGE_COMPLIANCY_ERRORS) is False

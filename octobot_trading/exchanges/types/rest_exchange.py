@@ -211,6 +211,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 raise errors.AuthenticationError(
                     f"Error when handling order {e}. Please make sure that trading permissions are on for this API key."
                 )
+            if exchanges_util.is_exchange_rules_compliancy_error(e):
+                raise errors.ExchangeCompliancyError(
+                    f"Error when handling order {e}. Exchange is refusing this order request on this account because "
+                    f"of its compliancy requirements."
+                )
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             print(traceback.format_exc(), file=sys.stderr)
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")

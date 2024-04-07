@@ -429,8 +429,16 @@ def get_associated_symbol(exchange_manager, asset: str, target_asset: str) -> (t
 
 
 def is_api_permission_error(error: BaseException) -> bool:
+    return _is_error_on_this_type(error, constants.EXCHANGE_PERMISSION_ERRORS)
+
+
+def is_exchange_rules_compliancy_error(error: BaseException) -> bool:
+    return _is_error_on_this_type(error, constants.EXCHANGE_COMPLIANCY_ERRORS)
+
+
+def _is_error_on_this_type(error: BaseException, descriptions: typing.List[typing.Iterable[str]]) -> bool:
     lower_error = str(error).lower()
-    for identifiers in constants.EXCHANGE_PERMISSION_ERRORS:
+    for identifiers in descriptions:
         if all(identifier in lower_error for identifier in identifiers):
             return True
     return False
