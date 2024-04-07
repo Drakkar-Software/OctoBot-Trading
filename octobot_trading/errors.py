@@ -99,6 +99,12 @@ class AuthenticationError(Exception):
     """
 
 
+class ExchangeCompliancyError(Exception):
+    """
+    Raised when an exchange failed to execute the given request because of compliance rules for the current user account
+    """
+
+
 class PortfolioNegativeValueError(Exception):
     """
     Raised when the portfolio is being updated with a negative value

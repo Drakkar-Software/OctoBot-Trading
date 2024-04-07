@@ -133,6 +133,12 @@ EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
     ("permission_denied", )
 ]
 
+# text content of errors due to exchange compliancy rules
+EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = [
+    # OKX ex: Trading of this pair or contract is restricted due to local compliance requirements
+    ("restricted ", "compliance"),
+]
+
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
 
