@@ -76,6 +76,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                 self.DEPENDENCIES_TIMEOUT
             )
             await self.fetch_and_push(is_from_bot=False, retry_till_success=True)
+            await self._restore_required_virtual_orders()
         except errors.NotSupported:
             self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")
             await self.pause()

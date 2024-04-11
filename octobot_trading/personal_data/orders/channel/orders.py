@@ -83,6 +83,16 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
+    async def _restore_required_virtual_orders(self):
+        """
+        Restore virtual orders that would not be restored otherwise
+        Should only be called once or will create the same virtual orders multiple times
+        """
+        pending_groups = {}
+        await orders_storage_operations.create_required_virtual_orders(
+            pending_groups, self.channel.exchange_manager
+        )
+
     async def _handle_open_order_update(
         self, symbol, order_dict, exchange_order_id, is_from_bot, is_new_order, pending_groups
     ):
