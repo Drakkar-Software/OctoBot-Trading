@@ -89,6 +89,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Set when order cost is not (yet) accurately computed for a given exchange
     MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER = constants.ONE
 
+    # text content of errors due to orders not found errors
+    EXCHANGE_ORDER_NOT_FOUND_ERRORS: typing.List[typing.Iterable[str]] = []
+
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
     def __init__(self, config, exchange_manager, connector_class=None):
@@ -865,6 +868,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     def is_skipping_empty_candles_in_ohlcv_fetch(self):
         return self.IS_SKIPPING_EMPTY_CANDLES_IN_OHLCV_FETCH
+
+    def is_order_not_found_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_ORDER_NOT_FOUND_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ORDER_NOT_FOUND_ERRORS)
+        return False
 
     """
     Auto fetched and filled exchanges
