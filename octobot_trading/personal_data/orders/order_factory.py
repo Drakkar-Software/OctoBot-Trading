@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging as logging
+
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -150,3 +152,4 @@ async def restore_chained_orders_from_storage_order_details(order, order_details
                 **chained_order.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value, {}),
             )
             order.add_chained_order(chained_order_inst)
+            logging.get_logger(order.get_logger_name()).debug(f"Restored chained order: {chained_order_inst}")
