@@ -21,6 +21,8 @@ import typing
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as common_enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.logging as logging
+import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.api as trading_api
 import octobot_trading.exchanges as exchanges
@@ -172,7 +174,12 @@ async def get_trades(
     return trades
 
 
-async def create_orders(exchange_manager, exchange_data: exchange_data_import.ExchangeData, orders: list) -> list:
+async def create_orders(
+    exchange_manager,
+    exchange_data: exchange_data_import.ExchangeData,
+    orders: list,
+    order_creation_timeout: float
+) -> list:
     async def _create_order(order_dict) -> personal_data.Order:
         symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
         side, order_type = personal_data.parse_order_type(order_dict)
@@ -186,8 +193,36 @@ async def create_orders(exchange_manager, exchange_data: exchange_data_import.Ex
             reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
         )
         # is private, to use in tests context only
-        return personal_data.create_order_instance_from_raw(
+        order = personal_data.create_order_instance_from_raw(
             exchange_manager.trader, created_order, force_open_or_pending_creation=True
         ) if created_order else None
+        if not order:
+            return order
+        if order.status is enums.OrderStatus.PENDING_CREATION and order_creation_timeout > 0:
+            try:
+                return await wait_for_other_status(order, order_creation_timeout)
+            except TimeoutError as err:
+                logging.get_logger(order.get_logger_name()).error(f"Created order can't be fetched: {err}")
+                return None
+        return order
 
     return await asyncio.gather(*(_create_order(order_dict) for order_dict in orders))
+
+
+async def wait_for_other_status(order: personal_data.Order, timeout) -> personal_data.Order:
+    t0 = time.time()
+    iterations = 0
+    origin_status = order.status.value
+    while time.time() - t0 < timeout:
+        raw_order = await order.exchange_manager.exchange.get_order(order.exchange_order_id, order.symbol)
+        iterations += 1
+        if raw_order is not None and raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value] != origin_status:
+            logging.get_logger(order.get_logger_name()).info(
+                f"Order fetched with status different from {origin_status} after {iterations} "
+                f"iterations and {round(time.time() - t0)}s"
+            )
+            return personal_data.create_order_instance_from_raw(
+                order.trader, raw_order, force_open_or_pending_creation=False
+            )
+        await asyncio.sleep(constants.CREATED_ORDER_FORCED_UPDATE_PERIOD)
+    raise TimeoutError(f"Order was not found with another status than {origin_status} within {timeout} seconds")
