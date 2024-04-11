@@ -33,3 +33,7 @@ class OrdersUpdaterSimulator(orders_updater.OrdersUpdater):
         """
         Used to subscribe at least one recent trades consumer during backtesting
         """
+
+    async def _restore_required_virtual_orders(self):
+        # nothing to do
+        pass

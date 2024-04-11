@@ -124,10 +124,16 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     def get_startup_self_managed_orders_details_from_group(self, group_id):
         return [
             order
-            for order in self.startup_orders.values()
+            for order in self.get_all_self_managed_startup_orders()
             if order.get(enums.StoredOrdersAttr.GROUP.value, {}).get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             == group_id
-            and order.get(constants.STORAGE_ORIGIN_VALUE, {})
+        ]
+
+    def get_all_self_managed_startup_orders(self):
+        return [
+            order
+            for order in self.startup_orders.values()
+            if order.get(constants.STORAGE_ORIGIN_VALUE, {})
             .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
         ]
 

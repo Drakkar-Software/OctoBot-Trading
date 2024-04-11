@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.logging as logging
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.groups.group_util as group_util
 
@@ -46,19 +47,41 @@ async def create_orders_storage_related_elements(order, order_storage_details, e
     )
 
 
+async def create_order_from_storage_data(order_desc: dict, exchange_manager, pending_groups):
+    created_order = await order_factory.create_order_from_order_storage_details(
+        order_desc, exchange_manager, pending_groups
+    )
+    await created_order.initialize()
+    return created_order
+
+
 async def _create_storage_self_managed_orders_from_group(pending_group_id, exchange_manager, pending_groups):
     try:
         to_create_orders = exchange_manager.storage_manager.orders_storage \
             .get_startup_self_managed_orders_details_from_group(pending_group_id)
         for order_desc in to_create_orders:
-            created_order = await order_factory.create_order_from_order_storage_details(
-                order_desc, exchange_manager, pending_groups
-            )
-            await created_order.initialize()
+            await create_order_from_storage_data(order_desc, exchange_manager, pending_groups)
     except Exception as err:
         logging.get_logger(LOGGER_NAME).exception(
             err, True, f"Error when creating {pending_group_id} group self-managed orders with stored data: {err}"
         )
+
+
+async def create_required_virtual_orders(pending_groups, exchange_manager):
+    virtual_orders = exchange_manager.storage_manager.orders_storage.get_all_self_managed_startup_orders()
+    # virtual order that are not within a group will only be restored here
+    virtual_non_grouped_order_details = [
+        order
+        for order in virtual_orders
+        if order.get(enums.StoredOrdersAttr.GROUP.value, {}) == {}
+    ]
+    logger = logging.get_logger(LOGGER_NAME)
+    for order_details in virtual_non_grouped_order_details:
+        try:
+            order = await create_order_from_storage_data(order_details, exchange_manager, pending_groups)
+            logger.debug(f"Restored order from storage: {order}")
+        except Exception as err:
+            logger.exception(err, True, f"Error when restoring virtual order order using stored data: {err}")
 
 
 async def create_missing_self_managed_orders_from_storage_order_groups(pending_groups, exchange_manager):
