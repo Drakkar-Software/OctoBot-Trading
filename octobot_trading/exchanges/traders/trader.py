@@ -279,7 +279,9 @@ class Trader(util.Initializable):
 
             if is_pending_creation:
                 # register order as pending order, it will then be added to live orders in order manager once open
-                self.exchange_manager.exchange_personal_data.orders_manager.register_pending_creation_order(updated_order)
+                self.exchange_manager.exchange_personal_data.orders_manager.register_pending_creation_order(
+                    updated_order
+                )
 
         await updated_order.initialize()
         if is_pending_creation and wait_for_creation \
