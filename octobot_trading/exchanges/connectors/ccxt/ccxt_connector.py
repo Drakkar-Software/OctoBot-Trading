@@ -351,8 +351,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 raise octobot_trading.errors.NotSupported(e) from e
             except ccxt.ExchangeError as e:
-                # something went wrong and ccxt did not expect it
-                raise octobot_trading.errors.FailedRequest(e) from e
+                if self.exchange_manager.exchange.is_order_not_found_error(e):
+                    # when an OrderNotFound error should have been raised but is not for some reason
+                    pass
+                else:
+                    # something went wrong and ccxt did not expect it
+                    raise octobot_trading.errors.FailedRequest(e) from e
         else:
             # When fetch_order is not supported, uses get_open_orders or get_closed_orders and extract order id
             for method in (self.get_open_orders, self.get_closed_orders):

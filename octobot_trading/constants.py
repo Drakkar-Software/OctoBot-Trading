@@ -42,6 +42,7 @@ ALLOW_SIMULATED_ORDERS_INSTANT_FILL = os_util.parse_boolean_environment_var(
 ORDER_DATA_FETCHING_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 CHAINED_ORDER_PRICE_FETCHING_TIMEOUT = 1    # should be instant or ignored
 CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE = decimal.Decimal("0.005")  # allows 0.5% outdated price error
+CREATED_ORDER_FORCED_UPDATE_PERIOD = 5
 
 # Tentacles
 TRADING_MODE_REQUIRED_STRATEGIES = "required_strategies"
@@ -136,7 +137,7 @@ EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
 # text content of errors due to exchange compliancy rules
 EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = [
     # OKX ex: Trading of this pair or contract is restricted due to local compliance requirements
-    ("restricted ", "compliance"),
+    ("restricted", "compliance"),
 ]
 
 CONFIG_DEFAULT_FEES = 0.001
