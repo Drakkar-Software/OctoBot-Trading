@@ -30,6 +30,7 @@ async def apply_order_storage_details_if_any(order, exchange_manager, pending_gr
         order.exchange_order_id
     )
     if order_details:
+        logging.get_logger(LOGGER_NAME).debug(f"Updating fetched order {order} using stored order details")
         order.update_from_storage_order_details(order_details)
         await create_orders_storage_related_elements(order, order_details, exchange_manager, pending_groups)
 
