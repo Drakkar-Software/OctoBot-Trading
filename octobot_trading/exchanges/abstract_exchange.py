@@ -17,6 +17,7 @@ import asyncio
 import typing
 import decimal
 import time
+import contextlib
 
 import octobot_commons.constants
 import octobot_commons.enums as common_enums
@@ -93,6 +94,8 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         self.current_account = enums.AccountTypes.CASH
 
         self.is_unreachable = False
+
+        self._creating_exchange_order_ids = set()
 
         if self.exchange_manager.tentacles_setup_config is not None:
             self.load_user_inputs_from_class(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
@@ -698,3 +701,19 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     def handle_token_error(self, error):
         self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
                           f"({error.__class__.__name__}: {error})")
+
+    @contextlib.contextmanager
+    def creating_order(self, creating_order: dict):
+        exchange_order_id = creating_order.get(
+            enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value
+        ) if creating_order else None
+        try:
+            self._creating_exchange_order_ids.add(exchange_order_id)
+            yield
+        finally:
+            self._creating_exchange_order_ids.remove(exchange_order_id)
+
+    def is_creating_order(self, exchange_order_id):
+        if exchange_order_id is None:
+            return False
+        return exchange_order_id in self._creating_exchange_order_ids

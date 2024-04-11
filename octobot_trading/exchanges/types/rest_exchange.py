@@ -155,7 +155,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 stop_price=stop_price, side=side, current_price=current_price,
                 reduce_only=reduce_only, params=params)
             self.logger.debug(f"Created order: {created_order}")
-            return await self._verify_order(created_order, order_type, symbol, price, side)
+            with self.creating_order(created_order):
+                return await self._verify_order(created_order, order_type, symbol, price, side)
         return None
 
     async def edit_order(self, exchange_order_id: str, order_type: enums.TraderOrderType, symbol: str,

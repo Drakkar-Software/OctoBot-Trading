@@ -36,11 +36,19 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             pending_groups = {}  # Used when restoring orders from order storage:
             # a dict of order groups for which to check if associated self-managed orders are to be created
             for order in orders:
+                exchange_order_id: str = self.channel.exchange_manager.exchange.parse_exhange_order_id(order)
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order)
                 )
+                if self.channel.exchange_manager.exchange.is_creating_order(exchange_order_id):
+                    # ignore orders that are being created
+                    self.logger.debug(
+                        f"Ignored update from order channel for {symbol} order with exchange order id "
+                        f"{exchange_order_id} as "
+                        f"this order is being created and will automatically be updated once creation is complete."
+                    )
+                    continue
                 symbols.add(symbol)
-                exchange_order_id: str = self.channel.exchange_manager.exchange.parse_exhange_order_id(order)
 
                 # if this order was not managed by order_manager before
                 is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
