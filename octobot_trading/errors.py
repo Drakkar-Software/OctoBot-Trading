@@ -93,6 +93,12 @@ class FailedRequest(Exception):
     """
 
 
+class UnavailableOrderTypeForMarketError(Exception):
+    """
+    Raised when an exchange refuses to create a given type of order that should normally be supported
+    """
+
+
 class AuthenticationError(Exception):
     """
     Raised when an exchange failed to authenticate

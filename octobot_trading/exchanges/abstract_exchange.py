@@ -383,7 +383,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_bundled_order_parameters is not implemented")
 
-    def is_supported_order_type(self, order_type):
+    def is_supported_order_type(self, order_type: enums.TraderOrderType) -> bool:
         """
         Check if the order type is supported by the current exchange instance
         Should be used to know if we should simulate this order or create it on the exchange
@@ -391,6 +391,12 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: True if the order type is supported by the exchange, else False
         """
         return order_type not in self.get_supported_elements(enums.ExchangeSupportedElements.UNSUPPORTED_ORDERS)
+
+    def is_market_open_for_order_type(self, symbol: str, order_type: enums.TraderOrderType) -> bool:
+        """
+        Override if necessary
+        """
+        return True
 
     def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
         """

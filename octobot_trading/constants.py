@@ -42,6 +42,8 @@ ALLOW_SIMULATED_ORDERS_INSTANT_FILL = os_util.parse_boolean_environment_var(
 ORDER_DATA_FETCHING_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 CHAINED_ORDER_PRICE_FETCHING_TIMEOUT = 1    # should be instant or ignored
 CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE = decimal.Decimal("0.005")  # allows 0.5% outdated price error
+# create instantly filled limit orders 0.5% beyond market
+INSTANT_FILLED_LIMIT_ORDER_PRICE_DELTA = decimal.Decimal("0.005")
 CREATED_ORDER_FORCED_UPDATE_PERIOD = 5
 
 # Tentacles
@@ -131,7 +133,7 @@ EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
 
     # coinbase ex: coinbase {"error":"PERMISSION_DENIED",
     # "error_details":"Missing required scopes","message":"Missing required scopes"}
-    ("permission_denied", )
+    ("permission_denied", "required scopes"),
 ]
 
 # text content of errors due to exchange compliancy rules

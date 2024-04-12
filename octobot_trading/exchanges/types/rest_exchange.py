@@ -196,30 +196,35 @@ class RestExchange(abstract_exchange.AbstractExchange):
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             if self.__class__.PRINT_DEBUG_LOGS:
                 self.logger.warning(str(e))
-            raise errors.MissingFunds(e)
-        except ccxt.NotSupported:
-            raise errors.NotSupported
+            raise errors.MissingFunds(e) from e
+        except ccxt.NotSupported as err:
+            raise errors.NotSupported from err
         except ccxt.AuthenticationError as err:
             # invalid api key or missing trading rights
             raise errors.AuthenticationError(
                 f"Error when handling order {err}. Please make sure that trading permissions are on for this API key."
-            )
+            ) from err
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
             if self.should_log_on_ddos_exception(e):
                 self.connector.log_ddos_error(e)
             raise errors.FailedRequest(f"Failed to order operation: {e.__class__.__name__} {e}") from e
         except Exception as e:
+            if not self.is_market_open_for_order_type(symbol, order_type):
+                raise errors.UnavailableOrderTypeForMarketError(
+                    f"Error when handling order {e}. "
+                    f"Exchange currently refuses to create orders of type {order_type} on {symbol}."
+                ) from e
             if exchanges_util.is_api_permission_error(e):
                 # invalid api key or missing trading rights
                 raise errors.AuthenticationError(
                     f"Error when handling order {e}. Please make sure that trading permissions are on for this API key."
-                )
+                ) from e
             if exchanges_util.is_exchange_rules_compliancy_error(e):
                 raise errors.ExchangeCompliancyError(
                     f"Error when handling order {e}. Exchange is refusing this order request on this account because "
                     f"of its compliancy requirements."
-                )
+                ) from e
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             print(traceback.format_exc(), file=sys.stderr)
             self.logger.exception(e, False, f"Unexpected error during order operation: {e}")

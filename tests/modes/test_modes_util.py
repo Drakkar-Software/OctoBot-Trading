@@ -243,6 +243,64 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         trading_mode.create_order.assert_called_once()
         trading_mode.create_order.reset_mock()
 
+    # using limit orders
+    def _is_market_open_for_order_type(symbol: str, order_type: trading_enums.TraderOrderType):
+        return (
+            True if order_type in (trading_enums.TraderOrderType.SELL_LIMIT, trading_enums.TraderOrderType.BUY_LIMIT)
+            else False
+        )
+
+    with mock.patch.object(
+        exchange_manager.exchange, "is_market_open_for_order_type",
+        mock.Mock(side_effect=_is_market_open_for_order_type)
+    ) as is_market_open_for_order_type_mock:
+        # cast 1: buying
+        orders = await modes_util.convert_asset_to_target_asset(
+            trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(450)
+        )
+        assert len(orders) == 1
+        order = orders[0]
+        assert order.order_type == trading_enums.TraderOrderType.BUY_LIMIT
+        assert order.symbol == "ETH/USDT"
+        # a bit lower than 0.3 because of the price change
+        assert order.origin_quantity == decimal.Decimal("0.29850746")
+        adapted_price = decimal.Decimal(1500) * (
+            constants.ONE + constants.INSTANT_FILLED_LIMIT_ORDER_PRICE_DELTA
+        )
+        assert order.origin_price == adapted_price
+        assert order.created_last_price == adapted_price
+        assert is_market_open_for_order_type_mock.call_count == 2
+        assert is_market_open_for_order_type_mock.mock_calls[0].args == \
+               ("ETH/USDT", trading_enums.TraderOrderType.BUY_MARKET)
+        assert is_market_open_for_order_type_mock.mock_calls[1].args == \
+               ("ETH/USDT", trading_enums.TraderOrderType.BUY_LIMIT)
+        is_market_open_for_order_type_mock.reset_mock()
+        trading_mode.create_order.assert_called_once()
+        trading_mode.create_order.reset_mock()
+
+        # cast 2: selling
+        orders = await modes_util.convert_asset_to_target_asset(
+            trading_mode, "ETH", "USDT", tickers, asset_amount=decimal.Decimal(2)
+        )
+        assert len(orders) == 1
+        order = orders[0]
+        assert order.order_type == trading_enums.TraderOrderType.SELL_LIMIT
+        assert order.symbol == "ETH/USDT"
+        assert order.origin_quantity == decimal.Decimal("2")
+        adapted_price = decimal.Decimal(1500) * (
+            constants.ONE - constants.INSTANT_FILLED_LIMIT_ORDER_PRICE_DELTA
+        )
+        assert order.origin_price == adapted_price
+        assert order.created_last_price == adapted_price
+        assert is_market_open_for_order_type_mock.call_count == 2
+        assert is_market_open_for_order_type_mock.mock_calls[0].args == \
+               ("ETH/USDT", trading_enums.TraderOrderType.SELL_MARKET)
+        assert is_market_open_for_order_type_mock.mock_calls[1].args == \
+               ("ETH/USDT", trading_enums.TraderOrderType.SELL_LIMIT)
+        is_market_open_for_order_type_mock.reset_mock()
+        trading_mode.create_order.assert_called_once()
+        trading_mode.create_order.reset_mock()
+
 
 def _get_trading_mode(exchange_manager):
     return mock.Mock(
