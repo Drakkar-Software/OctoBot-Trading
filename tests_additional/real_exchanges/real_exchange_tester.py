@@ -35,6 +35,7 @@ class RealExchangeTester:
     SYMBOL = None
     SYMBOL_2 = None
     SYMBOL_3 = None
+    INACTIVE_MARKETS = []
     # default is 1h, change if necessary
     TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
@@ -101,6 +102,14 @@ class RealExchangeTester:
     #
     # async def test_create_order(self):
     #     pass
+
+    def ensure_required_market_status_values(self, market_status):
+            assert market_status
+            assert market_status[Ecmsc.TYPE.value] == self.MARKET_STATUS_TYPE
+            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
+            assert market_status[Ecmsc.ACTIVE.value] \
+                   is False if market_status[Ecmsc.SYMBOL.value] in self.INACTIVE_MARKETS else True
+            assert market_status[Ecmsc.PRECISION.value]
 
     async def test_get_historical_ohlcv(self):
         # common implementation, should always work if candles history is supported

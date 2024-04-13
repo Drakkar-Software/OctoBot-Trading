@@ -97,7 +97,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 )
 
             # initialize symbols and timeframes
-            self.symbols = self.get_client_symbols()
+            self.symbols = self.get_client_symbols(active_only=True)
             self.time_frames = self.get_client_time_frames()
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
@@ -157,8 +157,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 else:
                     raise
 
-    def get_client_symbols(self):
-        return ccxt_client_util.get_symbols(self.client)
+    def get_client_symbols(self, active_only=True):
+        return ccxt_client_util.get_symbols(self.client, active_only)
 
     def get_client_time_frames(self):
         return ccxt_client_util.get_time_frames(self.client)

@@ -50,10 +50,7 @@ class TestHitBtcRealExchangeTester(RealExchangeTester):
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
-            assert market_status
-            assert market_status[Ecmsc.TYPE.value] == self.MARKET_STATUS_TYPE
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
-            assert market_status[Ecmsc.PRECISION.value]
+            self.ensure_required_market_status_values(market_status)
             assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
                 Ecmsc.PRECISION_AMOUNT.value] < 1  # to be fixed in hitbtc tentacle
             assert 1e-09 <= market_status[Ecmsc.PRECISION.value][

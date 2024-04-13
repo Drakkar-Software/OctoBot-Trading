@@ -766,7 +766,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         return self.EXCHANGE_FEEDS.get(Feeds.CANDLE, Feeds.UNSUPPORTED.value) != Feeds.UNSUPPORTED.value
 
     def _is_supported_pair(self, pair):
-        return pair in ccxt_client_util.get_symbols(self.client)
+        return pair in ccxt_client_util.get_symbols(self.client, True)
 
     def _is_pair_independent_feed(self, feed):
         return feed in self.PAIR_INDEPENDENT_CHANNELS

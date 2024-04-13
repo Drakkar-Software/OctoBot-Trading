@@ -134,8 +134,16 @@ def get_ccxt_client_login_options(exchange_manager):
     return {'defaultType': 'spot'}
 
 
-def get_symbols(client):
+def get_symbols(client, active_only):
     try:
+        if active_only:
+            return set(
+                symbol
+                for symbol in client.symbols
+                if client.markets.get(symbol, {}).get(
+                    enums.ExchangeConstantsMarketStatusColumns.ACTIVE.value, True
+                )
+            )
         return set(client.symbols)
     except (AttributeError, TypeError):
         # ccxt exchange load_markets failed
