@@ -54,10 +54,7 @@ class TestKucoinRealExchangeTester(RealExchangeTester):
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
-            assert market_status
-            assert market_status[Ecmsc.TYPE.value] == self.MARKET_STATUS_TYPE
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
-            assert market_status[Ecmsc.PRECISION.value]
+            self.ensure_required_market_status_values(market_status)
             # on this exchange, precision is a decimal instead of a number of digits
             assert 0 < market_status[Ecmsc.PRECISION.value][
                 Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in this exchange tentacle

@@ -32,6 +32,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
+    INACTIVE_MARKETS = [SYMBOL_3]
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -55,10 +56,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
-            assert market_status
-            assert market_status[Ecmsc.TYPE.value] == self.MARKET_STATUS_TYPE
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
-            assert market_status[Ecmsc.PRECISION.value]
+            self.ensure_required_market_status_values(market_status)
             assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]) == \
                    market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
             assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]) == \

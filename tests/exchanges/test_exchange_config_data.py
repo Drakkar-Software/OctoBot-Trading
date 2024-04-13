@@ -80,7 +80,6 @@ class TestExchangeConfig:
         }
         _, exchange_manager = await self.init_default(config=config)
 
-        assert "UNI/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ADA/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "MATIC/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
@@ -89,6 +88,9 @@ class TestExchangeConfig:
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
+
+        # inactive markets
+        assert "UNI/BTC" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
 
         # disabled
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
@@ -113,9 +115,11 @@ class TestExchangeConfig:
         }
         _, exchange_manager = await self.init_default(config=config)
 
-        assert "TRX/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
         assert "ADA/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
         assert "Bitcoin" in exchange_manager.exchange_config.traded_cryptocurrencies
+
+        # inactive markets
+        assert "TRX/BTC" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
 
         # invalid ETH wildcard config
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
@@ -141,7 +145,6 @@ class TestExchangeConfig:
 
         _, exchange_manager = await self.init_default(config=config)
 
-        assert "UNI/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ADA/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "MATIC/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
@@ -151,6 +154,9 @@ class TestExchangeConfig:
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_symbol_pairs
+
+        # inactive markets
+        assert "UNI/BTC" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
 
         # disabled
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
@@ -189,11 +195,13 @@ class TestExchangeConfig:
         _, exchange_manager = await self.init_default(config=config)
 
         assert exchange_manager.exchange_config.traded_cryptocurrencies["Binance Coin"] == ["BNB/USDT"]
-        assert exchange_manager.exchange_config.traded_cryptocurrencies["Binance USD"] == ["BNB/BUSD"]
         assert exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"] == ["BNB/BTC"]
         assert exchange_manager.exchange_config.traded_cryptocurrencies["Tether"] == ["BNB/USDT"]
 
-        sorted_pairs_without_redundancy = sorted(["BNB/USDT", "BNB/BUSD", "BNB/BTC"])
+        # inactive markets
+        assert exchange_manager.exchange_config.traded_cryptocurrencies["Binance USD"] == []
+
+        sorted_pairs_without_redundancy = sorted(["BNB/USDT", "BNB/BTC"])
         assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == sorted_pairs_without_redundancy
 
         cancel_ccxt_throttle_task()
