@@ -219,7 +219,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         )
 
     def unauthenticated_exchange_fallback(self, err):
-        self.handle_token_error(err)
+        if not self.exchange_manager.exchange_only:
+            # don't log error when auth is probably not necessary
+            self.handle_token_error(err)
         return ccxt_client_util.get_unauthenticated_exchange(
             self.exchange_type,
             self.options, self.headers, self.additional_config
