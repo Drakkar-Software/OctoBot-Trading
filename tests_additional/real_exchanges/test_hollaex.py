@@ -54,6 +54,7 @@ class TestHollaexRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(market_status,
+                                            normal_price_max=30000,
                                             normal_cost_min=1e-07,
                                             low_price_min=0.01,  # XRP/USDT instead of /BTC
                                             low_price_max=1,

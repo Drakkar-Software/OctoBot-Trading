@@ -82,7 +82,7 @@ class TestHTXRealExchangeTester(RealExchangeTester):
 
         # without useHistoricalEndpointForSpot=False
         useHistoricalEndpointForSpot_symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(useHistoricalEndpointForSpot_symbol_prices) == 150
+        assert len(useHistoricalEndpointForSpot_symbol_prices) == 200
 
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
