@@ -27,9 +27,11 @@ import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clie
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 
-def create_client(exchange_class, exchange_manager, logger,
-                  options, headers, additional_config, 
-                  should_authenticate, unauthenticated_exchange_fallback=None):
+def create_client(
+    exchange_class, exchange_manager, logger, options, headers,
+    additional_config, should_authenticate, unauthenticated_exchange_fallback=None,
+    keys_adapter=None
+):
     """
     Exchange instance creation
     :return: the created ccxt (pro, async or sync) client
@@ -43,6 +45,8 @@ def create_client(exchange_class, exchange_manager, logger,
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_manager.exchange_name):
         try:
             key, secret, password = exchange_manager.get_exchange_credentials(exchange_manager.exchange_name)
+            if keys_adapter:
+                key, secret, password = keys_adapter(key, secret, password)
             if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")

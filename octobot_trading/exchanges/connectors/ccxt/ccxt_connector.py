@@ -204,11 +204,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def _create_client(self, force_unauth=False):
         self.client, self.is_authenticated = self._client_factory(force_unauth)
 
-    def _client_factory(self, force_unauth) -> tuple:
+    def _client_factory(self, force_unauth, keys_adapter=None) -> tuple:
         return ccxt_client_util.create_client(
             self.exchange_type, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
-            False if force_unauth else self._should_authenticate(), self.unauthenticated_exchange_fallback
+            False if force_unauth else self._should_authenticate(), self.unauthenticated_exchange_fallback,
+            keys_adapter=keys_adapter
         )
 
     def _should_authenticate(self):
