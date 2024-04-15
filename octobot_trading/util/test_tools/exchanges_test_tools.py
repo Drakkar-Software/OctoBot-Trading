@@ -124,13 +124,13 @@ async def ensure_symbol_markets(
         await exchange_manager.exchange.connector.load_symbol_markets(reload=reload, market_filter=market_filter)
 
 
-async def get_portfolio(exchange_manager, as_float=False) -> dict:
+async def get_portfolio(exchange_manager, as_float=False, clear_empty=True) -> dict:
     balance = await exchange_manager.exchange.get_balance()
     # filter out 0 values
     return {
         asset: {key: float(val) if as_float else val for key, val in values.items()}  # use float for values
         for asset, values in balance.items()
-        if any(value for value in values.values())
+        if not clear_empty or (clear_empty and any(value for value in values.values()))
     }
 
 
