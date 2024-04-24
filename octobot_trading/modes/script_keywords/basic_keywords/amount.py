@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 import octobot_commons.symbols as commons_symbols
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
@@ -32,6 +31,7 @@ async def get_amount_from_input_amount(
     use_total_holding=False,
     target_price=None,
     allow_holdings_adaptation=True,
+    orders_to_be_ignored=None,
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
 
@@ -81,7 +81,8 @@ async def get_amount_from_input_amount(
     else:
         raise trading_errors.InvalidArgumentError(f"Unsupported input: {input_amount} make sure to use a supported syntax for amount")
     adapted_amount = await account_balance.adapt_amount_to_holdings(
-        context, amount_value, side, use_total_holding, reduce_only, is_stop_order, target_price=target_price
+        context, amount_value, side, use_total_holding, reduce_only, is_stop_order,
+        target_price=target_price, orders_to_be_ignored=orders_to_be_ignored
     )
     if adapted_amount < amount_value and not allow_holdings_adaptation:
         raise trading_errors.MissingFunds(

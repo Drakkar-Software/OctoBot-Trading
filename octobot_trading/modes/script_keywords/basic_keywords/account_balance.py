@@ -49,8 +49,10 @@ async def total_account_balance(context, side=trading_enums.PositionSide.BOTH.va
                               f"the reference market. reference market: {reference_market}, symbol: {context.symbol}")
 
 
-async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False,
-                                    is_stop_order=False, reduce_only=True, target_price=None):
+async def available_account_balance(
+    context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False,
+    is_stop_order=False, reduce_only=True, target_price=None, orders_to_be_ignored=None
+):
     portfolio_type = commons_constants.PORTFOLIO_TOTAL if use_total_holding else commons_constants.PORTFOLIO_AVAILABLE
     current_symbol_holding, _, market_quantity, price, _ = \
         await trading_personal_data.get_pre_order_data(context.exchange_manager,
@@ -67,6 +69,21 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
     already_locked_amount = trading_constants.ZERO
     if use_total_holding and is_stop_order:
         already_locked_amount = _get_locked_amount_in_stop_orders(context, side)
+    if orders_to_be_ignored:
+        for order_to_be_ignored in orders_to_be_ignored:
+            if order_to_be_ignored.side == trading_enums.TradeOrderSide.BUY:
+                market_quantity += order_to_be_ignored.origin_quantity
+            else:
+                current_symbol_holding += order_to_be_ignored.origin_quantity
+        total_symbol_holding, _, total_market_quantity, _, _ = \
+            await trading_personal_data.get_pre_order_data(context.exchange_manager,
+                                                           symbol=context.symbol,
+                                                           timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                           portfolio_type=commons_constants.PORTFOLIO_TOTAL,
+                                                           target_price=target_price)
+        # ensure not using more than total amounts
+        current_symbol_holding = min(current_symbol_holding, total_symbol_holding)
+        market_quantity = min(market_quantity, total_market_quantity)
     return (market_quantity if side == trading_enums.TradeOrderSide.BUY.value else current_symbol_holding) \
         - already_locked_amount
 
@@ -80,11 +97,14 @@ def _get_locked_amount_in_stop_orders(context, side):
     return locked_amount
 
 
-async def adapt_amount_to_holdings(context, amount, side, use_total_holding, reduce_only,
-                                   is_stop_order, target_price=None):
-    available_acc_bal = await available_account_balance(context, side, use_total_holding=use_total_holding,
-                                                        is_stop_order=is_stop_order, reduce_only=reduce_only,
-                                                        target_price=target_price)
+async def adapt_amount_to_holdings(
+    context, amount, side, use_total_holding, reduce_only,
+    is_stop_order, target_price=None, orders_to_be_ignored=None
+):
+    available_acc_bal = await available_account_balance(
+        context, side, use_total_holding=use_total_holding, is_stop_order=is_stop_order,
+        reduce_only=reduce_only, target_price=target_price, orders_to_be_ignored=orders_to_be_ignored
+    )
     if available_acc_bal > amount:
         return amount
     else:
