@@ -567,8 +567,9 @@ class TestTrader:
         with patch.object(ccxt.async_support.binanceus, "calculate_fee",
                           Mock(return_value=get_fees_mock("SOL"))) as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
-            # ensure call ccxt calculate_fee for order fees
-            calculate_fee_mock.assert_called_once()
+            # called twice: once for filled order fee calculation, once for forecasted fees calculation used to restore
+            # available amounts if relevant
+            assert calculate_fee_mock.call_count == 2
 
         # added filled orders as filled trades
         assert len(trades_manager.trades) == 1
@@ -611,7 +612,9 @@ class TestTrader:
         with patch.object(ccxt.async_support.binanceus, "calculate_fee", Mock(return_value=get_fees_mock("SOL"))) \
                 as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
-            calculate_fee_mock.assert_called_once()
+            # called twice: once for filled order fee calculation, once for forecasted fees calculation used to restore
+            # available amounts if relevant
+            assert calculate_fee_mock.call_count == 2
 
         assert limit_buy not in orders_manager.get_open_orders()
 

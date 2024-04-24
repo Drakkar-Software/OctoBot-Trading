@@ -259,40 +259,62 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
                      current_price=decimal.Decimal(str(50)),
                      quantity=decimal.Decimal(str(2)),
                      price=decimal.Decimal(str(50)))
+    limit_buy_2 = BuyLimitOrder(trader)
+    limit_buy_2.update(order_type=TraderOrderType.BUY_LIMIT,
+                       symbol="BTC/USDT",
+                       current_price=decimal.Decimal(str(50)),
+                       quantity=decimal.Decimal(str(2)),
+                       price=decimal.Decimal(str(50)))
 
     # update portfolio with creations
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, True)
-    portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
+    # simulate fees in USDT (ex: Kucoin, OKX)
+    with mock.patch.object(limit_buy.exchange_manager.exchange.connector, "_get_fees_currency", return_value="USDT") \
+         as _get_fees_currency_mock:
+        # taker fees are locked
+        portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
+        portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
+    portfolio_manager.portfolio.update_portfolio_available(limit_buy_2, True)
 
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('2.8')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('900')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('799.9')
 
     # when cancelling limit sell, market sell and stop orders
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, False)
-    portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
+    # simulate fees in USDT (ex: Kucoin, OKX)
+    with mock.patch.object(limit_buy.exchange_manager.exchange.connector, "_get_fees_currency", return_value="USDT") \
+         as _get_fees_currency_mock:
+        portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
 
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('7')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('900')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('799.9')
 
     # when filling limit buy
-    await fill_limit_or_stop_order(limit_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('8.999')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('900')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('11.999')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('900')
+    # simulate fees in USDT (ex: Kucoin, OKX)
+    with mock.patch.object(limit_buy.exchange_manager.exchange.connector, "_get_fees_currency", return_value="USDT") \
+         as _get_fees_currency_mock:
+        await fill_limit_or_stop_order(limit_buy)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('9')
+    # USDT available is now 899.95 as maker fees are applied
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('799.95')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('12')
+    # USDT total is now 899.95 as maker fees are applied
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('899.95')
 
     # when filling market sell
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '8.999')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(
-        '1109.79')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '8.999')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(
-        '1109.79')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1009.74')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1109.74')
+
+    # when filling limit buy 2 (fees paid in BTC)
+    await fill_market_order(limit_buy_2)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10.999')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1009.74')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10.999')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1009.74')
 
 
 async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
@@ -349,15 +371,15 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
         portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
     assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC").available,
                  1) == decimal.Decimal('5.8')
-    # also locked 0.1 USDT for fees
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('799.9')
+    # also locked 0.2 USDT for fees (use taker fees to be sure to have enough funds if order is filled as taker)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('799.8')
 
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
 
     assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC").available,
                  1) == decimal.Decimal('1.7')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(
-        '799.9')
+        '799.8')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
         '10')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(
@@ -803,12 +825,16 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
         with mock.patch.object(exchange_manager.exchange.connector, "_get_fees_currency", return_value="BTC") \
              as _get_fees_currency_mock:
             await fill_limit_or_stop_order(limit_sell)
-            _get_fees_currency_mock.assert_called_once()
+            # called twice: once for filled order fee calculation, once for forecasted fees calculation used to restore
+            # available amounts if relevant
+            assert _get_fees_currency_mock.call_count == 2
         await fill_limit_or_stop_order(limit_sell_3)
         with mock.patch.object(exchange_manager.exchange.connector, "_get_fees_currency", return_value="USDT") \
              as _get_fees_currency_mock:
             await fill_limit_or_stop_order(limit_buy_2)
-            _get_fees_currency_mock.assert_called_once()
+            # called twice: once for filled order fee calculation, once for forecasted fees calculation used to restore
+            # available amounts if relevant
+            assert _get_fees_currency_mock.call_count == 2
         await fill_limit_or_stop_order(limit_sell_5)
         await fill_limit_or_stop_order(stop_loss_4)
         await fill_limit_or_stop_order(limit_buy_4)

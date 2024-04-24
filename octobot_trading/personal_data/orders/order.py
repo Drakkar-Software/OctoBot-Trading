@@ -546,16 +546,19 @@ class Order(util.Initializable):
         is_from_exchange = False
         price = self.origin_price if use_origin_quantity_and_price else self.filled_price
         quantity = self.origin_quantity if use_origin_quantity_and_price else self.filled_quantity
+        # consider worse case taker fees when using use_origin_quantity_and_price as the order is not filled yet
+        taker_or_maker = enums.ExchangeConstantsOrderColumns.TAKER.value \
+            if use_origin_quantity_and_price else self.taker_or_maker
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
             computed_fee = self.exchange_manager.exchange.get_trade_fee(
-                self.symbol, self.order_type, quantity, price, self.taker_or_maker
+                self.symbol, self.order_type, quantity, price, taker_or_maker
             )
             value = computed_fee[enums.FeePropertyColumns.COST.value]
             currency = computed_fee[enums.FeePropertyColumns.CURRENCY.value]
             is_from_exchange = computed_fee[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value]
         else:
             symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
-            fees = decimal.Decimal(f"{symbol_fees[self.taker_or_maker]}")
+            fees = decimal.Decimal(f"{symbol_fees[taker_or_maker]}")
             if self.fees_currency_side is enums.FeesCurrencySide.CURRENCY:
                 value = quantity / price * fees
                 currency = self.currency
