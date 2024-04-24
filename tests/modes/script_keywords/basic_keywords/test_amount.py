@@ -59,7 +59,8 @@ async def test_get_amount_from_input_amount(null_context):
                 assert await script_keywords.get_amount_from_input_amount(null_context, "1", "buy") \
                        == decimal.Decimal(1)
                 adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
-                                                                      False, True, False, target_price=None)
+                                                                      False, True, False, target_price=None,
+                                                                      orders_to_be_ignored=None)
                 parse_quantity_mock.assert_called_once_with("1")
                 parse_quantity_mock.reset_mock()
                 adapt_amount_to_holdings_mock.reset_mock()
@@ -67,10 +68,11 @@ async def test_get_amount_from_input_amount(null_context):
                 with pytest.raises(errors.MissingFunds):
                     # raises as 1 != 2
                     await script_keywords.get_amount_from_input_amount(
-                        null_context, "1", "buy", allow_holdings_adaptation=False
+                        null_context, "1", "buy", allow_holdings_adaptation=False, orders_to_be_ignored=[]
                     )
                 adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
-                                                                      False, True, False, target_price=None)
+                                                                      False, True, False, target_price=None,
+                                                                      orders_to_be_ignored=[])
                 parse_quantity_mock.assert_called_once_with("1")
                 adapt_amount_to_holdings_mock.reset_mock()
 
@@ -80,10 +82,12 @@ async def test_get_amount_from_input_amount(null_context):
                 for allow_holdings_adaptation in (True, False):
                     # doesn't raise as 1 == 1
                     assert await script_keywords.get_amount_from_input_amount(
-                        null_context, "1", "buy", allow_holdings_adaptation=allow_holdings_adaptation
+                        null_context, "1", "buy", allow_holdings_adaptation=allow_holdings_adaptation,
+                        orders_to_be_ignored=["plip"]
                     ) == decimal.Decimal(1)
                     adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(1), "buy",
-                                                                          False, True, False, target_price=None)
+                                                                          False, True, False, target_price=None,
+                                                                          orders_to_be_ignored=["plip"])
                     parse_quantity_mock.assert_called_once_with("1")
                     parse_quantity_mock.reset_mock()
                     adapt_amount_to_holdings_mock.reset_mock()
@@ -97,7 +101,8 @@ async def test_get_amount_from_input_amount(null_context):
                         null_context, "1", "buy", allow_holdings_adaptation=allow_holdings_adaptation
                     ) == decimal.Decimal(1)
                     adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("0.5"), "buy",
-                                                                          False, True, False, target_price=None)
+                                                                          False, True, False, target_price=None,
+                                                                          orders_to_be_ignored=None)
                     parse_quantity_mock.assert_called_once_with("1")
                     parse_quantity_mock.reset_mock()
                     adapt_amount_to_holdings_mock.reset_mock()
@@ -117,7 +122,7 @@ async def test_get_amount_from_input_amount(null_context):
                 # without target_price
                 adapt_amount_to_holdings_mock.assert_called_once_with(
                     null_context, decimal.Decimal(2) / decimal.Decimal(100), "buy",
-                    False, True, False, target_price=None
+                    False, True, False, target_price=None, orders_to_be_ignored=None
                 )
                 parse_quantity_mock.assert_called_once_with("1")
                 adapt_amount_to_holdings_mock.reset_mock()
@@ -130,7 +135,7 @@ async def test_get_amount_from_input_amount(null_context):
                 get_up_to_date_price_mock.assert_not_called()
                 adapt_amount_to_holdings_mock.assert_called_once_with(
                     null_context, decimal.Decimal(2) / decimal.Decimal(23), "buy",
-                    False, True, False, target_price=decimal.Decimal(23)
+                    False, True, False, target_price=decimal.Decimal(23), orders_to_be_ignored=None
                 )
                 parse_quantity_mock.assert_called_once_with("1")
                 adapt_amount_to_holdings_mock.reset_mock()
@@ -142,7 +147,8 @@ async def test_get_amount_from_input_amount(null_context):
                         null_context, "1", "buy",  target_price=decimal.Decimal("0.5"), allow_holdings_adaptation=False
                     )
                 adapt_amount_to_holdings_mock.assert_called_once_with(
-                    null_context, decimal.Decimal(4), "buy", False, True, False, target_price=decimal.Decimal("0.5")
+                    null_context, decimal.Decimal(4), "buy", False, True, False, target_price=decimal.Decimal("0.5"),
+                    orders_to_be_ignored=None
                 )
                 parse_quantity_mock.assert_called_once_with("1")
                 adapt_amount_to_holdings_mock.reset_mock()
@@ -158,7 +164,8 @@ async def test_get_amount_from_input_amount(null_context):
                                                                       is_stop_order=True,
                                                                       target_price=constants.ZERO) == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
-                                                                  True, False, True, target_price=constants.ZERO)
+                                                                  True, False, True, target_price=constants.ZERO,
+                                                                  orders_to_be_ignored=None)
             parse_quantity_mock.assert_called_once_with("50")
             available_account_balance_mock.assert_called_once_with(null_context, "buy",
                                                                    use_total_holding=True, reduce_only=False)
@@ -173,7 +180,8 @@ async def test_get_amount_from_input_amount(null_context):
                 as available_account_balance_mock:
             assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
-                                                                  False, True, False, target_price=None)
+                                                                  False, True, False, target_price=None,
+                                                                  orders_to_be_ignored=None)
             parse_quantity_mock.assert_called_once_with("50")
             available_account_balance_mock.assert_called_once_with(null_context, "buy",
                                                                    use_total_holding=False, reduce_only=True)
@@ -196,7 +204,8 @@ async def test_get_amount_from_input_amount(null_context):
 
             assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
-                                                                  False, True, False, target_price=None)
+                                                                  False, True, False, target_price=None,
+                                                                  orders_to_be_ignored=None)
             parse_quantity_mock.assert_called_once_with("50")
             get_holdings_value_mock.assert_called_once_with(("BTC", "USDT"), "BTC")
             adapt_amount_to_holdings_mock.reset_mock()
@@ -229,7 +238,8 @@ async def test_get_amount_from_input_amount(null_context):
 
             assert await script_keywords.get_amount_from_input_amount(null_context, "50", "buy") == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("7.5"), "buy",
-                                                                  False, True, False, target_price=None)
+                                                                  False, True, False, target_price=None,
+                                                                  orders_to_be_ignored=None)
             parse_quantity_mock.assert_called_once_with("50")
             get_holdings_value_mock.assert_called_once_with({'BTC', 'ETH', 'SOL', 'USDT'}, "BTC")
             adapt_amount_to_holdings_mock.reset_mock()
