@@ -31,6 +31,9 @@ class SpotPortfolio(portfolio_class.Portfolio):
         """
         base_fees = order.get_total_fees(order.currency)
         quote_fees = order.get_total_fees(order.market)
+        forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=True)
+        forecasted_base_fees = order_util.get_fees_for_currency(forecasted_fees, order.currency)
+        forecasted_quote_fees = order_util.get_fees_for_currency(forecasted_fees, order.market)
 
         # update base
         if order.side == enums.TradeOrderSide.BUY:
@@ -38,12 +41,16 @@ class SpotPortfolio(portfolio_class.Portfolio):
             self._update_portfolio_data(order.currency, total_value=new_quantity, available_value=new_quantity)
         else:
             new_quantity = -order.filled_quantity - base_fees
-            self._update_portfolio_data(order.currency, total_value=new_quantity)
+            # Align available amount using really paid fees. Does nothing if forecasted fees == real fees
+            available_update = forecasted_base_fees - base_fees
+            self._update_portfolio_data(order.currency, total_value=new_quantity, available_value=available_update)
 
         # update quote
         if order.side == enums.TradeOrderSide.BUY:
             new_quantity = -(order.filled_quantity * order.filled_price) - quote_fees
-            self._update_portfolio_data(order.market, total_value=new_quantity)
+            # Align available amount using really paid fees. Does nothing if forecasted fees == real fees
+            available_update = forecasted_quote_fees - quote_fees
+            self._update_portfolio_data(order.market, total_value=new_quantity, available_value=available_update)
         else:
             new_quantity = (order.filled_quantity * order.filled_price) - quote_fees
             self._update_portfolio_data(order.market, total_value=new_quantity, available_value=new_quantity)
