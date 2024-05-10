@@ -206,6 +206,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
             ) from err
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
+            # ensure this is not a permission error (can happen on binance)
+            if exchanges_util.is_api_permission_error(e):
+                # invalid api key or missing trading rights
+                raise errors.AuthenticationError(
+                    f"Error when handling order {e}. Please make sure that trading permissions are on for this API key."
+                ) from e
             if self.should_log_on_ddos_exception(e):
                 self.connector.log_ddos_error(e)
             raise errors.FailedRequest(f"Failed to order operation: {e.__class__.__name__} {e}") from e

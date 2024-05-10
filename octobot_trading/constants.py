@@ -131,9 +131,13 @@ EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
     # OKX ex: okx {"msg":"API key doesn't exist","code":"50119"}
     ("api", "key"),
 
+    # Binance ex: DDoSProtection('binance {"code":-2015,"msg":"Invalid API-key, IP, or permissions for action."}')
+    ("key", "permissions for action"),
+
     # coinbase ex: coinbase {"error":"PERMISSION_DENIED",
     # "error_details":"Missing required scopes","message":"Missing required scopes"}
     ("permission_denied", "required scopes"),
+    ("missing required scopes"),
 ]
 
 # text content of errors due to exchange compliancy rules
