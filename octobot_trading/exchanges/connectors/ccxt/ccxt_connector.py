@@ -113,6 +113,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def load_symbol_markets(
         self,
         reload=False,
@@ -191,6 +192,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client is not None:
             ccxt_client_util.add_options(self.client, options_dict)
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def _ensure_auth(self):
         try:
             await self.get_balance()
@@ -238,6 +240,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_balance(self, **kwargs: dict):
         """
         fetch balance (free + used) by currency
@@ -253,6 +256,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_symbol_prices(self,
                                 symbol: str,
                                 time_frame: octobot_commons.enums.TimeFrames,
@@ -271,6 +275,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 f"Failed to get_symbol_prices of {symbol} on {time_frame.value}: {e.__class__.__name__} on {e}"
             ) from e
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_kline_price(self,
                               symbol: str,
                               time_frame: octobot_commons.enums.TimeFrames,
@@ -288,6 +293,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_kline_price {e}")
 
     # return up to ten bidasks on each side of the order book stack
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         try:
             with self.error_describer():
@@ -299,6 +305,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_order_book {e}")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         try:
             with self.error_describer():
@@ -311,6 +318,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_recent_trades {e}")
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
         try:
             with self.error_describer():
@@ -322,6 +330,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
         try:
             with self.error_describer():
@@ -337,6 +346,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_all_currencies_price_ticker {e}")
 
     # ORDERS
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         if self.client.has['fetchOrder']:
             try:
@@ -370,6 +380,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
         return None  # OrderNotFound
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOrders']:
@@ -381,6 +392,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrders")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_open_orders(self, symbol: str = None, since: int = None,
                               limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOpenOrders']:
@@ -392,18 +404,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_closed_orders(self, symbol: str = None, since: int = None,
                                 limit: int = None, **kwargs: dict) -> list:
-        try:
-            with self.error_describer():
-                return self.adapter.adapt_orders(
-                    await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
-                    symbol=symbol
-                )
-        except ccxt.NotSupported as e:
-            # fetch_closed_orders is not supported
-            raise octobot_trading.errors.NotSupported(e) from e
+        with self.error_describer():
+            return self.adapter.adapt_orders(
+                await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs),
+                symbol=symbol
+            )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
@@ -422,6 +432,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
             # use create_order instead of create_market_buy_order to pass the price argument
@@ -432,12 +443,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
             await self.client.create_limit_buy_order(symbol, quantity, price, params=params),
             symbol=symbol, quantity=quantity
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
             # use create_order instead of create_market_sell_order to pass the price argument
@@ -448,12 +461,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
             await self.client.create_limit_sell_order(symbol, quantity, price, params=params),
             symbol=symbol, quantity=quantity
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
         if self.client.has.get("createStopMarketOrder"):
             try:
@@ -484,6 +499,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return created_order
         raise NotImplementedError("create_market_stop_loss_order is not implemented")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_stop_loss_order(self, symbol, quantity, price, stop_price, side, params=None) -> dict:
         if self.client.has.get("createStopLimitOrder"):
             return self.adapter.adapt_order(
@@ -499,18 +515,23 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             )
         raise NotImplementedError("create_limit_stop_loss_order is not implemented")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("create_market_take_profit_order is not implemented")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("create_limit_take_profit_order is not implemented")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("create_market_trailing_stop_order is not implemented")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("create_limit_trailing_stop_order is not implemented")
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def edit_order(self, exchange_order_id: str, order_type: enums.TraderOrderType, symbol: str,
                          quantity: float, price: float, stop_price: float = None, side: str = None,
                          current_price: float = None, params: dict = None):
@@ -527,6 +548,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def cancel_order(
         self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
@@ -562,6 +584,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                                            f"{exchange_order_id} failed to cancel | {e} ({e.__class__.__name__})")
             raise e
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
         try:
             return [
@@ -571,6 +594,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported as err:
             raise NotImplementedError from err
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         try:
             return self.adapter.adapt_position(
@@ -579,22 +603,26 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported as err:
             raise NotImplementedError from err
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
         return self.adapter.adapt_position(
             self.client.parse_position({}, market=self.client.market(symbol)),
             force_empty=True
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
         return self.adapter.adapt_funding_rate(
             await self.client.fetch_funding_rate(symbol=symbol, params=kwargs)
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
         return self.adapter.adapt_funding_rate(
             await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_leverage_tiers(self, symbols: list = None, **kwargs: dict) -> dict:
         if self.client.has.get("fetchLeverageTiers"):
             return self.adapter.adapt_leverage_tiers(
@@ -605,14 +633,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def get_contract_size(self, symbol: str):
         return decimal.Decimal(str(ccxt_client_util.get_contract_size(self.client, symbol)))
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_symbol_leverage(self, symbol: str, **kwargs: dict):
         return self.adapter.adapt_leverage(
             await self.client.fetch_leverage(symbol=symbol, params=kwargs)
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def set_symbol_leverage(self, symbol: str, leverage: float, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         return await self.client.set_margin_mode(
             ccxt_enums.ExchangeMarginTypes.ISOLATED.value if isolated else ccxt_enums.ExchangeMarginTypes.CROSS.value,
@@ -620,9 +651,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             params=kwargs,
         )
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         return await self.client.set_position_mode(self, hedged=not one_way, symbol=symbol)
 
+    @ccxt_client_util.converted_ccxt_common_errors
     async def set_symbol_partial_take_profit_stop_loss(self, symbol: str, inverse: bool,
                                                        tp_sl_mode: enums.TakeProfitStopLossMode):
         raise NotImplementedError("set_symbol_partial_take_profit_stop_loss is not implemented")

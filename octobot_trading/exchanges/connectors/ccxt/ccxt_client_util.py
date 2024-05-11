@@ -22,6 +22,7 @@ import ccxt.pro as ccxt_pro
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import octobot_trading.exchanges.util.exchange_util as exchange_util
@@ -226,6 +227,17 @@ def add_options(client, options_dict):
     """
     for option_key, option_value in options_dict.items():
         client.options[option_key] = option_value
+
+
+def converted_ccxt_common_errors(f):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await f(*args, **kwargs)
+        except ccxt.RateLimitExceeded as err:
+            raise errors.RateLimitExceeded(err) from err
+        except ccxt.NotSupported as err:
+            raise errors.NotSupported(err) from err
+    return wrapper
 
 
 def _use_http_proxy_if_necessary(client):

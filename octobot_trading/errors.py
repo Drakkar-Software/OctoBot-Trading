@@ -93,6 +93,12 @@ class FailedRequest(Exception):
     """
 
 
+class RateLimitExceeded(Exception):
+    """
+    Raised upon an exchange API rate limit error
+    """
+
+
 class UnavailableOrderTypeForMarketError(Exception):
     """
     Raised when an exchange refuses to create a given type of order that should normally be supported
