@@ -308,9 +308,15 @@ class ExchangeManager(util.Initializable):
             return "", "", ""
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
         return (
-            configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None),
-            configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
-            configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None)
+            configuration.decrypt_element_if_possible(
+                common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None
+            ).strip(" "),   # remove leading and trailing whitespaces if any
+            configuration.decrypt_element_if_possible(
+                common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None
+            ).strip(" "),   # remove leading and trailing whitespaces if any
+            configuration.decrypt_element_if_possible(
+                common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
+            )
         )
 
     def get_exchange_sub_account_id(self, exchange_name):
