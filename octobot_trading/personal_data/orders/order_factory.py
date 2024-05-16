@@ -28,14 +28,21 @@ def create_order_from_raw(trader, raw_order):
 def create_order_instance_from_raw(
     trader, raw_order, force_open_or_pending_creation=False, has_just_been_created=False
 ):
-    order = create_order_from_raw(trader, raw_order)
-    order.update_from_raw(raw_order)
-    if has_just_been_created:
-        order.register_broker_applied_if_enabled()
-    if force_open_or_pending_creation \
-            and order.status not in (enums.OrderStatus.OPEN, enums.OrderStatus.PENDING_CREATION):
-        order.status = enums.OrderStatus.OPEN
-    return order
+    try:
+        order = create_order_from_raw(trader, raw_order)
+        order.update_from_raw(raw_order)
+        if has_just_been_created:
+            order.register_broker_applied_if_enabled()
+        if force_open_or_pending_creation \
+                and order.status not in (enums.OrderStatus.OPEN, enums.OrderStatus.PENDING_CREATION):
+            order.status = enums.OrderStatus.OPEN
+        return order
+    except Exception as err:
+        # log unparsable order to fix it
+        logging.get_logger(__name__).exception(
+            err, True, f"Unexpected {err} ({err.__class__.__name__}) error when parsing row order {raw_order}"
+        )
+        raise
 
 
 def create_order_from_type(trader, order_type, side=None):
