@@ -52,6 +52,18 @@ def is_currency_enabled(config, currency, default_value) -> bool:
         return default_value
 
 
+def is_symbol_disabled(config, symbol) -> bool:
+    for currency_details in config[commons_constants.CONFIG_CRYPTO_CURRENCIES].values():
+        for pair in currency_details[commons_constants.CONFIG_CRYPTO_PAIRS]:
+            if (
+                symbol == symbol_util.parse_symbol(pair).base
+                and currency_details.get(commons_constants.CONFIG_ENABLED_OPTION, True) is False
+            ):
+                return True
+    return False
+
+
+
 def get_symbols(config, enabled_only) -> list:
     if commons_constants.CONFIG_CRYPTO_CURRENCIES in config \
             and isinstance(config[commons_constants.CONFIG_CRYPTO_CURRENCIES], dict):
