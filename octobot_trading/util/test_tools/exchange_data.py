@@ -37,7 +37,8 @@ class ExchangeAuthDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot
     sandboxed: bool = False
     broker_enabled: bool = False
     encrypted: str = ""
-    incompatible_assets: typing.Union[list[IncompatibleAssetDetails], None] = None
+    exchange_account_id: typing.Union[str, None] = None
+    incompatible_assets: typing.Union[list[IncompatibleAssetDetails], None] = dataclasses.field(default_factory=list)
 
     # pylint: disable=E1134
     def __post_init__(self):
