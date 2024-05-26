@@ -436,6 +436,10 @@ def is_exchange_rules_compliancy_error(error: BaseException) -> bool:
     return is_error_on_this_type(error, constants.EXCHANGE_COMPLIANCY_ERRORS)
 
 
+def is_exchange_account_traded_symbol_permission_error(error: BaseException) -> bool:
+    return is_error_on_this_type(error, constants.EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS)
+
+
 def is_error_on_this_type(error: BaseException, descriptions: typing.List[typing.Iterable[str]]) -> bool:
     lower_error = str(error).lower()
     for identifiers in descriptions:

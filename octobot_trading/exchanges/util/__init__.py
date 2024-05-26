@@ -46,6 +46,7 @@ from octobot_trading.exchanges.util.exchange_util import (
     get_exchange_details,
     is_api_permission_error,
     is_exchange_rules_compliancy_error,
+    is_exchange_account_traded_symbol_permission_error,
     is_error_on_this_type,
 )
 from octobot_trading.exchanges.util import websockets_util
@@ -81,6 +82,7 @@ __all__ = [
     "get_exchange_details",
     "is_api_permission_error",
     "is_exchange_rules_compliancy_error",
+    "is_exchange_account_traded_symbol_permission_error",
     "is_error_on_this_type",
     "force_disable_web_socket",
     "check_web_socket_config",

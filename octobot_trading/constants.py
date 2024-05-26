@@ -146,6 +146,12 @@ EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = [
     ("restricted", "compliance"),
 ]
 
+# text content of errors due to exchange local account permissions (ex: accounts from X country can't trade XYZ)
+EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
+    # Binance ex: InvalidOrder binance {"code":-2010,"msg":"This symbol is not permitted for this account."}
+    ("symbol", "not permitted", "for this account"),
+]
+
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
 
