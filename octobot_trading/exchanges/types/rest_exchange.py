@@ -215,6 +215,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             if self.should_log_on_ddos_exception(e):
                 self.connector.log_ddos_error(e)
             raise errors.FailedRequest(f"Failed to order operation: {e.__class__.__name__} {e}") from e
+        except errors.ExchangeAccountSymbolPermissionError:
+            raise
         except Exception as e:
             if not self.is_market_open_for_order_type(symbol, order_type):
                 raise errors.UnavailableOrderTypeForMarketError(
@@ -273,9 +275,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                                      stop_price=stop_price, side=side,
                                                      current_price=current_price, 
                                                      reduce_only=reduce_only, params=params)
-        except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
+        except (ccxt.InvalidOrder, ccxt.BadRequest) as err:
+            if exchanges_util.is_exchange_account_traded_symbol_permission_error(err):
+                # exchange won't let this order create: raise
+                raise errors.ExchangeAccountSymbolPermissionError(
+                    f"Error when creating {symbol} {order_type} order on {self.exchange_manager.exchange_name}: {err}"
+                ) from err
             # can be raised when exchange precision/limits rules change
-            self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
+            self.logger.debug(f"Failed to create order ({err}) : order_type: {order_type}, symbol: {symbol}. "
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
             await self.connector.load_symbol_markets(reload=True, market_filter=self.exchange_manager.market_filter)
             # retry order creation with updated markets (ccxt will use the updated market values)

@@ -117,6 +117,13 @@ class ExchangeCompliancyError(Exception):
     """
 
 
+class ExchangeAccountSymbolPermissionError(Exception):
+    """
+    Raised when an exchange failed to execute the given request because of allowed traded symbols
+    on the current user account
+    """
+
+
 class PortfolioNegativeValueError(Exception):
     """
     Raised when the portfolio is being updated with a negative value
