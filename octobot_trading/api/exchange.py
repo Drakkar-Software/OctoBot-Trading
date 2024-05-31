@@ -322,14 +322,6 @@ async def get_exchange_details(
     )
 
 
-def is_api_permission_error(error: BaseException) -> bool:
-    return exchanges.is_api_permission_error(error)
-
-
-def is_exchange_rules_compliancy_error(error: BaseException) -> bool:
-    return exchanges.is_exchange_rules_compliancy_error(error)
-
-
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise

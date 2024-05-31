@@ -91,6 +91,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     # text content of errors due to orders not found errors
     EXCHANGE_ORDER_NOT_FOUND_ERRORS: typing.List[typing.Iterable[str]] = []
+    # when ccxt is raising ccxt.ExchangeError instead of ccxt.AuthenticationError on api key permissions issue
+    # text content of errors due to api key permissions issues
+    EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to account compliancy issues
+    EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to exchange local account permissions (ex: accounts from X country can't trade XYZ)
+    # text content of errors due to traded assets for account
+    EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
@@ -207,7 +215,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
             # ensure this is not a permission error (can happen on binance)
-            if exchanges_util.is_api_permission_error(e):
+            if self.is_api_permission_error(e):
                 # invalid api key or missing trading rights
                 raise errors.AuthenticationError(
                     f"Error when handling order {e}. Please make sure that trading permissions are on for this API key."
@@ -223,12 +231,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
                     f"Error when handling order {e}. "
                     f"Exchange currently refuses to create orders of type {order_type} on {symbol}."
                 ) from e
-            if exchanges_util.is_api_permission_error(e):
+            if self.is_api_permission_error(e):
                 # invalid api key or missing trading rights
                 raise errors.AuthenticationError(
                     f"Error when handling order {e}. Please make sure that trading permissions are on for this API key."
                 ) from e
-            if exchanges_util.is_exchange_rules_compliancy_error(e):
+            if self.is_exchange_rules_compliancy_error(e):
                 raise errors.ExchangeCompliancyError(
                     f"Error when handling order {e}. Exchange is refusing this order request on this account because "
                     f"of its compliancy requirements."
@@ -276,7 +284,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                                      current_price=current_price, 
                                                      reduce_only=reduce_only, params=params)
         except (ccxt.InvalidOrder, ccxt.BadRequest) as err:
-            if exchanges_util.is_exchange_account_traded_symbol_permission_error(err):
+            if self.is_exchange_account_traded_symbol_permission_error(err):
                 # exchange won't let this order create: raise
                 raise errors.ExchangeAccountSymbolPermissionError(
                     f"Error when creating {symbol} {order_type} order on {self.exchange_manager.exchange_name}: {err}"
@@ -891,6 +899,21 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_order_not_found_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_ORDER_NOT_FOUND_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ORDER_NOT_FOUND_ERRORS)
+        return False
+
+    def is_api_permission_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_PERMISSION_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_PERMISSION_ERRORS)
+        return False
+
+    def is_exchange_rules_compliancy_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_COMPLIANCY_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_COMPLIANCY_ERRORS)
+        return False
+
+    def is_exchange_account_traded_symbol_permission_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS)
         return False
 
     """

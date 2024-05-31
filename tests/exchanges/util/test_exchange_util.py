@@ -244,26 +244,10 @@ async def test_get_exchange_details(tentacles_setup_config, supported_exchanges)
             get_tentacle_config_mock.assert_called_once()
 
 
-def test_is_api_permission_error():
-    with mock.patch.object(exchange_util, "is_error_on_this_type") as is_error_on_this_type_mock:
-        err = Exception("plop")
-        exchanges.is_api_permission_error(err)
-        is_error_on_this_type_mock.assert_called_once_with(
-            err, constants.EXCHANGE_PERMISSION_ERRORS
-        )
-
-
-def test_is_exchange_rules_compliancy_error():
-    with mock.patch.object(exchange_util, "is_error_on_this_type") as is_error_on_this_type_mock:
-        err = Exception("plop")
-        exchanges.is_exchange_rules_compliancy_error(err)
-        is_error_on_this_type_mock.assert_called_once_with(
-            err, constants.EXCHANGE_COMPLIANCY_ERRORS
-        )
-
-
 def test_is_error_on_this_type():
-    assert exchange_util.is_error_on_this_type(Exception("plop"), constants.EXCHANGE_PERMISSION_ERRORS) is False
-    assert exchange_util.is_error_on_this_type(Exception("api key doesn't exist"), constants.EXCHANGE_PERMISSION_ERRORS) is True
-    assert exchange_util.is_error_on_this_type(Exception("api"), constants.EXCHANGE_PERMISSION_ERRORS) is False
-    assert exchange_util.is_error_on_this_type(Exception("api"), constants.EXCHANGE_COMPLIANCY_ERRORS) is False
+    errors = [("api", "key", "doesn't exist"),]
+
+    assert exchange_util.is_error_on_this_type(Exception("plop"), errors) is False
+    assert exchange_util.is_error_on_this_type(Exception("api key doesn't exist"), errors) is True
+    assert exchange_util.is_error_on_this_type(Exception("api"), errors) is False
+    assert exchange_util.is_error_on_this_type(Exception("api"), errors) is False
