@@ -127,20 +127,22 @@ SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex2", "bithumb", "bitstamp", "bittre
                               "wavesexchange"])
 
 # when ccxt is raising ccxt.ExchangeError instead of ccxt.AuthenticationError on api key permissions issue
+# Warning: should never be a false positive
 EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
     # OKX ex: okx {"msg":"API key doesn't exist","code":"50119"}
-    ("api", "key"),
+    ("api", "key", "doesn't exist"),
 
     # Binance ex: DDoSProtection('binance {"code":-2015,"msg":"Invalid API-key, IP, or permissions for action."}')
     ("key", "permissions for action"),
 
     # coinbase ex: coinbase {"error":"PERMISSION_DENIED",
     # "error_details":"Missing required scopes","message":"Missing required scopes"}
-    ("permission_denied", "required scopes"),
+    ("permission_denied", "missing required scopes"),
     ("missing required scopes"),
 ]
 
 # text content of errors due to exchange compliancy rules
+# Warning: should never be a false positive
 EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = [
     # OKX ex: Trading of this pair or contract is restricted due to local compliance requirements
     ("restricted", "compliance"),
