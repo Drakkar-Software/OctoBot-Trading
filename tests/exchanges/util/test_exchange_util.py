@@ -264,6 +264,6 @@ def test_is_exchange_rules_compliancy_error():
 
 def test_is_error_on_this_type():
     assert exchange_util.is_error_on_this_type(Exception("plop"), constants.EXCHANGE_PERMISSION_ERRORS) is False
-    assert exchange_util.is_error_on_this_type(Exception("api key"), constants.EXCHANGE_PERMISSION_ERRORS) is True
+    assert exchange_util.is_error_on_this_type(Exception("api key doesn't exist"), constants.EXCHANGE_PERMISSION_ERRORS) is True
     assert exchange_util.is_error_on_this_type(Exception("api"), constants.EXCHANGE_PERMISSION_ERRORS) is False
     assert exchange_util.is_error_on_this_type(Exception("api"), constants.EXCHANGE_COMPLIANCY_ERRORS) is False
