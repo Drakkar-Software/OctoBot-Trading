@@ -28,6 +28,7 @@ import octobot_commons.tentacles_management as tentacles_management
 import octobot_tentacles_manager.api as api
 
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.implementations as exchanges_implementations
@@ -228,7 +229,8 @@ async def get_local_exchange_manager(
         .disable_trading_mode() \
         .build()
     try:
-        yield exchange_manager
+        with exchange_error_translator(exchange_manager):
+            yield exchange_manager
     finally:
         # do not log stopping message
         logger = exchange_manager.exchange.connector.logger
@@ -236,6 +238,20 @@ async def get_local_exchange_manager(
         builder.clear()
         await exchange_manager.stop(enable_logs=False)
         logger.disable(False)
+
+
+@contextlib.contextmanager
+def exchange_error_translator(exchange_manager):
+    try:
+        yield
+    except ccxt.ExchangeError as err:
+        # convert permission and compliancy errors while the exchange manager still exists and can be used
+        if exchange_manager.exchange.is_api_permission_error(err):
+            raise errors.AuthenticationError(f"{err} ({err.__class__})") from err
+        if exchange_manager.exchange.is_exchange_rules_compliancy_error(err):
+            raise errors.ExchangeCompliancyError(f"{err} ({err.__class__})") from err
+        # default raise
+        raise
 
 
 async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
@@ -426,18 +442,6 @@ def get_associated_symbol(exchange_manager, asset: str, target_asset: str) -> (t
         symbol = reversed_symbol
         is_reversed_symbol = True
     return symbol, is_reversed_symbol
-
-
-def is_api_permission_error(error: BaseException) -> bool:
-    return is_error_on_this_type(error, constants.EXCHANGE_PERMISSION_ERRORS)
-
-
-def is_exchange_rules_compliancy_error(error: BaseException) -> bool:
-    return is_error_on_this_type(error, constants.EXCHANGE_COMPLIANCY_ERRORS)
-
-
-def is_exchange_account_traded_symbol_permission_error(error: BaseException) -> bool:
-    return is_error_on_this_type(error, constants.EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS)
 
 
 def is_error_on_this_type(error: BaseException, descriptions: typing.List[typing.Iterable[str]]) -> bool:
