@@ -69,6 +69,8 @@ from octobot_trading.modes.modes_util import (
     get_assets_requiring_extra_price_data_to_convert,
     convert_assets_to_target_asset,
     convert_asset_to_target_asset,
+    get_instantly_filled_limit_order_adapted_price,
+    get_instantly_filled_limit_order_adapted_price_and_quantity,
     notify_portfolio_optimization_complete,
 )
 
@@ -97,5 +99,7 @@ __all__ = [
     "get_assets_requiring_extra_price_data_to_convert",
     "convert_assets_to_target_asset",
     "convert_asset_to_target_asset",
+    "get_instantly_filled_limit_order_adapted_price",
+    "get_instantly_filled_limit_order_adapted_price_and_quantity",
     "notify_portfolio_optimization_complete",
 ]
