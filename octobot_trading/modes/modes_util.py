@@ -122,15 +122,7 @@ async def convert_asset_to_target_asset(
 
         if trading_personal_data.get_trade_order_type(order_type) is not trading_enums.TradeOrderType.MARKET:
             # can't use market orders: use limit orders with price a bit under the current price to instant fill it.
-            price_delta = price * constants.INSTANT_FILLED_LIMIT_ORDER_PRICE_DELTA
-            if order_type is trading_enums.TraderOrderType.SELL_LIMIT:
-                price -= price_delta
-            elif order_type is trading_enums.TraderOrderType.BUY_LIMIT:
-                price += price_delta
-            else:
-                trading_mode.logger.error(
-                    f"Unhandled order type in convertor limit order price adapter: {order_type}"
-                )
+            price = get_instantly_filled_limit_order_adapted_price(price, order_type)
 
         # get order quantity
         quantity = _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount)
@@ -152,6 +144,31 @@ async def convert_asset_to_target_asset(
             )
             created_orders.append(await trading_mode.create_order(order))
     return created_orders
+
+
+def get_instantly_filled_limit_order_adapted_price(
+    price: decimal.Decimal, order_type: trading_enums.TraderOrderType
+) -> decimal.Decimal:
+    price_delta = price * constants.INSTANT_FILLED_LIMIT_ORDER_PRICE_DELTA
+    if order_type is trading_enums.TraderOrderType.SELL_LIMIT:
+        price -= price_delta
+    elif order_type is trading_enums.TraderOrderType.BUY_LIMIT:
+        price += price_delta
+    else:
+        logging.get_logger(__name__).error(
+            f"Unhandled order type in convertor limit order price adapter: {order_type}"
+        )
+    return price
+
+
+def get_instantly_filled_limit_order_adapted_price_and_quantity(
+    price: decimal.Decimal, quantity: decimal.Decimal, order_type: trading_enums.TraderOrderType
+) -> (decimal.Decimal, decimal.Decimal):
+    adapted_price = get_instantly_filled_limit_order_adapted_price(price, order_type)
+    origin_cost = price * quantity
+    # keep the same total cost, adapt quantity
+    adapted_quantity = origin_cost / adapted_price
+    return adapted_price, adapted_quantity
 
 
 def _get_associated_symbol_and_order_type(trading_mode, asset: str, target_asset: str) \
