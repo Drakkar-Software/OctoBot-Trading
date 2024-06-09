@@ -113,6 +113,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
+    async def _load_markets(self, client, reload: bool):
+        """
+        Override if necessary
+        """
+        await client.load_markets(reload=reload)
+
     @ccxt_client_util.converted_ccxt_common_errors
     async def load_symbol_markets(
         self,
@@ -128,7 +134,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if load_markets:
             self.logger.info(f"Loading {self.exchange_manager.exchange_name} exchange markets")
             try:
-                await self.client.load_markets(reload=reload)
+                await self._load_markets(self.client, reload)
                 ccxt_client_util.set_markets_cache(self.client)
             except ccxt.ExchangeNotAvailable as err:
                 raise octobot_trading.errors.FailedRequest(
@@ -145,7 +151,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     unauth_client = None
                     try:
                         unauth_client = self._client_factory(True)[0]
-                        await unauth_client.load_markets(reload=reload)
+                        await self._load_markets(unauth_client, reload)
                         ccxt_client_util.set_markets_cache(unauth_client)
                         # apply markets to target client
                         ccxt_client_util.load_markets_from_cache(self.client, market_filter=market_filter)
