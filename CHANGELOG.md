@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.87] - 2024-06-09
+### Updated
+- [Exchanges] allow market status fetch override
+### Fixed
+- [ModesUtil] asset convertor error on missing traded symbol
+
 ## [2.4.86] - 2024-06-07
 ### Added
 - [ModesUtil] limit order price & quantity convertors
