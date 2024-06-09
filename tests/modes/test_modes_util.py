@@ -97,36 +97,45 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
     converter = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.value_converter
 
-    # only BTC and USDT in portfolio
-    # convert ETH to USDT: nothing to do
-    orders = await modes_util.convert_asset_to_target_asset(trading_mode, "ETH", "USDT", tickers)
-    assert orders == []
-    trading_mode.create_order.assert_not_called()
+    with mock.patch.object(exchange_manager.exchange, "is_market_open_for_order_type", mock.Mock(return_value=True)) \
+        as is_market_open_for_order_type_mock:
+        # only BTC and USDT in portfolio
+        # convert ETH to USDT: nothing to do
+        orders = await modes_util.convert_asset_to_target_asset(trading_mode, "ETH", "USDT", tickers)
+        assert orders == []
+        trading_mode.create_order.assert_not_called()
+        is_market_open_for_order_type_mock.assert_not_called()
 
-    # sell BTC
-    orders = await modes_util.convert_asset_to_target_asset(trading_mode, "BTC", "USDT", tickers)
-    # not working: no BTC pair in exchange_manager.client_symbols (can't create convert order)
-    assert orders == []
-    trading_mode.create_order.assert_not_called()
+        # sell BTC
+        orders = await modes_util.convert_asset_to_target_asset(trading_mode, "BTC", "USDT", tickers)
+        # not working: no BTC pair in exchange_manager.client_symbols (can't create convert order)
+        assert orders == []
+        trading_mode.create_order.assert_not_called()
+        # not called as symbol is not in client_symbols and might not be in symbol_markets
+        is_market_open_for_order_type_mock.assert_not_called()
 
-    # add client_symbols pair
-    exchange_manager.client_symbols.append("BTC/USDT")
+        # add client_symbols pair
+        exchange_manager.client_symbols.append("BTC/USDT")
 
-    # not working: no btc price
-    assert orders == []
-    trading_mode.create_order.assert_not_called()
+        # not working: no btc price
+        assert orders == []
+        trading_mode.create_order.assert_not_called()
 
-    # register BTC price
-    converter.update_last_price("BTC/USDT", decimal.Decimal(30000))
-    orders = await modes_util.convert_asset_to_target_asset(trading_mode, "BTC", "USDT", tickers)
-    assert len(orders) == 1
-    order = orders[0]
-    assert order.order_type == trading_enums.TraderOrderType.SELL_MARKET
-    assert order.symbol == "BTC/USDT"
-    assert order.origin_quantity == decimal.Decimal(10)
-    assert order.created_last_price == decimal.Decimal(30000)
-    trading_mode.create_order.assert_called_once()
-    trading_mode.create_order.reset_mock()
+        # register BTC price
+        converter.update_last_price("BTC/USDT", decimal.Decimal(30000))
+        orders = await modes_util.convert_asset_to_target_asset(trading_mode, "BTC", "USDT", tickers)
+        assert len(orders) == 1
+        order = orders[0]
+        assert order.order_type == trading_enums.TraderOrderType.SELL_MARKET
+        assert order.symbol == "BTC/USDT"
+        assert order.origin_quantity == decimal.Decimal(10)
+        assert order.created_last_price == decimal.Decimal(30000)
+        trading_mode.create_order.assert_called_once()
+        trading_mode.create_order.reset_mock()
+        is_market_open_for_order_type_mock.assert_called_once_with(
+            "BTC/USDT", trading_enums.TraderOrderType.SELL_MARKET
+        )
+        is_market_open_for_order_type_mock.reset_mock()
 
     orders = await modes_util.convert_asset_to_target_asset(trading_mode, "USDT", "BTC", tickers)
     assert len(orders) == 1

@@ -96,7 +96,7 @@ async def convert_asset_to_target_asset(
         symbol, order_type = _get_associated_symbol_and_order_type(trading_mode, asset, target_asset)
         if symbol is None:
             # can't convert asset into target_asset
-            trading_mode.logger.error(
+            trading_mode.logger.warning(
                 f"Impossible to convert {asset} into {target_asset}: no associated trading pair "
                 f"on {trading_mode.exchange_manager.exchange_name}"
             )
@@ -174,6 +174,8 @@ def get_instantly_filled_limit_order_adapted_price_and_quantity(
 def _get_associated_symbol_and_order_type(trading_mode, asset: str, target_asset: str) \
      -> (str, trading_enums.TraderOrderType):
     symbol, reversed_symbol = exchange_util.get_associated_symbol(trading_mode.exchange_manager, asset, target_asset)
+    if symbol is None:
+        return None, None
     order_type = trading_enums.TraderOrderType.BUY_MARKET if reversed_symbol else \
         trading_enums.TraderOrderType.SELL_MARKET
     if not trading_mode.exchange_manager.exchange.is_market_open_for_order_type(symbol, order_type):
