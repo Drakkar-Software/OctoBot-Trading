@@ -22,7 +22,7 @@ import octobot_commons.constants as commons_constants
 
 
 def _adapter(func):
-    def wrapper(*args, **kwargs):
+    def adapter_wrapper(*args, **kwargs):
         try:
             if args[1] is None:
                 # element to adapt is None, no need to go any further
@@ -34,7 +34,7 @@ def _adapter(func):
             raise errors.UnexpectedAdapterError(
                 f"Unexpected error when adapting exchange data: {err} (data: {args[1]})"
             ) from err
-    return wrapper
+    return adapter_wrapper
 
 
 class AbstractAdapter:
