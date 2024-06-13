@@ -230,14 +230,14 @@ def add_options(client, options_dict):
 
 
 def converted_ccxt_common_errors(f):
-    async def wrapper(*args, **kwargs):
+    async def converted_ccxt_common_errors_wrapper(*args, **kwargs):
         try:
             return await f(*args, **kwargs)
         except ccxt.RateLimitExceeded as err:
             raise errors.RateLimitExceeded(err) from err
         except ccxt.NotSupported as err:
             raise errors.NotSupported(err) from err
-    return wrapper
+    return converted_ccxt_common_errors_wrapper
 
 
 def _use_http_proxy_if_necessary(client):
