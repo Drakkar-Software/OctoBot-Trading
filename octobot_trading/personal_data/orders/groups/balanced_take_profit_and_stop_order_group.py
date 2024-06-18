@@ -141,9 +141,12 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             self.STOP: _SideBalance()
         }
         for order in self.get_group_open_orders():
-            if order is not closed_order \
-                    and (ignored_orders is None or order not in ignored_orders) \
-                    and order not in self.balancing_orders:
+            if ((not closed_order
+                 or order.order_id is not (closed_order.order_id
+                                           if closed_order
+                                           else None))
+                and (ignored_orders is None or order not in ignored_orders)
+                and order not in self.balancing_orders):
                 if order_util.is_stop_order(order.order_type):
                     balance[self.STOP].add_order(order)
                 else:
@@ -174,16 +177,30 @@ class _SideBalance:
             return actions
         to_be_reduced_amount = constants.ZERO
         remaining_orders = list(self.orders)
+        amount_to_reduce = balance - target_balance
+        
+        # try to find order with the same quantity
+        matching_quantity_order_index = None
+        for index, order in enumerate(remaining_orders):
+            if order.origin_quantity == amount_to_reduce:
+                matching_quantity_order_index = index
+                break
+        
         while remaining_orders and balance - to_be_reduced_amount > target_balance:
-            order_quantity = remaining_orders[0].origin_quantity
+            if matching_quantity_order_index is not None:
+                order_to_check = matching_quantity_order_index
+                matching_quantity_order_index = None
+            else:
+                order_to_check = 0
+            order_quantity = remaining_orders[order_to_check].origin_quantity
             if balance - to_be_reduced_amount - order_quantity >= target_balance:
                 # cancel order and keep reducing
-                actions[BalancedTakeProfitAndStopOrderGroup.CANCEL].append(remaining_orders.pop(0))
+                actions[BalancedTakeProfitAndStopOrderGroup.CANCEL].append(remaining_orders.pop(order_to_check))
                 to_be_reduced_amount += order_quantity
             else:
                 # update order and stop reducing
                 actions[BalancedTakeProfitAndStopOrderGroup.UPDATE].append({
-                    BalancedTakeProfitAndStopOrderGroup.ORDER: remaining_orders.pop(0),
+                    BalancedTakeProfitAndStopOrderGroup.ORDER: remaining_orders.pop(order_to_check),
                     BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY:
                         target_balance - (balance - to_be_reduced_amount - order_quantity)
                 })
