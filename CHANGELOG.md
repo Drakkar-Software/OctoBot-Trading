@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.88] - 2024-06-20
+### Updated
+- [API] add default_price to get_minimal_order_cost
+- 
 ## [2.4.87] - 2024-06-09
 ### Updated
 - [Exchanges] allow market status fetch override
