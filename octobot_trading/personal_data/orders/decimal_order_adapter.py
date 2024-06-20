@@ -40,7 +40,7 @@ def get_minimal_order_amount(symbol_market):
         raise errors.NotSupported("Impossible to get the minimal order size for the this exchange")
 
 
-def get_minimal_order_cost(symbol_market) -> float:
+def get_minimal_order_cost(symbol_market, default_price=None) -> float:
     try:
         min_cost = symbol_market[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value].get(Ecmsc.LIMITS_COST_MIN.value, None)
         if min_cost:
@@ -52,6 +52,8 @@ def get_minimal_order_cost(symbol_market) -> float:
         min_price = symbol_market[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value].get(
             Ecmsc.LIMITS_PRICE_MIN.value, None
         )
+        if min_price is None:
+            min_price = default_price
         if min_amount and min_price:
             return min_amount * min_price
     except KeyError:
