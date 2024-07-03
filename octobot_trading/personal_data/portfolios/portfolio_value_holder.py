@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import copy
+import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
@@ -131,18 +132,28 @@ class PortfolioValueHolder:
                 self.logger.info(f"Missing {asset} price conversion, ignoring {float(asset_holdings.total)} holdings.")
         return total_value
 
-    def get_traded_assets_holdings_value(self, unit):
+    def get_traded_assets_holdings_value(self, unit: str, coins_whitelist: typing.Optional[typing.Iterable]):
         assets = set()
         for symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
-            assets.add(symbol.base)
-            assets.add(symbol.quote)
+            if coins_whitelist is None or symbol.base in coins_whitelist:
+                assets.add(symbol.base)
+            if coins_whitelist is None or symbol.quote in coins_whitelist:
+                assets.add(symbol.quote)
         return self.get_assets_holdings_value(
             assets, unit
         )
 
-    def get_holdings_ratio(self, currency, traded_symbols_only=False, include_assets_in_open_orders=False):
-        if traded_symbols_only:
-            total_holdings_value = self.get_traded_assets_holdings_value(self.portfolio_manager.reference_market)
+    def get_holdings_ratio(
+        self, currency, traded_symbols_only=False, include_assets_in_open_orders=False, coins_whitelist=None
+    ):
+        if coins_whitelist and not traded_symbols_only:
+            total_holdings_value = self.get_assets_holdings_value(
+                coins_whitelist, self.portfolio_manager.reference_market
+            )
+        elif traded_symbols_only:
+            total_holdings_value = self.get_traded_assets_holdings_value(
+                self.portfolio_manager.reference_market, coins_whitelist
+            )
         else:
             # consider all assets for total_holdings_value
             total_holdings_value = self.portfolio_current_value
