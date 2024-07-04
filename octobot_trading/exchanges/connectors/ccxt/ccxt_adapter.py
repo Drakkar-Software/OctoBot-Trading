@@ -403,6 +403,8 @@ class CCXTAdapter(adapters.AbstractAdapter):
 
     def fix_market_status(self, raw, remove_price_limits=False, **kwargs):
         fixed = super().fix_market_status(raw, remove_price_limits=remove_price_limits, **kwargs)
+        if not fixed:
+            return fixed
         # CCXT standard market_status fixing logic
         fixed[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
             enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(

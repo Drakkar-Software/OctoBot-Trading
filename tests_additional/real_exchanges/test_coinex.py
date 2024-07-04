@@ -154,14 +154,14 @@ class TestCoinexRealExchangeTester(RealExchangeTester):
         if check_content:
             assert ticker[Ectc.HIGH.value]
             assert ticker[Ectc.LOW.value]
-            assert ticker[Ectc.BID.value]
+            assert ticker[Ectc.BID.value] is None
             assert ticker[Ectc.BID_VOLUME.value]
-            assert ticker[Ectc.ASK.value]
+            assert ticker[Ectc.ASK.value] is None
             assert ticker[Ectc.ASK_VOLUME.value]
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
-            assert ticker[Ectc.TIMESTAMP.value]
-            RealExchangeTester.check_ticker_typing(ticker)
+            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
+            RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)
