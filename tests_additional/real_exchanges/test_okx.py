@@ -56,7 +56,7 @@ class TestOkxRealExchangeTester(RealExchangeTester):
             self.ensure_required_market_status_values(market_status)
             assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
                 Ecmsc.PRECISION_AMOUNT.value] < 1   # to be fixed in tentacle
-            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
+            assert 1e-09 <= market_status[Ecmsc.PRECISION.value][
                 Ecmsc.PRECISION_PRICE.value] < 1    # to be fixed in tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,

@@ -147,7 +147,7 @@ def get_symbols(client, active_only):
                 for symbol in client.symbols
                 if client.markets.get(symbol, {}).get(
                     enums.ExchangeConstantsMarketStatusColumns.ACTIVE.value, True
-                )
+                ) in (True, None)
             )
         return set(client.symbols)
     except (AttributeError, TypeError):

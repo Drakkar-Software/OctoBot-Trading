@@ -76,6 +76,7 @@ class MockedCCXTConnector(CCXTConnector):
 
 class MockedRestExchange(DefaultRestExchange):
     DEFAULT_CONNECTOR_CLASS = MockedCCXTConnector
+    FIX_MARKET_STATUS = True    # true as binanceus needs this and is mainly used
 
     @classmethod
     def get_exchange_connector_class(cls, exchange_manager):
