@@ -107,7 +107,7 @@ class AbstractStorage:
     async def trigger_debounced_flush(self):
         if self.exchange_manager.is_backtesting:
             # flush now in backtesting
-            await self._get_db().flush()
+            await self.flush()
             return
         if self._flush_task is not None and not self._flush_task.done():
             self._flush_task.cancel()
@@ -131,7 +131,7 @@ class AbstractStorage:
     async def _waiting_flush(self):
         try:
             await asyncio.sleep(self.FLUSH_DEBOUNCE_DURATION)
-            await self._get_db().flush()
+            await self.flush()
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when flushing database: {err}")
 
@@ -149,6 +149,9 @@ class AbstractStorage:
 
     async def clear_history(self, flush=True):
         await self.clear_database_history(self._get_db(), flush=flush)
+
+    async def flush(self):
+        await self._get_db().flush()
 
     @classmethod
     async def clear_database_history(cls, database, flush=True):
