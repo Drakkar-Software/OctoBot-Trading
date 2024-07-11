@@ -420,6 +420,23 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             )
 
     @ccxt_client_util.converted_ccxt_common_errors
+    async def get_cancelled_orders(self, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
+        with self.error_describer():
+            method = self.client.fetch_canceled_orders if self.client.has['fetchCanceledOrders'] \
+                else (self.client.fetch_closed_orders if self.client.has['fetchClosedOrders'] else None)
+            if method is None:
+                raise octobot_trading.errors.NotSupported(
+                    f"Neither of fetchCanceledOrders and fetchClosedOrders are supported: get_cancelled_orders "
+                    f"is not supported"
+                )
+            return self.adapter.adapt_orders(
+                await method(symbol=symbol, since=since, limit=limit, params=kwargs),
+                symbol=symbol,
+                cancelled_only=True
+            )
+
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:

@@ -298,6 +298,17 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_closed_orders is not implemented")
 
+    async def get_cancelled_orders(self, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
+        """
+        Get the user closed order list
+        :param symbol: the order symbol
+        :param since: the starting timestamp
+        :param limit: the list limit size
+        :return: the user closed order list
+        """
+        raise NotImplementedError("get_cancelled_orders is not implemented")
+
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:
         """
