@@ -43,10 +43,16 @@ class AbstractAdapter:
         self.connector = connector
 
     @_adapter
-    def adapt_orders(self, raw, **kwargs):
+    def adapt_orders(self, raw, cancelled_only=False, **kwargs):
         return [
-            self.adapt_order(element, **kwargs)
-            for element in raw
+            order
+            for order in (
+                self.adapt_order(element, **kwargs)
+                for element in raw
+            )
+            if not cancelled_only or not order or (
+                order[enums.ExchangeConstantsOrderColumns.STATUS.value] == enums.OrderStatus.CANCELED.value
+            )
         ]
 
     @_adapter

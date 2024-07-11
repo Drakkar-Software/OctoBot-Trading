@@ -89,6 +89,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Set when order cost is not (yet) accurately computed for a given exchange
     MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER = constants.ONE
 
+    SUPPORT_FETCHING_CANCELLED_ORDERS = True
+    # Set True when get_open_order() can return outdated orders (cancelled or not yet created)
+    CAN_HAVE_DELAYED_OPEN_ORDERS = False
+    # Set True when get_cancelled_order() can return outdated open orders
+    CAN_HAVE_DELAYED_CANCELLED_ORDERS = False
+
     # text content of errors due to orders not found errors
     EXCHANGE_ORDER_NOT_FOUND_ERRORS: typing.List[typing.Iterable[str]] = []
     # when ccxt is raising ccxt.ExchangeError instead of ccxt.AuthenticationError on api key permissions issue
@@ -550,6 +556,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
                     symbol=symbol, since=since, limit=limit, **kwargs
                 )
             raise
+
+    async def get_cancelled_orders(
+        self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict
+    ) -> list:
+        if not self.SUPPORT_FETCHING_CANCELLED_ORDERS:
+            raise errors.NotSupported(f"get_cancelled_orders is not supported")
+        return await self._ensure_orders_completeness(
+            await self.connector.get_cancelled_orders(symbol=symbol, since=since, limit=limit, **kwargs),
+            symbol, since=since, limit=limit, **kwargs
+        )
 
     async def _get_closed_orders_from_my_recent_trades(
         self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict
