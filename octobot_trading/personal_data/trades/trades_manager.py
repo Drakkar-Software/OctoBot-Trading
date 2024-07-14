@@ -19,6 +19,7 @@ import octobot_commons.logging as logging
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
 
+import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.personal_data.trades.trade_pnl as trade_pnl
@@ -27,7 +28,7 @@ import octobot_trading.util as util
 
 class TradesManager(util.Initializable):
     # memory usage for 100000 trades: approx 180 Mo
-    MAX_TRADES_COUNT = 100000
+    MAX_TRADES_COUNT = constants.MAX_TRADES_COUNT
 
     def __init__(self, trader):
         super().__init__()
@@ -136,13 +137,22 @@ class TradesManager(util.Initializable):
             return
         try:
             if self.trader.exchange_manager.storage_manager.trades_storage:
-                for trade_dict in await self.trader.exchange_manager.storage_manager.trades_storage.get_history():
+                full_history = await self.trader.exchange_manager.storage_manager.trades_storage.get_history()
+                self.logger.debug(f"Loaded {len(full_history)} trades")
+                for trade_dict in full_history:
                     self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
                 if reset:
                     # reset uploaded trades history
                     await self.trader.exchange_manager.storage_manager.trades_storage.trigger_debounced_update_auth_data(
                         True
                     )
+                if len(full_history) > len(self.trades):
+                    # clear removed trades from db
+                    self.logger.debug(
+                        f"Removed {len(full_history) - len(self.trades)} beyond limit trades from storage"
+                    )
+                    await self.trader.exchange_manager.storage_manager.trades_storage.store_history()
+
         except Exception as err:
             self.logger.exception(err, True, f"Error when loading local trade history {err}")
 
