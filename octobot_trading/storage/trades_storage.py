@@ -171,7 +171,8 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
         commons_enums.DBRows.FEES_CURRENCY.value: fee[enums.FeePropertyColumns.CURRENCY.value]
         if trade_dict[enums.ExchangeConstantsOrderColumns.FEE.value] else "",
         commons_enums.DBRows.ID.value: trade_dict[enums.ExchangeConstantsOrderColumns.ID.value],
-        commons_enums.DBRows.TRADING_MODE.value: exchange_manager.trading_modes[0].get_name(),
+        commons_enums.DBRows.TRADING_MODE.value: exchange_manager.trading_modes[0].get_name()
+        if exchange_manager.trading_modes else None,
         commons_enums.PlotAttributes.X.value: trade_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
         commons_enums.PlotAttributes.TEXT.value: f"{tag}{trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value]} "
                 f"{trade_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]} "
