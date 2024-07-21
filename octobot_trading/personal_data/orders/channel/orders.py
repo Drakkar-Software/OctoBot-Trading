@@ -214,7 +214,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                                               wait_for_refresh=wait_for_refresh))
         except IndexError:
             if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
-                self.logger.debug("Missing orders producer, starting one...")
+                self.logger.info("Missing orders producer, starting one...")
                 await exchanges.create_authenticated_producer_from_parent(self.channel.exchange_manager,
                                                                           self.__class__,
                                                                           force_register_producer=True)

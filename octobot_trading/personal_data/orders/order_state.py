@@ -106,6 +106,9 @@ class OrderState(state_class.State):
         """
         try:
             self.ensure_not_cleared(self.order)
+            self.get_logger().info(
+                f"Synchronizing order {self.order} with {self.order.exchange_manager.exchange_name} exchange"
+            )
             await exchange_channel.get_chan(
                 octobot_trading.constants.ORDERS_CHANNEL,
                 self.order.exchange_manager.id
