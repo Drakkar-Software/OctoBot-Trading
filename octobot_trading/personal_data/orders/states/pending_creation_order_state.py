@@ -46,6 +46,9 @@ class PendingCreationOrderState(order_state.OrderState):
             # If it turns out to be instantly closed, OctoBot will miss it as is will never be fetched with
             # open orders refresh.
             self.ensure_not_cleared(self.order)
+            self.get_logger().info(
+                f"Synchronizing order {self.order} with {self.order.exchange_manager.exchange_name} exchange"
+            )
             while self.order.is_pending_creation() \
                     and time.time() - t0 < octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT:
                 iteration += 1
