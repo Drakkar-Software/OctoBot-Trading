@@ -18,6 +18,7 @@ import sys
 import concurrent.futures as futures
 
 import octobot_commons.thread_util as thread_util
+import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
@@ -42,6 +43,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
         self.is_websocket_running = False
         self.is_websocket_authenticated = False
+        self.is_beyond_feed_exchange_limit = False
 
         self.restart_task = None
 
@@ -59,6 +61,13 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.time_frames = time_frames
 
         if self.pairs:
+            if self._has_too_many_feeds_to_handle():
+                self.logger.info(
+                    f"Disabling websocket: {self.get_connector_feeds_count()} "
+                    f"feeds are required and {self.get_connector_max_handled_feeds()} are supported at most."
+                )
+                self.is_beyond_feed_exchange_limit = True
+                return
             # unauthenticated
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.TRADES)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.L1_BOOK)
@@ -91,8 +100,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             # ensure feeds are added
             self.create_feeds()
         else:
-            self.logger.warning(f"{self.exchange_manager.exchange_name.title()}'s "
-                                f"websocket has no symbol to feed")
+            self.logger.warning(
+                f"{self.exchange_manager.exchange_name.title()}'s websocket has no symbol to feed"
+            )
 
     async def add_feed(self, feed_name):
         if self.is_feed_available(feed_name):
@@ -212,6 +222,17 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def add_pairs(self, pairs, watching_only=False):
         for websocket in self.websocket_connectors:
             websocket.add_pairs(pairs, watching_only=watching_only)
+
+    def _has_too_many_feeds_to_handle(self) -> bool:
+        if self.get_connector_max_handled_feeds() == octobot_trading.constants.NO_DATA_LIMIT:
+            return False
+        return self.get_connector_feeds_count() >= self.get_connector_max_handled_feeds()
+
+    def get_connector_feeds_count(self):
+        return self.websocket_connector.get_feeds_count(self.pairs, self.time_frames)
+
+    def get_connector_max_handled_feeds(self):
+        return self.websocket_connector.MAX_HANDLED_FEEDS
 
     def clear(self):
         super(WebSocketExchange, self).clear()

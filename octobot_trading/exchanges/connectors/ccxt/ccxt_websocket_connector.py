@@ -620,14 +620,14 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                     if not already_got_closed_by_user_error:
                         count_error = False
                         self.logger.debug(
-                            f"{ws_des} connection automatically closed, reconnecting in {self.LONG_RECONNECT_DELAY} "
-                            f"seconds ({err})"
+                            f"{ws_des} connection automatically closed, reconnecting in {self.LONG_RECONNECT_DELAY}"
+                            f" seconds ({err})"
                         )
                         already_got_closed_by_user_error = True
                 if count_error:
                     error_count = self._increment_error_counter(g_kwargs.get("time_frame"), err)
-                    error_message = f"Unexpected error when handling {ws_des} feed: {err} ({err.__class__.__name__}) " \
-                                    f"({error_count} times)"
+                    error_message = f"Unexpected error when handling {ws_des} feed: {err} " \
+                                    f"({err.__class__.__name__}) ({error_count} times)"
                     if error_count == 1:
                         self.logger.exception(err, True, error_message)
                     elif error_count % spamming_logs_warning_interval == 0:
@@ -642,7 +642,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     def _create_task_if_necessary(self, feed, feed_callback, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
         if identifier not in self.feed_tasks:
-            self.logger.debug(f"Subscribing to {feed.value} with {kwargs}")
+            self.logger.debug(f"Subscribing to {feed.value} with {kwargs} ({len(self.feed_tasks)} total feeds)")
             self.feed_tasks[identifier] = asyncio.create_task(
                 self._feed_task(feed, feed_callback, feed_generator, **kwargs)
             )
@@ -770,6 +770,17 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
 
     def _is_pair_independent_feed(self, feed):
         return feed in self.PAIR_INDEPENDENT_CHANNELS
+
+    @classmethod
+    def get_feeds_count(cls, pairs, time_frames) -> int:
+        total_count = 0
+        if pairs:
+            # rounding: account for 1 feed per symbol
+            total_count = len(pairs)
+            if cls.get_exchange_feed(trading_enums.WebsocketFeeds.CANDLE):
+                # rounding: account for 1 per timeframe per symbol
+                total_count += len(pairs) * len(time_frames)
+        return total_count
 
     def _convert_book_prices_to_orders(self, book_prices_and_volumes, book_side):
         """
