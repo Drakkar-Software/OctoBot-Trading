@@ -107,10 +107,11 @@ class ExchangeManager(util.Initializable):
                 await self.exchange_web_socket.close_sockets()
             except Exception as err:
                 self.logger.exception(err, True, f"Error when stopping exchange websocket: {err}")
-            self.exchange_web_socket.clear()
-            self.exchange_web_socket = None
             if enable_logs:
                 self.logger.debug("Stopped websocket")
+        if self.exchange_web_socket:
+            self.exchange_web_socket.clear()
+            self.exchange_web_socket = None
 
         # stop trading modes
         if enable_logs:
