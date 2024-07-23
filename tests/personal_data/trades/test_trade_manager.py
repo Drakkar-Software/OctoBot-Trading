@@ -74,9 +74,24 @@ def test_get_completed_trades_pnl(trade_manager_and_trader):
     assert all(isinstance(pnl, personal_data.TradePnl) for pnl in pnls)
     assert all(pnl.entries and pnl.closes for pnl in pnls)
 
-    # with a trades argument
+    # with a trades_history argument
     trades = list(trade_manager.trades.values())[:2]
     assert len(trade_manager.get_completed_trades_pnl(trades)) == 1
-    trade_manager.trades.clear()
+    trades = list(trade_manager.trades.values())[:4]
+    assert len(trade_manager.get_completed_trades_pnl(trades)) == 3
+
+    # with a selected_trades argument
+    trades = list(trade_manager.trades.values())[:4]
+    assert len(trade_manager.get_completed_trades_pnl(trades, selected_trades=[trades[0]])) == 1
+
+    # using trade_id
+    assert trade_manager.get_completed_trade_pnl("1", None).entries == \
+           trade_manager.get_completed_trades_pnl(trades, selected_trades=[trades[0]])[0].entries
+
+    # using order_id
+    assert trade_manager.get_completed_trade_pnl(None, "3").entries == \
+           trade_manager.get_completed_trades_pnl(trades, selected_trades=[trades[2]])[0].entries
+
     # does not depend on trades_manager trades
-    assert len(trade_manager.get_completed_trades_pnl(trades)) == 1
+    trade_manager.trades.clear()
+    assert len(trade_manager.get_completed_trades_pnl(trades)) == 3

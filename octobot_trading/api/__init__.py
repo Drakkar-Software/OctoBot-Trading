@@ -51,6 +51,7 @@ from octobot_trading.api.symbol_data import (
 from octobot_trading.api.trades import (
     get_trade_history,
     get_completed_pnl_history,
+    get_trade_pnl,
     is_executed_trade,
     is_trade_after_or_at,
     get_total_paid_trading_fees,
@@ -235,6 +236,7 @@ __all__ = [
     "get_config_symbols",
     "get_trade_history",
     "get_completed_pnl_history",
+    "get_trade_pnl",
     "is_executed_trade",
     "is_trade_after_or_at",
     "get_total_paid_trading_fees",
