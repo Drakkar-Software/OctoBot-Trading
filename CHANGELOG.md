@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.93] - 2024-07-23
+### Added
+- [Trades] get_trade_pnl API
+- [Orders] allow disabled_order_auto_synchronization 
+### Fixed
+- [Exchanges] Websocket limit issues
+### Updated
+- [Trades] Increase default max trades history to 6000 
+- [Orders] Add logs on auto-refresh 
+
 ## [2.4.92] - 2024-07-15
 ### Fixed
 - [Trades] optimize trade storage RAM
