@@ -13,9 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import mock.mock
 import pytest
 import octobot_trading.api as api
 import octobot_trading.exchanges as exchanges
+import octobot_commons.authentication as commons_authentication
 
 from tests.exchanges import exchange_manager
 from tests import event_loop
@@ -36,7 +38,14 @@ async def test_build_trading_modes_if_required(exchange_manager):
 
     # with trader simulator: will attempt to create a trading mode and fail (because of the None arg)
     builder.is_simulated()
-    with pytest.raises(AttributeError):
+    with mock.patch.object(
+        commons_authentication.Authenticator, "has_open_source_package", mock.Mock(return_value=False)
+    ) as has_open_source_package_mock:
+        with pytest.raises(AttributeError):
+            await builder._build_trading_modes_if_required(None)
+        has_open_source_package_mock.assert_called_once()
+    # raised by default has_open_source_package (which should be overriden)
+    with pytest.raises(NotImplementedError):
         await builder._build_trading_modes_if_required(None)
 
 
