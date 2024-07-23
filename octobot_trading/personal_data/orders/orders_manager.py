@@ -16,6 +16,7 @@
 import collections
 import uuid
 import typing
+import contextlib
 
 import octobot_commons.logging as logging
 
@@ -35,7 +36,8 @@ class OrdersManager(util.Initializable):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
-        self.orders_initialized = False  # TODO
+        self.orders_initialized = False
+        self.enable_order_auto_synchronization = True
         self.orders = collections.OrderedDict()
         self.order_groups = {}
         # orders that are expected from exchange but have not yet been fetched: will be removed when fetched
@@ -221,6 +223,17 @@ class OrdersManager(util.Initializable):
             self.orders.pop(previous_id, None)
         self._add_order(order.order_id, order)
         self._check_orders_size()
+
+    @contextlib.contextmanager
+    def disabled_order_auto_synchronization(self):
+        """
+        Can be used to locally disable orders auto refresh when an order is pending
+        """
+        self.enable_order_auto_synchronization = False
+        try:
+            yield
+        finally:
+            self.enable_order_auto_synchronization = True
 
     # private methods
     def _reset_orders(self):

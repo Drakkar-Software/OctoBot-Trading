@@ -157,7 +157,7 @@ class State(util.Initializable):
             else:
                 raise
         finally:
-            self.has_already_been_synchronized_once = True
+            self.has_already_been_synchronized_once = self._is_synchronization_enabled()
 
     async def synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
         """
@@ -166,6 +166,9 @@ class State(util.Initializable):
         Restore the previous state if the refresh process fails
         :param force_synchronization: When True, for the update of the order from the exchange
         """
+        if not self._is_synchronization_enabled():
+            self.get_logger().info(f"Skipped {self.__class__.__name__} exchange synchronization")
+            return
         if self.is_refreshing():
             self.log_event_message(enums.StatesMessages.ALREADY_SYNCHRONIZING)
         else:
@@ -235,6 +238,9 @@ class State(util.Initializable):
         Called when synchronize succeed to update the instance
         """
         raise NotImplementedError("on_refresh_successful not implemented")
+
+    def _is_synchronization_enabled(self):
+        return True
 
     def clear(self):
         """

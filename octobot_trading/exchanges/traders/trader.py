@@ -285,7 +285,8 @@ class Trader(util.Initializable):
 
         await updated_order.initialize()
         if is_pending_creation and wait_for_creation \
-                and updated_order.state is not None and updated_order.state.is_pending():
+                and updated_order.state is not None and updated_order.state.is_pending()\
+                and self.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization:
             await updated_order.state.wait_for_terminate(creation_timeout)
         return updated_order
 

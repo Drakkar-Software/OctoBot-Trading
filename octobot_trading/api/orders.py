@@ -45,6 +45,10 @@ def get_open_orders(exchange_manager, symbol=None) -> list:
     return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)
 
 
+def get_pending_creation_orders(exchange_manager) -> list:
+    return exchange_manager.exchange_personal_data.orders_manager.pending_creation_orders
+
+
 async def cancel_all_open_orders(exchange_manager, emit_trading_signals=True) -> bool:
     return await exchange_manager.trader.cancel_all_open_orders(emit_trading_signals=emit_trading_signals)
 
@@ -72,6 +76,10 @@ def parse_order_type(dict_order) -> octobot_trading.enums.TraderOrderType:
 
 def parse_order_status(dict_order) -> octobot_trading.enums.OrderStatus:
     return personal_data.parse_order_status(dict_order)
+
+
+def is_order_pending(order: personal_data.Order) -> bool:
+    return order.status == octobot_trading.enums.OrderStatus.PENDING_CREATION
 
 
 def get_order_profitability(exchange_manager, order_id) -> float:
