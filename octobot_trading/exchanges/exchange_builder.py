@@ -17,6 +17,7 @@
 import typing
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
+import octobot_commons.authentication as commons_authentication
 
 import octobot_trading.errors as errors
 import octobot_trading.modes as modes
@@ -120,6 +121,9 @@ class ExchangeBuilder:
 
     async def build_trading_modes(self, trading_mode_class):
         try:
+            # ensure authenticated data are fetched before starting trading modes
+            if not self.exchange_manager.is_backtesting:
+                await commons_authentication.Authenticator.wait_and_check_has_open_source_package()
             self._ensure_trading_mode_compatibility(trading_mode_class)
             return await modes.create_trading_modes(
                 self.config,
