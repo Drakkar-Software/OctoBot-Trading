@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import typing
 
 import octobot_trading.enums
 import octobot_trading.personal_data as personal_data
@@ -35,6 +36,14 @@ def get_completed_pnl_history(exchange_manager, quote=None, symbol=None, since=N
         get_trade_history(
             exchange_manager, quote=quote, symbol=symbol, since=since, as_dict=False, include_cancelled=False
         )
+    )
+
+
+def get_trade_pnl(
+    exchange_manager, trade_id: typing.Optional[str] = None, order_id: typing.Optional[str] = None
+) -> typing.Optional[personal_data.TradePnl]:
+    return exchange_manager.exchange_personal_data.trades_manager.get_completed_trade_pnl(
+        trade_id, order_id
     )
 
 

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import collections
+import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.tree as commons_tree
@@ -86,14 +87,23 @@ class TradesManager(util.Initializable):
                 self.logger.warning(f"Trade without any registered fee: {trade.to_dict()}")
         return total_fees
 
-    def get_completed_trades_pnl(self, trades=None) -> list:
-        trades = trades or self.get_trades()
+    def get_completed_trade_pnl(
+        self, trade_id: typing.Optional[str], order_id: typing.Optional[str]
+    ) -> typing.Optional[trade_pnl.TradePnl]:
+        pnls = []
+        trade = self.get_trade(trade_id) if trade_id else self.get_trade_from_order_id(order_id)
+        if trade:
+            pnls = self.get_completed_trades_pnl(selected_trades=[trade])
+        return pnls[0] if pnls else None
+
+    def get_completed_trades_pnl(self, trades_history=None, selected_trades=None) -> list[trade_pnl.TradePnl]:
+        trades = trades_history or self.get_trades()
         trades_by_order_id = {
             trade.origin_order_id: trade
             for trade in trades
         }
         exits_by_entry_id = {}
-        for trade in trades:
+        for trade in (selected_trades or trades):
             if trade.status is not enums.OrderStatus.CANCELED and trade.associated_entry_ids:
                 for entry_id in trade.associated_entry_ids:
                     if entry_id not in trades_by_order_id:
@@ -109,8 +119,13 @@ class TradesManager(util.Initializable):
             for entry_id, exit_trade in exits_by_entry_id.items()
         ]
 
-    def get_trade(self, trade_id):
+    def get_trade(self, trade_id: str):
         return self.trades[trade_id]
+
+    def get_trade_from_order_id(self, order_id: str):
+        if trades := self.get_trades(origin_order_id=order_id):
+            return trades[0]
+        return None
 
     def get_trades(self, origin_order_id=None, exchange_order_id=None):
         return [
