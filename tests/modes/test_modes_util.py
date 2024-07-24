@@ -74,10 +74,10 @@ async def test_convert_assets_to_target_asset():
 
         assert convert_asset_to_target_asset.call_count == 2
         assert convert_asset_to_target_asset.mock_calls[0].args == \
-               (trading_mode, "USDT", target_asset, {"BTC/USDT": {}})
+               (trading_mode, "PLOP", target_asset, {"BTC/USDT": {}})
         assert convert_asset_to_target_asset.mock_calls[0].kwargs == {"asset_amount": None}
         assert convert_asset_to_target_asset.mock_calls[1].args == \
-               (trading_mode, "PLOP", target_asset, {"BTC/USDT": {}})
+               (trading_mode, "USDT", target_asset, {"BTC/USDT": {}})
         assert convert_asset_to_target_asset.mock_calls[1].kwargs == {"asset_amount": None}
 
         assert orders == ["orders", "orders"]
