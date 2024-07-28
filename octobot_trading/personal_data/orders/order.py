@@ -406,7 +406,7 @@ class Order(util.Initializable):
     async def on_fill(self, force_fill=False, is_from_exchange_data=False, enable_associated_orders_creation=None):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
-            else (enable_associated_orders_creation or True)
+            else (True if enable_associated_orders_creation is None else enable_associated_orders_creation)
         logging.get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
         if (self.is_open() and not self.is_refreshing()) or self.is_pending_creation():
             with self.order_state_creation():
@@ -423,7 +423,7 @@ class Order(util.Initializable):
     async def on_close(self, force_close=False, is_from_exchange_data=False, enable_associated_orders_creation=None):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
-            else (enable_associated_orders_creation or True)
+            else (True if enable_associated_orders_creation is None else enable_associated_orders_creation)
         with self.order_state_creation():
             self.state = orders_states.CloseOrderState(
                 self, is_from_exchange_data=is_from_exchange_data,
@@ -437,7 +437,7 @@ class Order(util.Initializable):
     ):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
-            else (enable_associated_orders_creation or True)
+            else (True if enable_associated_orders_creation is None else enable_associated_orders_creation)
         with self.order_state_creation():
             self.state = orders_states.CancelOrderState(
                 self, is_from_exchange_data=is_from_exchange_data,
