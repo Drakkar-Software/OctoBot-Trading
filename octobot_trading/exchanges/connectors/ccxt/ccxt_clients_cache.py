@@ -18,7 +18,7 @@ import cachetools
 import octobot_commons.constants as commons_constants
 
 
-_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=commons_constants.DAYS_TO_SECONDS*7)
+_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=commons_constants.DAYS_TO_SECONDS*1)
 
 
 def get_client_key(client) -> str:
