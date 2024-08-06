@@ -99,6 +99,7 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "mexc",
     "coinbase",
     "binanceus",
+    "bitmart",
 ]
 
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
@@ -124,7 +125,7 @@ TESTED_EXCHANGES = [
 DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
 SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex2", "bithumb", "bitstamp", "bittrex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
-                              "wavesexchange"])
+                              "wavesexchange", "bitmart",])
 
 # text content of errors due to exchange compliancy rules
 # Warning: should never be a false positive
