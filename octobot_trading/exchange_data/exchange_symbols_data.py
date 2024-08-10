@@ -33,7 +33,7 @@ class ExchangeSymbolsData:
             exchange_symbol_data.stop()
         self.exchange_symbol_data = {}
 
-    def get_exchange_symbol_data(self, symbol, allow_creation=True):
+    def get_exchange_symbol_data(self, symbol, allow_creation=True) -> ExchangeSymbolData:
         try:
             return self.exchange_symbol_data[symbol]
         except KeyError as e:
