@@ -89,7 +89,13 @@ class PricesManager(util.Initializable):
                 (mark_price, self.exchange_manager.exchange.get_exchange_current_time())
         return is_mark_price_updated
 
-    async def get_mark_price(self, timeout=MARK_PRICE_FETCH_TIMEOUT):
+    def get_mark_price_no_wait(self) -> decimal.Decimal:
+        self._ensure_price_validity()
+        if not self.valid_price_received_event.is_set():
+            raise ValueError(f"No up to date mark price for {self.exchange_manager.exchange_name}")
+        return self.mark_price
+
+    async def get_mark_price(self, timeout=MARK_PRICE_FETCH_TIMEOUT) -> decimal.Decimal:
         """
         Return mark price if valid
         :param timeout: event wait timeout

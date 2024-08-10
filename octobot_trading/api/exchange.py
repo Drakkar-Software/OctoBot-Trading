@@ -78,7 +78,7 @@ def get_exchange_configuration_from_exchange_id(exchange_id: str) -> exchanges.E
 
 
 # prefer get_exchange_manager_from_exchange_name_and_id when possible
-def get_exchange_manager_from_exchange_id(exchange_id: str) -> object:
+def get_exchange_manager_from_exchange_id(exchange_id: str) -> exchanges.ExchangeManager:
     try:
         return get_exchange_configuration_from_exchange_id(exchange_id).exchange_manager
     except KeyError:
