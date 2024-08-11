@@ -94,6 +94,30 @@ def get_symbol_volume_candles(symbol_data, time_frame, limit=-1, include_in_cons
     return exchange_data.get_symbol_volume_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
+def get_daily_base_and_quote_volume(symbol_data, reference_price: decimal.Decimal) -> (decimal.Decimal, decimal.Decimal):
+    base_volume = symbol_data.ticker_manager.ticker[
+        octobot_trading.enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value
+    ]
+    quote_volume = symbol_data.ticker_manager.ticker[
+        octobot_trading.enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value
+    ]
+    if base_volume:
+        base_volume = decimal.Decimal(str(base_volume))
+        if not quote_volume or decimal.Decimal(str(quote_volume)).is_nan():
+            # compute from the other if missing
+            quote_volume = base_volume * reference_price
+    if quote_volume:
+        quote_volume = decimal.Decimal(str(quote_volume))
+        if not base_volume or decimal.Decimal(str(base_volume)).is_nan():
+            # compute from the other if missing
+            base_volume = quote_volume / reference_price
+    if not (base_volume and quote_volume):
+        raise ValueError(
+            f"Missing volume {base_volume=} {quote_volume=}"
+        )
+    return base_volume, quote_volume
+
+
 def get_symbol_time_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
     return exchange_data.get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construction)
 
