@@ -92,13 +92,21 @@ class ValueConverter:
 
     @staticmethod
     def get_usd_like_symbol_from_symbols(currency: str, symbols) -> str:
+        try:
+            return ValueConverter.get_usd_like_symbols_from_symbols(currency, symbols)[0]
+        except IndexError:
+            return None
+
+    @staticmethod
+    def get_usd_like_symbols_from_symbols(currency: str, symbols) -> list:
         # look for symbols using USD_LIKE_COINS priorities
+        usd_like_symbols = []
         for usd_like_coin in commons_constants.USD_LIKE_COINS:
             for symbol in symbols:
                 base_and_quote = symbol_util.parse_symbol(symbol).base_and_quote()
                 if currency in base_and_quote and usd_like_coin in base_and_quote:
-                    return symbol
-        return None
+                    usd_like_symbols.append(symbol)
+        return usd_like_symbols
 
     @staticmethod
     def can_convert_symbol_to_usd_like(symbol: str) -> bool:

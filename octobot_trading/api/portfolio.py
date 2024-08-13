@@ -96,6 +96,10 @@ def get_usd_like_symbol_from_symbols(currency: str, symbols) -> str:
     return personal_data.ValueConverter.get_usd_like_symbol_from_symbols(currency, symbols)
 
 
+def get_usd_like_symbols_from_symbols(currency: str, symbols) -> list:
+    return personal_data.ValueConverter.get_usd_like_symbols_from_symbols(currency, symbols)
+
+
 def can_convert_symbol_to_usd_like(symbol: str) -> bool:
     return personal_data.ValueConverter.can_convert_symbol_to_usd_like(symbol)
 
