@@ -95,11 +95,12 @@ class TickerUpdater(ticker_channel.TickerProducer):
     """
 
     def _should_use_future(self):
-        return self.channel.exchange_manager.is_future and \
-               (
-                       self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
-                       or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
-               )
+        return (
+            self.channel.exchange_manager.is_future and (
+                self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
+                or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
+            )
+        )
 
     async def modify(self, added_pairs=None, removed_pairs=None):
         if added_pairs:

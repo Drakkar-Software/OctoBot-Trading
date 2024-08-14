@@ -106,6 +106,10 @@ class ExchangeBuilder:
             self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT],
             modes.get_required_candles_count(trading_mode_class, tentacles_setup_config)
         )
+        # register forced updaters if any
+        self.exchange_manager.exchange_config.add_forced_updater_channels(
+            trading_mode_class.get_forced_updater_channels()
+        )
 
     async def _build_trading_modes_if_required(self, trading_mode_class):
         if self._is_using_trading_modes:

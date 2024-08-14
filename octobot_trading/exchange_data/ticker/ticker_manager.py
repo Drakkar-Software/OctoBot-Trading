@@ -62,7 +62,12 @@ class TickerManager(util.Initializable):
         }
 
     def ticker_update(self, ticker):
-        self.ticker.update(ticker)
+        ticker_update = {
+            key: val
+            for key, val in ticker.items()
+            if val
+        }
+        self.ticker.update(ticker_update)
 
     def mini_ticker_update(self, mini_ticker):
         self.mini_ticker.update(mini_ticker)
