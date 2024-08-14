@@ -620,8 +620,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
 
+    async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
+        return await self.connector.cancel_all_orders(symbol=symbol, **kwargs)
+
     async def cancel_order(
-            self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
+        self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
         return await self.connector.cancel_order(exchange_order_id, symbol, order_type, **kwargs)
 

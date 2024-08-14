@@ -490,6 +490,21 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             ignored_order=ignored_order
         )
 
+    async def cancel_all_orders(
+        self,
+        symbol: str,
+        allow_single_order_cancel_fallback: bool,
+        wait_for_cancelling: bool = True,
+        cancelling_timeout: float = constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ) -> bool:
+        # todo send signals when implementation will be necessary
+        return await self.exchange_manager.trader.cancel_all_orders(
+            symbol,
+            allow_single_order_cancel_fallback,
+            wait_for_cancelling=wait_for_cancelling,
+            cancelling_timeout=cancelling_timeout
+        )
+
     async def edit_order(self, order,
                          edited_quantity: decimal.Decimal = None,
                          edited_price: decimal.Decimal = None,

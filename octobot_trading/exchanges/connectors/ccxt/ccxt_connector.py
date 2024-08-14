@@ -572,6 +572,19 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         )
 
     @ccxt_client_util.converted_ccxt_common_errors
+    async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
+        try:
+            with self.error_describer():
+                await self.client.cancel_all_orders(symbol=symbol, params=kwargs)
+        except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
+            raise octobot_trading.errors.NotSupported(e) from e
+        except Exception as e:
+            self.logger.exception(
+                e, True, f"Unexpected error when cancelling all {symbol} orders | {e} ({e.__class__.__name__})"
+            )
+            raise e
+
+    @ccxt_client_util.converted_ccxt_common_errors
     async def cancel_order(
         self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
