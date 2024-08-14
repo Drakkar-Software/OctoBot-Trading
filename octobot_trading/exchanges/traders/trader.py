@@ -468,6 +468,10 @@ class Trader(util.Initializable):
     ) -> bool:
         orders_to_cancel = self.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(symbol)
         success = True
+        if orders_to_cancel:
+            self.logger.info(f"Cancelling all {len(orders_to_cancel)} {symbol} orders")
+        else:
+            return success
         try:
             cancel_on_exchange = False
             for order in orders_to_cancel:
@@ -504,6 +508,7 @@ class Trader(util.Initializable):
         finally:
             for order in orders_to_cancel:
                 order.lock.release()
+        self.logger.info(f"Cancelling of all {len(orders_to_cancel)} {symbol} orders complete")
         return success
 
     async def _wait_for_order_cancel(self, order, cancelling_timeout):

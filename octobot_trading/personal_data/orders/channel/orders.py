@@ -29,7 +29,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
 
     async def perform(self, orders, is_from_bot=False, are_closed=False):
         try:
-            self.logger.debug(f"Received order update for {len(orders)} {'closed' if are_closed else ''} orders.")
+            self.logger.debug(f"Received order update for {len(orders)} {'closed' if are_closed else ''}orders.")
             has_new_order = False
             waiting_complete_init_orders = []
             symbols = set()
@@ -40,7 +40,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order)
                 )
-                if self.channel.exchange_manager.exchange.is_creating_order(exchange_order_id):
+                if self.channel.exchange_manager.exchange.is_creating_order(order, symbol):
                     # ignore orders that are being created
                     self.logger.debug(
                         f"Ignored update from order channel for {symbol} order with exchange order id "

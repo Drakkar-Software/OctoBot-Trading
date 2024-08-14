@@ -164,12 +164,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
                            reduce_only: bool = False, params: dict = None) -> typing.Optional[dict]:
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
-            created_order = await self._create_order_with_retry(
-                order_type=order_type, symbol=symbol, quantity=quantity, price=price,
-                stop_price=stop_price, side=side, current_price=current_price,
-                reduce_only=reduce_only, params=params)
-            self.logger.debug(f"Created order: {created_order}")
-            with self.creating_order(created_order):
+            with self.creating_order(side, symbol, quantity, price):
+                created_order = await self._create_order_with_retry(
+                    order_type=order_type, symbol=symbol, quantity=quantity, price=price,
+                    stop_price=stop_price, side=side, current_price=current_price,
+                    reduce_only=reduce_only, params=params)
+                self.logger.debug(f"Created order: {created_order}")
                 return await self._verify_order(created_order, order_type, symbol, price, side)
         return None
 

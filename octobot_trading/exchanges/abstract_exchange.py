@@ -95,7 +95,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
 
         self.is_unreachable = False
 
-        self._creating_exchange_order_ids = set()
+        self._creating_exchange_order_descriptions = set()
 
         if self.exchange_manager.tentacles_setup_config is not None:
             self.load_user_inputs_from_class(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
@@ -727,17 +727,25 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                           f"({error.__class__.__name__}: {error})")
 
     @contextlib.contextmanager
-    def creating_order(self, creating_order: dict):
-        exchange_order_id = creating_order.get(
-            enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value
-        ) if creating_order else None
+    def creating_order(
+        self, side: enums.TradeOrderSide, symbol: str, quantity: decimal.Decimal, price: decimal.Decimal
+    ):
+        desc = self._get_order_description(side, symbol, quantity, price)
         try:
-            self._creating_exchange_order_ids.add(exchange_order_id)
+            self._creating_exchange_order_descriptions.add(desc)
             yield
         finally:
-            self._creating_exchange_order_ids.remove(exchange_order_id)
+            self._creating_exchange_order_descriptions.remove(desc)
 
-    def is_creating_order(self, exchange_order_id):
-        if exchange_order_id is None:
-            return False
-        return exchange_order_id in self._creating_exchange_order_ids
+    def is_creating_order(
+        self, order: dict, symbol: str
+    ) -> bool:
+        quantity = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
+        price = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.PRICE.value]))
+        side = enums.TradeOrderSide(str(order[enums.ExchangeConstantsOrderColumns.SIDE.value]))
+        return self._get_order_description(side, symbol, quantity, price) in self._creating_exchange_order_descriptions
+
+    def _get_order_description(
+        self, side: enums.TradeOrderSide, symbol: str, quantity: decimal.Decimal, price: decimal.Decimal
+    ) -> str:
+        return f"{side.value}-{symbol}-{float(quantity)}-{float(price)}"
