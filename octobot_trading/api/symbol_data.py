@@ -95,12 +95,14 @@ def get_symbol_volume_candles(symbol_data, time_frame, limit=-1, include_in_cons
 
 
 def get_daily_base_and_quote_volume(symbol_data, reference_price: decimal.Decimal) -> (decimal.Decimal, decimal.Decimal):
-    base_volume = symbol_data.ticker_manager.ticker[
-        octobot_trading.enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value
-    ]
-    quote_volume = symbol_data.ticker_manager.ticker[
-        octobot_trading.enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value
-    ]
+    base_volume = symbol_data.ticker_manager.ticker.get(
+        octobot_trading.enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
+        "nan"
+    )
+    quote_volume = symbol_data.ticker_manager.ticker.get(
+        octobot_trading.enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value,
+        "nan"
+    )
     if base_volume:
         base_volume = decimal.Decimal(str(base_volume))
         if not quote_volume or decimal.Decimal(str(quote_volume)).is_nan():
