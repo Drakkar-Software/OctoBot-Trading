@@ -327,6 +327,13 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_leverage_tiers is not implemented")
 
+    async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
+        """
+        Cancel all orders on the exchange
+        :param symbol: the orders symbol
+        """
+        raise NotImplementedError("cancel_all_orders is not implemented")
+
     async def cancel_order(
             self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
