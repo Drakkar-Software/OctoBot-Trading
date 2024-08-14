@@ -926,7 +926,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 Ectc.CLOSE.value: kline[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
                 Ectc.LAST.value: kline[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
                 Ectc.PREVIOUS_CLOSE.value: None,
-                Ectc.BASE_VOLUME.value: kline[commons_enums.PriceIndexes.IND_PRICE_VOL.value],
+                # do not include volume as this is not the ticker volume but the current candle volume
+                Ectc.BASE_VOLUME.value: None,
                 Ectc.TIMESTAMP.value: self.exchange.get_exchange_current_time(),
             }
             await self.push_to_channel(
