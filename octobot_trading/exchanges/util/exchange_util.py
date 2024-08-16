@@ -96,8 +96,8 @@ def _get_auto_filled_exchanges(tentacles_setup_config, exchange_config_by_exchan
         if tentacles_setup_config is None:
             # tentacles_setup_config is required for auto-filled exchanges
             continue
-        config = exchange_config_by_exchange[exchange_candidate] if (
-            exchange_config_by_exchange and exchange_candidate in exchange_config_by_exchange
+        config = exchange_config_by_exchange[exchange_candidate.get_name()] if (
+            exchange_config_by_exchange and exchange_candidate.get_name() in exchange_config_by_exchange
         ) else api.get_tentacle_config(
             tentacles_setup_config, exchange_candidate
         )
@@ -219,7 +219,7 @@ def get_enabled_exchanges(config):
 async def get_local_exchange_manager(
     exchange_name: str, exchange_config: dict, tentacles_setup_config,
     is_sandboxed: bool, ignore_config=False, builder=None, use_cached_markets=True,
-    is_broker_enabled: bool = False,
+    is_broker_enabled: bool = False, exchange_config_by_exchange: typing.Optional[dict[str, dict]] = None,
     market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
 ):
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
@@ -231,6 +231,7 @@ async def get_local_exchange_manager(
         .is_checking_credentials(False) \
         .is_sandboxed(is_sandboxed) \
         .is_using_exchange_type(exchange_type) \
+        .use_exchange_config_by_exchange(exchange_config_by_exchange) \
         .is_exchange_only() \
         .is_rest_only() \
         .is_broker_enabled(is_broker_enabled) \

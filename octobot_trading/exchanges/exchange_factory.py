@@ -154,8 +154,12 @@ async def _search_and_create_rest_exchange(
         exchange_manager.exchange_name, exchange_manager.tentacles_setup_config, exchange_config_by_exchange
     )
     if rest_exchange_class:
-        exchange_manager.exchange = rest_exchange_class(config=exchange_manager.config,
-                                                        exchange_manager=exchange_manager)
+        if rest_exchange_class.HAS_FETCHED_DETAILS:
+            await rest_exchange_class.fetch_exchange_config(exchange_config_by_exchange, exchange_manager)
+        exchange_manager.exchange = rest_exchange_class(
+            config=exchange_manager.config, exchange_manager=exchange_manager,
+            exchange_config_by_exchange=exchange_config_by_exchange
+        )
 
 
 def _initialize_simulator_time_frames(exchange_manager):

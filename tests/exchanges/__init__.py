@@ -92,7 +92,13 @@ class MockedAutoFillRestExchange(MockedRestExchange):
     _SUPPORTED_EXCHANGE_MOCK = []
     _EXCHANGE_DETAILS_MOCK = {}
 
-    def _fetch_details(self, config, exchange_manager):
+    def _apply_fetched_details(self, config, exchange_manager):
+        pass
+
+    @classmethod
+    async def fetch_exchange_config(
+        cls, exchange_config_by_exchange, exchange_manager
+    ):
         pass
 
     @staticmethod
@@ -122,7 +128,7 @@ async def exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = False
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -137,7 +143,7 @@ async def liquid_exchange_manager():
     exchange_manager_instance = ExchangeManager(_load_liquid_exchange_test_config(), DEFAULT_LIQUID_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = False
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -152,7 +158,7 @@ async def simulated_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = True
     exchange_manager_instance.is_simulated = True
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -167,7 +173,7 @@ async def margin_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_margin = True
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -183,7 +189,7 @@ async def margin_simulated_exchange_manager():
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_simulated = True
     exchange_manager_instance.is_margin = True
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -198,7 +204,7 @@ async def future_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_FUTURE_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_future = True
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -214,7 +220,7 @@ async def future_simulated_exchange_manager():
     exchange_manager_instance.is_spot_only = False
     exchange_manager_instance.is_simulated = True
     exchange_manager_instance.is_future = True
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     finally:
@@ -286,7 +292,7 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
     exchange_manager_instance.is_future = is_future
     exchange_manager_instance.backtesting = fake_backtesting
     exchange_manager_instance.backtesting.time_manager = backtesting_time.TimeManager(config)
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     yield exchange_manager_instance
     await exchange_manager_instance.stop()
 

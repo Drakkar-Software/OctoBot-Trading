@@ -33,7 +33,7 @@ EXCHANGE_NAME = "binanceus"
 @pytest.fixture
 def abstract_exchange():
     config = test_config.load_test_config()
-    return exchanges.AbstractExchange(config, exchanges.ExchangeManager(config, EXCHANGE_NAME))
+    return exchanges.AbstractExchange(config, exchanges.ExchangeManager(config, EXCHANGE_NAME), None)
 
 
 @pytest.mark.asyncio

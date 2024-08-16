@@ -47,12 +47,12 @@ class TestExchanges:
         config = await self.init_default()
 
         exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize()
+        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bybit = ExchangeManager(config, "bybit")
         exchange_manager_bybit.exchange_only = True
-        await exchange_manager_bybit.initialize()
+        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_bybit, "")
 
         assert "binanceus" in Exchanges.instance().exchanges
@@ -69,11 +69,11 @@ class TestExchanges:
         config = await self.init_default()
 
         exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize()
+        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize()
+        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_bybit, "")
 
         assert Exchanges.instance().get_exchanges_list("binanceus")[0].exchange_manager is exchange_manager_binance
@@ -92,11 +92,11 @@ class TestExchanges:
         config = await self.init_default()
 
         exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize()
+        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize()
+        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_bybit, "")
 
         Exchanges.instance().del_exchange("binanceus", exchange_manager_binance.id)
@@ -117,11 +117,11 @@ class TestExchanges:
         config = await self.init_default()
 
         exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize()
+        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize()
+        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
         Exchanges.instance().add_exchange(exchange_manager_bybit, "")
 
         exchanges = Exchanges.instance().get_all_exchanges()
@@ -137,7 +137,7 @@ class TestExchanges:
     async def test_ms_timestamp_operations(self):
         config = await self.init_default()
         exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize()
+        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
 
         if os.getenv('CYTHON_IGNORE'):
             await exchange_manager_bybit.stop()

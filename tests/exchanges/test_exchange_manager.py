@@ -43,7 +43,7 @@ class TestExchangeManager:
             exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [], False)
         exchange_manager.rest_only = True
 
-        await exchange_manager.initialize()
+        await exchange_manager.initialize(exchange_config_by_exchange=None)
         return config, exchange_manager
 
     async def test_create_exchange(self):

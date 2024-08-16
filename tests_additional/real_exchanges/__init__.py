@@ -43,7 +43,7 @@ async def get_exchange_manager(exchange_name, config=None, authenticated=False, 
     if config[commons_constants.CONFIG_EXCHANGES][exchange_name]. \
        get(commons_constants.CONFIG_EXCHANGE_TYPE, enums.ExchangeTypes.SPOT.value) == enums.ExchangeTypes.FUTURE.value:
         exchange_manager_instance.is_future = True
-    await exchange_manager_instance.initialize()
+    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     except errors.UnreachableExchange as err:
