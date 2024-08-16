@@ -50,22 +50,34 @@ class TradesManager(util.Initializable):
         self._reset_trades()
         await self._load_trades_history(reset)
 
-    def upsert_trade(self, trade_id, raw_trade):
+    def upsert_trade(self, trade_id: str, raw_trade: dict) -> bool:
         if trade_id not in self.trades:
             created_trade = personal_data.create_trade_instance_from_raw(self.trader, raw_trade)
             if created_trade:
                 if trade_id in self.trades:
                     self.logger.debug(f"Replacement of an existing trade: {self.trades[trade_id].to_dict()} "
                                       f"by {created_trade.to_dict()} on id: {trade_id}")
-                self.trades[trade_id] = created_trade
-                self._check_trades_size()
-                return True
+                return self._add_trade_if_relevant(trade_id, created_trade)
         return False
 
     def upsert_trade_instance(self, trade):
         if trade.trade_id not in self.trades:
-            self.trades[trade.trade_id] = trade
-            self._check_trades_size()
+            self._add_trade_if_relevant(trade.trade_id, trade)
+
+    def _add_trade_if_relevant(self, trade_id: str, trade) -> bool:
+        if (
+            trade.status is enums.OrderStatus.CANCELED
+            and not self.trader.exchange_manager.exchange_config.is_saving_cancelled_orders_as_trade
+        ):
+            self.logger.debug(
+                f"Cancelled order not added in trades history: {trade.trade_type.name} {trade.origin_quantity} "
+                f"{trade.symbol} at {trade.origin_price}"
+            )
+            return False
+        self.trades[trade_id] = trade
+        self._check_trades_size()
+        return True
+
 
     def has_closing_trade_with_exchange_order_id(self, exchange_order_id) -> bool:
         for trade in self.get_trades(exchange_order_id=exchange_order_id):
