@@ -37,6 +37,7 @@ class ExchangeBuilder:
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
         self.trading_config_by_trading_mode: dict = None
+        self.exchange_config_by_exchange: dict = None
         self.auto_start_trading_modes: bool = True
 
     async def build(self):
@@ -61,10 +62,12 @@ class ExchangeBuilder:
             if self._is_using_trading_modes:
                 trading_mode_class = modes.get_activated_trading_mode(self.exchange_manager.tentacles_setup_config)
                 # handle exchange related requirements if the activated trading mode has any
-                self._register_trading_modes_requirements(trading_mode_class, self.exchange_manager.tentacles_setup_config)
+                self._register_trading_modes_requirements(
+                    trading_mode_class, self.exchange_manager.tentacles_setup_config
+                )
 
             self._ensure_exchange_compatibility()
-            await self.exchange_manager.initialize()
+            await self.exchange_manager.initialize(exchange_config_by_exchange=self.exchange_config_by_exchange)
             # add exchange to be able to use it
             exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
 
@@ -271,6 +274,10 @@ class ExchangeBuilder:
 
     def use_trading_config_by_trading_mode(self, trading_config_by_trading_mode):
         self.trading_config_by_trading_mode = trading_config_by_trading_mode
+        return self
+
+    def use_exchange_config_by_exchange(self, exchange_config_by_exchange):
+        self.exchange_config_by_exchange = exchange_config_by_exchange
         return self
 
     def set_auto_start_trading_modes(self, auto_start_trading_modes):
