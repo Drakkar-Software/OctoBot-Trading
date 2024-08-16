@@ -180,6 +180,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return True
 
     @classmethod
+    def is_ignoring_cancelled_orders_trades(cls) -> bool:
+        """
+        :return: True if trades created by cancelled orders should be ignored and not stored in trades manager
+        """
+        return False
+
+    @classmethod
     def get_parent_trading_mode_classes(cls, higher_parent_class_limit=None) -> list:
         return [
             class_type
