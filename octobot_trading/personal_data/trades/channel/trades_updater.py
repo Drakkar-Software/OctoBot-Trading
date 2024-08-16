@@ -45,7 +45,7 @@ class TradesUpdater(trades_channel.TradesProducer):
     """
     The default trade history update refresh time in seconds
     """
-    TRADES_REFRESH_TIME = 333
+    TRADES_REFRESH_TIME = 5 * commons_constants.MINUTE_TO_SECONDS
 
     DEPENDENCIES_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 
@@ -57,6 +57,7 @@ class TradesUpdater(trades_channel.TradesProducer):
     async def init_trade_history(self):
         try:
             await self.fetch_and_push()
+            self._set_all_initialized()
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
         except errors.NotSupported:
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
@@ -65,12 +66,18 @@ class TradesUpdater(trades_channel.TradesProducer):
             self.logger.error(f"Fail to initialize trade history : {e}")
 
     async def fetch_and_push(self):
+        self.logger.debug(
+            f"Updating {self.channel.exchange_manager.exchange_config.traded_symbol_pairs} trades history"
+        )
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
+            if trades := await self.channel.exchange_manager.exchange.get_my_recent_trades(
                 symbol=symbol,
-                limit=self.MAX_OLD_TRADES_TO_FETCH)
-            if trades:
+                limit=self.MAX_OLD_TRADES_TO_FETCH
+            ):
                 await self.push(trades)
+
+    def _set_all_initialized(self):
+        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
         self._is_initialized_event_set = True
@@ -98,20 +105,17 @@ class TradesUpdater(trades_channel.TradesProducer):
             )
             await self.init_trade_history()
 
-        # Code bellow shouldn't be necessary
-        # while not self.should_stop and not self.channel.is_paused:
-        #     try:
-        #         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-        #             trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
-        #                 symbol=symbol,
-        #                 limit=self.TRADES_LIMIT)
-        #
-        #             if trades:
-        #                 await self.push(list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
-        #     except Exception as e:
-        #         self.logger.error(f"Fail to update trades : {e}")
-        #
-        #     await asyncio.sleep(self.TRADES_REFRESH_TIME)
+        if self.channel.exchange_manager.exchange_config.has_forced_updater(self.CHANNEL_NAME):
+            await self._run_update_loop()
+
+    async def _run_update_loop(self):
+        while not self.should_stop and not self.channel.is_paused:
+            try:
+                await self.fetch_and_push()
+            except Exception as e:
+                self.logger.error(f"Fail to update trades : {e}")
+
+            await asyncio.sleep(self.TRADES_REFRESH_TIME)
 
     async def resume(self) -> None:
         """
