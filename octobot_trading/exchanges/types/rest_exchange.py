@@ -108,10 +108,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
-    def __init__(self, config, exchange_manager, connector_class=None):
-        super().__init__(config, exchange_manager)
+    def __init__(
+        self, config, exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]],
+        connector_class=None
+    ):
+        super().__init__(config, exchange_manager, exchange_config_by_exchange)
         if self.HAS_FETCHED_DETAILS:
-            self._fetch_details(config, exchange_manager)
+            self._apply_fetched_details(config, exchange_manager)
         self.connector = self._create_connector(config, exchange_manager, connector_class)
         self.pair_contracts = {}
 
@@ -938,8 +941,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
     """
     Auto fetched and filled exchanges
     """
-    def _fetch_details(self, config, exchange_manager):
-        raise NotImplementedError("_fetch_details is not implemented")
+    def _apply_fetched_details(self, config, exchange_manager):
+        raise NotImplementedError("_apply_fetched_details is not implemented")
+
+    @classmethod
+    async def fetch_exchange_config(
+        cls, exchange_config_by_exchange: typing.Optional[dict[str, dict]], exchange_manager
+    ):
+        raise NotImplementedError("fetch_exchange_config")
 
     @staticmethod
     def supported_autofill_exchanges(tentacle_config):

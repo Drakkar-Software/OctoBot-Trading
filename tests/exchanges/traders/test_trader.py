@@ -64,7 +64,7 @@ class TestTrader:
                                            DEFAULT_FUTURE_EXCHANGE_NAME if is_future else DEFAULT_EXCHANGE_NAME)
         exchange_manager.is_simulated = simulated
         exchange_manager.is_future = is_future
-        await exchange_manager.initialize()
+        await exchange_manager.initialize(exchange_config_by_exchange=None)
 
         trader = TraderSimulator(config, exchange_manager)
         await trader.initialize()

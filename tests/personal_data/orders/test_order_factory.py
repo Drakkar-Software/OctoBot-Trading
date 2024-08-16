@@ -37,7 +37,7 @@ class TestOrderFactory:
     async def init_default():
         config = load_test_config()
         exchange_manager = ExchangeManager(config, TestOrderFactory.EXCHANGE_MANAGER_CLASS_STRING)
-        await exchange_manager.initialize()
+        await exchange_manager.initialize(exchange_config_by_exchange=None)
 
         trader = TraderSimulator(config, exchange_manager)
         await trader.initialize()

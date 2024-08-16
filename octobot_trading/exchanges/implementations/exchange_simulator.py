@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.util as exchange_util
 import octobot_trading.exchanges.connectors.simulator.exchange_simulator_connector as exchange_simulator_connector
@@ -22,12 +24,15 @@ import octobot_trading.exchanges.types.rest_exchange as rest_exchange
 class ExchangeSimulator(rest_exchange.RestExchange):
     DEFAULT_CONNECTOR_CLASS = exchange_simulator_connector.ExchangeSimulatorConnector
 
-    def __init__(self, config, exchange_manager, backtesting):
+    def __init__(
+        self, config, exchange_manager, backtesting,
+        exchange_config_by_exchange: typing.Optional[dict[str, dict]] = None
+    ):
         self.backtesting = backtesting
         self.exchange_importers = []
         self.exchange_tentacle_class = None
         self.exchange_tentacle = None
-        super().__init__(config, exchange_manager)
+        super().__init__(config, exchange_manager, exchange_config_by_exchange)
 
     def _create_connector(self, config, exchange_manager, connector_class):
         return (connector_class or self.DEFAULT_CONNECTOR_CLASS)(
@@ -41,7 +46,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
         await super().initialize_impl()
         self.exchange_importers = self.connector.exchange_importers
         self.exchange_tentacle_class = exchange_util.get_rest_exchange_class(
-            self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config
+            self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config, None
         )
         if self.connector.should_adapt_market_statuses():
             await self._init_exchange_tentacle()
@@ -54,7 +59,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
             # initialize a locale exchange_tentacle to be able to access adapters for market statuses
             if self.exchange_tentacle_class:
                 self.exchange_tentacle = self.exchange_tentacle_class(
-                    self.exchange_manager.config, self.exchange_manager
+                    self.exchange_manager.config, self.exchange_manager, None
                 )
         finally:
             self.exchange_manager.ignore_config = origin_ignore_config

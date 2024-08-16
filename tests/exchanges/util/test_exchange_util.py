@@ -138,17 +138,17 @@ def test_get_auto_filled_exchange_names(tentacles_setup_config, supported_exchan
 def test_get_exchange_class_from_name(tentacles_setup_config, supported_exchanges):
     # not found exchange
     assert exchanges.get_exchange_class_from_name(
-        exchanges.RestExchange, "plop", tentacles_setup_config, True,
+        exchanges.RestExchange, "plop", tentacles_setup_config, None, True,
         strict_name_matching=False
     ) == exchanges.DefaultRestExchange
     with mock.patch.object(api, "get_tentacle_config", mock.Mock()) as get_tentacle_config_mock:
         assert exchanges.get_exchange_class_from_name(
-            exchanges.RestExchange, "plop", tentacles_setup_config, False,
+            exchanges.RestExchange, "plop", tentacles_setup_config, None, False,
             strict_name_matching=False
         ) == MockedRestExchange
         get_tentacle_config_mock.assert_not_called()
         assert exchanges.get_exchange_class_from_name(
-            exchanges.RestExchange, "plop", tentacles_setup_config, True,
+            exchanges.RestExchange, "plop", tentacles_setup_config, None, True,
             strict_name_matching=True
         ) is None
         get_tentacle_config_mock.assert_called_once()
@@ -156,15 +156,15 @@ def test_get_exchange_class_from_name(tentacles_setup_config, supported_exchange
 
     # regular exchange
     assert exchanges.get_exchange_class_from_name(
-        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, None,True,
         strict_name_matching=False
     ) == exchanges.DefaultRestExchange
     assert exchanges.get_exchange_class_from_name(
-        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, False,
+        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, None,False,
         strict_name_matching=False
     ) == MockedRestExchange
     assert exchanges.get_exchange_class_from_name(
-        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+        exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, None,True,
         strict_name_matching=True
     ) == MockedRestExchange
 
@@ -172,31 +172,31 @@ def test_get_exchange_class_from_name(tentacles_setup_config, supported_exchange
         # auto-filled exchange
         with MockedAutoFillRestExchange.patched_supported_exchanges(supported_exchanges):
             assert exchanges.get_exchange_class_from_name(
-                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, None,True,
                 strict_name_matching=False
             ) == exchanges.DefaultRestExchange
             assert exchanges.get_exchange_class_from_name(
-                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, False,
+                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, None,False,
                 strict_name_matching=False
             ) == MockedRestExchange
             assert exchanges.get_exchange_class_from_name(
-                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, True,
+                exchanges.RestExchange, MockedRestExchange.get_name(), tentacles_setup_config, None,True,
                 strict_name_matching=True
             ) == MockedRestExchange
 
             get_tentacle_config_mock.assert_not_called()
 
             assert exchanges.get_exchange_class_from_name(
-                exchanges.RestExchange, "blip", tentacles_setup_config, True,
+                exchanges.RestExchange, "blip", tentacles_setup_config, None,True,
                 strict_name_matching=False
             ) == exchanges.DefaultRestExchange
             assert exchanges.get_exchange_class_from_name(
-                exchanges.RestExchange, "blip", tentacles_setup_config, False,
+                exchanges.RestExchange, "blip", tentacles_setup_config, None,False,
                 strict_name_matching=False
             ) == MockedRestExchange
             get_tentacle_config_mock.assert_not_called()
             assert exchanges.get_exchange_class_from_name(
-                exchanges.RestExchange, "blip", tentacles_setup_config, True,
+                exchanges.RestExchange, "blip", tentacles_setup_config, None, True,
                 strict_name_matching=True
             ) == MockedAutoFillRestExchange
             get_tentacle_config_mock.assert_called_once()

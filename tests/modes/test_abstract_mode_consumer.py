@@ -47,7 +47,7 @@ async def _get_tools():
     exchange_manager.use_cached_markets = False
     exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [], False)
 
-    await exchange_manager.initialize()
+    await exchange_manager.initialize(exchange_config_by_exchange=None)
 
     trader = TraderSimulator(config, exchange_manager)
     await trader.initialize()

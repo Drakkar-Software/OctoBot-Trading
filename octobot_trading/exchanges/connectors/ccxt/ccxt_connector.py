@@ -50,7 +50,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def __init__(
         self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None, force_auth=False
     ):
-        super().__init__(config, exchange_manager)
+        super().__init__(config, exchange_manager, None)
         self.client = None
         self.exchange_type = None
         self.adapter = self.get_adapter_class(adapter_class)(self)

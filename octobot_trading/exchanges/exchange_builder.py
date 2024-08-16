@@ -276,7 +276,7 @@ class ExchangeBuilder:
         self.trading_config_by_trading_mode = trading_config_by_trading_mode
         return self
 
-    def use_exchange_config_by_exchange(self, exchange_config_by_exchange):
+    def use_exchange_config_by_exchange(self, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
         self.exchange_config_by_exchange = exchange_config_by_exchange
         return self
 

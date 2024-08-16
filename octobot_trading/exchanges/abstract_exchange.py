@@ -72,7 +72,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     }
     ACCOUNTS = {}
 
-    def __init__(self, config, exchange_manager):
+    def __init__(self, config, exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
         super().__init__()
         self.config = config
         self.exchange_manager = exchange_manager
@@ -97,6 +97,8 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
 
         self._creating_exchange_order_descriptions = set()
 
+        if exchange_config_by_exchange and self.get_name() in exchange_config_by_exchange:
+            self.tentacle_config = exchange_config_by_exchange[self.get_name()]
         if self.exchange_manager.tentacles_setup_config is not None:
             self.load_user_inputs_from_class(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
 

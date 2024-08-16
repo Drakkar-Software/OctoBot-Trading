@@ -35,7 +35,7 @@ import octobot_trading.exchanges.util as util
 
 class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     def __init__(self, config, exchange_manager, backtesting, adapter_class=None):
-        super().__init__(config, exchange_manager)
+        super().__init__(config, exchange_manager, None)
         self.backtesting = backtesting
         self.allowed_time_lag = constants.DEFAULT_BACKTESTING_TIME_LAG
         self.adapter = self.get_adapter_class(adapter_class)(self)

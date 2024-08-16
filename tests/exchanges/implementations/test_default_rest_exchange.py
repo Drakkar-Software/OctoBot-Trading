@@ -26,7 +26,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 def default_rest_exchange(exchange_manager):
-    return MockedRestExchange(exchange_manager.config, exchange_manager)
+    return MockedRestExchange(exchange_manager.config, exchange_manager, None)
 
 
 async def test_start_request_data_and_stop(default_rest_exchange):

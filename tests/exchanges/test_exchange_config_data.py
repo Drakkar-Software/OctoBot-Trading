@@ -34,7 +34,7 @@ class TestExchangeConfig:
 
         exchange_manager = ExchangeManager(config, TestExchangeConfig.EXCHANGE_NAME)
 
-        await exchange_manager.initialize()
+        await exchange_manager.initialize(exchange_config_by_exchange=None)
         return config, exchange_manager
 
     async def test_traded_pairs(self):
