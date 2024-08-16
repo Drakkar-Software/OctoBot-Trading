@@ -37,13 +37,20 @@ import octobot_trading.exchanges.exchange_details as exchange_details
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
 
-def get_rest_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(exchanges_types.RestExchange, exchange_name, tentacles_setup_config)
+def get_rest_exchange_class(
+    exchange_name: str, tentacles_setup_config, exchange_config_by_exchange: typing.Optional[dict[str, dict]]
+):
+    return search_exchange_class_from_exchange_name(
+        exchanges_types.RestExchange, exchange_name, tentacles_setup_config, exchange_config_by_exchange
+    )
 
 
-def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
-                                             tentacles_setup_config, enable_default=False):
-    exchange_class = get_exchange_class_from_name(exchange_class, exchange_name,  tentacles_setup_config, enable_default)
+def search_exchange_class_from_exchange_name(
+    exchange_class, exchange_name, tentacles_setup_config, exchange_config_by_exchange, enable_default=False
+):
+    exchange_class = get_exchange_class_from_name(
+        exchange_class, exchange_name,  tentacles_setup_config, exchange_config_by_exchange, enable_default
+    )
     if exchange_class is not None:
         return exchange_class
     if enable_default:
@@ -59,8 +66,10 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
     return exchanges_implementations.DefaultRestExchange
 
 
-def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles_setup_config,
-                                 enable_default_implementation, strict_name_matching=False):
+def get_exchange_class_from_name(
+    exchange_parent_class, exchange_name, tentacles_setup_config, exchange_config_by_exchange,
+    enable_default_implementation, strict_name_matching=False
+):
     for exchange_candidate in tentacles_management.get_all_classes_from_parent(exchange_parent_class):
         try:
             if _is_exchange_candidate_matching(
@@ -75,19 +84,21 @@ def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles
             # As we are searching for an exchange_type specific subclass
             # We should ignore classes that raises NotImplementedError
             pass
-    auto_filled_exchanges = _get_auto_filled_exchanges(tentacles_setup_config)
+    auto_filled_exchanges = _get_auto_filled_exchanges(tentacles_setup_config, exchange_config_by_exchange)
     if exchange_name in auto_filled_exchanges:
         return auto_filled_exchanges[exchange_name][0]
     return None
 
 
-def _get_auto_filled_exchanges(tentacles_setup_config):
+def _get_auto_filled_exchanges(tentacles_setup_config, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
     auto_filled_exchanges = {}
     for exchange_candidate in _get_auto_filled_exchanges_tentacles():
         if tentacles_setup_config is None:
             # tentacles_setup_config is required for auto-filled exchanges
             continue
-        config = api.get_tentacle_config(
+        config = exchange_config_by_exchange[exchange_candidate] if (
+            exchange_config_by_exchange and exchange_candidate in exchange_config_by_exchange
+        ) else api.get_tentacle_config(
             tentacles_setup_config, exchange_candidate
         )
         for exchange_name in exchange_candidate.supported_autofill_exchanges(config):
@@ -96,7 +107,7 @@ def _get_auto_filled_exchanges(tentacles_setup_config):
 
 
 def get_auto_filled_exchange_names(tentacles_setup_config):
-    return list(_get_auto_filled_exchanges(tentacles_setup_config))
+    return list(_get_auto_filled_exchanges(tentacles_setup_config, None))
 
 
 def _get_auto_filled_exchanges_tentacles():
@@ -111,7 +122,7 @@ async def get_exchange_details(
     exchange_name, is_autofilled, tentacles_setup_config, aiohttp_session
 ) -> exchange_details.ExchangeDetails:
     if is_autofilled:
-        auto_filled_exchanges = _get_auto_filled_exchanges(tentacles_setup_config)
+        auto_filled_exchanges = _get_auto_filled_exchanges(tentacles_setup_config, None)
         if exchange_name in auto_filled_exchanges:
             return await auto_filled_exchanges[exchange_name][0].get_autofilled_exchange_details(
                 aiohttp_session, auto_filled_exchanges[exchange_name][1], exchange_name
@@ -344,9 +355,10 @@ def get_default_exchange_type(exchange_name):
     return common_constants.DEFAULT_EXCHANGE_TYPE
 
 
-def get_supported_exchange_types(exchange_name, tentacles_setup_config):
+def get_supported_exchange_types(exchange_name, tentacles_setup_config, exchange_config_by_exchange=None):
     exchange_class = get_exchange_class_from_name(
-        exchanges_types.RestExchange, exchange_name, tentacles_setup_config, False, strict_name_matching=True
+        exchanges_types.RestExchange, exchange_name, tentacles_setup_config,
+        exchange_config_by_exchange, False, strict_name_matching=True
     )
     if exchange_class is None:
         # default

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import typing
 
 import trading_backend
 
@@ -22,7 +23,7 @@ import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 
 
-async def create_exchanges(exchange_manager):
+async def create_exchanges(exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
     if exchange_manager.is_sandboxed and not exchange_manager.exchange_only:
         exchange_manager.logger.info(f"Using sandbox exchange for {exchange_manager.exchange_name}")
 
@@ -32,7 +33,7 @@ async def create_exchanges(exchange_manager):
         exchange_manager.load_constants()
     else:
         # real : create a rest or websocket exchange instance
-        await create_real_exchange(exchange_manager)
+        await create_real_exchange(exchange_manager, exchange_config_by_exchange)
         exchange_manager.load_constants()
         await initialize_real_exchange(exchange_manager)
 
@@ -47,12 +48,13 @@ async def create_exchanges(exchange_manager):
     exchange_manager.is_ready = True
 
 
-async def create_real_exchange(exchange_manager) -> None:
+async def create_real_exchange(exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]) -> None:
     """
     Create and initialize real REST exchange
     :param exchange_manager: the related exchange manager
+    :param exchange_config_by_exchange: optional exchange configurations
     """
-    await _create_rest_exchange(exchange_manager)
+    await _create_rest_exchange(exchange_manager, exchange_config_by_exchange)
     try:
         await exchange_manager.exchange.initialize()
         _create_exchange_backend(exchange_manager)
@@ -62,7 +64,7 @@ async def create_real_exchange(exchange_manager) -> None:
     except errors.AuthenticationError:
         exchange_manager.logger.error("Authentication error, retrying without authentication...")
         exchange_manager.without_auth = True
-        await create_real_exchange(exchange_manager)
+        await create_real_exchange(exchange_manager, exchange_config_by_exchange)
         return
 
 
@@ -112,12 +114,14 @@ async def _is_supporting_octobot() -> bool:
     return False
 
 
-async def _create_rest_exchange(exchange_manager) -> None:
+async def _create_rest_exchange(
+    exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]
+) -> None:
     """
     create REST based on ccxt exchange
     :param exchange_manager: the related exchange manager
     """
-    await _search_and_create_rest_exchange(exchange_manager)
+    await _search_and_create_rest_exchange(exchange_manager, exchange_config_by_exchange)
 
     if not exchange_manager.exchange:
         raise Exception(f"Can't create an exchange instance that match the exchange configuration ({exchange_manager})")
@@ -139,13 +143,16 @@ async def init_simulated_exchange(exchange_manager):
     await exchange_manager.exchange.create_backtesting_exchange_producers()
 
 
-async def _search_and_create_rest_exchange(exchange_manager) -> None:
+async def _search_and_create_rest_exchange(
+    exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]
+) -> None:
     """
     Create a rest exchange if a RestExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    rest_exchange_class = exchanges.get_rest_exchange_class(exchange_manager.exchange_name,
-                                                            exchange_manager.tentacles_setup_config)
+    rest_exchange_class = exchanges.get_rest_exchange_class(
+        exchange_manager.exchange_name, exchange_manager.tentacles_setup_config, exchange_config_by_exchange
+    )
     if rest_exchange_class:
         exchange_manager.exchange = rest_exchange_class(config=exchange_manager.config,
                                                         exchange_manager=exchange_manager)

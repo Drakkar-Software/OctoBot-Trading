@@ -85,8 +85,8 @@ class ExchangeManager(util.Initializable):
 
         self.debug_info = {}
 
-    async def initialize_impl(self):
-        await exchanges.create_exchanges(self)
+    async def initialize_impl(self, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
+        await exchanges.create_exchanges(self, exchange_config_by_exchange)
         if self.is_storage_enabled():
             await self.storage_manager.initialize()
 
