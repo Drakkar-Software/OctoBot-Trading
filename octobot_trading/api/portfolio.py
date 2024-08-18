@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 
+import octobot_commons.symbols as commons_symbols
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants
 import octobot_trading.personal_data as personal_data
@@ -105,4 +106,4 @@ def can_convert_symbol_to_usd_like(symbol: str) -> bool:
 
 
 def is_usd_like_coin(coin) -> bool:
-    return personal_data.ValueConverter.is_usd_like_coin(coin)
+    return commons_symbols.is_usd_like_coin(coin)

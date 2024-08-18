@@ -76,11 +76,11 @@ class ValueConverter:
         return self._check_currency_initialization(currency, currency_value)
 
     def get_usd_like_value(self, currency, quantity, raise_error=True, init_price_fetchers=True):
-        if self.is_usd_like_coin(currency):
+        if symbol_util.is_usd_like_coin(currency):
             return quantity
         if symbol := self.get_usd_like_symbol_from_symbols(currency, self.last_prices_by_trading_pair):
             base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
-            usd_like_currency = base if self.is_usd_like_coin(base) else quote
+            usd_like_currency = base if symbol_util.is_usd_like_coin(base) else quote
             return self.evaluate_value(
                 currency, quantity, raise_error=raise_error,
                 target_currency=usd_like_currency, init_price_fetchers=init_price_fetchers
@@ -115,10 +115,6 @@ class ValueConverter:
             if usd_like_coins == base or usd_like_coins == quote:
                 return True
         return False
-
-    @staticmethod
-    def is_usd_like_coin(coin) -> bool:
-        return coin in commons_constants.USD_LIKE_COINS
 
     def _check_currency_initialization(self, currency, currency_value):
         """
