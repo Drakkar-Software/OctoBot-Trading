@@ -31,7 +31,7 @@ class TestOkxRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "okx"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
-    SYMBOL_3 = "XRP/BTC"
+    SYMBOL_3 = "OKB/BTC"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()

@@ -138,7 +138,7 @@ class TestBitMartRealExchangeTester(RealExchangeTester):
         assert len(tickers) > 2    # all tickers
         assert self.SYMBOL in tickers
         assert self.SYMBOL_2 in tickers
-        assert self.SYMBOL_3 in tickers  # symbol not correctly parsed as not in available markets (but luckily bitmart also uses the same syntax)
+        assert self.SYMBOL_3 not in tickers
         tickers = await self.get_all_currencies_price_ticker(
             symbols=[self.SYMBOL, self.SYMBOL_2],
             market_filter=self.get_market_filter()

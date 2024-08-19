@@ -32,7 +32,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "SHIB/USDT"
-    CANDLE_SINCE = 1680215441000  # Friday, March 24, 2023 3:00:00 PM UTC (large differences not supported)
+    CANDLE_SINCE = 1703005232000  # Thursday, October 19, 2023 5:00:32 PM UTC (large differences not supported)
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     async def _test_time_frames(self):
