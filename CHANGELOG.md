@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.99] - 2024-08-19
+### Updated
+- [CCXT] updated to ccxt 4.3.85
+
 ## [2.4.98] - 2024-08-16
 ### Added
 - [Exchanges] exchange_config_by_exchange in init
