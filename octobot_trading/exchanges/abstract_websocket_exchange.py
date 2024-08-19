@@ -94,7 +94,7 @@ class AbstractWebsocketExchange:
     def get_exchange_credentials(self):
         """
         Exchange credentials
-        :return: key, secret, password
+        :return: key, secret, password, uid
         """
         return self.exchange_manager.get_exchange_credentials(self.exchange_manager.exchange_name)
 
@@ -219,7 +219,7 @@ class AbstractWebsocketExchange:
         raise NotImplementedError(f"get_feeds_count is not implemented")
 
     def _should_authenticate(self):
-        api_key, api_secret, _ = self.get_exchange_credentials()
+        api_key, api_secret, _, _ = self.get_exchange_credentials()
         return not self.exchange_manager.without_auth \
             and not self.exchange_manager.is_trader_simulated \
             and api_key and api_secret

@@ -306,7 +306,7 @@ class ExchangeManager(util.Initializable):
 
     def get_exchange_credentials(self, exchange_name):
         if self.ignore_config or not self.should_decrypt_token() or self.without_auth:
-            return "", "", ""
+            return "", "", "", ""
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
         return (
             configuration.decrypt_element_if_possible(
@@ -317,7 +317,8 @@ class ExchangeManager(util.Initializable):
             ).strip(" "),   # remove leading and trailing whitespaces if any
             configuration.decrypt_element_if_possible(
                 common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
-            )
+            ),
+            config_exchange.get(common_constants.CONFIG_EXCHANGE_UID, "")
         )
 
     def get_exchange_sub_account_id(self, exchange_name):

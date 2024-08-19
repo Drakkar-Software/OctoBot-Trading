@@ -45,15 +45,15 @@ def create_client(
                     f"exchange with ccxt in version {ccxt.__version__}")
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_manager.exchange_name):
         try:
-            key, secret, password = exchange_manager.get_exchange_credentials(exchange_manager.exchange_name)
+            key, secret, password, uid = exchange_manager.get_exchange_credentials(exchange_manager.exchange_name)
             if keys_adapter:
-                key, secret, password = keys_adapter(key, secret, password)
+                key, secret, password, uid = keys_adapter(key, secret, password, uid)
             if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
             if should_authenticate and not exchange_manager.is_backtesting:
                 client = exchange_class(_get_client_config(options, headers, additional_config,
-                                                           key, secret, password))
+                                                           key, secret, password, uid))
                 is_authenticated = True
                 if exchange_manager.check_credentials:
                     client.checkRequiredCredentials()
@@ -244,7 +244,7 @@ def _use_http_proxy_if_necessary(client):
     client.aiohttp_trust_env = constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
 
 
-def _get_client_config(options, headers, additional_config, api_key=None, secret=None, password=None):
+def _get_client_config(options, headers, additional_config, api_key=None, secret=None, password=None, uid=None):
     config = {
         'verbose': constants.ENABLE_CCXT_VERBOSE,
         'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,
@@ -258,5 +258,7 @@ def _get_client_config(options, headers, additional_config, api_key=None, secret
         config['secret'] = secret
     if password is not None:
         config['password'] = password
+    if uid is not None:
+        config['uid'] = uid
     config.update(additional_config or {})
     return config
