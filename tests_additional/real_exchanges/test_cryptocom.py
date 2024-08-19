@@ -96,7 +96,13 @@ class TestCryptoComRealExchangeTester(RealExchangeTester):
             # check that fetched candles are historical candles
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
-            with pytest.raises(AssertionError):  # not supported
+            if limit is None:
+                # not supported
+                with pytest.raises(AssertionError):
+                    for candle in symbol_prices:
+                        assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+            else:
+                # supported with a limit value
                 for candle in symbol_prices:
                     assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
