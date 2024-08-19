@@ -750,4 +750,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     def _get_order_description(
         self, side: enums.TradeOrderSide, symbol: str, quantity: decimal.Decimal, price: decimal.Decimal
     ) -> str:
-        return f"{side.value}-{symbol}-{float(quantity)}-{float(price)}"
+        return (
+            f"{side.value if side else None}-{symbol}-"
+            f"{float(quantity) if quantity else None}-{float(price) if price else None}"
+        )
