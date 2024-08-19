@@ -121,11 +121,12 @@ TESTED_EXCHANGES = [
     "mexc",
     "bingx",
     "coinex",
+    "bitmart",
 ])
 DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
 SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex2", "bithumb", "bitstamp", "bittrex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
-                              "wavesexchange", "bitmart",])
+                              "wavesexchange",])
 
 # text content of errors due to exchange compliancy rules
 # Warning: should never be a false positive
