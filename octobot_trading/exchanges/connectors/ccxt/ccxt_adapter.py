@@ -43,6 +43,30 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard order parsing logic
         return fixed
 
+    def adapt_amount_from_filled_or_cost(self, fixed):
+        try:
+            if (
+                fixed[enums.ExchangeConstantsOrderColumns.TYPE.value] == enums.TradeOrderType.MARKET.value and
+                fixed[enums.ExchangeConstantsOrderColumns.SIDE.value] == enums.TradeOrderSide.BUY.value and
+                fixed[enums.ExchangeConstantsOrderColumns.FILLED.value]
+            ):
+                # convert amount to use the base unit: use FILLED for accuracy (when not None/0)
+                fixed[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = (
+                    fixed[enums.ExchangeConstantsOrderColumns.FILLED.value]
+                )
+            if (
+                (not fixed[enums.ExchangeConstantsOrderColumns.AMOUNT.value]) and
+                fixed[enums.ExchangeConstantsOrderColumns.COST.value] and
+                fixed[enums.ExchangeConstantsOrderColumns.PRICE.value]
+            ):
+                # convert amount to use the base unit
+                fixed[enums.ExchangeConstantsOrderColumns.AMOUNT.value] = (
+                    fixed[enums.ExchangeConstantsOrderColumns.COST.value] /
+                    fixed[enums.ExchangeConstantsOrderColumns.PRICE.value]
+                )
+        except KeyError:
+            pass
+
     def adapt_quantities_with_contract_size(self, order_or_trade, symbol):
         if self.connector.exchange_manager.is_future:
             symbol = symbol or order_or_trade.get(ecoc.SYMBOL.value)
