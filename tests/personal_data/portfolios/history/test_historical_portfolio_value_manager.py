@@ -521,12 +521,23 @@ async def test_get_historical_values(historical_portfolio_value_manager):
         time_manager.current_timestamp = late_timestamp
     await historical_portfolio_value_manager.on_new_value(late_timestamp, late_values, save_changes=False)
     assert historical_portfolio_value_manager.get_historical_values("USD", commons_enums.TimeFrames.ONE_DAY) == \
-        {friday_timestamp: 3010, sunday_timestamp: 3, today_timestamp: 54}
+        {
+            friday_timestamp: 3010, sunday_timestamp: 3, today_timestamp: 54,
+            late_timestamp: 88  # window select include latest value
+        }
     historical_portfolio_value_manager.logger.debug.assert_called_once()
     historical_portfolio_value_manager.logger.debug.reset_mock()
     assert historical_portfolio_value_manager.get_historical_values("BTC", commons_enums.TimeFrames.ONE_HOUR) == \
         {friday_timestamp: 1.1, saturday_timestamp: 1.3, today_timestamp: 11, today_hour_timestamp: 11,
          late_timestamp: 77}
+    historical_portfolio_value_manager.logger.debug.assert_called_once()
+    historical_portfolio_value_manager.logger.debug.reset_mock()
+    # with ask timeframe that doesn't round with stored values: adapt select window
+    assert historical_portfolio_value_manager.get_historical_values("BTC", commons_enums.TimeFrames.FOUR_HOURS) == \
+        {
+            friday_timestamp: 1.1, saturday_timestamp: 1.3, today_timestamp: 11, today_hour_timestamp: 11,
+            late_timestamp: 77
+        }
     historical_portfolio_value_manager.logger.debug.assert_called_once()
     historical_portfolio_value_manager.logger.debug.reset_mock()
 

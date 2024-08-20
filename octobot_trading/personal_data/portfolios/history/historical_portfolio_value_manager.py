@@ -157,10 +157,13 @@ class HistoricalPortfolioValueManager(util.Initializable):
         """
         to_timestamp = to_timestamp or self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
         time_frame_seconds = commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
+        sorted_available_timestamps = list(self.historical_portfolio_value)
         relevant_historical_values = [
             value
             for timestamp, value in self.historical_portfolio_value.items()
-            if self._is_historical_timestamp_relevant(timestamp, time_frame_seconds, from_timestamp, to_timestamp)
+            if self._is_historical_timestamp_relevant(
+                timestamp, time_frame_seconds, from_timestamp, to_timestamp, sorted_available_timestamps
+            )
         ]
         historical_values = {}
         for historical_value in relevant_historical_values:
@@ -252,15 +255,34 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 if currency not in self.historical_starting_portfolio_values:
                     self.historical_starting_portfolio_values[currency] = value.get(currency)
 
-    def _is_historical_timestamp_relevant(self, timestamp, time_frame_seconds, from_timestamp, to_timestamp):
+    def _is_historical_timestamp_relevant(
+        self, timestamp, time_frame_seconds, from_timestamp, to_timestamp, sorted_available_timestamps: list
+    ):
         from_timestamp = from_timestamp or 0
         to_timestamp = to_timestamp or time.time()
-        return self._is_timestamp_relevant(timestamp, time_frame_seconds) and \
+        return self._is_timestamp_relevant(timestamp, time_frame_seconds, sorted_available_timestamps) and \
            from_timestamp <= timestamp <= to_timestamp
 
     @staticmethod
-    def _is_timestamp_relevant(timestamp, time_frame_seconds):
-        return timestamp % time_frame_seconds == 0
+    def _is_timestamp_relevant(timestamp, time_frame_seconds, sorted_available_timestamps: list):
+        if timestamp % time_frame_seconds == 0:
+            # timestamp is expected at this time
+            return True
+        else:
+            # timestamp is relevant only if there is no other available timestamp within the given timeframe range
+            current_timestamp_index = sorted_available_timestamps.index(timestamp)
+            allowed_delta = time_frame_seconds / 2
+            previous_timestamp = (
+                sorted_available_timestamps[current_timestamp_index - 1]
+                if current_timestamp_index > 0
+                else 0
+            )
+            next_timestamp = (
+                sorted_available_timestamps[current_timestamp_index + 1]
+                if current_timestamp_index < len(sorted_available_timestamps) - 1
+                else (timestamp + allowed_delta)
+            )
+            return previous_timestamp + allowed_delta <= timestamp <= next_timestamp - allowed_delta
 
     @staticmethod
     def convert_to_historical_timestamp(timestamp, time_frame):
