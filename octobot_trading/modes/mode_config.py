@@ -47,12 +47,14 @@ def get_activated_trading_mode(tentacles_setup_config):
 
                 if trading_mode_class is not None:
                     return trading_mode_class
-        except ModuleNotFoundError as e:
-            logging.get_logger("get_activated_trading_mode").error(f"Error when loading "
-                                                                   f"the activated trading mode: {e}")
+        except ModuleNotFoundError as err:
+            logging.get_logger("get_activated_trading_mode").error(
+                f"Error when loading the activated trading mode: {err}"
+            )
 
-    raise errors.ConfigTradingError(f"Please ensure your tentacles configuration file is valid and "
-                                    f"at least one trading mode is activated")
+    raise errors.ConfigTradingError(
+        "Please ensure your tentacles configuration file is valid and that a trading mode is activated"
+    )
 
 
 def should_emit_trading_signals_user_input(trading_mode, inputs: dict):

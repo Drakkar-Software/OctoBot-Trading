@@ -20,9 +20,11 @@ import octobot_commons.channels_name as channels_name
 import octobot_commons.logging as logging
 import octobot_commons.enums as enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.errors as commons_errors
 
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
+import octobot_trading.modes as modes
 import octobot_trading.util as util
 
 OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG = "OctoBotChannelTradingConsumer"
@@ -70,6 +72,14 @@ async def _handle_creation(bot_id, action, data):
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
                 .set_bot_id(bot_id)
+            try:
+                modes.get_activated_trading_mode(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value])
+            except commons_errors.ConfigTradingError:
+                logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
+                    f"No configured trading mode. in order to trade, selected a profile with a trading mode."
+                )
+                # do not raise on missing trading mode
+                exchange_builder.disable_trading_mode()
             _set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
             await exchange_builder.build()
             await channel_instances.get_chan_at_id(
