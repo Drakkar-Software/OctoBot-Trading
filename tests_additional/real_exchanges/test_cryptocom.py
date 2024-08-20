@@ -49,6 +49,9 @@ class TestCryptoComRealExchangeTester(RealExchangeTester):
             TimeFrames.ONE_MONTH.value
         ))
 
+    async def test_active_symbols(self):
+        await self.inner_test_active_symbols(700, 700)
+
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             self.ensure_required_market_status_values(market_status)

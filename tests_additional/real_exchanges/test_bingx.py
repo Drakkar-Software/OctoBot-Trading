@@ -54,6 +54,9 @@ class TestBingxRealExchangeTester(RealExchangeTester):
             TimeFrames.ONE_MONTH.value
         ))
 
+    async def test_active_symbols(self):
+        await self.inner_test_active_symbols(1000, 1200)
+
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             # on Bingx, precision is a decimal instead of a number of digits
