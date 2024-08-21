@@ -101,8 +101,8 @@ class MockedAutoFillRestExchange(MockedRestExchange):
     ):
         pass
 
-    @staticmethod
-    def supported_autofill_exchanges(tentacle_config):
+    @classmethod
+    def supported_autofill_exchanges(cls, tentacle_config):
         return MockedAutoFillRestExchange._SUPPORTED_EXCHANGE_MOCK
 
     @classmethod

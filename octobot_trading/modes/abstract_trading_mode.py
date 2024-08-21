@@ -447,9 +447,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     """
 
     @classmethod
-    def get_required_strategies_names_and_count(cls,
-                                                tentacles_config: tm_configuration.TentaclesSetupConfiguration,
-                                                trading_mode_config=None):
+    def get_required_strategies_names_and_count(
+        cls, tentacles_config: tm_configuration.TentaclesSetupConfiguration, trading_mode_config=None
+    ):
         config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
         if constants.TRADING_MODE_REQUIRED_STRATEGIES in config:
             return config[constants.TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)

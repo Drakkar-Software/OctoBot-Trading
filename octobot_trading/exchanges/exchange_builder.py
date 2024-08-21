@@ -102,8 +102,13 @@ class ExchangeBuilder:
             raise e
 
     def _register_trading_modes_requirements(self, trading_mode_class, tentacles_setup_config):
-        self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(self.exchange_name,
-                                                                                         tentacles_setup_config)
+        self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(
+            self.exchange_name, tentacles_setup_config
+        )
+        if not self.exchange_manager.is_trading:
+            self.logger.info(
+                f"{self.exchange_manager.exchange_name} exchange is configured not to apply any trading strategy."
+            )
         # take trading modes candles requirements into account if any
         self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT] = max(
             self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT],
