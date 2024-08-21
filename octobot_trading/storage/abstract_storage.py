@@ -31,7 +31,6 @@ class AbstractStorage:
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
     HISTORY_TABLE = None
-    AUTH_UPDATE_DEBOUNCE_DURATION = 10
     FLUSH_DEBOUNCE_DURATION = 5   # avoid disc spam on multiple quick live updated
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
@@ -123,7 +122,7 @@ class AbstractStorage:
 
     async def _waiting_update_auth_data(self, reset):
         try:
-            await asyncio.sleep(self.AUTH_UPDATE_DEBOUNCE_DURATION)
+            await asyncio.sleep(trading_constants.AUTH_UPDATE_DEBOUNCE_DURATION)
             await self._update_auth_data(reset)
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when updating auth data: {err}")
