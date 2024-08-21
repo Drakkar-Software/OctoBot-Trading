@@ -950,8 +950,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     ):
         raise NotImplementedError("fetch_exchange_config")
 
-    @staticmethod
-    def supported_autofill_exchanges(tentacle_config):
+    @classmethod
+    def supported_autofill_exchanges(cls, tentacle_config):
         raise NotImplementedError("supported_autofill_exchanges is not implemented")
 
     @classmethod
