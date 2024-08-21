@@ -27,6 +27,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.storage.abstract_storage as abstract_storage
 import octobot_trading.storage.util as storage_util
+import octobot_trading.exchanges as exchanges
 
 
 class OrdersStorage(abstract_storage.AbstractStorage):
@@ -36,13 +37,16 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE = constants.ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE
 
     def __init__(self, exchange_manager, use_live_consumer_in_backtesting=None, is_historical=None):
-        super().__init__(exchange_manager, plot_settings=None,
-                         use_live_consumer_in_backtesting=use_live_consumer_in_backtesting, is_historical=is_historical)
+        super().__init__(
+            exchange_manager, plot_settings=None,
+            use_live_consumer_in_backtesting=use_live_consumer_in_backtesting, is_historical=is_historical
+        )
         self.startup_orders = {}
 
     def should_store_data(self):
-        return not self.exchange_manager.is_trader_simulated \
-            and not self.exchange_manager.is_backtesting
+        return (
+            constants.ENABLE_SIMULATED_ORDERS_STORAGE or not self.exchange_manager.is_trader_simulated
+        ) and not self.exchange_manager.is_backtesting
 
     async def on_start(self):
         await self._load_startup_orders()
@@ -86,13 +90,19 @@ class OrdersStorage(abstract_storage.AbstractStorage):
 
     async def _update_auth_data(self, _):
         authenticator = authentication.Authenticator.instance()
-        snapshot = [
-            _format_order(order, self.exchange_manager)
-            for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
-        ]
+
+        orders_by_exchange = {
+            exchange_manager.exchange_name: [
+                _format_order(order, exchange_manager)
+                for order in exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
+            ]
+            for exchange_manager in exchanges.Exchanges.instance().get_exchanges_managers_with_same_matrix_id(
+                self.exchange_manager
+            )
+        }
         if authenticator.is_initialized():
             # also update when history is empty to reset trade history
-            await authenticator.update_orders(snapshot, self.exchange_manager.exchange_name)
+            await authenticator.update_orders(orders_by_exchange)
 
     async def _store_history(self):
         await self._update_history()

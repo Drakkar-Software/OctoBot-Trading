@@ -138,9 +138,8 @@ def get_matrix_id_from_exchange_id(exchange_name: str, exchange_id: str) -> str:
 
 def get_all_exchange_ids_from_matrix_id(matrix_id) -> list:
     return [
-        exchange_configuration.id
-        for exchange_configuration in exchanges.Exchanges.instance().get_all_exchanges()
-        if exchange_configuration.matrix_id == matrix_id
+        get_exchange_manager_id(exchange_manager)
+        for exchange_manager in exchanges.Exchanges.instance().get_exchanges_managers_with_matrix_id(matrix_id)
     ]
 
 
