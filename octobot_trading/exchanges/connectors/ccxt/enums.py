@@ -74,6 +74,13 @@ class ExchangeLeverageTiersCCXTColumns(enum.Enum):
     INFO = "info"
 
 
+class ExchangeLeverageCCXTColumns(enum.Enum):
+    SYMBOL = "symbol"
+    MARGIN_MODE = "marginMode"
+    LONG_LEVERAGE = "longLeverage"
+    SHORT_LEVERAGE = "shortLeverage"
+
+
 class ExchangeOrderCCXTColumns(enum.Enum):
     INFO = "info"
     ID = "id"

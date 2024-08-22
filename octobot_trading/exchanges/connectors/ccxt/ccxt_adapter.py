@@ -359,11 +359,8 @@ class CCXTAdapter(adapters.AbstractAdapter):
         return fixed
 
     def parse_leverage(self, fixed, **kwargs):
-        # WARNING no CCXT standard leverage parsing logic
-        # HAS TO BE IMPLEMENTED IN EACH EXCHANGE IMPLEMENTATION
-        return {
-            enums.ExchangeConstantsLeveragePropertyColumns.RAW.value: fixed,
-        }
+        # CCXT standard leverage fixing logic
+        return fixed
 
     def fix_funding_rate_history(self, raw, **kwargs):
         fixed = super().fix_funding_rate_history(raw, **kwargs)
