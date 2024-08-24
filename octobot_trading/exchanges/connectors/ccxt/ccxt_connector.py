@@ -311,6 +311,28 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_order_book {e}")
 
+    # return bidasks on each side of the order book stack for each given symbol
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def get_order_books(
+        self, symbols: typing.Optional[list[str]], limit: int = 5, **kwargs: dict
+    ) -> typing.Optional[dict]:
+        """
+        WARNING: not always supported by exchanges.
+        Raises octobot_trading.errors.NotSupported when not supported
+        :return: a dict of order book by symbol
+        """
+        try:
+            with self.error_describer():
+                book_by_symbol = await self.client.fetch_order_books(symbols=symbols, limit=limit, params=kwargs)
+                return {
+                    symbol: self.adapter.adapt_order_book(book)
+                    for symbol, book in book_by_symbol.items()
+                }
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except ccxt.BaseError as e:
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_order_books {e}")
+
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         try:

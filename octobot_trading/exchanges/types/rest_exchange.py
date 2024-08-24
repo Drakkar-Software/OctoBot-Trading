@@ -502,6 +502,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_order_book(symbol=symbol, limit=limit, **kwargs)
 
+    async def get_order_books(
+        self, symbols: typing.Optional[list[str]], limit: int = 5, **kwargs: dict
+    ) -> typing.Optional[dict]:
+        return await self.connector.get_order_books(symbols=symbols, limit=limit, **kwargs)
+
     async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_recent_trades(symbol=symbol, limit=limit, **kwargs)
 

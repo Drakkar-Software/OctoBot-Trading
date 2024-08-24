@@ -199,6 +199,13 @@ class CCXTAdapter(adapters.AbstractAdapter):
     def fix_order_book(self, raw, **kwargs):
         fixed = super().fix_order_book(raw, **kwargs)
         # CCXT standard order_book fixing logic
+        try:
+            exchange_timestamp = fixed[enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value]
+            fixed[enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] = self.get_uniformized_timestamp(
+                exchange_timestamp
+            )
+        except KeyError as e:
+            self.logger.error(f"Fail to convert order book timestamp ({e})")
         return fixed
 
     def parse_order_book(self, fixed, **kwargs):
