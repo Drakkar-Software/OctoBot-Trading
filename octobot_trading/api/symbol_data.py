@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import typing
 
 import octobot_commons.enums
 
@@ -95,14 +96,25 @@ def get_symbol_volume_candles(symbol_data, time_frame, limit=-1, include_in_cons
 
 
 def get_daily_base_and_quote_volume(symbol_data, reference_price: decimal.Decimal) -> (decimal.Decimal, decimal.Decimal):
-    base_volume = symbol_data.ticker_manager.ticker.get(
+    return get_daily_base_and_quote_volume_from_ticker(
+        symbol_data.ticker_manager.ticker, reference_price=reference_price
+    )
+
+
+def get_daily_base_and_quote_volume_from_ticker(
+    ticker: dict, reference_price: typing.Optional[decimal.Decimal] = None
+) -> (decimal.Decimal, decimal.Decimal):
+    base_volume = ticker.get(
         octobot_trading.enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
         "nan"
     )
-    quote_volume = symbol_data.ticker_manager.ticker.get(
+    quote_volume = ticker.get(
         octobot_trading.enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value,
         "nan"
     )
+    reference_price = reference_price or decimal.Decimal(str(
+        ticker[octobot_trading.enums.ExchangeConstantsTickersColumns.CLOSE.value]
+    ))
     if base_volume:
         base_volume = decimal.Decimal(str(base_volume))
         if not quote_volume or decimal.Decimal(str(quote_volume)).is_nan():
