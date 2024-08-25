@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.103] - 2024-08-25
+### Added
+- [API] add supports_custom_limit_order_book_fetch
+
 ## [2.4.102] - 2024-08-24
 ### Added
 - [Exchanges] add get_order_books
