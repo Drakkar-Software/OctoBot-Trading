@@ -94,6 +94,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     CAN_HAVE_DELAYED_OPEN_ORDERS = False
     # Set True when get_cancelled_order() can return outdated open orders
     CAN_HAVE_DELAYED_CANCELLED_ORDERS = False
+    # Set True when the "limit" param when fetching order books is taken into account
+    SUPPORTS_CUSTOM_LIMIT_ORDER_BOOK_FETCH = False
 
     # text content of errors due to orders not found errors
     EXCHANGE_ORDER_NOT_FOUND_ERRORS: typing.List[typing.Iterable[str]] = []
