@@ -120,13 +120,21 @@ class TestHollaexRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
         assert len(order_book[Ecobic.BIDS.value]) >= 10
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
+
+        custom_limit_order_book = await self.get_order_book(limit=50)
+        # limit param not supported
+        self._ensure_book_custom_limit(
+            {self.SYMBOL: custom_limit_order_book}, False, 20, 50
+        )
         
     async def test_get_order_books(self):
         await self.inner_test_get_order_books(
             False,
-            30,
-            20,
-            0,
+            30, # all symbols
+            20, # up to 20 orders
+            0, # up to 20 orders
+            False,
+            None,
             1,
         )
 

@@ -15,6 +15,7 @@
 #  License along with this library.
 import contextlib
 import time
+import typing
 
 import ccxt.async_support
 import pytest
@@ -47,6 +48,7 @@ class RealExchangeTester:
     REQUIRES_AUTH = False  # set True when even normally public apis require authentication
     MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.SPOT.value
     HISTORICAL_CANDLES_TO_FETCH_COUNT = 650
+    DEFAULT_CUSTOM_BOOK_LIMIT = 50
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -171,6 +173,8 @@ class RealExchangeTester:
         expected_missing_symbol_filter_books_min_count: int,
         expected_max_orders_by_side: int,
         min_book_orders_count: int,
+        supports_custom_limit: bool,
+        custom_limit: typing.Optional[int],
         max_empty_book_sides: int,
     ):
         async with (self.get_exchange_manager() as exchange_manager):
@@ -229,6 +233,32 @@ class RealExchangeTester:
                 raise AssertionError(
                     f"More empty book sides than expected: {max_empty_book_sides=} {empty_book_sides=}"
                 )
+            # with custom limit
+            books_by_symbol = await exchange_manager.exchange.get_order_books(symbols=None, limit=custom_limit)
+            self._ensure_book_custom_limit(
+                books_by_symbol, supports_custom_limit, expected_max_orders_by_side, custom_limit
+            )
+
+    def _ensure_book_custom_limit(
+        self,
+        books_by_symbol: dict,
+        supports_custom_limit: bool,
+        no_limit_default_size: int,
+        custom_limit: typing.Optional[int],
+    ):
+        has_taken_limit_into_account = False
+        custom_limit = custom_limit or self.DEFAULT_CUSTOM_BOOK_LIMIT
+        for symbol, book in books_by_symbol.items():
+            for side in [
+                trading_enums.ExchangeConstantsOrderBookInfoColumns.BIDS,
+                trading_enums.ExchangeConstantsOrderBookInfoColumns.ASKS
+            ]:
+                if no_limit_default_size < len(book[side.value]) <= custom_limit:
+                    has_taken_limit_into_account = True
+        if supports_custom_limit:
+            assert has_taken_limit_into_account
+        else:
+            assert not supports_custom_limit
 
     @contextlib.asynccontextmanager
     async def get_exchange_manager(self, market_filter=None):
