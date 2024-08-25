@@ -128,6 +128,12 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value]) == 5
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
+        custom_limit_order_book = await self.get_order_book(limit=450)
+        # limit param is supported
+        self._ensure_book_custom_limit(
+            {self.SYMBOL: custom_limit_order_book}, True, 20, 450
+        )
+
     async def test_get_order_books(self):
         # not supported
         await self.inner_test_unsupported_get_order_books()
