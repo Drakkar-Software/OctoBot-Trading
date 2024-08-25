@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import time
+
 import pytest
 
 from octobot_commons.enums import TimeFrames, PriceIndexes
@@ -113,10 +115,20 @@ class TestHollaexRealExchangeTester(RealExchangeTester):
 
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
+        assert 0 < order_book[Ecobic.TIMESTAMP.value] < self._get_ref_order_book_timestamp()
         assert len(order_book[Ecobic.ASKS.value]) >= 10
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
         assert len(order_book[Ecobic.BIDS.value]) >= 10
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
+        
+    async def test_get_order_books(self):
+        await self.inner_test_get_order_books(
+            False,
+            30,
+            20,
+            0,
+            1,
+        )
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()

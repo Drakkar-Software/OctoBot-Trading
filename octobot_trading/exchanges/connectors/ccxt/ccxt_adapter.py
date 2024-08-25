@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import time
 
 import octobot_trading.exchanges.adapters as adapters
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
@@ -201,9 +202,13 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard order_book fixing logic
         try:
             exchange_timestamp = fixed[enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value]
-            fixed[enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] = self.get_uniformized_timestamp(
-                exchange_timestamp
-            )
+            if exchange_timestamp is None:
+                # force current time
+                fixed[enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] =  time.time()
+            else:
+                fixed[enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] = self.get_uniformized_timestamp(
+                    exchange_timestamp
+                )
         except KeyError as e:
             self.logger.error(f"Fail to convert order book timestamp ({e})")
         return fixed
