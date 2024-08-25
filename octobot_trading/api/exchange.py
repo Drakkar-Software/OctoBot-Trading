@@ -324,6 +324,10 @@ def get_auto_filled_exchange_names(tentacles_setup_config) -> list:
     return exchanges.get_auto_filled_exchange_names(tentacles_setup_config)
 
 
+def supports_custom_limit_order_book_fetch(exchange_manager) -> bool:
+    return exchange_manager.exchange.SUPPORTS_CUSTOM_LIMIT_ORDER_BOOK_FETCH
+
+
 async def get_exchange_details(
     exchange_name, is_autofilled, tentacles_setup_config, aiohttp_session
 ) -> exchanges.ExchangeDetails:

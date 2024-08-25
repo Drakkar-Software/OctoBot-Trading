@@ -130,6 +130,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
 
         custom_limit_order_book = await self.get_order_book(limit=450)
         # limit param is supported
+        # SUPPORTS_CUSTOM_LIMIT_ORDER_BOOK_FETCH = True in tentacle
         self._ensure_book_custom_limit(
             {self.SYMBOL: custom_limit_order_book}, True, 20, 450
         )
