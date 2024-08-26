@@ -159,7 +159,7 @@ async def get_order(
     exchange_manager,
     exchange_order_id: str,
     symbol: str,
-) -> dict:
+) -> typing.Optional[dict]:
     return await exchange_manager.exchange.get_order(exchange_order_id, symbol=symbol)
 
 
