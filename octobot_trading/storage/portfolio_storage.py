@@ -71,6 +71,9 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
         for exchange_manager in exchanges.Exchanges.instance().get_exchanges_managers_with_same_matrix_id(
             self.exchange_manager
         ):
+            if not exchange_manager.exchange_personal_data.portfolio_manager:
+                # exchange has no portfolio (probably not trading)
+                continue
             hist_portfolio_values_manager = exchange_manager.exchange_personal_data. \
                 portfolio_manager.historical_portfolio_value_manager
             if initializing_prices := hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.\
