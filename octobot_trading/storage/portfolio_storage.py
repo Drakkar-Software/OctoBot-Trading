@@ -128,7 +128,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
             await authenticator.update_portfolio(
                 {reference_market: current_value},
                 {reference_market: initial_value},
-                (100 * current_value / initial_value) - 100,
+                ((100 * current_value / initial_value) - 100) if initial_value else 0,
                 reference_market,
                 ending_portfolio,
                 historical_value_by_timestamp,
