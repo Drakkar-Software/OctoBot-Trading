@@ -99,6 +99,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
             for exchange_manager in exchanges.Exchanges.instance().get_exchanges_managers_with_same_matrix_id(
                 self.exchange_manager
             )
+            if exchange_manager.exchange_personal_data.orders_manager
         }
         if authenticator.is_initialized():
             # also update when history is empty to reset trade history
