@@ -119,6 +119,10 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.headers = {}
         self.options = {
             "newUpdates": True,  # only get new updates from trades and ohlcv (don't return the full cached history)
+            "OHLCVLimit": trading_constants.CCXT_OHLCV_CACHE_LIMIT,
+            "tradesLimit": trading_constants.CCXT_TRADES_CACHE_LIMIT,
+            "ordersLimit": trading_constants.CCXT_ORDERS_CACHE_LIMIT,
+            "watchOrderBookLimit": trading_constants.CCXT_WATCH_ORDER_BOOK_LIMIT,
         }
         # add default options
         self.add_options(

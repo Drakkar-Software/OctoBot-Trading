@@ -68,6 +68,11 @@ ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV = os_util.parse_boolean_environment_var(
     "ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV", "True")
 ENABLE_CCXT_VERBOSE = os_util.parse_boolean_environment_var("ENABLE_CCXT_VERBOSE", "False")
 ENABLE_CCXT_RATE_LIMIT = os_util.parse_boolean_environment_var("ENABLE_CCXT_RATE_LIMIT", "True")
+CCXT_DEFAULT_CACHE_LIMIT = int(os.getenv("CCXT_DEFAULT_CACHE_LIMIT", "1000"))  # 1000: default ccxt value
+CCXT_TRADES_CACHE_LIMIT = int(os.getenv("CCXT_TRADES_CACHE_LIMIT", str(CCXT_DEFAULT_CACHE_LIMIT)))
+CCXT_ORDERS_CACHE_LIMIT = int(os.getenv("CCXT_ORDERS_CACHE_LIMIT", str(CCXT_DEFAULT_CACHE_LIMIT)))
+CCXT_OHLCV_CACHE_LIMIT = int(os.getenv("CCXT_OHLCV_CACHE_LIMIT", str(CCXT_DEFAULT_CACHE_LIMIT)))
+CCXT_WATCH_ORDER_BOOK_LIMIT = int(os.getenv("CCXT_WATCH_ORDER_BOOK_LIMIT", str(CCXT_DEFAULT_CACHE_LIMIT)))
 THROTTLED_WS_UPDATES = float(os.getenv("THROTTLED_WS_UPDATES", "0.1"))  # avoid spamming CPU
 MAX_CANDLES_IN_RAM = int(os.getenv("MAX_CANDLES_IN_RAM", "3000"))    # max candles per CandlesManager
 STORAGE_ORIGIN_VALUE = "origin_value"
