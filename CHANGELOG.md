@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.108] - 2024-08-28
+### Added
+- [CCXT] cache size env variables
+### Fixed
+- [OrderState] cleared order issue
+
 ## [2.4.107] - 2024-08-27
 ### Fixed
 - [OrderStorage] non-trading exchanges issues
