@@ -88,10 +88,25 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                         ),
                         self.PRICE_INIT_TIMEOUT
                     )
-            full_history = hist_portfolio_values_manager.get_dict_historical_values()
-            if not (full_history and hist_portfolio_values_manager.ending_portfolio):
-                continue
             reference_market = hist_portfolio_values_manager.portfolio_manager.reference_market
+            full_history = hist_portfolio_values_manager.get_dict_historical_values()
+            if full_history:
+                latest_value = full_history[-1]
+                first_value = full_history[0]
+            else:
+                # use current value
+                latest_value = {
+                    portfolio_history.HistoricalAssetValue.VALUES_KEY: {
+                        reference_market: float(
+                            hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.portfolio_current_value
+                        )
+                    },
+                    portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY:
+                        self.exchange_manager.exchange.get_exchange_current_time(),
+                }
+                first_value = latest_value
+            if not (latest_value and first_value and hist_portfolio_values_manager.ending_portfolio):
+                continue
             price_by_asset.update(
                 hist_portfolio_values_manager.portfolio_manager.portfolio_value_holder.current_crypto_currencies_values
             )
@@ -106,10 +121,10 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                         value[commons_constants.PORTFOLIO_AVAILABLE]
                     ending_portfolio[asset][commons_constants.PORTFOLIO_TOTAL] += \
                         value[commons_constants.PORTFOLIO_TOTAL]
-            current_value += full_history[-1][portfolio_history.HistoricalAssetValue.VALUES_KEY].get(reference_market, 0)
-            min_ts = full_history[0][portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]
+            current_value += latest_value[portfolio_history.HistoricalAssetValue.VALUES_KEY].get(reference_market, 0)
+            min_ts = first_value[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]
             initial_value_by_timestamp[min_ts] = initial_value_by_timestamp.get(min_ts, 0) + \
-                full_history[0][portfolio_history.HistoricalAssetValue.VALUES_KEY].get(reference_market, 0)
+                first_value[portfolio_history.HistoricalAssetValue.VALUES_KEY].get(reference_market, 0)
             history = [
                 history_val
                 for history_val in hist_portfolio_values_manager.get_dict_historical_values()
@@ -121,7 +136,11 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
                     ts = history_val[portfolio_history.HistoricalAssetValue.TIMESTAMP_KEY]
                     value = history_val[portfolio_history.HistoricalAssetValue.VALUES_KEY]
                     if ts in historical_value_by_timestamp:
-                        historical_value_by_timestamp[ts] += value
+                        for key, val in value.items():
+                            if key in historical_value_by_timestamp[ts]:
+                                historical_value_by_timestamp[ts][key] += val
+                            else:
+                                historical_value_by_timestamp[ts][key] = value
                     else:
                         historical_value_by_timestamp[ts] = value
 
