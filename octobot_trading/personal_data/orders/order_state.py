@@ -130,7 +130,10 @@ class OrderState(state_class.State):
             raise octobot_trading.errors.InvalidOrderState(f"Order has already been cleared. Order: {order}")
 
     def _is_synchronization_enabled(self):
-        return self.order.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization
+        return (
+            self.order.exchange_manager is not None and
+            self.order.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization
+        )
 
     def clear(self):
         """
