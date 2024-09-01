@@ -102,8 +102,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             raise octobot_trading.errors.UnreachableExchange(e) from e
-        except ccxt.AuthenticationError:
-            raise ccxt.AuthenticationError
 
     def get_adapter_class(self, adapter_class):
         return adapter_class or ccxt_adapter.CCXTAdapter
@@ -202,7 +200,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def _ensure_auth(self):
         try:
             await self.get_balance()
-        except ccxt.AuthenticationError as e:
+        except (octobot_trading.errors.AuthenticationError, ccxt.AuthenticationError) as e:
             await self.client.close()
             self.unauthenticated_exchange_fallback(e)
         except Exception as e:
@@ -254,13 +252,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         """
         if not kwargs:
             kwargs = {}
-        try:
-            with self.error_describer():
-                return self.adapter.adapt_balance(
-                    await self.client.fetch_balance(params=kwargs)
-                )
-        except ccxt.NotSupported:
-            raise octobot_trading.errors.NotSupported
+        with self.error_describer():
+            return self.adapter.adapt_balance(
+                await self.client.fetch_balance(params=kwargs)
+            )
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_symbol_prices(self,
@@ -927,3 +922,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(err) from err
         except ccxt.RequestTimeout as e:
             raise octobot_trading.errors.FailedRequest(f"Request timeout: {e}") from e
+        except ccxt.AuthenticationError as err:
+            raise octobot_trading.errors.AuthenticationError(err) from err
+        except ccxt.ExchangeError as err:
+            if self.exchange_manager.exchange.is_authentication_error(err):
+                # ensure this is not an unhandled authentication error
+                raise octobot_trading.errors.AuthenticationError(err) from err
+            # otherwise just forward exception
+            raise

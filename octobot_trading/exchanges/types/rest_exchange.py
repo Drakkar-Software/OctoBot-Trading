@@ -107,6 +107,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # text content of errors due to exchange local account permissions (ex: accounts from X country can't trade XYZ)
     # text content of errors due to traded assets for account
     EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to unhandled authentication issues
+    EXCHANGE_AUTHENTICATION_ERRORS: typing.List[typing.Iterable[str]] = []
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
@@ -218,7 +220,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             raise errors.MissingFunds(e) from e
         except ccxt.NotSupported as err:
             raise errors.NotSupported from err
-        except ccxt.AuthenticationError as err:
+        except (errors.AuthenticationError, ccxt.AuthenticationError) as err:
             # invalid api key or missing trading rights
             raise errors.AuthenticationError(
                 f"Error when handling order {err}. Please make sure that trading permissions are on for this API key."
@@ -495,10 +497,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         raise NotImplementedError(f"get_account_id is not implemented on {self.exchange_manager.exchange_name}")
 
     async def get_balance(self, **kwargs: dict):
-        try:
-            return await self.connector.get_balance(**kwargs)
-        except ccxt.AuthenticationError as err:
-            raise errors.AuthenticationError(err) from err
+        return await self.connector.get_balance(**kwargs)
 
     async def get_symbol_prices(self, symbol: str, time_frame: commons_enums.TimeFrames, limit: int = None,
                                 **kwargs: dict) -> typing.Optional[list]:
@@ -952,6 +951,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_exchange_account_traded_symbol_permission_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS)
+        return False
+
+    def is_authentication_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_AUTHENTICATION_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_AUTHENTICATION_ERRORS)
         return False
 
     """
