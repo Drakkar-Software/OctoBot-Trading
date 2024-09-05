@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.110] - 2024-09-05
+### Updated
+[TradingModes] handle NEUTRAL trigger checks
+## Fixed
+[Exchanges] fix order descriptor
+
 ## [2.4.109] - 2024-09-01
 ### Added
 [Exchanges] is_authentication_error
