@@ -198,6 +198,10 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             )
             return can_create_order
 
+        elif state == enums.EvaluatorStates.NEUTRAL.value:
+            self.logger.debug(f"can_create_order: True. No check to perform for {state} state")
+            return True
+
         # other cases like neutral state or unfulfilled previous conditions
         self.logger.debug("can_create_order: return False")
         return False

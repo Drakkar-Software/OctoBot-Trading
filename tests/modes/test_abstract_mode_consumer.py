@@ -66,8 +66,8 @@ async def test_can_create_order():
     min_trigger_symbol = "SUB/BTC"
     min_trigger_market = "ADA/BNB"
 
-    # order from neutral state => false
-    assert not await consumer.can_create_order(symbol, EvaluatorStates.NEUTRAL.value)
+    # order from neutral state => true
+    assert await consumer.can_create_order(symbol, EvaluatorStates.NEUTRAL.value)
 
     # sell order using a currency with 0 available
     assert not await consumer.can_create_order(not_owned_symbol, EvaluatorStates.SHORT.value)
@@ -113,9 +113,9 @@ async def test_can_create_order_unknown_symbols():
     assert await consumer.can_create_order(unknown_symbol, EvaluatorStates.VERY_LONG.value)
 
     # neutral state with unknown symbol, market and everything
-    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.NEUTRAL.value)
-    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.NEUTRAL.value)
-    assert not await consumer.can_create_order(unknown_everything,  EvaluatorStates.NEUTRAL.value)
+    assert await consumer.can_create_order(unknown_symbol, EvaluatorStates.NEUTRAL.value)
+    assert await consumer.can_create_order(unknown_market, EvaluatorStates.NEUTRAL.value)
+    assert await consumer.can_create_order(unknown_everything,  EvaluatorStates.NEUTRAL.value)
 
 
 async def test_valid_create_new_order():
