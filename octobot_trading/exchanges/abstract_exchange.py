@@ -742,9 +742,17 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     def is_creating_order(
         self, order: dict, symbol: str
     ) -> bool:
-        quantity = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.AMOUNT.value]))
-        price = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.PRICE.value]))
-        side = enums.TradeOrderSide(str(order[enums.ExchangeConstantsOrderColumns.SIDE.value]))
+        try:
+            quantity = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.AMOUNT.value] or 0))
+        except decimal.DecimalException:
+            quantity = octobot_trading.constants.ZERO
+        try:
+            price = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.PRICE.value] or 0))
+        except decimal.DecimalException:
+            price = octobot_trading.constants.ZERO
+        side = enums.TradeOrderSide(
+            str(order[enums.ExchangeConstantsOrderColumns.SIDE.value]) or enums.TradeOrderSide.BUY.value
+        )
         return self._get_order_description(side, symbol, quantity, price) in self._creating_exchange_order_descriptions
 
     def _get_order_description(
