@@ -31,7 +31,7 @@ def price_events_manager(event_loop):
 
 @pytest.fixture()
 def prices_manager(event_loop, backtesting_exchange_manager):
-    return PricesManager(backtesting_exchange_manager)
+    return PricesManager(backtesting_exchange_manager, "BTC/USDT")
 
 
 @pytest.fixture()

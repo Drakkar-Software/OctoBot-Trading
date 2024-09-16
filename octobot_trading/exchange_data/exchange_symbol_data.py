@@ -39,7 +39,7 @@ class ExchangeSymbolData:
 
         self.price_events_manager = price_events_manager.PriceEventsManager()
         self.order_book_manager = order_book_manager.OrderBookManager()
-        self.prices_manager = prices_manager.PricesManager(self.exchange_manager)
+        self.prices_manager = prices_manager.PricesManager(self.exchange_manager, self.symbol)
         self.recent_trades_manager = recent_trades_manager.RecentTradesManager()
         self.ticker_manager = ticker_manager.TickerManager()
         self.funding_manager = funding_manager.FundingManager() \

@@ -22,17 +22,19 @@ import octobot_commons.logging as logging
 import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.constants as constants
+import octobot_trading.exchange_channel as exchange_channel
 
 
 class PricesManager(util.Initializable):
     MARK_PRICE_FETCH_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 
-    def __init__(self, exchange_manager):
+    def __init__(self, exchange_manager, symbol: str):
         super().__init__()
         self.mark_price = constants.ZERO
         self.mark_price_set_time = 0
         self.mark_price_from_sources = {}
         self.exchange_manager = exchange_manager
+        self.symbol = symbol
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
         self.price_validity = self._compute_mark_price_validity_timeout()
 
@@ -113,13 +115,39 @@ class PricesManager(util.Initializable):
                     # should never happen in backtesting: mark price is either available
                     # or exchange should be unreachable
                     raise asyncio.TimeoutError()
+                else:
+                    self.logger.debug(
+                        f"Asking for {self.exchange_manager.exchange_name} {self.symbol} mark price update"
+                    )
+                    await self._trigger_mark_price_update()
+
                 await asyncio.wait_for(self.valid_price_received_event.wait(), timeout)
+                self.logger.debug(
+                    f"{self.exchange_manager.exchange_name} {self.symbol} mark price update received: {self.mark_price}"
+                )
             except asyncio.TimeoutError:
                 self.logger.warning("Timeout when waiting for current market price. This probably means that the "
                                     "required mark price market as a very low liquidity. Market price will be "
                                     "available as soon as a trade will happen on this market.")
                 raise
         return self.mark_price
+
+    async def _trigger_mark_price_update(self):
+        # trigger a mark price refresh from a ticker update
+        try:
+            await exchange_channel.get_chan(
+                constants.TICKER_CHANNEL,
+                self.exchange_manager.id
+            ).get_producers()[0].trigger_ticker_update(self.symbol)
+        except IndexError as err:
+            # missing producer
+            self.logger.exception(
+                err,
+                True,
+                f"Missing {constants.TICKER_CHANNEL} channel producer. Can't force mark price update from this channel"
+            )
+        except Exception as err:
+            self.logger.exception(err, True, f"Unexpected error when triggering ticker update: {err}")
 
     def _set_mark_price_value(self, mark_price):
         """
