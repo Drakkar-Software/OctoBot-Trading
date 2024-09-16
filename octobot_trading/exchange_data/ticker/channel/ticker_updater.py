@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import contextlib
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
@@ -33,6 +34,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
         self._added_pairs = []
         self.is_fetching_future_data = False
         self.refresh_time = self.TICKER_REFRESH_TIME
+        self.updating_pairs = set()
 
     async def start(self):
         if self._should_use_future():
@@ -62,15 +64,37 @@ class TickerUpdater(ticker_channel.TickerProducer):
 
     async def _fetch_ticker(self, pair):
         try:
-            ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
-            if self._is_valid(ticker):
-                await self.push(pair, ticker)
-            else:
-                self.logger.debug(f"Ignored incomplete ticker: {ticker}")
+            await self.fetch_and_push_pair(pair)
         except errors.FailedRequest as e:
             self.logger.warning(str(e))
             # avoid spamming on disconnected situation
             await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+
+    async def fetch_and_push_pair(self, pair: str):
+        with self._single_pair_update(pair) as can_update:
+            if can_update:
+                ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
+                if self._is_valid(ticker):
+                    await self.push(pair, ticker)
+                else:
+                    self.logger.debug(f"Ignored incomplete ticker: {ticker}")
+            else:
+                self.logger.debug(f"Skipping {pair} ticker update request: an update is already processing")
+
+    async def trigger_ticker_update(self, symbol: str):
+        await self.fetch_and_push_pair(symbol)
+
+    @contextlib.contextmanager
+    def _single_pair_update(self, pair: str):
+        can_update = False
+        try:
+            can_update = pair not in self.updating_pairs
+            if can_update:
+                self.updating_pairs.add(pair)
+            yield can_update
+        finally:
+            if can_update:
+                self.updating_pairs.remove(pair)
 
     @staticmethod
     def _is_valid(ticker):
