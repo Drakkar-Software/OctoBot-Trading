@@ -115,6 +115,13 @@ def get_daily_base_and_quote_volume_from_ticker(
     reference_price = reference_price or decimal.Decimal(str(
         ticker[octobot_trading.enums.ExchangeConstantsTickersColumns.CLOSE.value]
     ))
+    return compute_base_and_quote_volume(base_volume, quote_volume, reference_price)
+
+def compute_base_and_quote_volume(
+    base_volume: decimal.Decimal,
+    quote_volume: decimal.Decimal,
+    reference_price: decimal.Decimal
+) -> (decimal.Decimal, decimal.Decimal):
     if base_volume:
         base_volume = decimal.Decimal(str(base_volume))
         if not quote_volume or decimal.Decimal(str(quote_volume)).is_nan():
@@ -125,7 +132,7 @@ def get_daily_base_and_quote_volume_from_ticker(
         if not base_volume or decimal.Decimal(str(base_volume)).is_nan():
             # compute from the other if missing
             base_volume = quote_volume / reference_price
-    if not (base_volume and quote_volume):
+    if not (base_volume and quote_volume) or (base_volume.is_nan() or quote_volume.is_nan()):
         raise ValueError(
             f"Missing volume {base_volume=} {quote_volume=}"
         )
