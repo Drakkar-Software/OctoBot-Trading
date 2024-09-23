@@ -192,6 +192,10 @@ class HistoricalPortfolioValueManager(util.Initializable):
 
     def _add_historical_portfolio_value(self, timestamp, value_by_currency):
         if len(self.historical_portfolio_value) >= self.max_history_size:
+            self.logger.info(
+                f"Clearing oldest historical portfolio value as the maximum historical values ({self.max_history_size}) "
+                f"has been reached"
+            )
             # remove the oldest element
             self.historical_portfolio_value.popitem(0)
         self.historical_portfolio_value[timestamp] = \
