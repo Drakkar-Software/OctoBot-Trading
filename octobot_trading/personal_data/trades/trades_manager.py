@@ -184,6 +184,10 @@ class TradesManager(util.Initializable):
             self.logger.exception(err, True, f"Error when loading local trade history {err}")
 
     def _remove_oldest_trades(self, nb_to_remove):
+        self.logger.info(
+            f"Clearing the {nb_to_remove} oldest historical trades as the maximum count of trades ("
+            f"{self.MAX_TRADES_COUNT}) has been reached"
+        )
         for _ in range(nb_to_remove):
             self.trades.popitem(last=False)
 
