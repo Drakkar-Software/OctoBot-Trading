@@ -369,8 +369,9 @@ class Trader(util.Initializable):
                                                          wait_for_cancelling, cancelling_timeout)
         return False
 
-    async def _handle_order_cancellation(self, order, ignored_order,
-                                         wait_for_cancelling: bool, cancelling_timeout: float) -> bool:
+    async def _handle_order_cancellation(
+        self, order, ignored_order, wait_for_cancelling: bool, cancelling_timeout: float
+    ) -> bool:
         success = True
         if order.is_waiting_for_chained_trigger:
             # order will just never get created
@@ -386,17 +387,19 @@ class Trader(util.Initializable):
                         )
                     except errors.NotSupported:
                         raise
-                    except (errors.OrderCancelError, Exception) as err:
+                    except (errors.OrderCancelError, Exception) as inner_err:
                         # retry to cancel order
-                        self.logger.debug(f"Failed to cancel order ({err} {err.__class__.__name__}), retrying")
+                        self.logger.info(
+                            f"Failed to cancel order ({inner_err} {inner_err.__class__.__name__}), retrying"
+                        )
                         order_status = await self.exchange_manager.exchange.cancel_order(
                             order.exchange_order_id, order.symbol, order.order_type
                         )
             except errors.OrderCancelError as err:
                 if await self._handle_order_cancel_error(order, err, wait_for_cancelling, cancelling_timeout):
                     return True
-            except Exception as e:
-                self.logger.exception(e, True, f"Failed to cancel order {order}")
+            except Exception as err:
+                self.logger.exception(err, True, f"Failed to cancel order {order}")
                 return False
             if order_status is enums.OrderStatus.CANCELED:
                 order.status = octobot_trading.enums.OrderStatus.CANCELED
@@ -446,6 +449,11 @@ class Trader(util.Initializable):
                 await self._wait_for_order_cancel(order, cancelling_timeout)
             return True
         elif order.is_open():
+            if isinstance(err, errors.OrderNotFoundOnCancelError):
+                raise errors.OrderNotFoundOnCancelError(
+                    f"Tried to cancel an order that can't be found, it might be cancelled or filled already ({err}). "
+                    f"Order: {order}"
+                ) from err
             raise errors.OpenOrderError(
                 f"Order is open, but can't be cancelled. This is unexpected. Order: {order}"
             ) from err
