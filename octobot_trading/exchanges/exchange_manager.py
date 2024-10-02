@@ -311,10 +311,10 @@ class ExchangeManager(util.Initializable):
         return (
             configuration.decrypt_element_if_possible(
                 common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None
-            ).strip(" "),   # remove leading and trailing whitespaces if any
+            ).strip(' "').strip("'"),   # remove leading and trailing ", ' and whitespaces if any
             configuration.decrypt_element_if_possible(
                 common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None
-            ).strip(" "),   # remove leading and trailing whitespaces if any
+            ).strip(' "').strip("'"),   # remove leading and trailing ", ' and whitespaces if any
             configuration.decrypt_element_if_possible(
                 common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
             ),
