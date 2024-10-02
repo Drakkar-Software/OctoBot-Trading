@@ -245,8 +245,10 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             )
         )
         if missing_exchange_order_ids:
-            self.logger.debug(f"{len(missing_exchange_order_ids)} open orders are missing on exchange, "
-                              f"synchronizing with exchange (exchange ids: {missing_exchange_order_ids})...")
+            self.logger.info(
+                f"{len(missing_exchange_order_ids)} open orders are missing on exchange, "
+                f"synchronizing with exchange (exchange ids: {missing_exchange_order_ids})..."
+            )
             synchronize_tasks = []
             for missing_order_id in missing_exchange_order_ids:
                 try:
@@ -254,11 +256,13 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                         get_order(None, exchange_order_id=missing_order_id)
                     if order_to_update.state is not None:
                         # catch exception not to prevent multiple synchronize to be cancelled in asyncio.gather
-                        synchronize_tasks.append(order_to_update.state.synchronize(force_synchronization=True,
-                                                                                   catch_exception=True))
+                        synchronize_tasks.append(
+                            order_to_update.state.synchronize(force_synchronization=True, catch_exception=True)
+                        )
                 except KeyError:
-                    self.logger.error(f"Order with id {missing_order_id} could not be synchronized: "
-                                      f"missing from order manager")
+                    self.logger.error(
+                        f"Order with id {missing_order_id} could not be synchronized: missing from order manager"
+                    )
             await asyncio.gather(*synchronize_tasks)
 
     async def send(

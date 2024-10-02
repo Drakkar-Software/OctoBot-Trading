@@ -194,17 +194,17 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :return: True if the order was updated
         """
         exchange_name = self.channel.exchange_manager.exchange_name
-        self.logger.debug(f"Requested update for {order} on {exchange_name}")
+        self.logger.info(f"Requested update for {order} on {exchange_name}")
         raw_order = await self.channel.exchange_manager.exchange.get_order(order.exchange_order_id, order.symbol)
 
         if raw_order is not None:
-            self.logger.debug(f"Received update for {order} on {exchange_name}: {raw_order}")
+            self.logger.info(f"Received update for {order} on {exchange_name}: {raw_order}")
 
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                 order.exchange_order_id, raw_order, should_notify=should_notify
             )
         else:
-            self.logger.debug(f"Can't received update for {order} on {exchange_name}: received order is None")
+            self.logger.info(f"Can't received update for {order} on {exchange_name}: received order is None")
 
     async def stop(self) -> None:
         """
