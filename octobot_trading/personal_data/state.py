@@ -29,7 +29,10 @@ class State(util.Initializable):
         super().__init__()
 
         # default state
-        self.state = enums.States.UNKNOWN
+        self.state: enums.States = enums.States.UNKNOWN
+
+        # state when refreshing, is only indicative and can be outdated du to avoid concurrency issues
+        self._underlying_refreshed_state: enums.States = enums.States.UNKNOWN
 
         # if this state has been created from exchange data or OctoBot internal mechanism
         self.is_from_exchange_data = is_from_exchange_data
@@ -42,6 +45,9 @@ class State(util.Initializable):
 
         # set at True after synchronize has been called
         self.has_already_been_synchronized_once = False
+
+        # how many times this state has been synchronized
+        self.synchronization_attempts = 0
 
     def is_pending(self) -> bool:
         """
@@ -179,6 +185,8 @@ class State(util.Initializable):
     async def refresh_operation(self):
         self.get_logger().debug("Starting refresh_operation")
         previous_state = self.state
+        # don't rely on self._underlying_refreshed_state only to avoid concurrency issues (use local variable instead)
+        self._underlying_refreshed_state = previous_state
         async with self.lock:
             self.state = enums.States.REFRESHING
         try:
@@ -187,6 +195,7 @@ class State(util.Initializable):
             async with self.lock:
                 if self.state is enums.States.REFRESHING:
                     self.state = previous_state
+                self._underlying_refreshed_state = enums.States.UNKNOWN
             self.get_logger().debug("Completed refresh_operation")
 
     async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:

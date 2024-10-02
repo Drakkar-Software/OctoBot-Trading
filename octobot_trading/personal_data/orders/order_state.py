@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 import octobot_commons.logging as logging
 
@@ -24,6 +25,8 @@ import octobot_trading.personal_data.state as state_class
 
 
 class OrderState(state_class.State):
+    MAX_SYNCHRONIZATION_ATTEMPTS = -1   # implement self._force_final_state() when this is enabled
+
     def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
         super().__init__(is_from_exchange_data)
 
@@ -58,6 +61,12 @@ class OrderState(state_class.State):
         :return: True if the Order is considered as canceled
         """
         return False
+
+    def is_max_synchronization_attempts_reached(self) -> bool:
+        """
+        :return: True if the MAX_SYNCHRONIZATION_ATTEMPTS is set and has been reached
+        """
+        return -1 < self.__class__.MAX_SYNCHRONIZATION_ATTEMPTS <= self.synchronization_attempts
 
     def get_logger(self):
         """
@@ -98,27 +107,40 @@ class OrderState(state_class.State):
             self.order = new_order
             self.order.state = self
 
+    def _force_final_state(self):
+        raise NotImplementedError("_force_final_state is not implemented")
+
     async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
         """
         Ask OrdersChannel Internal producer to refresh the order from the exchange
         :param force_synchronization: When True, for the update of the order from the exchange
         :return: the result of OrdersProducer.update_order_from_exchange()
         """
-        try:
-            self.ensure_not_cleared(self.order)
+        if self.is_max_synchronization_attempts_reached():
             self.get_logger().info(
-                f"Synchronizing order {self.order} with {self.order.exchange_manager.exchange_name} exchange"
+                f"Forcing {self.__class__.__name__} final state after {self.MAX_SYNCHRONIZATION_ATTEMPTS} "
+                f"synchronization attempts for order {self.order}"
             )
-            await exchange_channel.get_chan(
-                octobot_trading.constants.ORDERS_CHANNEL,
-                self.order.exchange_manager.id
-            ).get_internal_producer().update_order_from_exchange(
-                order=self.order,
-                wait_for_refresh=True,
-                force_job_execution=force_synchronization,
-            )
-        except octobot_trading.errors.InvalidOrderState:
-            self.get_logger().debug(f"Skipping exchange synchronisation as order has already been closed.")
+            self._force_final_state()
+            asyncio.create_task(self.on_refresh_successful())
+        else:
+            try:
+                self.ensure_not_cleared(self.order)
+                self.get_logger().info(
+                    f"Synchronizing [{self._underlying_refreshed_state.value}] order {self.order} "
+                    f"with {self.order.exchange_manager.exchange_name} exchange"
+                )
+                self.synchronization_attempts += 1
+                await exchange_channel.get_chan(
+                    octobot_trading.constants.ORDERS_CHANNEL,
+                    self.order.exchange_manager.id
+                ).get_internal_producer().update_order_from_exchange(
+                    order=self.order,
+                    wait_for_refresh=True,
+                    force_job_execution=force_synchronization,
+                )
+            except octobot_trading.errors.InvalidOrderState:
+                self.get_logger().debug(f"Skipping exchange synchronisation as order has already been closed.")
 
     async def wait_for_next_state(self, timeout) -> None:
         # terminate is called at the end of the state for most order states

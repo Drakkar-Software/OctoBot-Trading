@@ -61,6 +61,7 @@ class PositionState(state_class.State):
         :param force_synchronization: When True, for the update of the position from the exchange
         :return: the result of PositionsProducer.update_position_from_exchange()
         """
+        self.synchronization_attempts += 1
         return self.position.exchange_manager.exchange_personal_data.positions_manager.\
             refresh_real_trader_position(self.position, force_job_execution=force_synchronization)
 

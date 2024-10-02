@@ -47,11 +47,13 @@ class PendingCreationOrderState(order_state.OrderState):
             # open orders refresh.
             self.ensure_not_cleared(self.order)
             self.get_logger().info(
-                f"Synchronizing order {self.order} with {self.order.exchange_manager.exchange_name} exchange"
+                f"Synchronizing [{self._underlying_refreshed_state.value}] order {self.order} "
+                f"with {self.order.exchange_manager.exchange_name} exchange"
             )
             while self.order.is_pending_creation() \
                     and time.time() - t0 < octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT:
                 iteration += 1
+                self.synchronization_attempts += 1
                 await exchange_channel.get_chan(
                     octobot_trading.constants.ORDERS_CHANNEL,
                     self.order.exchange_manager.id

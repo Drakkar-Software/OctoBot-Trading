@@ -21,6 +21,8 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class FillOrderState(order_state.OrderState):
+    MAX_SYNCHRONIZATION_ATTEMPTS = 5
+
     def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
         super().__init__(
             order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
@@ -34,9 +36,12 @@ class FillOrderState(order_state.OrderState):
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
-            self.state = enums.OrderStates.FILLED
-            self.order.status = enums.OrderStatus.FILLED
+            self._force_final_state()
         return await super().initialize_impl()
+
+    def _force_final_state(self):
+        self.state = enums.OrderStates.FILLED
+        self.order.status = enums.OrderStatus.FILLED
 
     def is_pending(self) -> bool:
         return self.state is enums.OrderStates.FILLING

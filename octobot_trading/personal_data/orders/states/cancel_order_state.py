@@ -22,6 +22,8 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class CancelOrderState(order_state.OrderState):
+    MAX_SYNCHRONIZATION_ATTEMPTS = 5
+
     def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
         super().__init__(
             order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
@@ -32,8 +34,7 @@ class CancelOrderState(order_state.OrderState):
 
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:
         if forced:
-            self.state = enums.OrderStates.CANCELED
-            self.order.status = enums.OrderStatus.CANCELED
+            self._force_final_state()
 
         if self.order.order_group and self.enable_associated_orders_creation:
             await self.order.order_group.on_cancel(self.order, ignored_orders=[ignored_order])
@@ -52,6 +53,10 @@ class CancelOrderState(order_state.OrderState):
     def is_status_cancelled(self) -> bool:
         return not self.is_status_pending() and self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE
 
+    def _force_final_state(self):
+        self.state = enums.OrderStates.CANCELED
+        self.order.status = enums.OrderStatus.CANCELED
+
     def allows_new_status(self, status) -> bool:
         """
         Don't allow going from canceling to open
@@ -68,8 +73,9 @@ class CancelOrderState(order_state.OrderState):
         if not self.has_already_been_synchronized_once:
             # If we want to sync this state, it means the order is being canceled by the exchange but is not
             # fully canceled yet. Giving some time to the exchange before re-requesting it.
-            self.get_logger().debug(f"{self.__class__.__name__} still pending, "
-                                    f"synchronizing in {self.PENDING_REFRESH_INTERVAL}s")
+            self.get_logger().info(
+                f"{self.__class__.__name__} still pending, synchronizing in {self.PENDING_REFRESH_INTERVAL}s"
+            )
             await asyncio.sleep(self.PENDING_REFRESH_INTERVAL)
         await super()._synchronize_with_exchange(force_synchronization=force_synchronization)
 
