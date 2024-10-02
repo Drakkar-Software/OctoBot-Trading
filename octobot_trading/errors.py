@@ -51,6 +51,12 @@ class OrderCancelError(Exception):
     """
 
 
+class OrderNotFoundOnCancelError(OrderCancelError):
+    """
+    Raised upon a failed order cancel because order is not found
+    """
+
+
 class UnexpectedExchangeSideOrderStateError(Exception):
     """
     Raised when an order is in an unexpected state when fetched from exchange
