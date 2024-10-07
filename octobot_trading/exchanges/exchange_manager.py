@@ -308,13 +308,16 @@ class ExchangeManager(util.Initializable):
         if self.ignore_config or not self.should_decrypt_token() or self.without_auth:
             return "", "", "", ""
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
+        key = configuration.decrypt_element_if_possible(
+            common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None
+        )
+        secret = configuration.decrypt_element_if_possible(
+            common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None
+        )
         return (
-            configuration.decrypt_element_if_possible(
-                common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None
-            ).strip(' "').strip("'"),   # remove leading and trailing ", ' and whitespaces if any
-            configuration.decrypt_element_if_possible(
-                common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None
-            ).strip(' "').strip("'"),   # remove leading and trailing ", ' and whitespaces if any
+            # remove leading and trailing ", ' and whitespaces if any
+            key.strip(' "').strip("'") if key else key,
+            secret.strip(' "').strip("'") if secret else secret,
             configuration.decrypt_element_if_possible(
                 common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
             ),
