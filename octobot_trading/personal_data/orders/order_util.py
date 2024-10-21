@@ -105,10 +105,41 @@ def check_cost(total_order_price, min_cost):
     return True
 
 
+def get_valid_split_orders(
+    quantity: decimal.Decimal, prices: list[decimal.Decimal], symbol_market
+) -> (list[decimal.Decimal], list[decimal.Decimal]):
+    if len(prices) < 1:
+        return [], []
+    if len(prices) < 2:
+        return [quantity], [prices[0]]
+    min_quantity, max_quantity, min_cost, max_cost, min_price, max_price = get_min_max_amounts(symbol_market)
+    min_quantity = None if min_quantity is None else decimal.Decimal(f"{min_quantity}")
+    max_quantity = None if max_quantity is None else decimal.Decimal(f"{max_quantity}")
+    min_cost = None if min_cost is None else decimal.Decimal(f"{min_cost}")
+    max_cost = None if max_cost is None else decimal.Decimal(f"{max_cost}")
+    min_price = None if min_price is None else decimal.Decimal(f"{min_price}")
+    max_price = None if max_price is None else decimal.Decimal(f"{max_price}")
+    # try to split quantity evenly amount prices
+    current_supported_orders_count = decimal.Decimal(str(len(prices)))
+    while current_supported_orders_count > constants.ONE:
+        order_vol = quantity / current_supported_orders_count
+        candidate_prices = prices[:int(current_supported_orders_count)]
+        first_price = min(candidate_prices)
+        last_price = max(candidate_prices)
+        if _are_orders_too_small(min_quantity, min_cost, min_price, first_price, order_vol):
+            # reduce orders count to increase quantity
+            current_supported_orders_count -= 1
+        elif _are_orders_too_large(max_quantity, max_cost, max_price, last_price, order_vol):
+            raise errors.InvalidArgumentError(f"Order volume ({order_vol}) is too large")
+        else:
+            return [order_vol] * int(current_supported_orders_count), candidate_prices
+    # default to full quantity and first price
+    return [quantity], [prices[0]]
+
+
 def get_split_orders_count_and_increment(
     lower_price, higher_price, quantity, orders_count, symbol_market, add_increment_to_min_price
-) \
-        -> (int, decimal.Decimal):
+) -> (int, decimal.Decimal):
     """
     :param lower_price: smallest order price
     :param higher_price: largest order price

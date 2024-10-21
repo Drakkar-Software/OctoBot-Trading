@@ -537,6 +537,71 @@ async def test_get_order_size_portfolio_percent(trader_simulator):
     ) == decimal.Decimal("10")
 
 
+def test_get_valid_split_orders():
+    # example SOL/BTC values from 12/09/2023
+    symbol_market = {
+        enums.ExchangeConstantsMarketStatusColumns.LIMITS.value: {
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MIN.value: 0.01,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MAX.value: 90000000.0,
+            },
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST_MIN.value: 0.0001,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST_MAX.value: 9000000.0
+            },
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value: 1e-07,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value: 1000.0
+            },
+        },
+        enums.ExchangeConstantsMarketStatusColumns.PRECISION.value: {
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value: 7,
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value: 2
+        }
+    }
+    # all valid values
+    prices = [
+        decimal.Decimal("0.0006858"),
+        decimal.Decimal("0.0006908"),
+        decimal.Decimal("0.0006938"),
+        decimal.Decimal("0.0006958"),
+    ]
+    assert personal_data.get_valid_split_orders(
+        decimal.Decimal("1"),
+        prices,
+        symbol_market
+    ) == ([decimal.Decimal("1") / len(prices)] * len(prices), prices)
+
+    # too small amount for cost: adapt to 3 orders
+    assert personal_data.get_valid_split_orders(
+        decimal.Decimal("0.5"),
+        prices,
+        symbol_market
+    ) == ([decimal.Decimal("0.5") / 3] * 3, prices[:3])
+
+    # too small amount for cost: adapt to 1 orders
+    assert personal_data.get_valid_split_orders(
+        decimal.Decimal("0.1"),
+        prices,
+        symbol_market
+    ) == ([decimal.Decimal('0.1')], [decimal.Decimal('0.0006858')])
+
+    # too small amount for cost (because of the lowest price order amount that gets truncated because of
+    # exchange precision rules): adapt to 0 orders
+
+    prices = [
+        decimal.Decimal("0.0006963"),
+        decimal.Decimal("0.0006908"),
+        decimal.Decimal("0.0006938"),
+        decimal.Decimal("0.0006958"),
+    ]
+    assert personal_data.get_valid_split_orders(
+        decimal.Decimal("0.14985"),
+        prices,
+        symbol_market,
+    ) == ([decimal.Decimal('0.14985')], [decimal.Decimal('0.0006963')])
+
+
 def test_get_split_orders_count_and_increment():
     # example SOL/BTC values from 12/09/2023
     symbol_market = {
