@@ -321,6 +321,7 @@ class Trader(util.Initializable):
             order, chained_order.order_type
         )
         if is_bundled:
+            # warning: doesn't work for multiple stop loss / take profits
             if chained_order.order_type is enums.TraderOrderType.STOP_LOSS:
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     order,
