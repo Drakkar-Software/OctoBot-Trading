@@ -30,3 +30,11 @@ class ProxyConfig:
     socks_proxy_callback: typing.Optional[typing.Callable] = None
     # enable trust_env in exchange's aiohttp.ClientSession
     aiohttp_trust_env: bool = octobot_trading.constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
+
+    @classmethod
+    def default_env_var_config(cls):
+        return cls(
+            http_proxy=octobot_trading.constants.EXCHANGE_HTTP_PROXY_AUTHENTICATED_URL or None,
+            https_proxy=octobot_trading.constants.EXCHANGE_HTTPS_PROXY_AUTHENTICATED_URL or None,
+            socks_proxy=octobot_trading.constants.EXCHANGE_SOCKS_PROXY_AUTHENTICATED_URL or None,
+        )

@@ -58,7 +58,7 @@ class ExchangeManager(util.Initializable):
         self.without_auth: bool = False
         self.check_credentials: bool = True
         self.enable_storage: bool = True
-        self.proxy_config: exchanges.ProxyConfig = exchanges.ProxyConfig()
+        self.proxy_config: exchanges.ProxyConfig = exchanges.ProxyConfig.default_env_var_config()
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
