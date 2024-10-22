@@ -33,7 +33,7 @@ class ExchangeAuthDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot
     api_key: str = ""
     api_secret: str = ""
     api_password: str = ""
-    oauth_token: str = ""
+    access_token: str = ""
     exchange_type: str = ""
     sandboxed: bool = False
     broker_enabled: bool = False

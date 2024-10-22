@@ -46,15 +46,23 @@ def create_client(
                     f"exchange with ccxt in version {ccxt.__version__}")
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_manager.exchange_name):
         try:
-            key, secret, password, uid = exchange_manager.get_exchange_credentials(exchange_manager.exchange_name)
+            auth_token_header_prefix = None
+            key, secret, password, uid, auth_token = exchange_manager.get_exchange_credentials(
+                exchange_manager.exchange_name
+            )
             if keys_adapter:
-                key, secret, password, uid = keys_adapter(key, secret, password, uid)
+                key, secret, password, uid, auth_token, auth_token_header_prefix = keys_adapter(
+                    key, secret, password, uid, auth_token
+                )
             if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
             if should_authenticate and not exchange_manager.is_backtesting:
-                client = exchange_class(_get_client_config(options, headers, additional_config,
-                                                           key, secret, password, uid))
+                client = exchange_class(_get_client_config(
+                    options, headers, additional_config,
+                    api_key=key, secret=secret, password=password, uid=uid,
+                    auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
+                ))
                 is_authenticated = True
                 if exchange_manager.check_credentials:
                     client.checkRequiredCredentials()

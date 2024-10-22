@@ -219,7 +219,7 @@ class AbstractWebsocketExchange:
         raise NotImplementedError(f"get_feeds_count is not implemented")
 
     def _should_authenticate(self):
-        api_key, api_secret, _, _ = self.get_exchange_credentials()
+        api_key, api_secret, _, _, _ = self.get_exchange_credentials()
         return not self.exchange_manager.without_auth \
             and not self.exchange_manager.is_trader_simulated \
             and api_key and api_secret
