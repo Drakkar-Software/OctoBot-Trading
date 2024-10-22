@@ -13,23 +13,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import dataclasses
+import typing
+import octobot_trading.constants
 
 
-from octobot_trading.exchanges.config import exchange_config_data
-from octobot_trading.exchanges.config.exchange_config_data import (
-    ExchangeConfig,
-)
-from octobot_trading.exchanges.config import backtesting_exchange_config
-from octobot_trading.exchanges.config.backtesting_exchange_config import (
-    BacktestingExchangeConfig,
-)
-from octobot_trading.exchanges.config import proxy_config
-from octobot_trading.exchanges.config.proxy_config import (
-    ProxyConfig,
-)
-
-__all__ = [
-    "ExchangeConfig",
-    "BacktestingExchangeConfig",
-    "ProxyConfig",
-]
+@dataclasses.dataclass
+class ProxyConfig:
+    # REST proxy
+    http_proxy: typing.Optional[str] = None
+    http_proxy_callback: typing.Optional[typing.Callable] = None
+    https_proxy: typing.Optional[str] = None
+    https_proxy_callback: typing.Optional[typing.Callable] = None
+    # Websocket proxy
+    socks_proxy : typing.Optional[str] = None
+    socks_proxy_callback: typing.Optional[typing.Callable] = None
+    # enable trust_env in exchange's aiohttp.ClientSession
+    aiohttp_trust_env: bool = octobot_trading.constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV

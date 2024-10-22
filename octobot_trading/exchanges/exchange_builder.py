@@ -269,6 +269,10 @@ class ExchangeBuilder:
         self.exchange_manager.bot_id = bot_id
         return self
 
+    def set_proxy_config(self, proxy_config):
+        self.exchange_manager.proxy_config = proxy_config
+        return self
+
     def disable_trading_mode(self):
         self._is_using_trading_modes = False
         return self
