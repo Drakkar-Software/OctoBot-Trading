@@ -25,6 +25,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
+import octobot_trading.exchanges.config.proxy_config as proxy_config_import
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 
@@ -62,14 +63,16 @@ def create_client(
         except (ccxt.AuthenticationError, Exception) as e:
             if unauthenticated_exchange_fallback is None:
                 return get_unauthenticated_exchange(
-                    exchange_class, options, headers, additional_config
+                    exchange_class, options, headers, additional_config, exchange_manager.proxy_config
                 ), False
             return unauthenticated_exchange_fallback(e), False
     else:
-        client = get_unauthenticated_exchange(exchange_class, options, headers, additional_config)
+        client = get_unauthenticated_exchange(
+            exchange_class, options, headers, additional_config, exchange_manager.proxy_config
+        )
         logger.error("configuration issue: missing login information !")
     client.logger.setLevel(logging.INFO)
-    _use_http_proxy_if_necessary(client)
+    _use_proxy_if_necessary(client, exchange_manager.proxy_config)
     return client, is_authenticated
 
 
@@ -95,9 +98,11 @@ async def close_client(client):
     client.orderbooks = {}
 
 
-def get_unauthenticated_exchange(exchange_class, options, headers, additional_config):
+def get_unauthenticated_exchange(
+    exchange_class, options, headers, additional_config, proxy_config: proxy_config_import.ProxyConfig
+):
     client = exchange_class(_get_client_config(options, headers, additional_config))
-    _use_http_proxy_if_necessary(client)
+    _use_proxy_if_necessary(client, proxy_config)
     return client
 
 
@@ -240,11 +245,29 @@ def converted_ccxt_common_errors(f):
     return converted_ccxt_common_errors_wrapper
 
 
-def _use_http_proxy_if_necessary(client):
-    client.aiohttp_trust_env = constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
+def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfig):
+    client.aiohttp_trust_env = proxy_config.aiohttp_trust_env
+    if proxy_config.http_proxy:
+        client.http_proxy = proxy_config.http_proxy
+    if proxy_config.http_proxy_callback:
+        client.http_proxy_callback = proxy_config.http_proxy_callback
+    if proxy_config.https_proxy:
+        client.https_proxy = proxy_config.https_proxy
+    if proxy_config.https_proxy_callback:
+        client.https_proxy_callback = proxy_config.https_proxy_callback
+    if proxy_config.socks_proxy:
+        client.socks_proxy = proxy_config.socks_proxy
+    if proxy_config.socks_proxy_callback:
+        client.socks_proxy_callback = proxy_config.socks_proxy_callback
 
 
-def _get_client_config(options, headers, additional_config, api_key=None, secret=None, password=None, uid=None):
+def _get_client_config(
+    options, headers, additional_config,
+    api_key=None, secret=None, password=None, uid=None,
+    auth_token=None, auth_token_header_prefix=None
+):
+    if auth_token is not None:
+        headers["Authorization"] = f"{auth_token_header_prefix or ''}{auth_token}"
     config = {
         'verbose': constants.ENABLE_CCXT_VERBOSE,
         'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,

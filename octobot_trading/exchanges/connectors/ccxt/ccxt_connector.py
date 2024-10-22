@@ -256,7 +256,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.handle_token_error(err)
         return ccxt_client_util.get_unauthenticated_exchange(
             self.exchange_type,
-            self.options, self.headers, self.additional_config
+            self.options, self.headers, self.additional_config,
+            self.exchange_manager.proxy_config
         )
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
