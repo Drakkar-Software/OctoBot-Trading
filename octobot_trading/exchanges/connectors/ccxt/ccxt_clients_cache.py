@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import cachetools
+import json
 
 import octobot_commons.constants as commons_constants
 
@@ -22,7 +23,7 @@ _MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=commons_constants.DAY
 
 
 def get_client_key(client) -> str:
-    return client.__class__.__name__
+    return f"{client.__class__.__name__}:{json.dumps(client.urls.get('api'))}"
 
 
 def get_exchange_parsed_markets(exchange: str):
