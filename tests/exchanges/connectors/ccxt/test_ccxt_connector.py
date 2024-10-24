@@ -46,6 +46,7 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(ccxt_connector):
             self.timeframes = None
             self.markets = {}
             self.set_markets_calls = []
+            self.urls = {}
 
         async def load_markets(self, reload=False):
             pass
@@ -71,6 +72,7 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector)
             self.timeframes = []
             self.markets = {}
             self.set_markets_calls = []
+            self.urls = {}
 
         async def load_markets(self, reload=False):
             pass
@@ -106,6 +108,7 @@ async def test_initialize_impl(ccxt_connector):
             ]
             self.markets = {}
             self.set_markets_calls = []
+            self.urls = {}
 
         async def load_markets(self, reload=False):
             pass
