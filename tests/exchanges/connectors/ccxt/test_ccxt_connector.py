@@ -25,7 +25,8 @@ import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clie
 import pytest
 
 import tests.exchanges.connectors.ccxt.mock_exchanges_data as mock_exchanges_data
-from tests.exchanges import exchange_manager, future_simulated_exchange_manager, set_future_exchange_fees
+from tests.exchanges import exchange_manager, future_simulated_exchange_manager, set_future_exchange_fees, \
+    register_market_status_mocks
 from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, \
     DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, DEFAULT_FUTURE_SYMBOL_LEVERAGE
 
@@ -178,9 +179,7 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     if forced_markets := mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS.get(
         fut_exchange_manager_inst.exchange_name, None
     ):
-        ccxt_clients_cache.set_exchange_parsed_markets(
-            fut_exchange_manager_inst.exchange_name, forced_markets
-        )
+        register_market_status_mocks(fut_exchange_manager_inst.exchange_name)
     await fut_ccxt_exchange.load_symbol_markets()
     # enforce taker and maker values
     set_future_exchange_fees(fut_ccxt_exchange, future_symbol, taker=future_fees_value, maker=future_fees_value)

@@ -17,7 +17,6 @@ import contextlib
 import time
 import typing
 
-import ccxt.async_support
 import pytest
 from ccxt import Exchange
 
@@ -295,7 +294,7 @@ class RealExchangeTester:
                 exchange_manager.exchange.get_market_status(self.SYMBOL_3)
 
     def _ensure_market_status_cachability(self, exchange_manager):
-        client_using_cached_markets = getattr(ccxt.async_support, self.EXCHANGE_NAME)()
+        client_using_cached_markets = ccxt_client_util.ccxt_exchange_class_factory(self.EXCHANGE_NAME)()
         ccxt_client_util.load_markets_from_cache(client_using_cached_markets)
         assert exchange_manager.exchange.connector.client.markets == client_using_cached_markets.markets
 
