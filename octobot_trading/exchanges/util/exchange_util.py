@@ -33,6 +33,7 @@ import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.implementations as exchanges_implementations
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
+import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.exchange_details as exchange_details
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
@@ -128,7 +129,7 @@ async def get_exchange_details(
                 aiohttp_session, auto_filled_exchanges[exchange_name][1], exchange_name
             )
     try:
-        exchange = getattr(ccxt, exchange_name)()
+        exchange = ccxt_client_util.ccxt_exchange_class_factory(exchange_name)()
         return exchange_details.ExchangeDetails(
             exchange.id,
             exchange.name,

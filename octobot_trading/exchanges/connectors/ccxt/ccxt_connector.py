@@ -200,7 +200,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def _create_exchange_type(self):
         if self.is_supporting_exchange(self.rest_name):
-            self.exchange_type = getattr(ccxt, self.rest_name)
+            self.exchange_type = ccxt_client_util.ccxt_exchange_class_factory(self.rest_name)
         else:
             self.exchange_type = self.rest_name
 

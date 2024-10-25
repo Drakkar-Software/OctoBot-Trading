@@ -28,6 +28,8 @@ from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 from tests import event_loop
 
+from tests.exchanges import cached_markets_exchange_manager
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -46,21 +48,12 @@ class TestExchanges:
     async def test_add_exchange(self):
         config = await self.init_default()
 
-        exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_binance, "")
+        async with cached_markets_exchange_manager(config, "binanceus"), \
+                cached_markets_exchange_manager(config, "bybit", True):
+            assert "binanceus" in Exchanges.instance().exchanges
+            assert "bybit" in Exchanges.instance().exchanges
+            assert "test" not in Exchanges.instance().exchanges
 
-        exchange_manager_bybit = ExchangeManager(config, "bybit")
-        exchange_manager_bybit.exchange_only = True
-        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_bybit, "")
-
-        assert "binanceus" in Exchanges.instance().exchanges
-        assert "bybit" in Exchanges.instance().exchanges
-        assert "test" not in Exchanges.instance().exchanges
-
-        await exchange_manager_binance.stop()
-        await exchange_manager_bybit.stop()
         cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
@@ -68,22 +61,15 @@ class TestExchanges:
     async def test_get_exchange(self):
         config = await self.init_default()
 
-        exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_binance, "")
+        async with cached_markets_exchange_manager(config, "binanceus") as exchange_manager_binance, \
+                cached_markets_exchange_manager(config, "bybit") as exchange_manager_bybit:
 
-        exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_bybit, "")
+            assert Exchanges.instance().get_exchanges_list("binanceus")[0].exchange_manager is exchange_manager_binance
+            assert Exchanges.instance().get_exchanges_list("bybit")[0].exchange_manager is exchange_manager_bybit
 
-        assert Exchanges.instance().get_exchanges_list("binanceus")[0].exchange_manager is exchange_manager_binance
-        assert Exchanges.instance().get_exchanges_list("bybit")[0].exchange_manager is exchange_manager_bybit
+            with pytest.raises(KeyError):
+                assert Exchanges.instance().get_exchanges_list("test")
 
-        with pytest.raises(KeyError):
-            assert Exchanges.instance().get_exchanges_list("test")
-
-        await exchange_manager_binance.stop()
-        await exchange_manager_bybit.stop()
         cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
@@ -91,24 +77,17 @@ class TestExchanges:
     async def test_del_exchange(self):
         config = await self.init_default()
 
-        exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_binance, "")
+        async with cached_markets_exchange_manager(config, "binanceus") as exchange_manager_binance, \
+                cached_markets_exchange_manager(config, "bybit") as exchange_manager_bybit:
 
-        exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_bybit, "")
+            Exchanges.instance().del_exchange("binanceus", exchange_manager_binance.id)
+            assert "binanceus" not in Exchanges.instance().exchanges
+            Exchanges.instance().del_exchange("bybit", exchange_manager_bybit.id)
+            assert "bybit" not in Exchanges.instance().exchanges
 
-        Exchanges.instance().del_exchange("binanceus", exchange_manager_binance.id)
-        assert "binanceus" not in Exchanges.instance().exchanges
-        Exchanges.instance().del_exchange("bybit", exchange_manager_bybit.id)
-        assert "bybit" not in Exchanges.instance().exchanges
+            Exchanges.instance().del_exchange("test", "")  # should not raise
 
-        Exchanges.instance().del_exchange("test", "")  # should not raise
-
-        assert Exchanges.instance().exchanges == {}
-        await exchange_manager_binance.stop()
-        await exchange_manager_bybit.stop()
+            assert Exchanges.instance().exchanges == {}
         cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
@@ -116,51 +95,42 @@ class TestExchanges:
     async def test_get_all_exchanges(self):
         config = await self.init_default()
 
-        exchange_manager_binance = ExchangeManager(config, "binanceus")
-        await exchange_manager_binance.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_binance, "")
+        async with cached_markets_exchange_manager(config, "binanceus") as exchange_manager_binance, \
+                cached_markets_exchange_manager(config, "bybit") as exchange_manager_bybit:
 
-        exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
-        Exchanges.instance().add_exchange(exchange_manager_bybit, "")
+            exchanges = Exchanges.instance().get_all_exchanges()
+            assert exchanges[0].exchange_manager is exchange_manager_binance
+            assert exchanges[1].exchange_manager is exchange_manager_bybit
 
-        exchanges = Exchanges.instance().get_all_exchanges()
-        assert exchanges[0].exchange_manager is exchange_manager_binance
-        assert exchanges[1].exchange_manager is exchange_manager_bybit
-
-        await exchange_manager_binance.stop()
-        await exchange_manager_bybit.stop()
         cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
 
     async def test_ms_timestamp_operations(self):
         config = await self.init_default()
-        exchange_manager_bybit = ExchangeManager(config, "bybit")
-        await exchange_manager_bybit.initialize(exchange_config_by_exchange=None)
+        async with cached_markets_exchange_manager(config, "bybit") as exchange_manager_bybit:
 
-        if os.getenv('CYTHON_IGNORE'):
-            await exchange_manager_bybit.stop()
-            return
+            if os.getenv('CYTHON_IGNORE'):
+                await exchange_manager_bybit.stop()
+                return
 
-        exchange = exchange_manager_bybit.exchange
-        with patch.object(exchange, 'get_exchange_current_time', new=get_constant_ms_timestamp):
-            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_HOUR] * MSECONDS_TO_MINUTE * 200
-            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_HOUR, count=200) == expected_ms_timestamp
+            exchange = exchange_manager_bybit.exchange
+            with patch.object(exchange, 'get_exchange_current_time', new=get_constant_ms_timestamp):
+                expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_HOUR] * MSECONDS_TO_MINUTE * 200
+                assert exchange.get_candle_since_timestamp(TimeFrames.ONE_HOUR, count=200) == expected_ms_timestamp
 
-            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_WEEK] * MSECONDS_TO_MINUTE * 200
-            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_WEEK, count=200) == expected_ms_timestamp
+                expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_WEEK] * MSECONDS_TO_MINUTE * 200
+                assert exchange.get_candle_since_timestamp(TimeFrames.ONE_WEEK, count=200) == expected_ms_timestamp
 
-            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
-            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=2000) == expected_ms_timestamp
+                expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
+                assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=2000) == expected_ms_timestamp
 
-            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MINUTE] * MSECONDS_TO_MINUTE * 10
-            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MINUTE, count=10) == expected_ms_timestamp
+                expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MINUTE] * MSECONDS_TO_MINUTE * 10
+                assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MINUTE, count=10) == expected_ms_timestamp
 
-            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MINUTE] * MSECONDS_TO_MINUTE * 0
-            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MINUTE, count=0) == expected_ms_timestamp
+                expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MINUTE] * MSECONDS_TO_MINUTE * 0
+                assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MINUTE, count=0) == expected_ms_timestamp
 
-            # 2000 months into the future
-            expected_ms_timestamp = MS_TIMESTAMP + TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
-            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=-2000) == expected_ms_timestamp
-        await exchange_manager_bybit.stop()
+                # 2000 months into the future
+                expected_ms_timestamp = MS_TIMESTAMP + TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
+                assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=-2000) == expected_ms_timestamp

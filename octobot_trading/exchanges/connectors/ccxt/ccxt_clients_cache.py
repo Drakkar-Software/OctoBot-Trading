@@ -26,9 +26,9 @@ def get_client_key(client) -> str:
     return f"{client.__class__.__name__}:{json.dumps(client.urls.get('api'))}"
 
 
-def get_exchange_parsed_markets(exchange: str):
-    return _MARKETS_BY_EXCHANGE[exchange]
+def get_exchange_parsed_markets(client_key: str):
+    return _MARKETS_BY_EXCHANGE[client_key]
 
 
-def set_exchange_parsed_markets(exchange: str, markets):
-    _MARKETS_BY_EXCHANGE[exchange] = markets
+def set_exchange_parsed_markets(client_key: str, markets):
+    _MARKETS_BY_EXCHANGE[client_key] = markets

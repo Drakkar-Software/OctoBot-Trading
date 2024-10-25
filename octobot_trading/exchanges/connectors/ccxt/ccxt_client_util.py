@@ -18,6 +18,7 @@ import logging
 import typing
 import ccxt
 import ccxt.pro as ccxt_pro
+import ccxt.async_support as async_ccxt
 
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.constants as constants
@@ -293,3 +294,7 @@ def _get_client_config(
         config['uid'] = uid
     config.update(additional_config or {})
     return config
+
+
+def ccxt_exchange_class_factory(exchange_name):
+    return getattr(async_ccxt, exchange_name)
