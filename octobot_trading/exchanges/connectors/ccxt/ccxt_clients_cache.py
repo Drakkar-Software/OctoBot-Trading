@@ -19,7 +19,12 @@ import json
 import octobot_commons.constants as commons_constants
 
 
-_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=commons_constants.DAYS_TO_SECONDS*1)
+# To avoid side effects related to a cache refresh at a fix time of the day every day,
+# cache should not be refreshed at the same time every day.
+# Use 30h and 18min as a period. It could be anything else as long as it doesn't make it so
+# that cache ends up refreshed approximately at the same time of the day
+_CACHE_TIME = commons_constants.HOURS_TO_SECONDS * 30 + commons_constants.MINUTE_TO_SECONDS * 18
+_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_CACHE_TIME)
 
 
 def get_client_key(client) -> str:
