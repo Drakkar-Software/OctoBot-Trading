@@ -35,6 +35,7 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     HISTORY_TABLE = commons_enums.DBTables.ORDERS.value
     HISTORICAL_OPEN_ORDERS_TABLE = commons_enums.DBTables.HISTORICAL_ORDERS_UPDATES.value
     ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE = constants.ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE
+    IS_MULTI_EXCHANGE_STORAGE = True   # set True when this storage is updating data from all other exchanges as well
 
     def __init__(self, exchange_manager, use_live_consumer_in_backtesting=None, is_historical=None):
         super().__init__(

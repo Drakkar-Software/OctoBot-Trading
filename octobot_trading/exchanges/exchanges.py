@@ -71,6 +71,9 @@ class Exchanges(singleton.Singleton):
             self.get_exchange(exchange_manager.exchange_name, exchange_manager.id).matrix_id
         )
 
+    def get_matrix_id(self, exchange_manager) -> str:
+        return self.get_exchange(exchange_manager.exchange_name, exchange_manager.id).matrix_id
+
     def del_exchange(self, exchange_name, exchange_manager_id, should_warn=True) -> None:
         try:
             self.exchanges[exchange_name].pop(exchange_manager_id, None)
