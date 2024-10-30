@@ -30,6 +30,7 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
     IS_HISTORICAL = True
     PRICE_INIT_TIMEOUT = 30
     HISTORY_TABLE = commons_enums.RunDatabases.HISTORICAL_PORTFOLIO_VALUE.value
+    IS_MULTI_EXCHANGE_STORAGE = True   # set True when this storage is updating data from all other exchanges as well
 
     @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary
     async def store_history(self, reset=False):

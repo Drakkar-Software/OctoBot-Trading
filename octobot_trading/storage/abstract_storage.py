@@ -14,8 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 import asyncio
+import contextlib
 import copy
 import decimal
+import time
 import types
 
 import octobot_commons.display as commons_display
@@ -23,6 +25,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as trading_constants
+import octobot_trading.exchanges as exchanges
 
 
 class AbstractStorage:
@@ -32,6 +35,8 @@ class AbstractStorage:
     IS_HISTORICAL = True
     HISTORY_TABLE = None
     FLUSH_DEBOUNCE_DURATION = 5   # avoid disc spam on multiple quick live updated
+    IS_MULTI_EXCHANGE_STORAGE = False   # set True when this storage is updating data from all other exchanges as well
+    LAST_UPDATE_TIME_PER_MATRIX_ID = {}
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
@@ -122,8 +127,15 @@ class AbstractStorage:
 
     async def _waiting_update_auth_data(self, reset):
         try:
-            await asyncio.sleep(trading_constants.AUTH_UPDATE_DEBOUNCE_DURATION)
-            await self._update_auth_data(reset)
+            debounce_interval = trading_constants.AUTH_UPDATE_DEBOUNCE_DURATION
+            await asyncio.sleep(debounce_interval)
+            with self._multi_exchange_auth_value_update(debounce_interval) as should_update:
+                if should_update:
+                    await self._update_auth_data(reset)
+                else:
+                    logging.get_logger(self.__class__.__name__).debug(
+                        f"Skip storage update: this multi exchange value has already been updated."
+                    )
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when updating auth data: {err}")
 
@@ -131,6 +143,7 @@ class AbstractStorage:
         try:
             await asyncio.sleep(self.FLUSH_DEBOUNCE_DURATION)
             await self.flush()
+
         except Exception as err:
             logging.get_logger(self.__class__.__name__).exception(err, True, f"Error when flushing database: {err}")
 
@@ -151,6 +164,43 @@ class AbstractStorage:
 
     async def flush(self):
         await self._get_db().flush()
+
+    @contextlib.contextmanager
+    def _multi_exchange_auth_value_update(self, interval):
+        """
+        yields True if the auth updated value should be updated at the current time or if it already just got updated
+        """
+        if not self.IS_MULTI_EXCHANGE_STORAGE:
+            yield True
+            return
+        should_update = time.time() - self._get_multi_exchange_last_update_time() > interval
+        if should_update:
+            # update time twice to prevent concurrent updated during yield
+            self._register_multi_exchange_last_update_time()
+            yield True
+            self._register_multi_exchange_last_update_time()
+        else:
+            yield False
+
+    def _get_multi_exchange_last_update_time(self) -> float:
+        try:
+            return AbstractStorage.LAST_UPDATE_TIME_PER_MATRIX_ID[
+                exchanges.Exchanges.instance().get_matrix_id(self.exchange_manager)
+            ][self.__class__.__name__]
+        except KeyError:
+            return 0
+
+    def _register_multi_exchange_last_update_time(self):
+        try:
+            AbstractStorage.LAST_UPDATE_TIME_PER_MATRIX_ID[
+                exchanges.Exchanges.instance().get_matrix_id(self.exchange_manager)
+            ][self.__class__.__name__] = time.time()
+        except KeyError:
+            AbstractStorage.LAST_UPDATE_TIME_PER_MATRIX_ID[
+                exchanges.Exchanges.instance().get_matrix_id(self.exchange_manager)
+            ] = {
+                self.__class__.__name__: time.time()
+            }
 
     @classmethod
     async def clear_database_history(cls, database, flush=True):
