@@ -275,7 +275,7 @@ def _get_client_config(
     api_key=None, secret=None, password=None, uid=None,
     auth_token=None, auth_token_header_prefix=None
 ):
-    if auth_token is not None:
+    if auth_token:
         headers["Authorization"] = f"{auth_token_header_prefix or ''}{auth_token}"
     config = {
         'verbose': constants.ENABLE_CCXT_VERBOSE,
