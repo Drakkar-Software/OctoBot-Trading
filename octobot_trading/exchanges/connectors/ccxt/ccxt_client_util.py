@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+import aiohttp
 import copy
 import logging
 import typing
@@ -21,6 +23,8 @@ import ccxt.pro as ccxt_pro
 import ccxt.async_support as async_ccxt
 
 import octobot_commons.time_frame_manager as time_frame_manager
+import octobot_commons.aiohttp_util as aiohttp_util
+import octobot_commons.logging as commons_logging
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -59,29 +63,40 @@ def create_client(
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
             if should_authenticate and not exchange_manager.is_backtesting:
-                client = exchange_class(_get_client_config(
-                    options, headers, additional_config,
-                    api_key=key, secret=secret, password=password, uid=uid,
-                    auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
-                ))
+                client = instantiate_exchange(
+                    exchange_class,
+                    _get_client_config(
+                        options, headers, additional_config,
+                        api_key=key, secret=secret, password=password, uid=uid,
+                        auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
+                    ),
+                    exchange_manager.exchange_name,
+                    exchange_manager.proxy_config
+                )
                 is_authenticated = True
                 if exchange_manager.check_credentials:
-                    client.checkRequiredCredentials()
+                    client.check_required_credentials()
             else:
-                client = exchange_class(_get_client_config(options, headers, additional_config))
+                client = instantiate_exchange(
+                    exchange_class,
+                    _get_client_config(options, headers, additional_config),
+                    exchange_manager.exchange_name,
+                    exchange_manager.proxy_config
+                )
         except (ccxt.AuthenticationError, Exception) as e:
             if unauthenticated_exchange_fallback is None:
                 return get_unauthenticated_exchange(
-                    exchange_class, options, headers, additional_config, exchange_manager.proxy_config
+                    exchange_class, options, headers, additional_config,
+                    exchange_manager.exchange_name, exchange_manager.proxy_config
                 ), False
             return unauthenticated_exchange_fallback(e), False
     else:
         client = get_unauthenticated_exchange(
-            exchange_class, options, headers, additional_config, exchange_manager.proxy_config
+            exchange_class, options, headers, additional_config,
+            exchange_manager.exchange_name, exchange_manager.proxy_config
         )
         logger.error("configuration issue: missing login information !")
     client.logger.setLevel(logging.INFO)
-    _use_proxy_if_necessary(client, exchange_manager.proxy_config)
     return client, is_authenticated
 
 
@@ -108,10 +123,19 @@ async def close_client(client):
 
 
 def get_unauthenticated_exchange(
-    exchange_class, options, headers, additional_config, proxy_config: proxy_config_import.ProxyConfig
-):
-    client = exchange_class(_get_client_config(options, headers, additional_config))
+    exchange_class, options, headers, additional_config, identifier: str, proxy_config: proxy_config_import.ProxyConfig
+) -> async_ccxt.Exchange:
+    return instantiate_exchange(
+        exchange_class, _get_client_config(options, headers, additional_config), identifier, proxy_config
+    )
+
+
+def instantiate_exchange(
+    exchange_class, config: dict, identifier: str, proxy_config: proxy_config_import.ProxyConfig
+) -> async_ccxt.Exchange:
+    client = exchange_class(config)
     _use_proxy_if_necessary(client, proxy_config)
+    _use_request_counter_if_enabled(identifier, client)
     return client
 
 
@@ -275,7 +299,7 @@ def _get_client_config(
     api_key=None, secret=None, password=None, uid=None,
     auth_token=None, auth_token_header_prefix=None
 ):
-    if auth_token:
+    if auth_token is not None:
         headers["Authorization"] = f"{auth_token_header_prefix or ''}{auth_token}"
     config = {
         'verbose': constants.ENABLE_CCXT_VERBOSE,
@@ -294,6 +318,41 @@ def _get_client_config(
         config['uid'] = uid
     config.update(additional_config or {})
     return config
+
+
+def _use_request_counter_if_enabled(identifier: str, ccxt_client: async_ccxt.Exchange):
+    """
+    Replaces the given exchange async session by an aiohttp_util.CounterClientSession
+    WARNING: should only be called right after creating the exchange (to avoid interrupting
+     open requests from current session)
+    """
+    if constants.ENABLE_CCXT_REQUESTS_COUNTER:
+        # use session with request counter
+        try:
+            # 1. create ssl context and other required elements if necessary
+            ccxt_client.open()
+            previous_session = ccxt_client.session
+            # 2. create patched session using the same params as a normal one
+            # same as in ccxt.async_support.exchange.py#open()
+            # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
+            new_connector = aiohttp.TCPConnector(
+                ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop, enable_cleanup_closed=True
+            )
+            counter_session = aiohttp_util.CounterClientSession(
+                identifier,
+                loop=ccxt_client.asyncio_loop,
+                connector=new_connector,
+                trust_env=previous_session.trust_env,
+            )
+            # 3. replace session
+            ccxt_client.session = counter_session
+            # 4. close replaced session in task to avoid making this function a coroutine
+            asyncio.create_task(previous_session.close())
+            commons_logging.get_logger(__name__).info(f"Request counter enabled for {identifier}")
+        except Exception as err:
+            commons_logging.get_logger(__name__).exception(
+                err, True, f"Error when initializing {identifier} request counter: {err}"
+            )
 
 
 def ccxt_exchange_class_factory(exchange_name):

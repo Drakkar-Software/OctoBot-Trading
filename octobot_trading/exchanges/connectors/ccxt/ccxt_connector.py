@@ -257,6 +257,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         return ccxt_client_util.get_unauthenticated_exchange(
             self.exchange_type,
             self.options, self.headers, self.additional_config,
+            self.exchange_manager.exchange_name,
             self.exchange_manager.proxy_config
         )
 
