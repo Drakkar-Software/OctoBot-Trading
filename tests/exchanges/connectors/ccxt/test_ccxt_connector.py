@@ -16,6 +16,7 @@
 #  License along with this library.
 import decimal
 
+import mock
 from mock import patch
 
 import octobot_trading.exchanges.connectors as exchange_connectors
@@ -58,11 +59,13 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(ccxt_connector):
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt:
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt, \
+            patch.object(ccxt_connector, '_ensure_auth', new=mock.AsyncMock()) as _ensure_auth_mock:
         await ccxt_connector.initialize_impl()
         assert ccxt_connector.symbols == set()
         assert ccxt_connector.time_frames == set()
         assert mocked_ccxt.set_markets_calls in ([[]], [])  # depends on call order
+        _ensure_auth_mock.assert_called_once()
 
 
 async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector):
@@ -84,11 +87,13 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector)
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt:
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt, \
+            patch.object(ccxt_connector, '_ensure_auth', new=mock.AsyncMock()) as _ensure_auth_mock:
         await ccxt_connector.initialize_impl()
         assert ccxt_connector.symbols == set()
         assert ccxt_connector.time_frames == set()
         assert mocked_ccxt.set_markets_calls in ([[]], [])  # depends on call order
+        _ensure_auth_mock.assert_called_once()
 
 
 async def test_initialize_impl(ccxt_connector):
@@ -120,7 +125,8 @@ async def test_initialize_impl(ccxt_connector):
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt:
+    with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt, \
+        patch.object(ccxt_connector, '_ensure_auth', new=mock.AsyncMock()) as _ensure_auth_mock:
         await ccxt_connector.initialize_impl()
         assert ccxt_connector.symbols == {
             "BTC/USDT",
@@ -133,6 +139,7 @@ async def test_initialize_impl(ccxt_connector):
             "4h",
         }
         assert mocked_ccxt.set_markets_calls in ([[]], [])  # depends on call order
+        _ensure_auth_mock.assert_called_once()
 
 
 async def test_set_symbol_partial_take_profit_stop_loss(ccxt_connector):

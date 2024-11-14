@@ -225,7 +225,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     @ccxt_client_util.converted_ccxt_common_errors
     async def _ensure_auth(self):
         try:
-            await self.get_balance()
+            await self.exchange_manager.exchange.get_balance()
         except (octobot_trading.errors.AuthenticationError, ccxt.AuthenticationError) as e:
             await self.client.close()
             self.unauthenticated_exchange_fallback(e)
