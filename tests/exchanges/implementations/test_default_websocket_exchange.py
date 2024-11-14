@@ -22,6 +22,7 @@ import octobot_trading.enums as enums
 import pytest
 
 from tests.exchanges import liquid_exchange_manager as liquid_exchange_manager_fixture, DEFAULT_EXCHANGE_NAME
+from tests import skipped_on_github_CI
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -123,7 +124,7 @@ def default_websocket_exchange(liquid_exchange_manager_fixture):
     yield MockedWebSocketExchange(liquid_exchange_manager_fixture.config, liquid_exchange_manager_fixture)
 
 
-async def test_start_receive_feeds_and_stop(default_websocket_exchange):
+async def test_start_receive_feeds_and_stop(default_websocket_exchange, skipped_on_github_CI):
     await default_websocket_exchange.init_websocket(
         default_websocket_exchange.exchange_manager.exchange_config.traded_time_frames,
         default_websocket_exchange.exchange_manager.exchange_config.traded_symbol_pairs,

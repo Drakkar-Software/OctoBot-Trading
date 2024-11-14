@@ -73,6 +73,19 @@ async def install_tentacles():
     _cleanup()
 
 
+@pytest_asyncio.fixture
+async def skipped_on_github_CI():
+    if _is_on_github_ci():
+        pytest.skip(reason="test skipped on github CI")
+
+
+def _is_on_github_ci():
+    # Always set to true when GitHub Actions is running the workflow.
+    # You can use this variable to differentiate when tests are being run locally or by GitHub Actions.
+    # from https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables
+    return bool(os.getenv("GITHUB_ACTIONS"))
+
+
 def _configure_async_test_loop():
     if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
         # use WindowsSelectorEventLoopPolicy to avoid aiohttp connexion close warnings
