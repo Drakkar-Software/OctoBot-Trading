@@ -19,4 +19,4 @@ sortedcontainers==2.4.0
 tinydb==4.5.2
 
 # Caching
-cachetools==5.3.2
+cachetools>=5.5.0, <6
