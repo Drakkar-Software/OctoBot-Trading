@@ -17,10 +17,12 @@ import mock
 import pytest
 import decimal
 
+import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.modes.modes_util as modes_util
+import octobot_trading.signals as signals
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 from tests import event_loop
@@ -130,6 +132,10 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         assert order.symbol == "BTC/USDT"
         assert order.origin_quantity == decimal.Decimal(10)
         assert order.created_last_price == decimal.Decimal(30000)
+        # market order is instantly filled
+        assert order.is_filled()
+        assert order.filled_price == order.origin_price
+        assert order.filled_quantity > constants.ZERO
         trading_mode.create_order.assert_called_once()
         trading_mode.create_order.reset_mock()
         is_market_open_for_order_type_mock.assert_called_once_with(
@@ -142,8 +148,9 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     order = orders[0]
     assert order.order_type == trading_enums.TraderOrderType.BUY_MARKET
     assert order.symbol == "BTC/USDT"
-    assert order.origin_quantity == decimal.Decimal("0.03333333")
+    assert order.origin_quantity == decimal.Decimal("10.03333333")
     assert order.created_last_price == decimal.Decimal(30000)
+    assert order.is_filled()
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
@@ -153,6 +160,8 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         trading_enums.ExchangeConstantsTickersColumns.CLOSE.value: decimal.Decimal(1500)
     }
 
+    # reset portfolio
+    portfolio["USDT"] = trading_personal_data.SpotAsset("USDT", decimal.Decimal(1000), decimal.Decimal(1000))
     orders = await modes_util.convert_asset_to_target_asset(trading_mode, "USDT", "ETH", tickers)
     assert len(orders) == 1
     order = orders[0]
@@ -160,15 +169,17 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     assert order.symbol == "ETH/USDT"
     assert order.origin_quantity == decimal.Decimal("0.66666666")
     assert order.created_last_price == decimal.Decimal(1500)
+    assert order.is_filled()
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
+    portfolio["ETH"] = trading_personal_data.SpotAsset("ETH", constants.ZERO, constants.ZERO)
     orders = await modes_util.convert_asset_to_target_asset(trading_mode, "ETH", "USDT", tickers)
     # no ETH in portfolio
     assert orders == []
     trading_mode.create_order.assert_not_called()
 
-    portfolio["ETH"] = trading_personal_data.Asset("ETH", constants.ONE, constants.ONE)
+    portfolio["ETH"] = trading_personal_data.SpotAsset("ETH", constants.ONE, constants.ONE)
     orders = await modes_util.convert_asset_to_target_asset(trading_mode, "ETH", "USDT", tickers)
     assert len(orders) == 1
     order = orders[0]
@@ -176,10 +187,12 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     assert order.symbol == "ETH/USDT"
     assert order.origin_quantity == decimal.Decimal("1")
     assert order.created_last_price == decimal.Decimal(1500)
+    assert order.is_filled()
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
     # with amount param
+    portfolio["ETH"] = trading_personal_data.SpotAsset("ETH", decimal.Decimal("2"), decimal.Decimal("2"))
     orders = await modes_util.convert_asset_to_target_asset(
         trading_mode, "ETH", "USDT", tickers, asset_amount=decimal.Decimal(2)
     )
@@ -189,6 +202,7 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     assert order.symbol == "ETH/USDT"
     assert order.origin_quantity == decimal.Decimal(2)
     assert order.created_last_price == decimal.Decimal(1500)
+    assert order.is_filled()
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
@@ -201,6 +215,7 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     assert order.symbol == "ETH/USDT"
     assert order.origin_quantity == decimal.Decimal("0.3")
     assert order.created_last_price == decimal.Decimal(1500)
+    assert order.is_filled()
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
@@ -213,6 +228,7 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     assert order.symbol == "ETH/USDT"
     assert order.origin_quantity == decimal.Decimal("0.66666666")
     assert order.created_last_price == decimal.Decimal(1500)
+    assert order.is_filled()
     trading_mode.create_order.assert_called_once()
     trading_mode.create_order.reset_mock()
 
@@ -220,10 +236,12 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
     fees = {
         trading_enums.FeePropertyColumns.COST.value: "2",
         trading_enums.FeePropertyColumns.CURRENCY.value: "USDT",
+        trading_enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
     }
     with mock.patch.object(exchange_manager.exchange, "get_trade_fee", mock.Mock(return_value=fees)) \
          as get_trade_fee_mock:
         # cast 1: enough funds in pf to cover fees
+        portfolio["USDT"] = trading_personal_data.SpotAsset("USDT", decimal.Decimal(1000), decimal.Decimal(1000))
         orders = await modes_util.convert_asset_to_target_asset(
             trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(450)
         )
@@ -233,12 +251,14 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         assert order.symbol == "ETH/USDT"
         assert order.origin_quantity == decimal.Decimal("0.3")
         assert order.created_last_price == decimal.Decimal(1500)
-        get_trade_fee_mock.assert_called_once()
+        assert order.is_filled()
+        assert get_trade_fee_mock.call_count == 4
         get_trade_fee_mock.reset_mock()
         trading_mode.create_order.assert_called_once()
         trading_mode.create_order.reset_mock()
 
         # cast 2: reduce amount to cover fees
+        portfolio["USDT"] = trading_personal_data.SpotAsset("USDT", decimal.Decimal(1000), decimal.Decimal(1000))
         orders = await modes_util.convert_asset_to_target_asset(
             trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(1000)
         )
@@ -248,7 +268,8 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         assert order.symbol == "ETH/USDT"
         assert order.origin_quantity == decimal.Decimal("0.66400000")   # lower than 0.66666666 when fees is 0 USDT
         assert order.created_last_price == decimal.Decimal(1500)
-        get_trade_fee_mock.assert_called_once()
+        assert order.is_filled()
+        assert get_trade_fee_mock.call_count == 4
         trading_mode.create_order.assert_called_once()
         trading_mode.create_order.reset_mock()
 
@@ -264,6 +285,7 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         mock.Mock(side_effect=_is_market_open_for_order_type)
     ) as is_market_open_for_order_type_mock:
         # cast 1: buying
+        portfolio["USDT"] = trading_personal_data.SpotAsset("USDT", decimal.Decimal(1000), decimal.Decimal(1000))
         orders = await modes_util.convert_asset_to_target_asset(
             trading_mode, "USDT", "ETH", tickers, asset_amount=decimal.Decimal(450)
         )
@@ -278,6 +300,10 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         )
         assert order.origin_price == adapted_price
         assert order.created_last_price == adapted_price
+        # limit order is designed to be instantly filled, on simulator it should be filled
+        assert order.is_filled()
+        assert order.filled_price == order.origin_price
+        assert order.filled_quantity > constants.ZERO
         assert is_market_open_for_order_type_mock.call_count == 2
         assert is_market_open_for_order_type_mock.mock_calls[0].args == \
                ("ETH/USDT", trading_enums.TraderOrderType.BUY_MARKET)
@@ -288,6 +314,7 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         trading_mode.create_order.reset_mock()
 
         # cast 2: selling
+        portfolio["USDT"] = trading_personal_data.SpotAsset("USDT", decimal.Decimal(2), decimal.Decimal(2))
         orders = await modes_util.convert_asset_to_target_asset(
             trading_mode, "ETH", "USDT", tickers, asset_amount=decimal.Decimal(2)
         )
@@ -301,6 +328,9 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         )
         assert order.origin_price == adapted_price
         assert order.created_last_price == adapted_price
+        assert order.is_filled()
+        assert order.filled_price == order.origin_price
+        assert order.filled_quantity > constants.ZERO
         assert is_market_open_for_order_type_mock.call_count == 2
         assert is_market_open_for_order_type_mock.mock_calls[0].args == \
                ("ETH/USDT", trading_enums.TraderOrderType.SELL_MARKET)
@@ -312,7 +342,12 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
 
 
 def _get_trading_mode(exchange_manager):
+    async def _create_order(order):
+        return await signals.create_order(
+            exchange_manager, False, order
+        )
+
     return mock.Mock(
         exchange_manager=exchange_manager,
-        create_order=mock.AsyncMock(side_effect=lambda x: x)
+        create_order=mock.AsyncMock(side_effect=_create_order)
     )
