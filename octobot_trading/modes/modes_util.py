@@ -92,61 +92,71 @@ async def convert_asset_to_target_asset(
     tickers = tickers or {}
     portfolio = trading_mode.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
     if asset in portfolio and portfolio[asset].available:
-        # get symbol of the order
-        symbol, order_type = _get_associated_symbol_and_order_type(trading_mode, asset, target_asset)
-        if symbol is None:
-            # can't convert asset into target_asset
-            trading_mode.logger.warning(
-                f"Impossible to convert {asset} into {target_asset}: no associated trading pair "
-                f"on {trading_mode.exchange_manager.exchange_name}"
-            )
-            return created_orders
-
-        # get symbol price
-        price_base = asset
-        price_target = target_asset
-        if order_type is trading_enums.TraderOrderType.BUY_MARKET:
-            price_base = target_asset
-            price_target = asset
-
-        price = trading_personal_data.get_asset_price_from_converter_or_tickers(
-            trading_mode.exchange_manager, price_base, price_target, symbol, tickers
+        created_orders.extend(
+            await convert_with_market_or_limit_order(trading_mode, asset, target_asset, tickers, asset_amount)
         )
+    return created_orders
 
-        if not price:
-            # can't get price, should not happen as symbol is in client_symbols
-            trading_mode.logger.error(
-                f"Impossible to convert {asset} into {target_asset}: {symbol} ticker can't be fetched"
-            )
-            return created_orders
 
-        if trading_personal_data.get_trade_order_type(order_type) is not trading_enums.TradeOrderType.MARKET:
-            # can't use market orders: use limit orders with price a bit under the current price to instant fill it.
-            price = get_instantly_filled_limit_order_adapted_price(price, order_type)
+async def convert_with_market_or_limit_order(
+    trading_mode, asset: str, target_asset: str, tickers: dict, asset_amount=None
+) -> list:
+    # get symbol of the order
+    symbol, order_type = _get_associated_symbol_and_order_type(trading_mode, asset, target_asset)
+    if symbol is None:
+        # can't convert asset into target_asset
+        trading_mode.logger.warning(
+            f"Impossible to convert {asset} into {target_asset}: no associated trading pair "
+            f"on {trading_mode.exchange_manager.exchange_name}"
+        )
+        return []
 
-        # get order quantity
-        quantity = _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount)
-        symbol_market = trading_mode.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
-        for order_quantity, order_price in \
-                trading_personal_data.decimal_check_and_adapt_order_details_if_necessary(
-                    quantity,
-                    price,
-                    symbol_market
-                ):
-            # create order
-            order = trading_personal_data.create_order_instance(
-                trader=trading_mode.exchange_manager.trader,
-                order_type=order_type,
-                symbol=symbol,
-                current_price=price,
-                quantity=order_quantity,
-                price=order_price
-            )
-            initialized_order = await trading_mode.create_order(order)
-            if isinstance(initialized_order, trading_personal_data.LimitOrder) and initialized_order.simulated:
-                # on simulator, this order should be instantly filled now as its price is meant to be instantly filled
-                await initialized_order.on_fill()
-            created_orders.append(initialized_order)
+    # get symbol price
+    price_base = asset
+    price_target = target_asset
+    if order_type is trading_enums.TraderOrderType.BUY_MARKET:
+        price_base = target_asset
+        price_target = asset
+
+    price = trading_personal_data.get_asset_price_from_converter_or_tickers(
+        trading_mode.exchange_manager, price_base, price_target, symbol, tickers
+    )
+
+    if not price:
+        # can't get price, should not happen as symbol is in client_symbols
+        trading_mode.logger.error(
+            f"Impossible to convert {asset} into {target_asset}: {symbol} ticker can't be fetched"
+        )
+        return []
+
+    if trading_personal_data.get_trade_order_type(order_type) is not trading_enums.TradeOrderType.MARKET:
+        # can't use market orders: use limit orders with price a bit under the current price to instant fill it.
+        price = get_instantly_filled_limit_order_adapted_price(price, order_type)
+
+    # get order quantity
+    quantity = _get_available_or_target_quantity(trading_mode, symbol, order_type, price, asset_amount)
+    symbol_market = trading_mode.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
+    created_orders = []
+    for order_quantity, order_price in \
+            trading_personal_data.decimal_check_and_adapt_order_details_if_necessary(
+                quantity,
+                price,
+                symbol_market
+            ):
+        # create order
+        order = trading_personal_data.create_order_instance(
+            trader=trading_mode.exchange_manager.trader,
+            order_type=order_type,
+            symbol=symbol,
+            current_price=price,
+            quantity=order_quantity,
+            price=order_price
+        )
+        initialized_order = await trading_mode.create_order(order)
+        if isinstance(initialized_order, trading_personal_data.LimitOrder) and initialized_order.simulated:
+            # on simulator, this order should be instantly filled now as its price is meant to be instantly filled
+            await initialized_order.on_fill()
+        created_orders.append(initialized_order)
     return created_orders
 
 
