@@ -106,6 +106,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to exchange internal synch (like when portfolio is not yet up to date after a trade)
     EXCHANGE_INTERNAL_SYNC_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to missing fnuds when creating an order (when not identified as such by ccxt)
+    EXCHANGE_MISSING_FUNDS_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to exchange local account permissions (ex: accounts from X country can't trade XYZ)
     # text content of errors due to traded assets for account
     EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
@@ -211,15 +213,18 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                                quantity, price, stop_price, side,
                                                current_price, params)
 
+    def _on_missing_funds_err(self, err, order_type, symbol, quantity, price, stop_price):
+        self.log_order_creation_error(err, order_type, symbol, quantity, price, stop_price)
+        if self.__class__.PRINT_DEBUG_LOGS:
+            self.logger.warning(str(err))
+        raise errors.MissingFunds(err) from err
+
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
         try:
             yield
         except ccxt.InsufficientFunds as e:
-            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            if self.__class__.PRINT_DEBUG_LOGS:
-                self.logger.warning(str(e))
-            raise errors.MissingFunds(e) from e
+            self._on_missing_funds_err(e, order_type, symbol, quantity, price, stop_price)
         except ccxt.NotSupported as err:
             raise errors.NotSupported from err
         except (errors.AuthenticationError, ccxt.AuthenticationError) as err:
@@ -239,7 +244,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             if self.should_log_on_ddos_exception(e):
                 self.connector.log_ddos_error(e)
             raise errors.FailedRequest(f"Failed to order operation: {e.__class__.__name__} {e}") from e
-        except errors.ExchangeAccountSymbolPermissionError:
+        except errors.OctoBotExchangeError:
+            # custom error: forward it
             raise
         except Exception as e:
             if not self.is_market_open_for_order_type(symbol, order_type):
@@ -256,11 +262,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 raise errors.ExchangeCompliancyError(
                     f"Error when handling order {e}. Exchange is refusing this order request on this account because "
                     f"of its compliancy requirements."
-                ) from e
-            if self.is_exchange_internal_sync_error(e):
-                raise errors.ExchangeInternalSyncError(
-                    f"Error when handling order {e}. Exchange is refusing this order request because of sync error "
-                    f"({e})."
                 ) from e
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             print(traceback.format_exc(), file=sys.stderr)
@@ -318,9 +319,18 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 raise errors.ExchangeAccountSymbolPermissionError(
                     f"Error when creating {symbol} {order_type} order on {self.exchange_manager.exchange_name}: {err}"
                 ) from err
+            if self.is_exchange_internal_sync_error(err):
+                raise errors.ExchangeInternalSyncError(
+                    f"Error when handling order {err}. Exchange is refusing this order request because of sync error "
+                    f"({err})."
+                ) from err
+            if self.is_missing_funds_error(err):
+                self._on_missing_funds_err(err, order_type, symbol, quantity, price, stop_price)
             # can be raised when exchange precision/limits rules change
-            self.logger.debug(f"Failed to create order ({err}) : order_type: {order_type}, symbol: {symbol}. "
-                              f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
+            self.logger.warning(
+                f"Failed to create order ({err}) : order_type: {order_type}, symbol: {symbol}. "
+                f"This might be due to an update on {self.name} market rules. Fetching updated rules."
+            )
             await self.connector.load_symbol_markets(reload=True, market_filter=self.exchange_manager.market_filter)
             # retry order creation with updated markets (ccxt will use the updated market values)
             return await self._create_specific_order(order_type, symbol, quantity, price=price,
@@ -958,6 +968,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_exchange_internal_sync_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_INTERNAL_SYNC_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_INTERNAL_SYNC_ERRORS)
+        return False
+
+    def is_missing_funds_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_MISSING_FUNDS_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_MISSING_FUNDS_ERRORS)
         return False
 
     def is_exchange_account_traded_symbol_permission_error(self, error: BaseException) -> bool:
