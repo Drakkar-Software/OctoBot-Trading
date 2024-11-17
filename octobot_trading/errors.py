@@ -117,6 +117,13 @@ class AuthenticationError(Exception):
     """
 
 
+class ExchangeInternalSyncError(Exception):
+    """
+    Raised when an exchange is returning an error due to its internal sync process
+    (ex: when an order is filled but portfolio has not yet been updated)
+    """
+
+
 class ExchangeCompliancyError(Exception):
     """
     Raised when an exchange failed to execute the given request because of compliance rules for the current user account
