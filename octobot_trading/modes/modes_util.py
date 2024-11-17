@@ -142,7 +142,11 @@ async def convert_asset_to_target_asset(
                 quantity=order_quantity,
                 price=order_price
             )
-            created_orders.append(await trading_mode.create_order(order))
+            initialized_order = await trading_mode.create_order(order)
+            if isinstance(initialized_order, trading_personal_data.LimitOrder) and initialized_order.simulated:
+                # on simulator, this order should be instantly filled now as its price is meant to be instantly filled
+                await initialized_order.on_fill()
+            created_orders.append(initialized_order)
     return created_orders
 
 
