@@ -34,3 +34,7 @@ async def close_position(exchange_manager, symbol: str, side: enums.PositionSide
                 emit_trading_signals=emit_trading_signals
             ) else 0
     return 0
+
+
+def load_pair_contract(exchange_manager, position_dict: dict):
+    exchange_data.update_future_contract_from_dict(exchange_manager, position_dict)

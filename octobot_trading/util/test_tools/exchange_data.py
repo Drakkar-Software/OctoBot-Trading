@@ -87,6 +87,12 @@ class PortfolioDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_co
 
 
 @dataclasses.dataclass
+class PositionDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commons.dataclasses.UpdatableDataclass):
+    position: dict = dataclasses.field(default_factory=dict)
+    contract: dict = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass
 class ExchangeData(octobot_commons.dataclasses.MinimizableDataclass, octobot_commons.dataclasses.UpdatableDataclass):
     auth_details: ExchangeAuthDetails = dataclasses.field(default_factory=ExchangeAuthDetails)
     exchange_details: ExchangeDetails = dataclasses.field(default_factory=ExchangeDetails)
@@ -94,11 +100,15 @@ class ExchangeData(octobot_commons.dataclasses.MinimizableDataclass, octobot_com
     portfolio_details: PortfolioDetails = dataclasses.field(default_factory=PortfolioDetails)
     orders_details: OrdersDetails = dataclasses.field(default_factory=OrdersDetails)
     trades: list[dict] = dataclasses.field(default_factory=list)
+    positions: list[PositionDetails] = dataclasses.field(default_factory=list)
 
     # pylint: disable=E1134
     def __post_init__(self):
         if self.markets and isinstance(self.markets[0], dict):
             self.markets = [MarketDetails.from_dict(market) for market in self.markets] if self.markets else []
+        if self.positions and isinstance(self.positions[0], dict):
+            self.positions = [PositionDetails.from_dict(position) for position in self.positions] \
+                if self.positions else []
 
     def get_price(self, symbol):
         for market in self.markets:

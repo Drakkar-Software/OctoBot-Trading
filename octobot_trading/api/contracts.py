@@ -30,3 +30,7 @@ def get_pair_contracts(exchange_manager) -> dict:
 
 def is_handled_contract(contract) -> bool:
     return contract.is_handled_contract()
+
+
+def load_pair_contract(exchange_manager, contract_dict: dict):
+    exchange_data.update_future_contract_from_dict(exchange_manager, contract_dict)

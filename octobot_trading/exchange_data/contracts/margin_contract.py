@@ -82,3 +82,13 @@ class MarginContract:
             logging.get_logger(str(self)).debug(f"Changed margin type to {margin_type}")
             changed = True
         return changed
+
+    def to_dict(self):
+        return {
+            enums.ExchangeConstantsMarginContractColumns.PAIR.value: self.pair,
+            enums.ExchangeConstantsMarginContractColumns.MARGIN_TYPE.value: self.margin_type.value,
+            enums.ExchangeConstantsMarginContractColumns.CONTRACT_SIZE.value: self.contract_size,
+            enums.ExchangeConstantsMarginContractColumns.MAXIMUM_LEVERAGE.value: self.maximum_leverage,
+            enums.ExchangeConstantsMarginContractColumns.CURRENT_LEVERAGE.value: self.current_leverage,
+            enums.ExchangeConstantsMarginContractColumns.RISK_LIMIT.value: self.risk_limit,
+        }

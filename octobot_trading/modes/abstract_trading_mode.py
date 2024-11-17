@@ -207,6 +207,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         return True
 
+    def is_updating_exchange_settings(self, context) -> bool:
+        """
+        :return: True if the TradingMode should update exchange settings
+        (such as leverage) upon initializing user inputs
+        """
+        return True
+
     async def initialize(self, trading_config=None, auto_start=True) -> None:
         """
         Triggers producers and consumers creation

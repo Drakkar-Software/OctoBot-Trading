@@ -111,3 +111,18 @@ class FutureContract(margin_contract.MarginContract):
             logging.get_logger(str(self)).debug(f"Changed position mode to {pos_mode}")
             changed = True
         return changed
+
+    def to_dict(self):
+        return {
+            **super().to_dict(),
+            **{
+                enums.ExchangeConstantsFutureContractColumns.CONTRACT_TYPE.value:
+                    self.contract_type.value if self.contract_type else self.contract_type,
+                enums.ExchangeConstantsFutureContractColumns.MINIMUM_TICK_SIZE.value: self.minimum_tick_size,
+                enums.ExchangeConstantsFutureContractColumns.POSITION_MODE.value: self.position_mode.value,
+                enums.ExchangeConstantsFutureContractColumns.MAINTENANCE_MARGIN_RATE.value:
+                    self.maintenance_margin_rate,
+                enums.ExchangeConstantsFutureContractColumns.TAKE_PROFIT_STOP_LOSS_MODE.value:
+                    self.take_profit_stop_loss_mode,
+            }
+        }
