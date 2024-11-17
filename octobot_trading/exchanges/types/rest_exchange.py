@@ -104,6 +104,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to account compliancy issues
     EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to exchange internal synch (like when portfolio is not yet up to date after a trade)
+    EXCHANGE_INTERNAL_SYNC_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to exchange local account permissions (ex: accounts from X country can't trade XYZ)
     # text content of errors due to traded assets for account
     EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
@@ -254,6 +256,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 raise errors.ExchangeCompliancyError(
                     f"Error when handling order {e}. Exchange is refusing this order request on this account because "
                     f"of its compliancy requirements."
+                ) from e
+            if self.is_exchange_internal_sync_error(e):
+                raise errors.ExchangeInternalSyncError(
+                    f"Error when handling order {e}. Exchange is refusing this order request because of sync error "
+                    f"({e})."
                 ) from e
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             print(traceback.format_exc(), file=sys.stderr)
@@ -946,6 +953,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_exchange_rules_compliancy_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_COMPLIANCY_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_COMPLIANCY_ERRORS)
+        return False
+
+    def is_exchange_internal_sync_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_INTERNAL_SYNC_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_INTERNAL_SYNC_ERRORS)
         return False
 
     def is_exchange_account_traded_symbol_permission_error(self, error: BaseException) -> bool:
