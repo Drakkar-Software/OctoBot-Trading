@@ -26,6 +26,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.api as trading_api
 import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_data as trading_exchange_data
 import octobot_tentacles_manager.api as tentacles_manager_api
 
 import octobot_trading.personal_data as personal_data
@@ -257,3 +258,21 @@ async def wait_for_other_status(order: personal_data.Order, timeout) -> personal
             break
         await asyncio.sleep(constants.CREATED_ORDER_FORCED_UPDATE_PERIOD)
     raise TimeoutError(f"Order was not found with another status than {origin_status} within {timeout} seconds")
+
+
+async def get_positions(
+    exchange_manager,
+    exchange_data: exchange_data_import.ExchangeData,
+    symbols: list = None
+) -> list[dict]:
+    symbols = symbols or [market.symbol for market in exchange_data.markets]
+    raw_positions = await exchange_manager.exchange.get_positions(symbols=symbols)
+    # initialize relevant contracts first as they might be waited for
+    trading_exchange_data.update_contracts_from_positions(exchange_manager, raw_positions)
+    dict_positions = [
+        personal_data.create_position_instance_from_raw(
+            exchange_manager.trader, raw_position
+        ).to_dict()
+        for raw_position in raw_positions
+    ]
+    return dict_positions

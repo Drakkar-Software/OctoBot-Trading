@@ -207,6 +207,7 @@ from octobot_trading.api.contracts import (
     is_perpetual_future_contract,
     get_pair_contracts,
     is_handled_contract,
+    load_pair_contract,
 )
 from octobot_trading.api.storage import (
     clear_trades_storage_history,
@@ -380,6 +381,7 @@ __all__ = [
     "is_perpetual_future_contract",
     "get_pair_contracts",
     "is_handled_contract",
+    "load_pair_contract",
     "clear_trades_storage_history",
     "clear_candles_storage_history",
     "clear_database_storage_history",

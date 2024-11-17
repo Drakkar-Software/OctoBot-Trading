@@ -749,6 +749,7 @@ class Position(util.Initializable):
     def to_dict(self):
         return {
             enums.ExchangeConstantsPositionColumns.ID.value: self.position_id,
+            enums.ExchangeConstantsPositionColumns.EXCHANGE_POSITION_ID.value: self.exchange_position_id,
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsPositionColumns.STATUS.value: self.status.value,
             enums.ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,

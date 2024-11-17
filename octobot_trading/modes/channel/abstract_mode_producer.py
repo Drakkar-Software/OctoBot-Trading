@@ -502,11 +502,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 common_enums.ActivationTopics.EVALUATION_CYCLE.value,
                 activation_topic_values
             )
-        try:
-            await self._apply_exchange_side_config(context)
-        except Exception as err:
-            # TODO important error to display
-            self.logger.exception(err, True, f"Error when applying exchange side config: {err}")
+        if self.trading_mode.is_updating_exchange_settings(context):
+            try:
+                await self._apply_exchange_side_config(context)
+            except Exception as err:
+                # TODO important error to display
+                self.logger.exception(err, True, f"Error when applying exchange side config: {err}")
 
     async def _apply_exchange_side_config(self, context):
         # can be slow, call in a task if necessary

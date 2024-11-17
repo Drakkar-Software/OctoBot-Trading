@@ -81,7 +81,7 @@ class PositionsManager(util.Initializable):
         :return: True when the creation or the update succeeded
         """
         self._ensure_support(raw_position)
-        position_id = self._generate_position_id(symbol=symbol, side=side)
+        position_id = self.generate_position_id(symbol=symbol, side=side)
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=raw_position)
             new_position.position_id = position_id
@@ -122,7 +122,7 @@ class PositionsManager(util.Initializable):
         """
         new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=position.to_dict())
         position.clear()
-        position.position_id = self._generate_position_id(symbol=position.symbol, side=position.side)
+        position.position_id = self.generate_position_id(symbol=position.symbol, side=position.side)
         return await self._finalize_position_creation(new_position)
 
     async def handle_position_update_from_order(self, order, require_exchange_update: bool) -> bool:
@@ -149,6 +149,9 @@ class PositionsManager(util.Initializable):
                             err, True, f"Error while refreshing real trader {order.symbol} position: {err}"
                         )
         return False
+
+    def add_position(self, position):
+        self.positions[position.position_id] = position
 
     def _refresh_simulated_position_from_order(self, order):
         if order.is_filled():
@@ -186,7 +189,7 @@ class PositionsManager(util.Initializable):
         :return: True when the operation succeeded
         """
         if position.position_id not in self.positions:
-            self.positions[position.position_id] = position
+            self.add_position(position)
             return True
         return False
 
@@ -198,8 +201,7 @@ class PositionsManager(util.Initializable):
             position.clear()
         self._reset_positions()
 
-    # private
-    def _generate_position_id(self, symbol, side, expiration_time=None):
+    def generate_position_id(self, symbol, side, expiration_time=None):
         """
         Generate a position ID for one way and hedge position modes
         :param symbol: the position symbol
@@ -211,6 +213,7 @@ class PositionsManager(util.Initializable):
                f"{'' if expiration_time is None else self.POSITION_ID_SEPARATOR + str(expiration_time)}" \
                f"{'' if side is enums.PositionSide.BOTH or side is None else self.POSITION_ID_SEPARATOR + side.value}"
 
+    # private
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
         """
         Ends a position creation process
@@ -218,7 +221,7 @@ class PositionsManager(util.Initializable):
         :param is_from_exchange_data: True when the exchange creation comes from exchange data
         :return: True when the process succeeded
         """
-        self.positions[new_position.position_id] = new_position
+        self.add_position(new_position)
         await new_position.initialize(is_from_exchange_data=is_from_exchange_data)
         return True
 
@@ -231,7 +234,7 @@ class PositionsManager(util.Initializable):
         """
         new_position = position_factory.create_symbol_position(self.trader, symbol)
         new_position.position_id = position_id
-        self.positions[position_id] = new_position
+        self.add_position(new_position)
         return new_position
 
     def _get_or_create_position(self, symbol, side):
@@ -241,11 +244,11 @@ class PositionsManager(util.Initializable):
         :param side: the expected position side
         :return: the matching position
         """
-        expected_position_id = self._generate_position_id(symbol=symbol, side=side)
+        expected_position_id = self.generate_position_id(symbol=symbol, side=side)
         try:
             return self.positions[expected_position_id]
         except KeyError:
-            self.positions[expected_position_id] = self._create_symbol_position(symbol, expected_position_id)
+            self._create_symbol_position(symbol, expected_position_id)
         return self.positions[expected_position_id]
 
     def _get_symbol_positions(self, symbol):
@@ -256,7 +259,7 @@ class PositionsManager(util.Initializable):
         """
         positions = []
         for side in [enums.PositionSide.BOTH, enums.PositionSide.SHORT, enums.PositionSide.LONG]:
-            position_id = self._generate_position_id(symbol=symbol, side=side)
+            position_id = self.generate_position_id(symbol=symbol, side=side)
             try:
                 positions.append(self.positions[position_id])
             except KeyError:

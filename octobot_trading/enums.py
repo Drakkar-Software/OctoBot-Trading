@@ -364,6 +364,24 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     STATUS = "status"
     SIDE = "side"
+    EXCHANGE_POSITION_ID = "exchange_position_id"
+
+
+class ExchangeConstantsMarginContractColumns(enum.Enum):
+    PAIR = "PAIR"
+    MARGIN_TYPE = "margin_type"
+    CONTRACT_SIZE = "contract_size"
+    MAXIMUM_LEVERAGE = "maximum_leverage"
+    CURRENT_LEVERAGE = "current_leverage"
+    RISK_LIMIT = "risk_limit"
+
+
+class ExchangeConstantsFutureContractColumns(enum.Enum):
+    CONTRACT_TYPE = "contract_type"
+    MINIMUM_TICK_SIZE = "minimum_tick_size"
+    POSITION_MODE = "position_mode"
+    MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
+    TAKE_PROFIT_STOP_LOSS_MODE = "take_profit_stop_loss_mode"
 
 
 class ExchangeConstantsLiquidationColumns(enum.Enum):
