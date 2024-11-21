@@ -17,6 +17,7 @@
 import asyncio
 
 import octobot_commons.async_job as async_job
+import octobot_commons.html_util as html_util
 
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
@@ -84,7 +85,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                                   f"This contract will be created from fetched positions.")
             except Exception as e:
                 self.logger.exception(e, False)
-                self.logger.warning(f"Failed to load {pair} contract info : {e}")
+                self.logger.warning(
+                    f"Failed to load {pair} contract info : {html_util.get_html_summary_if_relevant(e)}"
+                )
 
     async def initialize_positions(self) -> None:
         """
@@ -99,7 +102,11 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.stop()
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to initialize positions : {e}")
+            self.logger.exception(
+                e,
+                True,
+                f"Fail to initialize positions : {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     async def start(self):
         """
@@ -169,7 +176,11 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                     symbol, enums.PositionSide.BOTH, constants.FORCED_MARGIN_TYPE
                 )
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to update contracts settings : {e}")
+            self.logger.exception(
+                e,
+                True,
+                f"Fail to update contracts settings : {html_util.get_html_summary_if_relevant(e)}"
+            )
         finally:
             self.channel.exchange_manager.exchange.set_contract_initialized_event(symbol)
 

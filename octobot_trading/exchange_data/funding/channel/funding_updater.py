@@ -19,6 +19,7 @@ import typing
 
 import octobot_commons.async_job as async_job
 import octobot_commons.constants as common_constants
+import octobot_commons.html_util as html_util
 
 import octobot_trading.exchange_data.funding.channel.funding as funding_channel
 import octobot_trading.exchanges.exchange_websocket_factory as exchange_websocket_factory
@@ -109,7 +110,8 @@ class FundingUpdater(funding_channel.FundingProducer):
             self.logger.exception(
                 e,
                 True,
-                f"Fail to update funding rate on {self.channel.exchange_manager.exchange.name} for {symbol} : {e}"
+                f"Fail to update funding rate on {self.channel.exchange_manager.exchange.name} for {symbol} : "
+                f"{html_util.get_html_summary_if_relevant(e)}"
             )
         return None
 

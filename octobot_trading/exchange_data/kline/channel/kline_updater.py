@@ -17,8 +17,9 @@
 import asyncio
 import time
 
-import octobot_trading.errors as errors
+import octobot_commons.html_util as html_util
 
+import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.kline.channel.kline as kline_channel
 import octobot_trading.enums as enums
@@ -82,7 +83,11 @@ class KlineUpdater(kline_channel.KlineProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(e, True, f"Failed to update kline data in {time_frame} : {e}")
+                self.logger.exception(
+                    e,
+                    True,
+                    f"Failed to update kline data in {time_frame} : {html_util.get_html_summary_if_relevant(e)}"
+                )
 
     async def resume(self) -> None:
         await super().resume()

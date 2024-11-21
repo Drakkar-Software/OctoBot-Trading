@@ -16,6 +16,8 @@
 #  License along with this library.
 import asyncio
 
+import octobot_commons.html_util as html_util
+
 import octobot_trading.errors as errors
 import octobot_trading.exchange_data.recent_trades.channel.recent_trade as recent_trade_channel
 import octobot_trading.constants as constants
@@ -40,7 +42,11 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                     await self.push(pair, recent_trades)
             await asyncio.sleep(self.refresh_time)
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to initialize recent trades : {e}")
+            self.logger.exception(
+                e,
+                True,
+                f"Fail to initialize recent trades : {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     async def start(self):
         refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
@@ -76,7 +82,11 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(e, True, f"Fail to update recent trades : {e}")
+                self.logger.exception(
+                    e,
+                    True,
+                    f"Fail to update recent trades : {html_util.get_html_summary_if_relevant(e)}"
+                )
 
     async def resume(self) -> None:
         await super().resume()
