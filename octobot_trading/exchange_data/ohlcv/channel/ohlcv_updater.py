@@ -20,6 +20,7 @@ import decimal
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
+import octobot_commons.html_util as html_util
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
@@ -244,7 +245,12 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(e, True, f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
+                self.logger.exception(
+                    e,
+                    True,
+                    f"Failed to update ohlcv data for {pair} on {time_frame} : "
+                    f"{html_util.get_html_summary_if_relevant(e)}"
+                )
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
 
     async def _refresh_current_candle(self, time_frame, pair, candles, last_candle,

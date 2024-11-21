@@ -23,6 +23,7 @@ import inspect
 import octobot_commons.enums
 import octobot_commons.logging
 import octobot_commons.symbols as commons_symbols
+import octobot_commons.html_util as html_util
 
 import octobot_trading
 import octobot_trading.constants as constants
@@ -50,7 +51,7 @@ def _retried_failed_network_request(func):
                 return resp
             except ccxt.RequestTimeout as err:
                 octobot_commons.logging.get_logger(f"_retried_failed_network_request").warning(
-                    f"{func.__name__} raised {err} ({err.__class__.__name__}) "
+                    f"{func.__name__} raised {html_util.get_html_summary_if_relevant(err)} ({err.__class__.__name__}) "
                     f"[attempts {i+1}/{constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS}]."
                 )
                 if i < constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS - 1:
@@ -162,7 +163,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 ccxt_client_util.set_markets_cache(self.client)
             except ccxt.ExchangeNotAvailable as err:
                 raise octobot_trading.errors.FailedRequest(
-                    f"Failed to load_symbol_markets: {err.__class__.__name__} on {err}"
+                    f"Failed to load_symbol_markets: {err.__class__.__name__} "
+                    f"on {html_util.get_html_summary_if_relevant(err)}"
                 ) from err
             except ccxt.ExchangeError:
                 # includes AuthenticationError but also auth error not identified as such by ccxt
@@ -269,7 +271,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except Exception as e:
-            self.logger.error(f"Fail to get market status of {symbol}: {e}")
+            self.logger.error(f"Fail to get market status of {symbol}: {html_util.get_html_summary_if_relevant(e)}")
             return {}
 
     @ccxt_client_util.converted_ccxt_common_errors
@@ -301,7 +303,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(
-                f"Failed to get_symbol_prices of {symbol} on {time_frame.value}: {e.__class__.__name__} on {e}"
+                f"Failed to get_symbol_prices of {symbol} on {time_frame.value}: {e.__class__.__name__} "
+                f"{html_util.get_html_summary_if_relevant(e)}"
             ) from e
 
     @ccxt_client_util.converted_ccxt_common_errors
@@ -319,7 +322,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_kline_price {e}")
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to get_kline_price {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     # return up to ten bidasks on each side of the order book stack
     @ccxt_client_util.converted_ccxt_common_errors
@@ -332,7 +337,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_order_book {e}")
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to get_order_book {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     # return bidasks on each side of the order book stack for each given symbol
     @ccxt_client_util.converted_ccxt_common_errors
@@ -354,7 +361,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_order_books {e}")
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to get_order_books {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
@@ -366,7 +375,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_recent_trades {e}")
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to get_recent_trades {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
     @ccxt_client_util.converted_ccxt_common_errors
@@ -379,7 +390,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to get_price_ticker {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
@@ -394,7 +407,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_all_currencies_price_ticker {e}")
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to get_all_currencies_price_ticker {html_util.get_html_summary_if_relevant(e)}"
+            )
 
     # ORDERS
     @ccxt_client_util.converted_ccxt_common_errors
@@ -413,14 +428,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 pass
             except ccxt.NotSupported as e:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
-                raise octobot_trading.errors.NotSupported(e) from e
+                raise octobot_trading.errors.NotSupported(
+                    html_util.get_html_summary_if_relevant(e)
+                ) from e
             except ccxt.ExchangeError as e:
                 if self.exchange_manager.exchange.is_order_not_found_error(e):
                     # when an OrderNotFound error should have been raised but is not for some reason
                     pass
                 else:
                     # something went wrong and ccxt did not expect it
-                    raise octobot_trading.errors.FailedRequest(e) from e
+                    raise octobot_trading.errors.FailedRequest(html_util.get_html_summary_if_relevant(e)) from e
         else:
             # When fetch_order is not supported, uses get_open_orders or get_closed_orders and extract order id
             for method in (self.get_open_orders, self.get_closed_orders):
@@ -625,7 +642,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.NotSupported(e) from e
         except Exception as e:
             self.logger.exception(
-                e, True, f"Unexpected error when cancelling all {symbol} orders | {e} ({e.__class__.__name__})"
+                e,
+                True,
+                f"Unexpected error when cancelling all {symbol} orders | "
+                f"{html_util.get_html_summary_if_relevant(e)} ({e.__class__.__name__})"
             )
             raise e
 
@@ -660,12 +680,20 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 f"Trying to cancel order with id {exchange_order_id} but order was not found. It might have "
                 f"already been cancelled or be filled."
             )
-            raise octobot_trading.errors.OrderNotFoundOnCancelError(e) from e
+            raise octobot_trading.errors.OrderNotFoundOnCancelError(
+                html_util.get_html_summary_if_relevant(e)
+            ) from e
         except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
-            raise octobot_trading.errors.NotSupported(e) from e
+            raise octobot_trading.errors.NotSupported(
+                html_util.get_html_summary_if_relevant(e)
+            ) from e
         except Exception as e:
-            self.logger.exception(e, True, f"Unexpected error when cancelling order with exchange id: "
-                                           f"{exchange_order_id} failed to cancel | {e} ({e.__class__.__name__})")
+            self.logger.exception(
+                e,
+                True,
+                f"Unexpected error when cancelling order with exchange id: "
+                f"{exchange_order_id} failed to cancel | {html_util.get_html_summary_if_relevant(e)} "
+                f"({e.__class__.__name__})")
             raise e
 
     @ccxt_client_util.converted_ccxt_common_errors
@@ -786,7 +814,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except Exception as e:
-            self.logger.error(f"Fees data for {symbol} was not found ({e})")
+            self.logger.error(f"Fees data for {symbol} was not found ({html_util.get_html_summary_if_relevant(e)})")
             return {
                 enums.ExchangeConstantsMarketPropertyColumns.TAKER.value: constants.CONFIG_DEFAULT_FEES,
                 enums.ExchangeConstantsMarketPropertyColumns.MAKER.value: constants.CONFIG_DEFAULT_FEES,
@@ -929,7 +957,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def log_ddos_error(self, error):
         self.logger.error(
-            f"DDoSProtection triggered [{error} ({error.__class__.__name__})]. "
+            f"DDoSProtection triggered [{html_util.get_html_summary_if_relevant(error)} ({error.__class__.__name__})]. "
             f"Last response headers: {self.client.last_response_headers} "
             f"Last json response: {self.client.last_json_response}"
         )
@@ -950,14 +978,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             # use 2 index to get the caller of the context manager
             caller_function_name = inspect.stack()[2].function
             exchanges.log_time_sync_error(self.logger, self.name, err, caller_function_name)
-            raise octobot_trading.errors.FailedRequest(err) from err
+            raise octobot_trading.errors.FailedRequest(html_util.get_html_summary_if_relevant(err)) from err
         except ccxt.RequestTimeout as e:
-            raise octobot_trading.errors.FailedRequest(f"Request timeout: {e}") from e
+            raise octobot_trading.errors.FailedRequest(
+                f"Request timeout: {html_util.get_html_summary_if_relevant(e)}"
+            ) from e
         except ccxt.AuthenticationError as err:
-            raise octobot_trading.errors.AuthenticationError(err) from err
+            raise octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err)) from err
         except ccxt.ExchangeError as err:
             if self.exchange_manager.exchange.is_authentication_error(err):
                 # ensure this is not an unhandled authentication error
-                raise octobot_trading.errors.AuthenticationError(err) from err
+                raise octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err)) from err
             # otherwise just forward exception
             raise

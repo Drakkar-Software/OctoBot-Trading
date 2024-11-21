@@ -24,6 +24,7 @@ import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
 import octobot_commons.tentacles_management as tentacles_management
+import octobot_commons.html_util as html_util
 
 import octobot_trading.constants
 import octobot_trading.enums as enums
@@ -513,7 +514,8 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
                 latest_error = err
                 latest_request_url = self.get_latest_request_url()
                 self.logger.debug(
-                    f"Request retrier failed for {request_func.__name__}({args} {kwargs}) (attempt {attempt}) ({err})"
+                    f"Request retrier failed for {request_func.__name__}({args} {kwargs}) "
+                    f"(attempt {attempt}) ({html_util.get_html_summary_if_relevant(err)})"
                 )
                 if time.time() - last_request_time < minimal_interval:
                     await asyncio.sleep(minimal_interval)
@@ -722,11 +724,14 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     def log_order_creation_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {str(quantity)}, price: {str(price)}," \
                      f" stop_price: {str(stop_price)}"
-        self.logger.error(f"Failed to create order : {error.__class__.__name__} {error}: ({order_desc})")
+        self.logger.error(
+            f"Failed to create order : {error.__class__.__name__} {html_util.get_html_summary_if_relevant(error)}: "
+            f"({order_desc})"
+        )
 
     def handle_token_error(self, error):
         self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
-                          f"({error.__class__.__name__}: {error})")
+                          f"({error.__class__.__name__}: {html_util.get_html_summary_if_relevant(error)})")
 
     @contextlib.contextmanager
     def creating_order(

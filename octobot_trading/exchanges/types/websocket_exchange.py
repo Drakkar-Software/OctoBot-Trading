@@ -17,6 +17,8 @@ import asyncio
 import sys
 import concurrent.futures as futures
 
+import octobot_commons.html_util as html_util
+
 import octobot_commons.thread_util as thread_util
 import octobot_trading.constants
 import octobot_trading.enums
@@ -156,7 +158,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
                 self.is_websocket_running = True
             except ValueError as e:
-                self.logger.error(f"Failed to start websocket on {self.exchange_name} : {e}")
+                self.logger.error(
+                    f"Failed to start websocket on {self.exchange_name} : {html_util.get_html_summary_if_relevant(e)}"
+                )
 
         if self.websocket_connectors and not self.is_websocket_running:
             self.logger.debug(f"{self.exchange_manager.exchange_name.title()}'s "
@@ -200,7 +204,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             for websocket in self.websocket_connectors:
                 await websocket.stop()
         except Exception as e:
-            self.logger.error(f"Error when stopping sockets : {e}")
+            self.logger.error(f"Error when stopping sockets : {html_util.get_html_summary_if_relevant(e)}")
 
     async def close_sockets(self):
         """
@@ -210,7 +214,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             for websocket in self.websocket_connectors:
                 await websocket.close()
         except Exception as e:
-            self.logger.error(f"Error when closing sockets : {e}")
+            self.logger.error(f"Error when closing sockets : {html_util.get_html_summary_if_relevant(e)}")
         for websocket_task in self.websocket_connectors_tasks:
             websocket_task.cancel()
         if sys.version_info.minor >= 9:

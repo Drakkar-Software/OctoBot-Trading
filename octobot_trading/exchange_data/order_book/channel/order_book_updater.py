@@ -16,8 +16,9 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors as errors
+import octobot_commons.html_util as html_util
 
+import octobot_trading.errors as errors
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.order_book.channel.order_book as order_book_channel
@@ -67,7 +68,9 @@ class OrderBookUpdater(order_book_channel.OrderBookProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(e, True, f"Fail to update order book : {e}")
+                self.logger.exception(
+                    e, True, f"Fail to update order book : {html_util.get_html_summary_if_relevant(e)}"
+                )
 
     async def parse_order_book_ticker(self, pair, asks, bids):
         """

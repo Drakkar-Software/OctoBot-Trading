@@ -17,6 +17,8 @@
 import asyncio
 import contextlib
 
+import octobot_commons.html_util as html_util
+
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ticker.channel.ticker as ticker_channel
@@ -60,13 +62,17 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(e, True, f"Fail to update ticker : {e}")
+                self.logger.exception(
+                    e,
+                    True,
+                    f"Fail to update ticker : {html_util.get_html_summary_if_relevant(e)}"
+                )
 
     async def _fetch_ticker(self, pair):
         try:
             await self.fetch_and_push_pair(pair)
         except errors.FailedRequest as e:
-            self.logger.warning(str(e))
+            self.logger.warning(html_util.get_html_summary_if_relevant(e))
             # avoid spamming on disconnected situation
             await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
 

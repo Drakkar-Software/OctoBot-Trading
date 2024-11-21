@@ -19,6 +19,7 @@ import asyncio
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.html_util as html_util
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.trades.channel as trades_channel
@@ -63,7 +64,7 @@ class TradesUpdater(trades_channel.TradesProducer):
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.pause()
         except Exception as e:
-            self.logger.error(f"Fail to initialize trade history : {e}")
+            self.logger.error(f"Fail to initialize trade history : {html_util.get_html_summary_if_relevant(e)}")
 
     async def fetch_and_push(self):
         self.logger.debug(
@@ -113,7 +114,7 @@ class TradesUpdater(trades_channel.TradesProducer):
             try:
                 await self.fetch_and_push()
             except Exception as e:
-                self.logger.error(f"Fail to update trades : {e}")
+                self.logger.error(f"Fail to update trades : {html_util.get_html_summary_if_relevant(e)}")
 
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
 

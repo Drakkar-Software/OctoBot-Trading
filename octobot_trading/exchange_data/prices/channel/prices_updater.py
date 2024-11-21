@@ -16,6 +16,8 @@
 import asyncio
 import decimal
 
+import octobot_commons.html_util as html_util
+
 import octobot_trading.errors as errors
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
@@ -135,7 +137,7 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         except (errors.NotSupported, NotImplementedError) as ne:
             raise ne
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to update funding rate : {e}")
+            self.logger.exception(e, True, f"Fail to update funding rate : {html_util.get_html_summary_if_relevant(e)}")
         return None
 
     async def push_funding_rate(self, symbol, funding_rate):

@@ -19,6 +19,7 @@ import asyncio
 import octobot_commons.async_job as async_job
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
+import octobot_commons.html_util as html_util
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.channel.orders as orders_channel
@@ -81,7 +82,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")
             await self.pause()
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to initialize orders : {e}")
+            self.logger.exception(e, True, f"Fail to initialize orders : {html_util.get_html_summary_if_relevant(e)}")
 
     async def start(self) -> None:
         """
