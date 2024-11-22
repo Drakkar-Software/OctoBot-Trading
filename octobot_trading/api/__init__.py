@@ -201,13 +201,16 @@ from octobot_trading.api.orders import (
 from octobot_trading.api.positions import (
     get_positions,
     close_position,
+    set_is_exclusively_using_exchange_position_details,
 )
 from octobot_trading.api.contracts import (
     is_inverse_future_contract,
     is_perpetual_future_contract,
     get_pair_contracts,
     is_handled_contract,
+    has_pair_future_contract,
     load_pair_contract,
+    create_default_future_contract,
 )
 from octobot_trading.api.storage import (
     clear_trades_storage_history,
@@ -381,7 +384,10 @@ __all__ = [
     "is_perpetual_future_contract",
     "get_pair_contracts",
     "is_handled_contract",
+    "has_pair_future_contract",
     "load_pair_contract",
+    "create_default_future_contract",
+    "set_is_exclusively_using_exchange_position_details",
     "clear_trades_storage_history",
     "clear_candles_storage_history",
     "clear_database_storage_history",

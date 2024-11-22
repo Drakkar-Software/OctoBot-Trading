@@ -24,6 +24,7 @@ from octobot_trading.personal_data.trades.trades_manager import (
 )
 from octobot_trading.personal_data.trades.trade_factory import (
     create_trade_instance_from_raw,
+    create_closed_order_instance_from_raw_trade,
     create_trade_from_order,
     create_trade_from_dict,
 )
@@ -48,6 +49,7 @@ __all__ = [
     "TradesProducer",
     "TradesChannel",
     "create_trade_instance_from_raw",
+    "create_closed_order_instance_from_raw_trade",
     "create_trade_from_order",
     "create_trade_from_dict",
     "TradesUpdater",

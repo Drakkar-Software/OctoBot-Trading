@@ -21,3 +21,24 @@ def parse_position_status(raw_position):
         return enums.PositionStatus(raw_position[enums.ExchangeConstantsPositionColumns.STATUS.value])
     except KeyError:
         return None
+
+
+def parse_position_side(raw_position):
+    try:
+        return enums.PositionSide(raw_position[enums.ExchangeConstantsPositionColumns.SIDE.value])
+    except KeyError:
+        return None
+
+
+def parse_position_margin_type(raw_position):
+    try:
+        return enums.MarginType(raw_position[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value])
+    except KeyError:
+        return None
+
+
+def parse_position_mode(raw_position):
+    try:
+        return enums.PositionMode(raw_position[enums.ExchangeConstantsPositionColumns.POSITION_MODE.value])
+    except KeyError:
+        return None

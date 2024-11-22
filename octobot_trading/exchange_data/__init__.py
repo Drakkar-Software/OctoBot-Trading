@@ -92,6 +92,7 @@ from octobot_trading.exchange_data.contracts import (
     FutureContract,
     update_contracts_from_positions,
     update_future_contract_from_dict,
+    create_default_future_contract,
 )
 from octobot_trading.exchange_data import exchange_symbol_data
 from octobot_trading.exchange_data.exchange_symbol_data import (
@@ -195,6 +196,7 @@ __all__ = [
     "FutureContract",
     "update_contracts_from_positions",
     "update_future_contract_from_dict",
+    "create_default_future_contract",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",
     "UNAUTHENTICATED_UPDATER_PRODUCERS",

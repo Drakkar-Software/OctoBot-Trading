@@ -68,6 +68,7 @@ class Position(util.Initializable):
         self.value = constants.ZERO
         self.initial_margin = constants.ZERO
         self.margin = constants.ZERO
+        self.auto_deposit_margin = False
 
         # PNL
         self.unrealized_pnl = constants.ZERO
@@ -131,7 +132,7 @@ class Position(util.Initializable):
 
     def _update(self, position_id, exchange_position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
-                quantity, size, value, initial_margin,
+                quantity, size, value, initial_margin, auto_deposit_margin,
                 unrealized_pnl, realised_pnl, fee_to_close,
                 status=None):
         changed: bool = False
@@ -170,6 +171,10 @@ class Position(util.Initializable):
         if self._should_change(self.initial_margin, initial_margin):
             self.initial_margin = initial_margin
             self._update_margin()
+            changed = True
+
+        if self._should_change(self.auto_deposit_margin, auto_deposit_margin):
+            self.auto_deposit_margin = auto_deposit_margin
             changed = True
 
         if self._should_change(self.unrealized_pnl, unrealized_pnl):
@@ -407,6 +412,12 @@ class Position(util.Initializable):
             return self.size + size_update <= constants.ZERO
         return self.size + size_update >= constants.ZERO
 
+    def is_exclusively_using_exchange_position_details(self) -> bool:
+        return (
+            self.exchange_manager.exchange_personal_data.positions_manager
+            .is_exclusively_using_exchange_position_details
+        )
+
     def _update_size(self, size_update, realised_pnl_update=constants.ZERO,
                      trigger_source=enums.PNLTransactionSource.UNKNOWN):
         """
@@ -424,7 +435,7 @@ class Position(util.Initializable):
         self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side(True)
-        if self.exchange_manager.is_simulated:
+        if self.exchange_manager.is_simulated and not self.is_exclusively_using_exchange_position_details():
             margin_update = self._update_initial_margin()
             self.update_fee_to_close()
             self.update_liquidation_price()
@@ -692,7 +703,7 @@ class Position(util.Initializable):
             self._reset_entry_price()
         self.exit_price = constants.ZERO
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
-        logging.get_logger(self.get_logger_name()).info(f"Changed position side: now {self.side.name}")
+        logging.get_logger(self.get_logger_name()).debug(f"Changed position side: now {self.side.name}")
         # update position state if necessary
         positions_states.create_position_state(self)
 
@@ -736,6 +747,9 @@ class Position(util.Initializable):
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
             initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
                                             constants.ZERO),
+            auto_deposit_margin=raw_position.get(
+                enums.ExchangeConstantsPositionColumns.AUTO_DEPOSIT_MARGIN.value, False
+            ),
             position_id=self.position_id or symbol,
             exchange_position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None) or symbol),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
@@ -748,8 +762,8 @@ class Position(util.Initializable):
 
     def to_dict(self):
         return {
-            enums.ExchangeConstantsPositionColumns.ID.value: self.position_id,
-            enums.ExchangeConstantsPositionColumns.EXCHANGE_POSITION_ID.value: self.exchange_position_id,
+            enums.ExchangeConstantsPositionColumns.ID.value: self.exchange_position_id,
+            enums.ExchangeConstantsPositionColumns.LOCAL_ID.value: self.position_id,
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsPositionColumns.STATUS.value: self.status.value,
             enums.ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
@@ -758,19 +772,27 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.SIZE.value: self.size,
             enums.ExchangeConstantsPositionColumns.NOTIONAL.value: self.value,
             enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: self.initial_margin,
+            enums.ExchangeConstantsPositionColumns.AUTO_DEPOSIT_MARGIN.value: self.auto_deposit_margin,
             enums.ExchangeConstantsPositionColumns.COLLATERAL.value: self.margin,
+            enums.ExchangeConstantsPositionColumns.LEVERAGE.value: self.symbol_contract.current_leverage,
+            enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: self.symbol_contract.margin_type.value
+                if self.symbol_contract and self.symbol_contract.margin_type else None,
+            enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: self.symbol_contract.position_mode.value
+                if self.symbol_contract and self.symbol_contract.position_mode else None,
             enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
             enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
             enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
             enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: self.unrealized_pnl,
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
+            enums.ExchangeConstantsPositionColumns.MAINTENANCE_MARGIN_RATE.value: self.symbol_contract.maintenance_margin_rate,
         }
 
     def _check_for_liquidation(self):
         """
         _check_for_liquidation defines rules for a position to be liquidated
         """
-        if self.liquidation_price.is_nan():
+        if self.liquidation_price.is_nan() or self.is_exclusively_using_exchange_position_details():
+            # should skip liquidation check
             return
         if (self.is_short()
             and self.mark_price >= self.liquidation_price > constants.ZERO) or (

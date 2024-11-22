@@ -13,9 +13,26 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+
+
+POSITION_DICT_DECIMAL_KEYS = [
+    enums.ExchangeConstantsPositionColumns.QUANTITY.value,
+    enums.ExchangeConstantsPositionColumns.SIZE.value,
+    enums.ExchangeConstantsPositionColumns.NOTIONAL.value,
+    enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
+    enums.ExchangeConstantsPositionColumns.COLLATERAL.value,
+    enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value,
+    enums.ExchangeConstantsPositionColumns.MARK_PRICE.value,
+    enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value,
+    enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
+    enums.ExchangeConstantsPositionColumns.REALISED_PNL.value,
+    enums.ExchangeConstantsPositionColumns.MAINTENANCE_MARGIN_RATE.value,
+]
 
 
 def create_position_instance_from_raw(trader, raw_position):
@@ -31,6 +48,37 @@ def create_position_instance_from_raw(trader, raw_position):
     position = create_position_from_type(trader, position_symbol_contract)
     position.update_from_raw(raw_position)
     return position
+
+
+def create_position_instance_from_dict(trader, position_dict: dict):
+    """
+    Creates a position instance from a raw position dictionary
+    :param trader: the trader instance
+    :param position_dict: the raw position dictionary as from position.to_dict
+    :return: the created position
+    """
+    raw_position = sanitize_raw_decimals(position_dict)
+    return create_position_instance_from_raw(trader, raw_position)
+
+
+def sanitize_raw_position(position_dict: dict):
+    position_dict[enums.ExchangeConstantsPositionColumns.STATUS.value] = (
+        personal_data.parse_position_status(position_dict))
+    position_dict[enums.ExchangeConstantsPositionColumns.SIDE.value] = (
+        personal_data.parse_position_side(position_dict))
+    position_dict[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value] = (
+        personal_data.parse_position_margin_type(position_dict))
+    position_dict[enums.ExchangeConstantsPositionColumns.POSITION_MODE.value] = (
+        personal_data.parse_position_mode(position_dict))
+    return sanitize_raw_decimals(position_dict)
+
+
+def sanitize_raw_decimals(position_dict: dict):
+    for key in POSITION_DICT_DECIMAL_KEYS:
+        value = position_dict.get(key)
+        if value is not None and value != "":
+            position_dict[key] = decimal.Decimal(str(value))
+    return position_dict
 
 
 def create_position_from_type(trader, symbol_contract):
