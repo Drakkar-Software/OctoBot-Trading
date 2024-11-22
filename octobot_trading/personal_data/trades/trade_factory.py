@@ -22,19 +22,24 @@ import octobot_trading.constants as constants
 
 def create_trade_instance_from_raw(trader, raw_trade):
     try:
-        order = order_factory.create_order_from_raw(trader, raw_trade)
-        order.update_from_raw(raw_trade)
-        if order.status is enums.OrderStatus.CANCELED:
-            # ensure order is considered canceled
-            order.consider_as_canceled()
-        else:
-            # ensure order is considered filled
-            order.consider_as_filled()
+        order = create_closed_order_instance_from_raw_trade(trader, raw_trade)
         exchange_trade_id = raw_trade.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value)
         return create_trade_from_order(order, exchange_trade_id=exchange_trade_id)
     except KeyError:
         # Funding trade candidate
         return None
+
+
+def create_closed_order_instance_from_raw_trade(trader, raw_trade):
+    order = order_factory.create_order_from_raw(trader, raw_trade)
+    order.update_from_raw(raw_trade)
+    if order.status is enums.OrderStatus.CANCELED:
+        # ensure order is considered canceled
+        order.consider_as_canceled()
+    else:
+        # ensure order is considered filled
+        order.consider_as_filled()
+    return order
 
 
 def create_trade_from_order(order,

@@ -273,18 +273,33 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # CCXT standard position parsing logic
         # if mode is enums.PositionMode.ONE_WAY:
         original_side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value)
-        position_side = enums.PositionSide.BOTH
-        # todo when handling cross positions
-        # side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value, enums.PositionSide.UNKNOWN.value)
-        # position_side = enums.PositionSide.LONG \
-        #     if side == enums.PositionSide.LONG.value else enums.PositionSide.
         symbol = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value)
         contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)))
         contracts = constants.ZERO if force_empty \
             else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
         is_empty = contracts == constants.ZERO
+        position_mode = (
+            enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED.value, False)
+            else enums.PositionMode.ONE_WAY
+        )
+        if position_mode is enums.PositionMode.HEDGE:
+            # todo when handling helge positions
+            side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value, enums.PositionSide.UNKNOWN.value)
+            position_side = enums.PositionSide.LONG \
+                if side == enums.PositionSide.LONG.value else enums.PositionSide.SHORT
+            log_func = self.logger.debug
+            if is_empty:
+                log_func = self.logger.error
+            log_func(f"Unhandled {symbol} position mode ({position_mode.value}). This position can't be traded.")
+        else:
+            # One way position use BOTH side as there is always only one position per symbol.
+            # This position can turn long and short
+            position_side = enums.PositionSide.BOTH
         liquidation_price = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)
-        if margin_type := fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None):
+        if margin_type := fixed.get(
+            ccxt_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value,
+            fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARGIN_MODE.value, None)   # can also be contained in margin mode
+        ):
             margin_type = enums.MarginType(margin_type)
         if force_empty or liquidation_price is None:
             liquidation_price = constants.NaN
@@ -306,9 +321,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
                     self.safe_decimal(fixed, ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value,
                                       constants.DEFAULT_SYMBOL_LEVERAGE),
-                enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: None if is_empty else
-                enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED.value, True)
-                else enums.PositionMode.ONE_WAY,
+                enums.ExchangeConstantsPositionColumns.POSITION_MODE.value: position_mode,
                 # next values are always 0 when the position empty (0 contracts)
                 enums.ExchangeConstantsPositionColumns.COLLATERAL.value: constants.ZERO if is_empty else
                 decimal.Decimal(
@@ -319,6 +332,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: constants.ZERO if is_empty else
                 decimal.Decimal(
                     f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.INITIAL_MARGIN.value, 0) or 0}"),
+                enums.ExchangeConstantsPositionColumns.AUTO_DEPOSIT_MARGIN.value: False,    # default value
                 enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: constants.ZERO if is_empty else
                 decimal.Decimal(
                     f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0) or 0}"),

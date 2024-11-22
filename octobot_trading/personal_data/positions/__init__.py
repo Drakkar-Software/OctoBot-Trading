@@ -54,11 +54,16 @@ from octobot_trading.personal_data.positions.positions_manager import (
 from octobot_trading.personal_data.positions import position_util
 from octobot_trading.personal_data.positions.position_util import (
     parse_position_status,
+    parse_position_side,
+    parse_position_margin_type,
+    parse_position_mode,
 )
 
 from octobot_trading.personal_data.positions import position_factory
 from octobot_trading.personal_data.positions.position_factory import (
     create_position_instance_from_raw,
+    create_position_instance_from_dict,
+    sanitize_raw_position,
     create_position_from_type,
     create_symbol_position,
 )
@@ -74,9 +79,14 @@ __all__ = [
     "PositionsUpdater",
     "PositionsManager",
     "create_position_instance_from_raw",
+    "create_position_instance_from_dict",
+    "sanitize_raw_position",
     "create_position_from_type",
     "create_symbol_position",
     "parse_position_status",
+    "parse_position_side",
+    "parse_position_margin_type",
+    "parse_position_mode",
     "LiquidatePositionState",
     "IdlePositionState",
     "ActivePositionState",

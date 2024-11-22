@@ -342,6 +342,7 @@ class TradeExtraConstants(enum.Enum):
 
 class ExchangeConstantsPositionColumns(enum.Enum):
     ID = "id"
+    LOCAL_ID = "local_id"
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
     ENTRY_PRICE = "entry_price"
@@ -355,6 +356,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     SIZE = "size"
     NOTIONAL = "notional"
     INITIAL_MARGIN = "initial_margin"
+    AUTO_DEPOSIT_MARGIN = "auto_deposit_margin"
     COLLATERAL = "collateral"
     LEVERAGE = "leverage"
     MARGIN_TYPE = "margin_type"
@@ -364,7 +366,6 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     STATUS = "status"
     SIDE = "side"
-    EXCHANGE_POSITION_ID = "exchange_position_id"
 
 
 class ExchangeConstantsMarginContractColumns(enum.Enum):

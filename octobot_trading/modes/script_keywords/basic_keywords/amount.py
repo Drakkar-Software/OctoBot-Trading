@@ -16,6 +16,7 @@
 import octobot_commons.symbols as commons_symbols
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
+import octobot_trading.modes.script_keywords.basic_keywords.position as position_kw
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.errors as trading_errors
 import octobot_trading.enums as trading_enums
@@ -77,7 +78,18 @@ async def get_amount_from_input_amount(
             )
         amount_value = total_symbol_assets_holdings_value * amount_value / trading_constants.ONE_HUNDRED
     elif amount_type is dsl.QuantityType.POSITION_PERCENT:
-        raise NotImplementedError(amount_type)
+        if context.exchange_manager.is_future:
+            if position_kw.is_in_one_way_position_mode(context):
+                # use abs() since short positions have negative size
+                amount_value = abs(
+                    position_kw.get_position(
+                        context, symbol=context.symbol, side=trading_enums.PositionSide.BOTH.value
+                    ).size
+                ) * amount_value / trading_constants.ONE_HUNDRED
+            else:
+                raise NotImplementedError(f"{amount_type} input type is not implemented for non-one-way positions")
+        else:
+            raise NotImplementedError(f"{amount_type} input type is not implemented for non-future exchanges")
     else:
         raise trading_errors.InvalidArgumentError(f"Unsupported input: {input_amount} make sure to use a supported syntax for amount")
     adapted_amount = await account_balance.adapt_amount_to_holdings(

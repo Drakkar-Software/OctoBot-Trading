@@ -36,5 +36,9 @@ async def close_position(exchange_manager, symbol: str, side: enums.PositionSide
     return 0
 
 
-def load_pair_contract(exchange_manager, position_dict: dict):
-    exchange_data.update_future_contract_from_dict(exchange_manager, position_dict)
+def set_is_exclusively_using_exchange_position_details(
+    exchange_manager, is_exclusively_using_exchange_position_details: bool
+):
+    exchange_manager.exchange_personal_data.positions_manager.is_exclusively_using_exchange_position_details = (
+        is_exclusively_using_exchange_position_details
+    )

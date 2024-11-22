@@ -119,7 +119,8 @@ class FutureContract(margin_contract.MarginContract):
                 enums.ExchangeConstantsFutureContractColumns.CONTRACT_TYPE.value:
                     self.contract_type.value if self.contract_type else self.contract_type,
                 enums.ExchangeConstantsFutureContractColumns.MINIMUM_TICK_SIZE.value: self.minimum_tick_size,
-                enums.ExchangeConstantsFutureContractColumns.POSITION_MODE.value: self.position_mode.value,
+                enums.ExchangeConstantsFutureContractColumns.POSITION_MODE.value:
+                    self.position_mode.value if self.position_mode else self.position_mode,
                 enums.ExchangeConstantsFutureContractColumns.MAINTENANCE_MARGIN_RATE.value:
                     self.maintenance_margin_rate,
                 enums.ExchangeConstantsFutureContractColumns.TAKE_PROFIT_STOP_LOSS_MODE.value:

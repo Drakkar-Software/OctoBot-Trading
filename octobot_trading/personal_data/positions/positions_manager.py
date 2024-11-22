@@ -14,12 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import collections
+import contextlib
+import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.enums as commons_enums
 import octobot_commons.tree as commons_tree
 
 import octobot_trading.personal_data.positions.position_factory as position_factory
+import octobot_trading.personal_data.positions.position as position_import
 import octobot_trading.util as util
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -36,6 +39,12 @@ class PositionsManager(util.Initializable):
         self.trader = trader
         self.positions = collections.OrderedDict()
         self.logged_unsupported_positions = set()
+
+        # When True, liquidation prices, PNL and other metrics are only read from exchange.
+        # They are never computed by OctoBot
+        self.is_exclusively_using_exchange_position_details = False
+
+        self._enable_position_update_from_order = True
 
     async def initialize_impl(self):
         self._reset_positions()
@@ -72,6 +81,12 @@ class PositionsManager(util.Initializable):
             return list(self.positions.values())
         return self._get_symbol_positions(symbol)
 
+    def get_symbol_position_margin_type(self, symbol: str) -> enums.MarginType:
+        positions = self.get_symbol_positions(symbol=symbol)
+        if len(positions) != 1:
+            raise ValueError(f"{len(positions)} positions found for symbol {symbol}")
+        return positions[0].symbol_contract.margin_type
+
     async def upsert_position(self, symbol: str, side, raw_position: dict) -> bool:
         """
         Create or update a position from a raw dictionary
@@ -81,7 +96,7 @@ class PositionsManager(util.Initializable):
         :return: True when the creation or the update succeeded
         """
         self._ensure_support(raw_position)
-        position_id = self.generate_position_id(symbol=symbol, side=side)
+        position_id = self._position_id_factory(symbol=symbol, side=side)
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=raw_position)
             new_position.position_id = position_id
@@ -122,7 +137,7 @@ class PositionsManager(util.Initializable):
         """
         new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=position.to_dict())
         position.clear()
-        position.position_id = self.generate_position_id(symbol=position.symbol, side=position.side)
+        position.position_id = self._position_id_factory(symbol=position.symbol, side=position.side)
         return await self._finalize_position_creation(new_position)
 
     async def handle_position_update_from_order(self, order, require_exchange_update: bool) -> bool:
@@ -133,7 +148,7 @@ class PositionsManager(util.Initializable):
         position changes using order data (as in trading simulator)
         :return: True if the position was updated
         """
-        if self.trader.is_enabled:
+        if self.trader.is_enabled and self._enable_position_update_from_order:
             # portfolio might be updated when refreshing the position
             async with self.trader.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_history_update():
                 if self.trader.simulate or not require_exchange_update:
@@ -150,7 +165,7 @@ class PositionsManager(util.Initializable):
                         )
         return False
 
-    def add_position(self, position):
+    def add_position(self, position: position_import.Position):
         self.positions[position.position_id] = position
 
     def _refresh_simulated_position_from_order(self, order):
@@ -182,7 +197,7 @@ class PositionsManager(util.Initializable):
             position, wait_for_refresh=True, force_job_execution=force_job_execution
         )
 
-    def upsert_position_instance(self, position) -> bool:
+    def upsert_position_instance(self, position: position_import.Position) -> bool:
         """
         Save an existing position instance to positions list
         :param position: the position instance
@@ -201,11 +216,31 @@ class PositionsManager(util.Initializable):
             position.clear()
         self._reset_positions()
 
-    def generate_position_id(self, symbol, side, expiration_time=None):
+    def create_position_id(self, position: position_import.Position) -> str:
+        return self._position_id_factory(
+            position.symbol, side=None if position.symbol_contract.is_one_way_position_mode() else position.side
+        )
+
+    @contextlib.contextmanager
+    def disabled_positions_update_from_order(self):
+        """
+        Can be used to locally disable position refresh when an order is updated
+        """
+        self._enable_position_update_from_order = False
+        try:
+            yield
+        finally:
+            self._enable_position_update_from_order = True
+
+    # private
+
+    def _position_id_factory(
+        self, symbol: str, side: typing.Union[None, enums.PositionSide], expiration_time=None
+    ) -> str:
         """
         Generate a position ID for one way and hedge position modes
         :param symbol: the position symbol
-        :param side: the position side
+        :param side: the position side. Should be None (or enums.PositionSide.BOTH) for one-way positions
         :param expiration_time: the symbol expiration timestamp
         :return: the computed position id
         """
@@ -213,7 +248,6 @@ class PositionsManager(util.Initializable):
                f"{'' if expiration_time is None else self.POSITION_ID_SEPARATOR + str(expiration_time)}" \
                f"{'' if side is enums.PositionSide.BOTH or side is None else self.POSITION_ID_SEPARATOR + side.value}"
 
-    # private
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
         """
         Ends a position creation process
@@ -244,7 +278,7 @@ class PositionsManager(util.Initializable):
         :param side: the expected position side
         :return: the matching position
         """
-        expected_position_id = self.generate_position_id(symbol=symbol, side=side)
+        expected_position_id = self._position_id_factory(symbol=symbol, side=side)
         try:
             return self.positions[expected_position_id]
         except KeyError:
@@ -259,7 +293,7 @@ class PositionsManager(util.Initializable):
         """
         positions = []
         for side in [enums.PositionSide.BOTH, enums.PositionSide.SHORT, enums.PositionSide.LONG]:
-            position_id = self.generate_position_id(symbol=symbol, side=side)
+            position_id = self._position_id_factory(symbol=symbol, side=side)
             try:
                 positions.append(self.positions[position_id])
             except KeyError:
