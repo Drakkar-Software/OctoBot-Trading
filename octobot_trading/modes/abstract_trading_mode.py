@@ -16,11 +16,13 @@
 import abc
 import contextlib
 import decimal
+import copy
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
+import octobot_commons.configuration
 
 import async_channel.constants as channel_constants
 import async_channel.channels as channels
@@ -76,6 +78,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # Trading Mode specific config snapshot before a config update
         self.previous_trading_config: dict = None
+
+        # Used when historical config is enabled
+        self.historical_master_config: dict = None
 
         # If this mode is enabled
         self.enabled: bool = True
@@ -431,6 +436,32 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     def get_local_config(self):
         return self.trading_config
+
+    def update_config_and_user_inputs_if_necessary(self):
+        if self.update_config_if_necessary():
+            print(f"{octobot_commons.timestamp_util.convert_timestamp_to_datetime(self.exchange_manager.exchange.get_exchange_current_time())}"
+                  f" updated config: {self.trading_config} ")
+            self.init_user_inputs({})
+
+    def update_config_if_necessary(self) -> bool:
+        if self.exchange_manager.is_backtesting:
+            try:
+                most_recent_config = self.get_historical_config()
+                if most_recent_config != self.trading_config:
+                    self.previous_trading_config = self.trading_config
+                    self.trading_config = most_recent_config
+                    self.logger.info(f"Switching config to use the most recent one: new config: {self.trading_config}")
+                    return True
+            except Exception as err:
+                self.logger.error(f"Error when reading historical config: {err} {err.__class__.__name__}")
+        return False
+
+    def get_historical_config(self) -> dict:
+        if self.historical_master_config is None:
+            self.historical_master_config = copy.deepcopy(self.trading_config)
+        return octobot_commons.configuration.get_historical_tentacle_config(
+            self.historical_master_config, self.exchange_manager.exchange.get_exchange_current_time()
+        )
 
     @classmethod
     def create_local_instance(cls, config, tentacles_setup_config, tentacle_config):
