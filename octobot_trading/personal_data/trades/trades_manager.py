@@ -196,7 +196,8 @@ class TradesManager(util.Initializable):
         commons_tree.EventProvider.instance().trigger_event(
             self.trader.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.trader.exchange_manager.exchange_name,
-                commons_enums.InitializationEventExchangeTopics.TRADES.value
+                commons_enums.InitializationEventExchangeTopics.TRADES.value,
+                symbol=symbol
             )
         )
 

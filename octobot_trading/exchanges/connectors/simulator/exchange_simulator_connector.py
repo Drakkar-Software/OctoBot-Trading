@@ -46,6 +46,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
 
         self.is_authenticated = False
         self._forced_market_statuses: dict = None
+        self._missing_market_statuses: set = set()
 
     async def initialize_impl(self):
         self.exchange_importers = self.backtesting.get_importers(importers.ExchangeDataImporter)
@@ -150,7 +151,15 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
                     ).market_status
                 return self._forced_market_statuses[symbol]
             except KeyError:
-                raise errors.NotSupported
+                self._missing_market_statuses.add(symbol)
+                if len(self._missing_market_statuses) >= len(self.symbols) - 1:
+                    # issue: almost all market statuses are missing
+                    raise errors.NotSupported(
+                        f"Missing too many market statuses: {self._missing_market_statuses}, "
+                        f"traded symbols: {self.symbols}"
+                    )
+                else:
+                    self.logger.warning(f"Missing cached market status for {symbol}: using default market status")
         return self._get_default_market_status()
 
     def _get_default_market_status(self):
