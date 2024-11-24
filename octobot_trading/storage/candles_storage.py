@@ -47,8 +47,15 @@ class CandlesStorage(abstract_storage.AbstractStorage):
         await super().stop(**kwargs)
 
     async def _store_candles_when_available(self):
-        await util.wait_for_topic_init(self.exchange_manager, self._init_timeout,
-                                       commons_enums.InitializationEventExchangeTopics.CANDLES.value)
+        init_symbols = (
+            self.exchange_manager.trading_modes[0].get_init_symbols()
+            if self.exchange_manager.trading_modes
+            else self.exchange_manager.exchange_config.traded_symbol_pairs
+        )
+        await util.wait_for_topic_init(
+            self.exchange_manager, self._init_timeout, commons_enums.InitializationEventExchangeTopics.CANDLES.value,
+            symbols=init_symbols
+        )
         await self.store_candles()
 
     @abstract_storage.AbstractStorage.hard_reset_and_retry_if_necessary

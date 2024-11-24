@@ -439,8 +439,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     def update_config_and_user_inputs_if_necessary(self):
         if self.update_config_if_necessary():
-            print(f"{octobot_commons.timestamp_util.convert_timestamp_to_datetime(self.exchange_manager.exchange.get_exchange_current_time())}"
-                  f" updated config: {self.trading_config} ")
             self.init_user_inputs({})
 
     def update_config_if_necessary(self) -> bool:
@@ -463,6 +461,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             self.historical_master_config, self.exchange_manager.exchange.get_exchange_current_time()
         )
 
+    def has_historical_config(self) -> bool:
+        try:
+            octobot_commons.configuration.get_oldest_historical_tentacle_config_time(self.trading_config)
+            return True
+        except ValueError:
+            return False
+
     @classmethod
     def create_local_instance(cls, config, tentacles_setup_config, tentacle_config):
         return modes_factory.create_temporary_trading_mode_with_local_config(
@@ -472,6 +477,17 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     # to implement in subclasses if config is necessary
     def set_default_config(self) -> None:
         pass
+
+    def get_init_symbols(self) -> list:
+        try:
+            if self.has_historical_config():
+                self.update_config_and_user_inputs_if_necessary()
+            return self.get_tentacle_config_traded_symbols(
+                self.trading_config, self.exchange_manager.exchange_personal_data.portfolio_manager.reference_market
+            )
+        except NotImplementedError:
+            return self.exchange_manager.exchange_config.traded_symbol_pairs
+
 
     """
     Strategy related methods

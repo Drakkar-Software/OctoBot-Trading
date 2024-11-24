@@ -13,17 +13,27 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import octobot_commons.tree as commons_tree
 
 
-async def wait_for_topic_init(exchange_manager, timeout, topic, symbol=None, time_frame=None):
-    return await commons_tree.EventProvider.instance().wait_for_event(
-        exchange_manager.bot_id,
-        commons_tree.get_exchange_path(
-            exchange_manager.exchange_name,
-            topic,
-            symbol=symbol,
-            time_frame=time_frame
-        ),
-        timeout
-    )
+async def wait_for_topic_init(exchange_manager, timeout, topic, symbol=None, time_frame=None, symbols=None):
+    if symbols:
+        return await asyncio.gather(
+            *[
+                wait_for_topic_init(exchange_manager, timeout, topic, symbol=local_symbol, time_frame=None)
+                for local_symbol in symbols
+            ]
+        )
+    else:
+        return await commons_tree.EventProvider.instance().wait_for_event(
+            exchange_manager.bot_id,
+            commons_tree.get_exchange_path(
+                exchange_manager.exchange_name,
+                topic,
+                symbol=symbol,
+                time_frame=time_frame
+            ),
+            timeout
+        )

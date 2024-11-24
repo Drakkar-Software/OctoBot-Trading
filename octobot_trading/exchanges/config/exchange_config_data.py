@@ -105,18 +105,18 @@ class ExchangeConfig(util.Initializable):
                 if self.exchange_manager.is_future \
                 else trading_constants.DEFAULT_INITIALIZATION_EVENT_TOPICS:
             if topic in (
-                    commons_enums.InitializationEventExchangeTopics.POSITIONS,
-                    commons_enums.InitializationEventExchangeTopics.TRADES,
-                    commons_enums.InitializationEventExchangeTopics.ORDERS,
-                    commons_enums.InitializationEventExchangeTopics.CONTRACTS,
-                    commons_enums.InitializationEventExchangeTopics.CANDLES,
-                    commons_enums.InitializationEventExchangeTopics.PRICE,
-                    commons_enums.InitializationEventExchangeTopics.ORDER_BOOK,
-                    commons_enums.InitializationEventExchangeTopics.FUNDING,
+                commons_enums.InitializationEventExchangeTopics.POSITIONS,
+                commons_enums.InitializationEventExchangeTopics.TRADES,
+                commons_enums.InitializationEventExchangeTopics.ORDERS,
+                commons_enums.InitializationEventExchangeTopics.CONTRACTS,
+                commons_enums.InitializationEventExchangeTopics.CANDLES,
+                commons_enums.InitializationEventExchangeTopics.PRICE,
+                commons_enums.InitializationEventExchangeTopics.ORDER_BOOK,
+                commons_enums.InitializationEventExchangeTopics.FUNDING,
             ):
                 for symbol in self.traded_symbol_pairs:
                     if topic in (
-                            commons_enums.InitializationEventExchangeTopics.CANDLES,
+                        commons_enums.InitializationEventExchangeTopics.CANDLES,
                     ):
                         for time_frame in self.traded_time_frames:
                             tree_provider.create_event_at_path(
