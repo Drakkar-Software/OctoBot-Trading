@@ -63,7 +63,7 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.LIMITS.value: self._get_limits(
                 0.002190990480628382, 21909.904806283797,
                 0.05, 10000.0,
-                0.0001095495240314191, 219099048.062838
+                0, 219099048.062838
             )
         }
 
@@ -77,7 +77,7 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.LIMITS.value: self._get_limits(
                 0.002190990480628382, 21909.904806283797,
                 0.05, 10000.0,
-                0.0001095495240314191, 219099048.062838
+                0, 219099048.062838
             )
         }
 
@@ -92,7 +92,7 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.LIMITS.value: self._get_limits(
                 641.0256410256403, 64102564102564.04,
                 1.5600000000000002e-09, 0.0015600000000000002,
-                9.999999999999991e-07, 99999999999.99991
+                0, 99999999999.99991
             )
         }
 
@@ -107,14 +107,14 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.LIMITS.value: self._get_limits(
                 6.37795818470299, 63779581.84702988,
                 0.0015678999, 1567.8999000000001,
-                0.01, 99999999999.99997
+                0, 99999999999.99997
             )
         }
 
         current_price = 25.87257
         ms = {
             Ecmsc.PRECISION.value: self._get_precision(),
-            Ecmsc.LIMITS.value: self._get_limits(None, None, 0, 0, None, None)
+            Ecmsc.LIMITS.value: self._get_limits(None, None, 0, 0, 11, None)
         }
 
         assert ExchangeMarketStatusFixer(ms, price_example=current_price).market_status == {
@@ -122,7 +122,7 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.LIMITS.value: self._get_limits(
                 0.3865097282566056, 3865097.2825660524,
                 0.02587257, current_price * 1000,
-                0.010000000000000007, 99999999999.99997
+                11, 99999999999.99997
             )
         }
 
@@ -137,7 +137,7 @@ class TestExchangeMarketStatusFixer:
             Ecmsc.LIMITS.value: self._get_limits(
                 0.04986163396574511, 498616.3396574511,
                 3, 3,
-                0.14958490189723533, 1495849.0189723533
+                0, 1495849.0189723533
             )
         }
 
@@ -269,6 +269,50 @@ class TestExchangeMarketStatusFixer:
                 1.001001001001, 100100100100.09999,
                 9.99e-07, 0.9990000000000001,
                 9.999999999999991e-07, 99999999999.99991
+            )
+
+            emsf = ExchangeMarketStatusFixer({
+                Ecmsc.LIMITS.value: self._get_limits(cost_min=1, cost_max=11000.33)
+            }, 0.000999)
+            emsf._fix_market_status_limits_with_price()
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                1.001001001001, 100100100100.09999,
+                9.99e-07, 0.9990000000000001,
+                1, 11000.33
+            )
+
+            emsf = ExchangeMarketStatusFixer({
+                Ecmsc.LIMITS.value: self._get_limits(
+                    amount_min=0.1, amount_max=10000,
+                    price_min=44, price_max=4444,
+                )
+            }, 52)
+            # cost min max computed using price & amount
+            emsf._fix_market_status_limits_with_price()
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                0.1, 10000,
+                44, 4444,
+                4.4, 44440000
+            )
+
+            # cost max ONLY computed using price & amount (missing min price)
+            emsf = ExchangeMarketStatusFixer({
+                Ecmsc.LIMITS.value: self._get_limits(
+                    amount_min=0.1, amount_max=10000,
+                    price_max=4444,
+                )
+            }, 52)
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                0.1, 10000,
+                0.052, 4444,
+                0, 44440000    # min cost impossible to compute (no exchange info)
+            )
+            # min cost inferred from price (2nd call: consider min price as 'from exchange')
+            emsf._fix_market_status_limits_with_price()
+            assert emsf.market_status[Ecmsc.LIMITS.value] == self._get_limits(
+                0.1, 10000,
+                0.052, 4444,
+                0.0052, 44440000
             )
 
     # Precision
