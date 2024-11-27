@@ -212,11 +212,11 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
     valid_price = decimal_adapt_price(symbol_market, price, truncate)
 
     # case 1: try with data directly from exchange
-    if personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value):
+    if personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value, zero_valid=True):
         min_quantity = decimal.Decimal(str(limit_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)))
         max_quantity = None
         # not all symbol data have a max quantity
-        if personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value):
+        if personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value, zero_valid=False):
             max_quantity = decimal.Decimal(str(limit_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value, math.nan)))
 
         total_order_price = valid_quantity * valid_price
@@ -226,11 +226,11 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
             return []
 
         # case 1.1: use only quantity and cost
-        if personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value):
+        if personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value, zero_valid=True):
             min_cost = decimal.Decimal(str(limit_cost.get(Ecmsc.LIMITS_COST_MIN.value, math.nan)))
             max_cost = None
             # not all symbol data have a max cost
-            if personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MAX.value):
+            if personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MAX.value, zero_valid=False):
                 max_cost = decimal.Decimal(str(limit_cost.get(Ecmsc.LIMITS_COST_MAX.value, math.nan)))
 
             # check total_order_price not < min_cost
@@ -250,11 +250,11 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
 
         # case 1.2: use only quantity and price (if available)
         else:
-            if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MIN.value):
+            if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MIN.value, zero_valid=True):
                 min_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MIN.value, math.nan)))
                 max_price = None
                 # not all symbol data have a max price
-                if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value):
+                if personal_data.is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value, zero_valid=False):
                     max_price = decimal.Decimal(str(limit_price.get(Ecmsc.LIMITS_PRICE_MAX.value, math.nan)))
 
                 if (max_price is not None and (valid_price > max_price)) or valid_price < min_price:

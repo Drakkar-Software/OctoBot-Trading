@@ -34,14 +34,15 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 LOGGER_NAME = "order_util"
 
 
-def is_valid(element, key):
+def is_valid(element, key, zero_valid=False):
     """
     Checks is the element is valid with the market status fixer
     :param element:
     :param key:
+    :param zero_valid: if 0 should be considered a valid value
     :return:
     """
-    return key in element and exchange_market_status_fixer.is_ms_valid(element[key])
+    return key in element and exchange_market_status_fixer.is_ms_valid(element[key], zero_valid=zero_valid)
 
 
 def get_min_max_amounts(symbol_market, default_value=None):

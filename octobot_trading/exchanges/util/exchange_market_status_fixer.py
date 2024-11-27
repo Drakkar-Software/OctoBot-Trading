@@ -245,7 +245,7 @@ class ExchangeMarketStatusFixer:
     def _fix_market_status_limits_with_price(self):
         candidate_amount_min, candidate_amount_max = self._calculate_amount()
         limits_amount = self.market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value]
-        amount_min = limits_amount.get(Ecmsc.LIMITS_PRICE_MIN.value)
+        amount_min = limits_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value)
         if not is_ms_valid(amount_min, zero_valid=True):
             amount_min = candidate_amount_min
         amount_max = limits_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value)
@@ -259,6 +259,28 @@ class ExchangeMarketStatusFixer:
         price_max = limits_price.get(Ecmsc.LIMITS_PRICE_MAX.value)
         if not is_ms_valid(price_max, zero_valid=False):
             price_max = self.price_example * self.LIMIT_PRICE_MULTIPLIER
+        limit_cost = self.market_status[Ecmsc.LIMITS.value].get(Ecmsc.LIMITS_COST.value, {})
+        cost_min = limit_cost.get(Ecmsc.LIMITS_COST_MIN.value)
+        if not is_ms_valid(cost_min, zero_valid=False):
+            updated_cost = False
+            if (
+                is_ms_valid(limits_price.get(Ecmsc.LIMITS_PRICE_MIN.value))
+                and is_ms_valid(limits_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value))
+            ):
+                # min cost can be computed from min price and amount: those values come from exchange data
+                candidate_cost_min = (
+                    limits_price.get(Ecmsc.LIMITS_PRICE_MIN.value)
+                    * limits_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value)
+                )
+                if is_ms_valid(candidate_cost_min, zero_valid=False):
+                    cost_min = candidate_cost_min
+                    updated_cost = True
+            if not updated_cost:
+                # avoid computing min cost based on indirect min price or amount
+                cost_min = 0
+        cost_max = limit_cost.get(Ecmsc.LIMITS_COST_MAX.value)
+        if not is_ms_valid(cost_max, zero_valid=False):
+            cost_max = price_max * amount_max
         self.market_status[Ecmsc.LIMITS.value] = {
             Ecmsc.LIMITS_AMOUNT.value: {
                 Ecmsc.LIMITS_AMOUNT_MIN.value: amount_min,
@@ -269,8 +291,8 @@ class ExchangeMarketStatusFixer:
                 Ecmsc.LIMITS_PRICE_MAX.value: price_max,
             },
             Ecmsc.LIMITS_COST.value: {
-                Ecmsc.LIMITS_COST_MIN.value: price_min * amount_min,
-                Ecmsc.LIMITS_COST_MAX.value: price_max * amount_max,
+                Ecmsc.LIMITS_COST_MIN.value: cost_min,
+                Ecmsc.LIMITS_COST_MAX.value: cost_max,
             }
         }
 
