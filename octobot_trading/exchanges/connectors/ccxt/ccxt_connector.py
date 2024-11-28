@@ -664,7 +664,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 )
                 if cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order):
                     return enums.OrderStatus.CANCELED
-                elif personal_data.parse_is_open(cancelled_order):
+                elif (
+                    personal_data.parse_is_open(cancelled_order)
+                    or personal_data.parse_is_pending_cancel(cancelled_order)
+                ):
                     return enums.OrderStatus.PENDING_CANCEL
                 # cancel command worked but order is still existing and is not open or canceled. unhandled case
                 # log error and consider it canceling. order states will manage the
