@@ -209,6 +209,10 @@ class Position(util.Initializable):
         # update side after quantity as it relies on self.quantity
         self._update_side(not entry_price)
         self._update_prices_if_necessary(mark_price)
+        if changed:
+            # ensure fee to close and margin are up to date now that all other attributes are set
+            self.update_fee_to_close()
+            self._update_margin()
         return changed
 
     async def ensure_position_initialized(self, **kwargs):
