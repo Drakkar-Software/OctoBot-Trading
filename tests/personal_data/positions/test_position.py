@@ -82,11 +82,13 @@ async def test_update_margin_linear(btc_usdt_future_trader_simulator_with_defaul
     await position_inst.update(mark_price=constants.ONE, update_margin=decimal.Decimal(5))
     assert position_inst.mark_price == constants.ONE
     assert position_inst.initial_margin == decimal.Decimal(5)
+    assert position_inst.margin == decimal.Decimal("5.0300")    # initial margin + closing fees
     assert position_inst.size == decimal.Decimal(50)
 
     await position_inst.update(mark_price=constants.ONE, update_margin=-decimal.Decimal(3))
     assert position_inst.mark_price == constants.ONE
     assert position_inst.initial_margin == decimal.Decimal(2)
+    assert position_inst.margin == decimal.Decimal("2.0120")
     assert position_inst.size == decimal.Decimal(20)
 
 
@@ -103,11 +105,13 @@ async def test_update_margin_inverse(btc_usdt_future_trader_simulator_with_defau
     await position_inst.update(mark_price=constants.ONE, update_margin=decimal.Decimal(8) / constants.ONE_HUNDRED)
     assert position_inst.mark_price == constants.ONE
     assert position_inst.initial_margin == decimal.Decimal('0.08')
+    assert position_inst.margin == decimal.Decimal("0.080288")  # initial margin + closing fees
     assert position_inst.size == decimal.Decimal('0.4')
 
     await position_inst.update(mark_price=constants.ONE, update_margin=-constants.ONE / constants.ONE_HUNDRED)
     assert position_inst.mark_price == constants.ONE
     assert position_inst.initial_margin == decimal.Decimal('0.07')
+    assert position_inst.margin == decimal.Decimal("0.070252")
     assert position_inst.size == decimal.Decimal('0.35')
 
 

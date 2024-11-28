@@ -102,14 +102,17 @@ class InversePosition(position_class.Position):
         Short position = (Entry Price x Leverage) / (Leverage - 1)
         """
         try:
+            price = self.mark_price if with_mark_price else price
             if side is enums.PositionSide.LONG:
-                return (self.mark_price if with_mark_price else
-                        price * self.symbol_contract.current_leverage) \
+                return (
+                    price * self.symbol_contract.current_leverage
                     / (self.symbol_contract.current_leverage + constants.ONE)
+                )
             elif side is enums.PositionSide.SHORT:
-                return (self.mark_price if with_mark_price else
-                        price * self.symbol_contract.current_leverage) \
+                return (
+                    price * self.symbol_contract.current_leverage
                     / (self.symbol_contract.current_leverage - constants.ONE)
+                )
             return constants.ZERO
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
@@ -134,7 +137,7 @@ class InversePosition(position_class.Position):
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
         try:
-            return quantity / \
+            return abs(quantity) / \
                 self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * self.get_taker_fee(symbol)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO

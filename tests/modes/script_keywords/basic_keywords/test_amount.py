@@ -24,6 +24,7 @@ import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.modes.script_keywords.dsl as dsl
 import octobot_trading.modes.script_keywords.basic_keywords.account_balance as account_balance
+import octobot_trading.modes.script_keywords.basic_keywords.position as position_kw
 
 from tests import event_loop
 from tests.modes.script_keywords import null_context
@@ -45,10 +46,6 @@ async def test_get_amount_from_input_amount(null_context):
 
     with pytest.raises(errors.InvalidArgumentError):
         await script_keywords.get_amount_from_input_amount(null_context, "1sdsqdq")
-
-    with pytest.raises(NotImplementedError):
-        await script_keywords.get_amount_from_input_amount(null_context,
-                                                           f"1{script_keywords.QuantityType.POSITION_PERCENT.value}")
 
     with mock.patch.object(account_balance, "adapt_amount_to_holdings",
                            mock.AsyncMock(return_value=decimal.Decimal(1))) as adapt_amount_to_holdings_mock:
@@ -243,3 +240,44 @@ async def test_get_amount_from_input_amount(null_context):
             parse_quantity_mock.assert_called_once_with("50")
             get_holdings_value_mock.assert_called_once_with({'BTC', 'ETH', 'SOL', 'USDT'}, "BTC")
             adapt_amount_to_holdings_mock.reset_mock()
+
+
+async def test_get_amount_from_input_amount_for_position(null_context):
+    null_context.exchange_manager = mock.Mock(
+        exchange_personal_data=mock.Mock(
+            portfolio_manager=mock.Mock(
+                portfolio_value_holder=mock.Mock()
+            )
+        )
+    )
+    null_context.exchange_manager.is_future = False
+    with pytest.raises(NotImplementedError):
+        # not futures
+        await script_keywords.get_amount_from_input_amount(
+            null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT.value}"
+        )
+
+    null_context.exchange_manager.is_future = True
+
+    # not one-way
+    with mock.patch.object(
+        position_kw, "is_in_one_way_position_mode", mock.Mock(return_value=False)
+    ) as is_in_one_way_position_mode_mock:
+        with pytest.raises(NotImplementedError):
+            await script_keywords.get_amount_from_input_amount(
+                null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT.value}"
+            )
+        is_in_one_way_position_mode_mock.assert_called_once_with(null_context)
+
+    # futures one-way: works
+    with (mock.patch.object(position_kw, "is_in_one_way_position_mode", mock.Mock(return_value=True))
+            as is_in_one_way_position_mode_mock,
+          mock.patch.object(position_kw, "get_position", mock.Mock(return_value=mock.Mock(size=decimal.Decimal("100"))))
+            as get_position_mock, mock.patch.object(account_balance, "adapt_amount_to_holdings",
+          mock.AsyncMock(return_value=decimal.Decimal(1))) as adapt_amount_to_holdings_mock):
+        assert await script_keywords.get_amount_from_input_amount(
+            null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT.value}"
+        ) == decimal.Decimal(1)
+        is_in_one_way_position_mode_mock.assert_called_once_with(null_context)
+        get_position_mock.assert_called_once()
+        adapt_amount_to_holdings_mock.assert_called_once()
