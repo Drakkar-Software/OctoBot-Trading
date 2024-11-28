@@ -395,6 +395,10 @@ def parse_is_cancelled(raw_order):
     return parse_order_status(raw_order) in {enums.OrderStatus.CANCELED, enums.OrderStatus.CLOSED}
 
 
+def parse_is_pending_cancel(raw_order):
+    return parse_order_status(raw_order) is enums.OrderStatus.PENDING_CANCEL
+
+
 def parse_is_open(raw_order):
     return parse_order_status(raw_order) is enums.OrderStatus.OPEN
 
