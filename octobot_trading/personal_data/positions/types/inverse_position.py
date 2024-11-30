@@ -134,7 +134,7 @@ class InversePosition(position_class.Position):
 
     def get_fee_to_close(self, quantity, price, side, symbol, with_mark_price=False):
         """
-        :return: Fee to open = (Quantity * Mark Price) x Taker fee
+        :return: Fee to close = (Quantity / Bankruptcy price) x Taker fee
         """
         try:
             return abs(quantity) / \

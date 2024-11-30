@@ -369,7 +369,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
 
 
 class ExchangeConstantsMarginContractColumns(enum.Enum):
-    PAIR = "PAIR"
+    PAIR = "pair"
     MARGIN_TYPE = "margin_type"
     CONTRACT_SIZE = "contract_size"
     MAXIMUM_LEVERAGE = "maximum_leverage"

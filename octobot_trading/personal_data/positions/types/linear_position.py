@@ -107,7 +107,7 @@ class LinearPosition(position_class.Position):
 
     def get_fee_to_close(self, quantity, price, side, symbol, with_mark_price=False):
         """
-        :return: Fee to open = (Quantity * Mark Price) x Taker fee
+        :return: Fee to close = (Quantity * Bankruptcy price) x Taker fee
         """
         return abs(quantity) * self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * \
             self.get_taker_fee(symbol)

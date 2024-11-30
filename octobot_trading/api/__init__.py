@@ -202,6 +202,7 @@ from octobot_trading.api.positions import (
     get_positions,
     close_position,
     set_is_exclusively_using_exchange_position_details,
+    update_position_mark_price,
 )
 from octobot_trading.api.contracts import (
     is_inverse_future_contract,
@@ -388,6 +389,7 @@ __all__ = [
     "load_pair_contract",
     "create_default_future_contract",
     "set_is_exclusively_using_exchange_position_details",
+    "update_position_mark_price",
     "clear_trades_storage_history",
     "clear_candles_storage_history",
     "clear_database_storage_history",

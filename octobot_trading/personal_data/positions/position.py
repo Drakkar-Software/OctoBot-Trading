@@ -148,6 +148,8 @@ class Position(util.Initializable):
 
         if self._should_change(self.timestamp, timestamp):
             self.timestamp = timestamp
+            # if we have a timestamp, it's a real trader => need to format timestamp if necessary
+            self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
         if not self.timestamp:
             if not timestamp:
                 self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -207,7 +209,7 @@ class Position(util.Initializable):
 
         self._update_quantity_or_size_if_necessary()
         # update side after quantity as it relies on self.quantity
-        self._update_side(not entry_price)
+        self._update_side(not entry_price, creation_timestamp=timestamp)
         self._update_prices_if_necessary(mark_price)
         if changed:
             # ensure fee to close and margin are up to date now that all other attributes are set
@@ -699,14 +701,15 @@ class Position(util.Initializable):
         """
         self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_from_pnl(self)
 
-    def _on_side_update(self, reset_entry_price):
+    def _on_side_update(self, reset_entry_price, creation_timestamp=0):
         """
         Resets the side related data when a position side changes
         """
         if reset_entry_price:
             self._reset_entry_price()
         self.exit_price = constants.ZERO
-        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
+        # use update_timestamp when available, use exchange time otherwise
+        self.creation_time = creation_timestamp or self.exchange_manager.exchange.get_exchange_current_time()
         logging.get_logger(self.get_logger_name()).debug(f"Changed position side: now {self.side.name}")
         # update position state if necessary
         positions_states.create_position_state(self)
@@ -820,7 +823,7 @@ class Position(util.Initializable):
         self.entry_price = constants.ZERO
         self._update_prices_if_necessary(self.mark_price)
 
-    def _update_side(self, reset_entry_price):
+    def _update_side(self, reset_entry_price, creation_timestamp=0):
         """
         Checks if self.side still represents the position side
         Only relevant when account is using one way position mode
@@ -838,7 +841,7 @@ class Position(util.Initializable):
             else:
                 self.side = enums.PositionSide.UNKNOWN
             if changed_side:
-                self._on_side_update(reset_entry_price)
+                self._on_side_update(reset_entry_price, creation_timestamp)
 
     def __str__(self):
         return self.to_string()
@@ -884,6 +887,7 @@ class Position(util.Initializable):
         self.unrealized_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
         self.creation_time = 0
+        self.timestamp = 0
         self.on_pnl_update()  # notify portfolio to reset unrealized PNL
         positions_states.create_position_state(self)
 

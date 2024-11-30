@@ -26,6 +26,7 @@ POSITION_DICT_DECIMAL_KEYS = [
     enums.ExchangeConstantsPositionColumns.NOTIONAL.value,
     enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
     enums.ExchangeConstantsPositionColumns.COLLATERAL.value,
+    enums.ExchangeConstantsPositionColumns.LEVERAGE.value,
     enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value,
     enums.ExchangeConstantsPositionColumns.MARK_PRICE.value,
     enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value,

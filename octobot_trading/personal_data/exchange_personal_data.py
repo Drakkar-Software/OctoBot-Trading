@@ -55,8 +55,9 @@ class ExchangePersonalData(util.Initializable):
         self.exchange = self.exchange_manager.exchange
         if self.trader.is_enabled:
             try:
-                self.portfolio_manager = portfolio_manager.PortfolioManager(self.config, self.trader,
-                                                                            self.exchange_manager)
+                self.portfolio_manager = portfolio_manager.PortfolioManager(
+                    self.config, self.trader, self.exchange_manager
+                )
                 self.trades_manager = trades_manager.TradesManager(self.trader)
                 self.orders_manager = orders_manager.OrdersManager(self.trader)
                 self.positions_manager = positions_manager.PositionsManager(self.trader)
