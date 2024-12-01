@@ -302,7 +302,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         ):
             margin_type = enums.MarginType(margin_type)
         if force_empty or liquidation_price is None:
-            liquidation_price = constants.NaN
+            liquidation_price = constants.ZERO
         else:
             liquidation_price = decimal.Decimal(str(liquidation_price))
         try:
