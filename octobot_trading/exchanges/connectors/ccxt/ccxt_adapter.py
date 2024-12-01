@@ -283,7 +283,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
             else enums.PositionMode.ONE_WAY
         )
         if position_mode is enums.PositionMode.HEDGE:
-            # todo when handling helge positions
+            # todo when handling hedge positions
             side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value, enums.PositionSide.UNKNOWN.value)
             position_side = enums.PositionSide.LONG \
                 if side == enums.PositionSide.LONG.value else enums.PositionSide.SHORT

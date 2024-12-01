@@ -206,9 +206,9 @@ async def get_trades(
 
 async def create_orders(
     exchange_manager,
-    exchange_data: exchange_data_import.ExchangeData,
     orders: list,
-    order_creation_timeout: float
+    order_creation_timeout: float,
+    price_by_symbol: dict[str, float],
 ) -> list:
     async def _create_order(order_dict) -> personal_data.Order:
         symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
@@ -219,7 +219,7 @@ async def create_orders(
             decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value])),
             price=decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.PRICE.value])),
             side=side,
-            current_price=decimal.Decimal(str(exchange_data.get_price(symbol))),
+            current_price=price_by_symbol[symbol],
             reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
         )
         # is private, to use in tests context only
