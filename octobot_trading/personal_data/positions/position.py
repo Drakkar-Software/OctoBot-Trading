@@ -209,7 +209,10 @@ class Position(util.Initializable):
 
         self._update_quantity_or_size_if_necessary()
         # update side after quantity as it relies on self.quantity
-        self._update_side(not entry_price, creation_timestamp=timestamp)
+        self._update_side(
+            not entry_price,
+            creation_timestamp=self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
+        )
         self._update_prices_if_necessary(mark_price)
         if changed:
             # ensure fee to close and margin are up to date now that all other attributes are set
