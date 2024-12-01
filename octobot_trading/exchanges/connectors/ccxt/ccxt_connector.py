@@ -157,7 +157,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             except KeyError:
                 load_markets = True
         if load_markets:
-            self.logger.info(f"Loading {self.exchange_manager.exchange_name} exchange markets")
+            self.logger.info(
+                f"Loading {self.exchange_manager.exchange_name} "
+                f"{exchanges.get_exchange_type(self.exchange_manager).value} exchange markets"
+            )
             try:
                 await self._load_markets(self.client, reload)
                 ccxt_client_util.set_markets_cache(self.client)
