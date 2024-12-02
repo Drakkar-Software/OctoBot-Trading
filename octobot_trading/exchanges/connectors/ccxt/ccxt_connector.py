@@ -159,7 +159,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if load_markets:
             self.logger.info(
                 f"Loading {self.exchange_manager.exchange_name} "
-                f"{exchanges.get_exchange_type(self.exchange_manager).value} exchange markets"
+                f"{exchanges.get_exchange_type(self.exchange_manager).value}"
+                f"{' sandbox' if self.exchange_manager.is_sandboxed else ''} exchange markets"
             )
             try:
                 await self._load_markets(self.client, reload)
