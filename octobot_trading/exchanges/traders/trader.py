@@ -19,6 +19,7 @@ import decimal
 import typing
 
 import octobot_commons.logging as logging
+import octobot_commons.html_util as html_util
 import octobot_commons.constants
 
 import octobot_trading.personal_data.orders.order_factory as order_factory
@@ -452,7 +453,8 @@ class Trader(util.Initializable):
         elif order.is_open():
             if isinstance(err, errors.OrderNotFoundOnCancelError):
                 raise errors.OrderNotFoundOnCancelError(
-                    f"Tried to cancel an order that can't be found, it might be cancelled or filled already ({err}). "
+                    f"Tried to cancel an order that can't be found, it might be cancelled or filled already "
+                    f"({html_util.get_html_summary_if_relevant(err)}). "
                     f"Order: {order}"
                 ) from err
             raise errors.OpenOrderError(
