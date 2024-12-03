@@ -33,17 +33,23 @@ def is_channel_managed_by_websocket(exchange_manager, channel):
 
 def is_channel_fully_managed_by_websocket(exchange_manager, channel):
     return (
-        not any([
-            # no associated feed is related to a time frame
-            exchange_manager.exchange_web_socket.is_time_frame_related_feed(feed)
-            for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]
-        ])
-        or all([
-            # all required time frames are supported
-            exchange_manager.exchange_web_socket.is_time_frame_supported(time_frame)
-            for time_frame in exchange_manager.exchange_config.available_time_frames
-        ])
-    ) and not exchange_manager.exchange_config.has_forced_updater(channel)
+        (
+            channel not in octobot_trading.constants.ALWAYS_STARTED_REST_PRODUCER_CHANNELS
+        ) and (
+            not any([
+                # no associated feed is related to a time frame
+                exchange_manager.exchange_web_socket.is_time_frame_related_feed(feed)
+                for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]
+            ])
+            or all([
+                # all required time frames are supported
+                exchange_manager.exchange_web_socket.is_time_frame_supported(time_frame)
+                for time_frame in exchange_manager.exchange_config.available_time_frames
+            ])
+        ) and (
+            not exchange_manager.exchange_config.has_forced_updater(channel)
+        )
+    )
 
 
 def is_websocket_feed_requiring_init(exchange_manager, channel):
