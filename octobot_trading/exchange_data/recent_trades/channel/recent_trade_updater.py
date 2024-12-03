@@ -74,10 +74,14 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                         except TypeError:
                             pass
                 await asyncio.sleep(self.refresh_time)
-            except errors.FailedRequest as e:
-                self.logger.warning(str(e))
+            except errors.FailedRequest as err:
+                sleep_time = constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS
+                self.logger.warning(
+                    f"Impossible to fetch recent trades. Retry in {sleep_time} seconds: "
+                    f"{html_util.get_html_summary_if_relevant(err)}"
+                )
                 # avoid spamming on disconnected situation
-                await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+                await asyncio.sleep(sleep_time)
             except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
