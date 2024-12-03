@@ -78,7 +78,7 @@ class KlineUpdater(kline_channel.KlineProducer):
             except errors.FailedRequest as e:
                 self.logger.warning(str(e))
                 # avoid spamming on disconnected situation
-                await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+                await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
             except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

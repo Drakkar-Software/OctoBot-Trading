@@ -74,7 +74,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
         except errors.FailedRequest as e:
             self.logger.warning(html_util.get_html_summary_if_relevant(e))
             # avoid spamming on disconnected situation
-            await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+            await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
 
     async def fetch_and_push_pair(self, pair: str):
         with self._single_pair_update(pair) as can_update:

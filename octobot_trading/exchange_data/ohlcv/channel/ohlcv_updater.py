@@ -33,7 +33,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     CHANNEL_NAME = constants.OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_OLD_LIMIT = constants.DEFAULT_CANDLE_HISTORY_SIZE  # should be <= to candle manager's MAX_CANDLES_COUNT
-    OHLCV_ON_ERROR_TIME = 6
+    OHLCV_ON_ERROR_TIME = 5
     OHLCV_MIN_REFRESH_TIME = 1
     OHLCV_REFRESH_TIME_THRESHOLD_BY_RETRY_ATTEMPT = [
         2,      # retry 1: t+2
@@ -215,11 +215,11 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         last_candle_timestamp: float = 0
 
         current_candle_start_time = 0
-        attempt = 0
+        attempt = 1
         while not self.should_stop and not self.channel.is_paused:
+            start_update_time = time.time()
+            iteration_candle_start_time = start_update_time - (start_update_time % time_frame_seconds)
             try:
-                start_update_time = time.time()
-                iteration_candle_start_time = start_update_time - (start_update_time % time_frame_seconds)
                 if iteration_candle_start_time == current_candle_start_time:
                     attempt += 1    # not working?
                 else:
@@ -258,10 +258,18 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 else:
                     # candles on this time frame have not been initialized: sleep until the next candle update
                     await asyncio.sleep(max(0.0, time_frame_sleep - (time.time() - start_update_time)))
-            except errors.FailedRequest as e:
-                self.logger.warning(str(e))
+            except errors.FailedRequest as err:
                 # avoid spamming on disconnected situation
-                await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+                sleep_time = self._ensure_correct_sleep_time(
+                    self._get_missing_candle_retry_sleep_time(attempt),
+                    iteration_candle_start_time, time_frame_seconds
+                )
+                sleep_time = max(sleep_time, constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+                self.logger.warning(
+                    f"Impossible to fetch {time_frame.value} {pair} candles. Retry in {sleep_time} seconds: "
+                    f"{html_util.get_html_summary_if_relevant(err)}"
+                )
+                await asyncio.sleep(sleep_time)
             except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
