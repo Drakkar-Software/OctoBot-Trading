@@ -37,7 +37,7 @@ import octobot_trading.exchanges.util.exchange_util as exchange_util
 def create_client(
     exchange_class, exchange_manager, logger, options, headers,
     additional_config, should_authenticate, unauthenticated_exchange_fallback=None,
-    keys_adapter=None
+    keys_adapter=None, allow_request_counter: bool = True
 ):
     """
     Exchange instance creation
@@ -71,7 +71,8 @@ def create_client(
                         auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
                     ),
                     exchange_manager.exchange_name,
-                    exchange_manager.proxy_config
+                    exchange_manager.proxy_config,
+                    allow_request_counter=allow_request_counter
                 )
                 is_authenticated = True
                 if exchange_manager.check_credentials:
@@ -81,7 +82,8 @@ def create_client(
                     exchange_class,
                     _get_client_config(options, headers, additional_config),
                     exchange_manager.exchange_name,
-                    exchange_manager.proxy_config
+                    exchange_manager.proxy_config,
+                    allow_request_counter=allow_request_counter
                 )
         except (ccxt.AuthenticationError, Exception) as e:
             if unauthenticated_exchange_fallback is None:
@@ -131,11 +133,13 @@ def get_unauthenticated_exchange(
 
 
 def instantiate_exchange(
-    exchange_class, config: dict, identifier: str, proxy_config: proxy_config_import.ProxyConfig
+    exchange_class, config: dict, identifier: str, proxy_config: proxy_config_import.ProxyConfig,
+    allow_request_counter: bool = True
 ) -> async_ccxt.Exchange:
     client = exchange_class(config)
     _use_proxy_if_necessary(client, proxy_config)
-    _use_request_counter_if_enabled(identifier, client)
+    if constants.ENABLE_CCXT_REQUESTS_COUNTER and allow_request_counter:
+        _use_request_counter(identifier, client)
     return client
 
 
@@ -320,39 +324,38 @@ def _get_client_config(
     return config
 
 
-def _use_request_counter_if_enabled(identifier: str, ccxt_client: async_ccxt.Exchange):
+def _use_request_counter(identifier: str, ccxt_client: async_ccxt.Exchange):
     """
     Replaces the given exchange async session by an aiohttp_util.CounterClientSession
-    WARNING: should only be called right after creating the exchange (to avoid interrupting
-     open requests from current session)
+    WARNING: should only be called right after creating the exchange and on the same async loop as
+    the one the exchange will be using (to avoid interrupting open requests from current session and loop errors)
     """
-    if constants.ENABLE_CCXT_REQUESTS_COUNTER:
-        # use session with request counter
-        try:
-            # 1. create ssl context and other required elements if necessary
-            ccxt_client.open()
-            previous_session = ccxt_client.session
-            # 2. create patched session using the same params as a normal one
-            # same as in ccxt.async_support.exchange.py#open()
-            # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
-            new_connector = aiohttp.TCPConnector(
-                ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop, enable_cleanup_closed=True
-            )
-            counter_session = aiohttp_util.CounterClientSession(
-                identifier,
-                loop=ccxt_client.asyncio_loop,
-                connector=new_connector,
-                trust_env=previous_session.trust_env,
-            )
-            # 3. replace session
-            ccxt_client.session = counter_session
-            # 4. close replaced session in task to avoid making this function a coroutine
-            asyncio.create_task(previous_session.close())
-            commons_logging.get_logger(__name__).info(f"Request counter enabled for {identifier}")
-        except Exception as err:
-            commons_logging.get_logger(__name__).exception(
-                err, True, f"Error when initializing {identifier} request counter: {err}"
-            )
+    # use session with request counter
+    try:
+        # 1. create ssl context and other required elements if necessary
+        ccxt_client.open()
+        previous_session = ccxt_client.session
+        # 2. create patched session using the same params as a normal one
+        # same as in ccxt.async_support.exchange.py#open()
+        # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
+        new_connector = aiohttp.TCPConnector(
+            ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop, enable_cleanup_closed=True
+        )
+        counter_session = aiohttp_util.CounterClientSession(
+            identifier,
+            loop=ccxt_client.asyncio_loop,
+            connector=new_connector,
+            trust_env=previous_session.trust_env,
+        )
+        # 3. replace session
+        ccxt_client.session = counter_session
+        # 4. close replaced session in task to avoid making this function a coroutine
+        asyncio.create_task(previous_session.close())
+        commons_logging.get_logger(__name__).info(f"Request counter enabled for {identifier}")
+    except Exception as err:
+        commons_logging.get_logger(__name__).exception(
+            err, True, f"Error when initializing {identifier} request counter: {err}"
+        )
 
 
 def ccxt_exchange_class_factory(exchange_name):
