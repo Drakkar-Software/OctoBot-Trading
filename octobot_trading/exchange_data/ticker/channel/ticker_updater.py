@@ -23,6 +23,7 @@ import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ticker.channel.ticker as ticker_channel
 import octobot_trading.enums as enums
+import octobot_trading.exchanges.exchange_websocket_factory as exchange_websocket_factory
 
 
 class TickerUpdater(ticker_channel.TickerProducer):
@@ -39,17 +40,24 @@ class TickerUpdater(ticker_channel.TickerProducer):
         self.updating_pairs = set()
 
     async def start(self):
-        if self._should_use_future():
+        use_futures = self._should_use_future()
+        if use_futures:
             self.is_fetching_future_data = True
             self.refresh_time = self.TICKER_FUTURE_REFRESH_TIME
         if self.channel.is_paused:
             await self.pause()
         else:
-            # initialize ticker
-            await asyncio.gather(*[self._fetch_ticker(pair)
-                                   for pair in self._get_pairs_to_update()])
-            await asyncio.sleep(self.refresh_time)
-            await self.start_update_loop()
+            if use_futures or self._should_loop():
+                # initialize ticker
+                await asyncio.gather(*[self._fetch_ticker(pair)
+                                       for pair in self._get_pairs_to_update()])
+                await asyncio.sleep(self.refresh_time)
+                await self.start_update_loop()
+            else:
+                self.logger.debug(
+                    f"Ticker update loop disabled: update is managed by websocket. "
+                    f"Updater remains available for forced updates."
+                )
 
     async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
@@ -88,6 +96,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 self.logger.debug(f"Skipping {pair} ticker update request: an update is already processing")
 
     async def trigger_ticker_update(self, symbol: str):
+        self.logger.debug(f"Triggered ticker update for {symbol}")
         await self.fetch_and_push_pair(symbol)
 
     @contextlib.contextmanager
@@ -123,6 +132,14 @@ class TickerUpdater(ticker_channel.TickerProducer):
     def _get_pairs_to_update(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self._added_pairs
 
+
+    def _should_loop(self):
+        """
+        Loop when websocket ticker channel not available
+        """
+        return not exchange_websocket_factory.is_channel_managed_by_websocket(
+            self.channel.exchange_manager, constants.TICKER_CHANNEL
+        )
 
     """
     Future data management
