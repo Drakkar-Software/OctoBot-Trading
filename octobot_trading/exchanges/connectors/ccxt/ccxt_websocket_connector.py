@@ -257,7 +257,10 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.client, self.is_authenticated = ccxt_client_util.create_client(
             client_class, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
-            self._should_authenticate()
+            self._should_authenticate(),
+            # Always disable request counter: ws exchange will be started in a different async loop,
+            # which is not yet supported
+            allow_request_counter=False
         )
         if self.exchange_manager.exchange.is_supporting_sandbox():
             ccxt_client_util.set_sandbox_mode(self, self.exchange_manager.is_sandboxed)
