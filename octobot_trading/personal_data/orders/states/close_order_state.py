@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.html_util as html_util
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_state as order_state
 
@@ -63,7 +64,9 @@ class CloseOrderState(order_state.OrderState):
             # remove order from open_orders
             self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
         except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute close state termination : {e}.")
+            self.get_logger().exception(
+                e, True, f"Fail to execute close state termination : {html_util.get_html_summary_if_relevant(e)}."
+            )
             raise
 
     async def _synchronize_with_exchange(self, force_synchronization=False):

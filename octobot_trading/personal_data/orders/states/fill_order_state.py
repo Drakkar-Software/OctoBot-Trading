@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.html_util as html_util
+
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_state as order_state
@@ -131,5 +133,7 @@ class FillOrderState(order_state.OrderState):
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?
         except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute fill state termination : {e}.")
+            self.get_logger().exception(
+                e, True, f"Fail to execute fill state termination : {html_util.get_html_summary_if_relevant(e)}."
+            )
             raise
