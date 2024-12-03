@@ -224,6 +224,10 @@ WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
     FUNDING_CHANNEL: [enums.WebsocketFeeds.FUNDING]
 }
 
+ALWAYS_STARTED_REST_PRODUCER_CHANNELS = [
+    TICKER_CHANNEL, # use to force mark price update when necessary: should always be reachable
+]
+
 FILL_ORDER_STATUS_SCOPE = [enums.OrderStatus.CLOSED,
                            enums.OrderStatus.FILLED,
                            enums.OrderStatus.PARTIALLY_FILLED]
