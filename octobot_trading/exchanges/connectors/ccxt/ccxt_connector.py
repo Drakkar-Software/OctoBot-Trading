@@ -992,6 +992,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             ) from e
         except ccxt.AuthenticationError as err:
             raise octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err)) from err
+        except ccxt.ExchangeNotAvailable as err:
+            raise octobot_trading.errors.FailedRequest(
+                f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
+            ) from err
         except ccxt.ExchangeError as err:
             if self.exchange_manager.exchange.is_authentication_error(err):
                 # ensure this is not an unhandled authentication error
