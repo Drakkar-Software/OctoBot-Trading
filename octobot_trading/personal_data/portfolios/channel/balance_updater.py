@@ -52,7 +52,7 @@ class BalanceUpdater(portfolios_channel.BalanceProducer):
             except errors.FailedRequest as e:
                 self.logger.warning(html_util.get_html_summary_if_relevant(e))
                 # avoid spamming on disconnected situation
-                await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
+                await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
             except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
@@ -72,6 +72,7 @@ class BalanceUpdater(portfolios_channel.BalanceProducer):
                     True,
                     f"Failed to update balance : {html_util.get_html_summary_if_relevant(e)}"
                 )
+                await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
 
     async def fetch_and_push(self):
         await self.push((await self.fetch_portfolio()))
