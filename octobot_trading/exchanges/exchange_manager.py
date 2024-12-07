@@ -166,6 +166,12 @@ class ExchangeManager(util.Initializable):
         except Exception as err:
             self.logger.exception(err, True, f"Error when stopping storage_manager: {err}")
 
+        if self.proxy_config and self.proxy_config.stop_proxy_callback is not None:
+            try:
+                self.proxy_config.stop_proxy_callback()
+            except Exception as err:
+                self.logger.exception(err, True, f"Error when stopping proxy: {err}")
+
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None

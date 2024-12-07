@@ -30,6 +30,8 @@ class ProxyConfig:
     socks_proxy_callback: typing.Optional[typing.Callable] = None
     # enable trust_env in exchange's aiohttp.ClientSession
     aiohttp_trust_env: bool = octobot_trading.constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
+    # if set, will be called when exchange stops
+    stop_proxy_callback: typing.Optional[typing.Callable] = None
 
     @classmethod
     def default_env_var_config(cls):
