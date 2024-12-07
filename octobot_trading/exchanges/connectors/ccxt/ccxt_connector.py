@@ -17,8 +17,10 @@
 import contextlib
 import decimal
 import ccxt.async_support as ccxt
+import ccxt.static_dependencies.ecdsa.der
 import typing
 import inspect
+import binascii
 
 import octobot_commons.enums
 import octobot_commons.logging
@@ -165,6 +167,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             try:
                 await self._load_markets(self.client, reload)
                 ccxt_client_util.set_markets_cache(self.client)
+            except (
+                ccxt.AuthenticationError, ccxt.ArgumentsRequired, ccxt.static_dependencies.ecdsa.der.UnexpectedDER,
+                binascii.Error, AssertionError, IndexError
+            ) as err:
+                if self.force_authentication:
+                    raise ccxt.AuthenticationError(
+                        f"Invalid key format ({html_util.get_html_summary_if_relevant(err)})"
+                    ) from err
+                # should never happen: if it does, propagate it
+                self.logger.error(f"Unexpected error when loading markets: {err} ({err.__class__.__name__})")
+                raise
             except ccxt.ExchangeNotAvailable as err:
                 raise octobot_trading.errors.FailedRequest(
                     f"Failed to load_symbol_markets: {err.__class__.__name__} "
