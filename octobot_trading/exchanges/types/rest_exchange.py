@@ -705,6 +705,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def switch_to_account(self, account_type: enums.AccountTypes):
         return await self.connector.switch_to_account(account_type=account_type)
 
+    def is_authenticated_request(self, url: str, method: str, headers: dict, body) -> bool:
+        raise NotImplementedError("is_authenticated_request is not implemented")
+
     # Futures
     async def load_pair_future_contract(self, pair: str):
         """
