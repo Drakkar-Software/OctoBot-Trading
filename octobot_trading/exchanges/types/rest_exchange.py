@@ -226,8 +226,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             yield
         except ccxt.InsufficientFunds as e:
             self._on_missing_funds_err(e, order_type, symbol, quantity, price, stop_price)
-        except ccxt.NotSupported as err:
-            raise errors.NotSupported from err
+        except (ccxt.NotSupported, NotImplementedError) as err:
+            raise errors.NotSupported(err) from err
         except (errors.AuthenticationError, ccxt.AuthenticationError) as err:
             # invalid api key or missing trading rights
             raise errors.AuthenticationError(
