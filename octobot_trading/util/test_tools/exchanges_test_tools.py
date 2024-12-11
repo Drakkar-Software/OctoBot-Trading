@@ -266,6 +266,9 @@ async def get_positions(
     symbols: list = None
 ) -> list[dict]:
     symbols = symbols or [market.symbol for market in exchange_data.markets]
+    if not symbols:
+        # nothing to fetch
+        return []
     raw_positions = await exchange_manager.exchange.get_positions(symbols=symbols)
     # initialize relevant contracts first as they might be waited for
     trading_exchange_data.update_contracts_from_positions(exchange_manager, raw_positions)
