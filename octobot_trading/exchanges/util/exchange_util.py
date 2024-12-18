@@ -316,6 +316,7 @@ async def get_historical_ohlcv(
     """
     reached_max = False
     time_frame_sec = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
+    time_frame_msec = time_frame_sec * common_constants.MSECONDS_TO_SECONDS
     exchange_time = local_exchange_manager.exchange.get_exchange_current_time()
     max_theoretical_time = exchange_time - exchange_time % time_frame_sec
     while start_time < end_time and not reached_max:
@@ -337,6 +338,9 @@ async def get_historical_ohlcv(
                 start_time += 1
             else:
                 reached_max = True
+        elif local_exchange_manager.exchange.MAX_FETCHED_OHLCV_COUNT:
+            # history needs to be fetched step by step
+            start_time = start_time + (time_frame_msec * local_exchange_manager.exchange.MAX_FETCHED_OHLCV_COUNT)
         else:
             reached_max = True
 

@@ -83,6 +83,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     MARK_PRICE_IN_POSITION = False
     MARK_PRICE_IN_TICKER = False
 
+    # OHLCV params
+    # set when the exchange returns nothing when fetching historical candles with a too early start time
+    # (will iterate historical OHLCV requests over this window)
+    MAX_FETCHED_OHLCV_COUNT = None
+
     # Funding rate params
     FUNDING_WITH_MARK_PRICE = False
     FUNDING_IN_TICKER = False
