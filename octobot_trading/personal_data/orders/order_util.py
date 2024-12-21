@@ -422,6 +422,13 @@ def is_stop_order(order_type: enums.TraderOrderType):
     ]
 
 
+def is_stop_trade_order_type(order_type: enums.TradeOrderType):
+    return order_type in [
+        enums.TradeOrderType.STOP_LOSS, enums.TradeOrderType.STOP_LOSS_LIMIT,
+        enums.TradeOrderType.TRAILING_STOP, enums.TradeOrderType.TRAILING_STOP_LIMIT,
+    ]
+
+
 def is_take_profit_order(order_type):
     return order_type in [
         enums.TraderOrderType.TAKE_PROFIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
