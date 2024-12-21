@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.134] - 2023-12-21
+### Added
+[Orders] add is_stop_trade_order_type
+### Updated
+[Exchanges] handle MAX_FETCHED_OHLCV_COUNT
+
 ## [2.4.133] - 2023-12-11
 ### Updated
 [TestTools] don't fetch positions when no given symbols
