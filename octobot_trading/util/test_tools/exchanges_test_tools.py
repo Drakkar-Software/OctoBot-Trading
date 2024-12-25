@@ -78,6 +78,35 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
     # let updaters gracefully shutdown
     await asyncio_tools.wait_asyncio_next_cycle()
 
+async def _update_ohlcv(
+    exchange_manager, symbol: str, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
+    history_size=1, start_time=0, end_time=0, close_price_only=False,
+    include_latest_candle=True
+):
+    parsed_tf = common_enums.TimeFrames(time_frame)
+    if start_time == 0:
+        ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
+    else:
+        ohlcvs = []
+        async for ohlcv in exchanges.get_historical_ohlcv(
+            exchange_manager, symbol, parsed_tf, start_time * 1000, (end_time or time.time()) * 1000,
+            request_retry_timeout=BASE_TIMEOUT
+        ):
+            ohlcvs.extend(ohlcv)
+    if not include_latest_candle:
+        ohlcvs = ohlcvs[:-1]
+    details = exchange_data_import.MarketDetails(
+        symbol=symbol,
+        time_frame=time_frame,
+        close=[ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] for ohlcv in ohlcvs],
+        open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs] if not close_price_only else [],
+        high=[ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] for ohlcv in ohlcvs] if not close_price_only else [],
+        low=[ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] for ohlcv in ohlcvs] if not close_price_only else [],
+        volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if not close_price_only else [],
+        time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
+    )
+    exchange_data.markets.append(details)
+
 
 async def add_symbols_details(
     exchange_manager, symbols: list, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
@@ -85,34 +114,15 @@ async def add_symbols_details(
     include_latest_candle=True, reload_markets=False,
     market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
 ) -> exchange_data_import.ExchangeData:
-    parsed_tf = common_enums.TimeFrames(time_frame)
-
-    async def _update_ohlcv(symbol):
-        if start_time == 0:
-            ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
-        else:
-            ohlcvs = []
-            async for ohlcv in exchanges.get_historical_ohlcv(
-                exchange_manager, symbol, parsed_tf, start_time * 1000, (end_time or time.time()) * 1000,
-                request_retry_timeout=BASE_TIMEOUT
-            ):
-                ohlcvs.extend(ohlcv)
-        if not include_latest_candle:
-            ohlcvs = ohlcvs[:-1]
-        details = exchange_data_import.MarketDetails(
-            symbol=symbol,
-            time_frame=time_frame,
-            close=[ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] for ohlcv in ohlcvs],
-            open=[ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] for ohlcv in ohlcvs] if not close_price_only else [],
-            high=[ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] for ohlcv in ohlcvs] if not close_price_only else [],
-            low=[ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] for ohlcv in ohlcvs] if not close_price_only else [],
-            volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if not close_price_only else [],
-            time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
-        )
-        exchange_data.markets.append(details)
 
     await ensure_symbol_markets(exchange_manager, reload=reload_markets, market_filter=market_filter)
-    await asyncio.gather(*(_update_ohlcv(symbol) for symbol in symbols))
+    await asyncio.gather(*(
+        _update_ohlcv(
+            exchange_manager, symbol, time_frame, exchange_data,
+            history_size, start_time, end_time, close_price_only, include_latest_candle
+        )
+        for symbol in symbols
+    ))
     return exchange_data
 
 
@@ -135,6 +145,16 @@ async def get_portfolio(exchange_manager, as_float=False, clear_empty=True) -> d
     }
 
 
+async def _get_open_orders(exchange_manager, symbol: str, open_orders: list):
+    orders = await exchange_manager.exchange.get_open_orders(symbol=symbol)
+    open_orders.extend(
+        personal_data.create_order_instance_from_raw(
+            exchange_manager.trader, order, force_open_or_pending_creation=True
+        ).to_dict()
+        for order in orders
+    )
+
+
 async def get_open_orders(
     exchange_manager,
     exchange_data: exchange_data_import.ExchangeData,
@@ -142,17 +162,10 @@ async def get_open_orders(
 ) -> list:
     open_orders = []
 
-    async def _get_orders(symbol):
-        orders = await exchange_manager.exchange.get_open_orders(symbol=symbol)
-        open_orders.extend(
-            personal_data.create_order_instance_from_raw(
-                exchange_manager.trader, order, force_open_or_pending_creation=True
-            ).to_dict()
-            for order in orders
-        )
-
     symbols = symbols or [market.symbol for market in exchange_data.markets]
-    await asyncio.gather(*(_get_orders(symbol) for symbol in symbols))
+    await asyncio.gather(*(
+        _get_open_orders(exchange_manager, symbol, open_orders) for symbol in symbols
+    ))
     return open_orders
 
 
@@ -164,25 +177,35 @@ async def get_order(
     return await exchange_manager.exchange.get_order(exchange_order_id, symbol=symbol)
 
 
+async def _get_cancelled_orders(exchange_manager, symbol: str, cancelled_orders: list):
+    orders = await exchange_manager.exchange.get_cancelled_orders(symbol=symbol)
+    cancelled_orders.extend(
+        personal_data.create_order_instance_from_raw(
+            exchange_manager.trader, order, force_open_or_pending_creation=False
+        ).to_dict()
+        for order in orders
+    )
+
+
 async def get_cancelled_orders(
     exchange_manager,
     exchange_data: exchange_data_import.ExchangeData,
     symbols: list = None
 ) -> list:
     cancelled_orders = []
-
-    async def _get_orders(symbol):
-        orders = await exchange_manager.exchange.get_cancelled_orders(symbol=symbol)
-        cancelled_orders.extend(
-            personal_data.create_order_instance_from_raw(
-                exchange_manager.trader, order, force_open_or_pending_creation=False
-            ).to_dict()
-            for order in orders
-        )
-
     symbols = symbols or [market.symbol for market in exchange_data.markets]
-    await asyncio.gather(*(_get_orders(symbol) for symbol in symbols))
+    await asyncio.gather(*(
+        _get_cancelled_orders(exchange_manager, symbol, cancelled_orders) for symbol in symbols
+    ))
     return cancelled_orders
+
+
+async def _get_trades(exchange_manager, symbol: str, trades: list):
+    row_trades = await exchange_manager.exchange.get_my_recent_trades(symbol=symbol)
+    trades.extend(
+        personal_data.create_trade_instance_from_raw(exchange_manager.trader, raw_trade).to_dict()
+        for raw_trade in row_trades
+    )
 
 
 async def get_trades(
@@ -191,17 +214,44 @@ async def get_trades(
     symbols: list = None
 ) -> list:
     trades = []
-
-    async def _get_trades(symbol):
-        row_trades = await exchange_manager.exchange.get_my_recent_trades(symbol=symbol)
-        trades.extend(
-            personal_data.create_trade_instance_from_raw(exchange_manager.trader, raw_trade).to_dict()
-            for raw_trade in row_trades
-        )
-
     symbols = symbols or [market.symbol for market in exchange_data.markets]
-    await asyncio.gather(*(_get_trades(symbol) for symbol in symbols))
+    await asyncio.gather(*(
+        _get_trades(exchange_manager, symbol, trades)
+        for symbol in symbols
+    ))
     return trades
+
+
+async def _create_order(
+    exchange_manager,
+    order_dict: dict,
+    order_creation_timeout: float,
+    price_by_symbol: dict[str, float],
+) -> typing.Optional[personal_data.Order]:
+    symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
+    side, order_type = personal_data.parse_order_type(order_dict)
+    created_order = await exchange_manager.exchange.create_order(
+        order_type,
+        symbol,
+        decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value])),
+        price=decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.PRICE.value])),
+        side=side,
+        current_price=price_by_symbol[symbol],
+        reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
+    )
+    # is private, to use in tests context only
+    order = personal_data.create_order_instance_from_raw(
+        exchange_manager.trader, created_order, force_open_or_pending_creation=True
+    ) if created_order else None
+    if not order:
+        return order
+    if order.status is enums.OrderStatus.PENDING_CREATION and order_creation_timeout > 0:
+        try:
+            return await wait_for_other_status(order, order_creation_timeout)
+        except TimeoutError as err:
+            logging.get_logger(order.get_logger_name()).error(f"Created order can't be fetched: {err}")
+            return None
+    return order
 
 
 async def create_orders(
@@ -210,33 +260,10 @@ async def create_orders(
     order_creation_timeout: float,
     price_by_symbol: dict[str, float],
 ) -> list:
-    async def _create_order(order_dict) -> personal_data.Order:
-        symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
-        side, order_type = personal_data.parse_order_type(order_dict)
-        created_order = await exchange_manager.exchange.create_order(
-            order_type,
-            symbol,
-            decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value])),
-            price=decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.PRICE.value])),
-            side=side,
-            current_price=price_by_symbol[symbol],
-            reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
-        )
-        # is private, to use in tests context only
-        order = personal_data.create_order_instance_from_raw(
-            exchange_manager.trader, created_order, force_open_or_pending_creation=True
-        ) if created_order else None
-        if not order:
-            return order
-        if order.status is enums.OrderStatus.PENDING_CREATION and order_creation_timeout > 0:
-            try:
-                return await wait_for_other_status(order, order_creation_timeout)
-            except TimeoutError as err:
-                logging.get_logger(order.get_logger_name()).error(f"Created order can't be fetched: {err}")
-                return None
-        return order
-
-    return await asyncio.gather(*(_create_order(order_dict) for order_dict in orders))
+    return await asyncio.gather(*(
+        _create_order(exchange_manager, order_dict, order_creation_timeout, price_by_symbol)
+        for order_dict in orders
+    ))
 
 
 async def wait_for_other_status(order: personal_data.Order, timeout) -> personal_data.Order:
