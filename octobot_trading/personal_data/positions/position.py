@@ -240,7 +240,7 @@ class Position(util.Initializable):
         try:
             with self.update_or_restore():
                 if mark_price is not None:
-                    self._update_mark_price(mark_price)
+                    self._update_mark_price(mark_price, force_entry_check=bool(update_size or update_margin))
                 if update_margin is not None:
                     self._update_size_from_margin(update_margin)
                 if update_size is not None:
@@ -265,27 +265,27 @@ class Position(util.Initializable):
         self._on_size_update(size_update, realised_pnl_update, self.unrealized_pnl, False)
         await self.close()
 
-    def _update_mark_price(self, mark_price, check_liquidation=True):
+    def _update_mark_price(self, mark_price, check_liquidation=True, force_entry_check=False):
         """
         Updates position mark_price and triggers size related attributes update
         :param mark_price: the update mark_price
         """
         self.mark_price = mark_price
-        self._update_prices_if_necessary(mark_price)
+        self._update_prices_if_necessary(mark_price, force_entry_check=force_entry_check)
         if check_liquidation:
             self._check_for_liquidation()
         if not self.is_idle() and self.exchange_manager.is_simulated:
             self.update_value()
             self.update_pnl()
 
-    def _update_prices_if_necessary(self, mark_price):
+    def _update_prices_if_necessary(self, mark_price, force_entry_check=False):
         """
         Update the position entry price and mark price when their value is 0 or when the position is new
         :param mark_price: the current mark_price
         """
         if self.mark_price == constants.ZERO:
             self.mark_price = mark_price
-        if self.entry_price == constants.ZERO:
+        if self.entry_price == constants.ZERO and (force_entry_check or not self.is_idle()):
             self.entry_price = mark_price
 
     def _update_size_from_margin(self, margin_update):
@@ -320,7 +320,7 @@ class Position(util.Initializable):
         """
         # consider the order filled price as the current reference price for pnl computation
         # do not check liquidation as our position might be closed by this order
-        self._update_mark_price(order.filled_price, check_liquidation=False)
+        self._update_mark_price(order.filled_price, check_liquidation=False, force_entry_check=True)
 
         # get size to close to check if closing
         size_to_close = self.get_quantity_to_close()

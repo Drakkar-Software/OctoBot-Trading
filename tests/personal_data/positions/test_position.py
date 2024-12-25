@@ -78,6 +78,7 @@ async def test_update_margin_linear(btc_usdt_future_trader_simulator_with_defaul
     assert position_inst.mark_price == constants.ZERO
     assert position_inst.initial_margin == constants.ZERO
     assert position_inst.size == constants.ZERO
+    assert position_inst.quantity == constants.ZERO
     assert position_inst.creation_time > 0
     initial_creation_time = 123
     # force changing creation time
@@ -86,16 +87,18 @@ async def test_update_margin_linear(btc_usdt_future_trader_simulator_with_defaul
     await position_inst.update(mark_price=constants.ONE, update_margin=decimal.Decimal(5))
     assert position_inst.mark_price == constants.ONE
     assert position_inst.initial_margin == decimal.Decimal(5)
+    assert position_inst.entry_price == constants.ONE
     assert position_inst.margin == decimal.Decimal("5.0300")    # initial margin + closing fees
     assert position_inst.size == decimal.Decimal(50)
     # creation time got updated: site changed
     assert initial_creation_time != position_inst.creation_time
     updated_creation_time = position_inst.creation_time
 
-    await position_inst.update(mark_price=constants.ONE, update_margin=-decimal.Decimal(3))
-    assert position_inst.mark_price == constants.ONE
+    await position_inst.update(mark_price=decimal.Decimal("1.1"), update_margin=-decimal.Decimal(3))
+    assert position_inst.mark_price == decimal.Decimal("1.1")
     assert position_inst.initial_margin == decimal.Decimal(2)
-    assert position_inst.margin == decimal.Decimal("2.0120")
+    assert position_inst.entry_price == constants.ONE   # did not change
+    assert position_inst.margin == decimal.Decimal("2.01320")
     assert position_inst.size == decimal.Decimal(20)
     # creation time did not get updated
     assert updated_creation_time == position_inst.creation_time
@@ -113,15 +116,24 @@ async def test_update_margin_inverse(btc_usdt_future_trader_simulator_with_defau
 
     await position_inst.update(mark_price=constants.ONE, update_margin=decimal.Decimal(8) / constants.ONE_HUNDRED)
     assert position_inst.mark_price == constants.ONE
+    assert position_inst.entry_price == constants.ONE
     assert position_inst.initial_margin == decimal.Decimal('0.08')
     assert position_inst.margin == decimal.Decimal("0.080288")  # initial margin + closing fees
     assert position_inst.size == decimal.Decimal('0.4')
 
     await position_inst.update(mark_price=constants.ONE, update_margin=-constants.ONE / constants.ONE_HUNDRED)
     assert position_inst.mark_price == constants.ONE
-    assert position_inst.initial_margin == decimal.Decimal('0.07')
+    assert position_inst.entry_price == constants.ONE   # did not change
+    assert position_inst.initial_margin == decimal.Decimal('0.07')  # - 0.01
     assert position_inst.margin == decimal.Decimal("0.070252")
     assert position_inst.size == decimal.Decimal('0.35')
+
+    await position_inst.update(mark_price=decimal.Decimal("0.9"), update_margin=-constants.ONE / constants.ONE_HUNDRED)
+    assert position_inst.mark_price == decimal.Decimal("0.9")
+    assert position_inst.entry_price == constants.ONE   # did not change
+    assert position_inst.initial_margin == decimal.Decimal('0.06')  # - 0.01
+    assert position_inst.margin == decimal.Decimal("0.06024")
+    assert position_inst.size == decimal.Decimal('0.3')
 
 
 async def test_update_entry_price_when_switching_side_on_one_way(btc_usdt_future_trader_simulator_with_default_linear):
