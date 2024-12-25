@@ -274,6 +274,9 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
         symbol,
         enums.PositionSide.BOTH
     )
+    if reduce_only and current_position.is_idle():
+        # can't reduce an empty position
+        return constants.ZERO, False
     # ensure max position order size is taken into account
     new_position_side = current_position.side
     if new_position_side is enums.PositionSide.UNKNOWN:
