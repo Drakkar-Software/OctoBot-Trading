@@ -327,12 +327,32 @@ async def test_get_futures_max_order_size(future_trader_simulator_with_default_l
         exchange_manager_inst, symbol, enums.TradeOrderSide.BUY,
         decimal.Decimal("37000"), False, l2_current_symbol_holding, l2_market_quantity
     ) == (decimal.Decimal('0.1346503937177512307045985802'), True)
+    # reduce only (position is empty)
+    assert personal_data.get_futures_max_order_size(
+        exchange_manager_inst, symbol, enums.TradeOrderSide.BUY,
+        decimal.Decimal("37000"), True, l2_current_symbol_holding, l2_market_quantity
+    ) == (constants.ZERO, False)
 
     # with short position
     assert personal_data.get_futures_max_order_size(
         exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
         decimal.Decimal("37000"), False, l2_current_symbol_holding, l2_market_quantity
     ) == (decimal.Decimal('0.1345431452958334678764786291'), True)
+    # reduce only (position is empty)
+    assert personal_data.get_futures_max_order_size(
+        exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
+        decimal.Decimal("37000"), True, l2_current_symbol_holding, l2_market_quantity
+    ) == (constants.ZERO, False)
+
+    # reduce only (position is NOT empty)
+    position = exchange_manager_inst.exchange_personal_data.positions_manager.get_symbol_positions(symbol)[0]
+    await position.update(mark_price=decimal.Decimal(37000), update_margin=decimal.Decimal(4))
+    position_size = position.size
+    assert position_size == decimal.Decimal("0.0005405405405405405405405405405")
+    assert personal_data.get_futures_max_order_size(
+        exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
+        decimal.Decimal("37000"), True, l2_current_symbol_holding, l2_market_quantity
+    ) == (position_size, False)
 
 
 @pytest.mark.asyncio
