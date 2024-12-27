@@ -230,6 +230,11 @@ async def _create_order(
 ) -> typing.Optional[personal_data.Order]:
     symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
     side, order_type = personal_data.parse_order_type(order_dict)
+    order_params = exchange_manager.exchange.get_order_additional_params(
+        personal_data.create_order_instance_from_raw(
+            exchange_manager.trader, order_dict, force_open_or_pending_creation=True
+        )
+    )
     created_order = await exchange_manager.exchange.create_order(
         order_type,
         symbol,
@@ -238,6 +243,7 @@ async def _create_order(
         side=side,
         current_price=price_by_symbol[symbol],
         reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
+        params=order_params
     )
     # is private, to use in tests context only
     order = personal_data.create_order_instance_from_raw(
