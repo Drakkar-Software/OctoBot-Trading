@@ -251,7 +251,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         return position.state.is_active()
 
     async def register_chained_order(
-        self, main_order, price, order_type, side, quantity=None, allow_bundling=True, tag=None
+        self, main_order, price, order_type, side, quantity=None, allow_bundling=True, tag=None, reduce_only=False
     ) -> tuple:
         chained_order = personal_data.create_order_instance(
             trader=self.exchange_manager.trader,
@@ -262,6 +262,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             price=price,
             side=side,
             associated_entry_id=main_order.order_id,
+            reduce_only=reduce_only,
             tag=tag,
         )
         params = {}
