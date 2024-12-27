@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.137] - 2023-12-27
+### Updated
+[Orders] handle reduce only in test tools and in register_chained_order
+
 ## [2.4.136] - 2023-12-25
 ### Updated
 [Positions] dont update entry price on empty positions
 ### Fixed
 [Orders] fix reduce only
-
 
 ## [2.4.134] - 2023-12-21
 ### Added
