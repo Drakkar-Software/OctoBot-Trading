@@ -820,7 +820,7 @@ class Order(util.Initializable):
                 f"{chained_order}"
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {str(self.origin_price)} | "
-                f"Quantity : {str(self.origin_quantity)} | "
+                f"Quantity : {str(self.origin_quantity)}{' (Reduce only)' if self.reduce_only else ''} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.order_id}{tag} "
                 f"exchange id: {self.exchange_order_id}")
