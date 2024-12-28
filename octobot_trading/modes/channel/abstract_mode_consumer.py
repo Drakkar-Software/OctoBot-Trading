@@ -266,12 +266,16 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             tag=tag,
         )
         params = {}
+        # do not reduce chained order amounts to account for fees when trading futures
+        update_with_triggering_order_fees = not self.exchange_manager.is_future
         if allow_bundling:
             params = await self.exchange_manager.trader.bundle_chained_order_with_uncreated_order(
-                main_order, chained_order, True
+                main_order, chained_order, update_with_triggering_order_fees
             )
         else:
-            await self.exchange_manager.trader.chain_order(main_order, chained_order, True, False)
+            await self.exchange_manager.trader.chain_order(
+                main_order, chained_order, update_with_triggering_order_fees, False
+            )
         return params, chained_order
 
 
