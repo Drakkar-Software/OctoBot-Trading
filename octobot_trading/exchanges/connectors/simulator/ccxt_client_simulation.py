@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 
 
@@ -24,3 +26,7 @@ def parse_markets(exchange_name, market_filter) -> dict:
 
 def get_fees(market_status) -> dict:
     return ccxt_client_util.get_fees(market_status)
+
+
+def get_contract_size(market_status: dict) -> decimal.Decimal:
+    return decimal.Decimal(str(ccxt_client_util.get_market_status_contract_size(market_status)))

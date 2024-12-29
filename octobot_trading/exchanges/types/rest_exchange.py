@@ -138,7 +138,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             exchange_manager,
             adapter_class=self.get_adapter_class(),
             additional_config=self.get_additional_connector_config(),
-            rest_name=self.get_rest_name(),
+            rest_name=self.get_rest_name(self.exchange_manager),
             force_auth=self.REQUIRES_AUTHENTICATION,
         )
 
@@ -166,8 +166,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         return [enums.ExchangeTypes.SPOT]
 
-    def get_rest_name(self):
-        return self.exchange_manager.exchange_class_string
+    @classmethod
+    def get_rest_name(cls, exchange_manager):
+        return exchange_manager.exchange_class_string
 
     def get_associated_websocket_exchange_name(self):
         return self.exchange_manager.exchange_name
