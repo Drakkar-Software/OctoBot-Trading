@@ -76,11 +76,19 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
             return market[enums.ExchangeConstantsMarketStatusColumns.SYMBOL.value] in self.symbols
 
         self._forced_market_statuses = ccxt_client_simulation.parse_markets(
-            self.exchange_manager.exchange_class_string, market_filter
+            self._get_exchange_class_rest_name(), market_filter
         )
+
+    def _get_exchange_class_rest_name(self):
+        if self.exchange_manager.exchange.exchange_tentacle_class:
+            return self.exchange_manager.exchange.exchange_tentacle_class.get_rest_name(self.exchange_manager)
+        return self.exchange_manager.exchange_class_string
 
     def should_adapt_market_statuses(self) -> bool:
         return self.exchange_manager.use_cached_markets
+
+    def get_contract_size(self, symbol: str):
+        return ccxt_client_simulation.get_contract_size(self.get_market_status(symbol, with_fixer=False))
 
     @classmethod
     def load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config):

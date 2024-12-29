@@ -236,7 +236,11 @@ def get_pair_cryptocurrency(client, pair) -> str:
 
 
 def get_contract_size(client, pair) -> float:
-    return client.markets[pair][ccxt_enums.ExchangeConstantsMarketStatusCCXTColumns.CONTRACT_SIZE.value]
+    return get_market_status_contract_size(client.markets[pair])
+
+
+def get_market_status_contract_size(market_status: dict) :
+    return market_status[ccxt_enums.ExchangeConstantsMarketStatusCCXTColumns.CONTRACT_SIZE.value]
 
 
 def get_fees(market_status) -> dict:

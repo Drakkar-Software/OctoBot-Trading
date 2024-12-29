@@ -44,11 +44,11 @@ class ExchangeSimulator(rest_exchange.RestExchange):
         )
 
     async def initialize_impl(self):
-        await super().initialize_impl()
-        self.exchange_importers = self.connector.exchange_importers
         self.exchange_tentacle_class = exchange_util.get_rest_exchange_class(
             self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config, None
         )
+        await super().initialize_impl()
+        self.exchange_importers = self.connector.exchange_importers
         if self.connector.should_adapt_market_statuses():
             await self._init_exchange_tentacle()
 
