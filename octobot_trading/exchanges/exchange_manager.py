@@ -322,9 +322,9 @@ class ExchangeManager(util.Initializable):
             common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None
         )
         return (
-            # remove leading and trailing ", ' and whitespaces if any
-            key.strip(' "').strip("'") if key else key,
-            secret.strip(' "').strip("'") if secret else secret,
+            # remove leading and trailing ", ', newlines and whitespaces if any
+            key.strip(' "').strip("'").strip("\n") if key else key,
+            secret.strip(' "').strip("'").strip("\n") if secret else secret,
             configuration.decrypt_element_if_possible(
                 common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
             ),
