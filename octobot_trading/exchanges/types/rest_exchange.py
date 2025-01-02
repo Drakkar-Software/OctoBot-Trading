@@ -119,6 +119,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to unhandled authentication issues
     EXCHANGE_AUTHENTICATION_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to a closed position on the exchange. Relevant for reduce-only orders
+    EXCHANGE_CLOSED_POSITION_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to an order that would immediately trigger if created. Relevant for stop losses
+    EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS: typing.List[typing.Iterable[str]] = []
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
@@ -253,7 +257,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             if self.should_log_on_ddos_exception(e):
                 self.connector.log_ddos_error(e)
             raise errors.FailedRequest(
-                f"Failed to order operation: {e.__class__.__name__} {html_util.get_html_summary_if_relevant(e)}"
+                f"Failed order operation: {e.__class__.__name__} {html_util.get_html_summary_if_relevant(e)}"
             ) from e
         except errors.OctoBotExchangeError:
             # custom error: forward it
@@ -275,6 +279,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
                     f"Error when handling order {html_util.get_html_summary_if_relevant(e)}. "
                     f"Exchange is refusing this order request on this account because "
                     f"of its compliancy requirements."
+                ) from e
+            if self.is_exchange_closed_position_error(e):
+                raise errors.ExchangeClosedPositionError(
+                    f"Error when handling order {html_util.get_html_summary_if_relevant(e)}. "
+                    f"Exchange is refusing this order request because associated position is closed."
+                ) from e
+            if self.is_exchange_order_would_immediately_trigger_error(e):
+                raise errors.ExchangeOrderInstantTriggerError(
+                    f"Error when handling order {html_util.get_html_summary_if_relevant(e)}. "
+                    f"Exchange is refusing this order request because associated order would instantly trigger."
                 ) from e
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             # print(traceback.format_exc(), file=sys.stderr)    # uncomment for debugging in tests
@@ -987,6 +1001,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_exchange_rules_compliancy_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_COMPLIANCY_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_COMPLIANCY_ERRORS)
+        return False
+
+    def is_exchange_closed_position_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_CLOSED_POSITION_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_CLOSED_POSITION_ERRORS)
+        return False
+
+    def is_exchange_order_would_immediately_trigger_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS)
         return False
 
     def is_exchange_internal_sync_error(self, error: BaseException) -> bool:
