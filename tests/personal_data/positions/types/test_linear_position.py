@@ -567,7 +567,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       quantity_filled=decimal.Decimal(str(5)),
                       filled_price=decimal.Decimal(str(25)))
-    position_inst.update_from_order(market_buy)
+    await position_inst.update_from_order(market_buy)
 
     # size did not reduce, exit price is still not set
     assert position_inst.already_reduced_size == constants.ZERO
@@ -581,7 +581,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(35)))
-    position_inst.update_from_order(market_sell)
+    await position_inst.update_from_order(market_sell)
     check_created_transaction(exchange_manager_inst, decimal.Decimal("-5"), decimal.Decimal("-5"))
 
     # size reduced, exit price is updated
@@ -595,7 +595,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        quantity_filled=decimal.Decimal(str(8)),
                        filled_price=decimal.Decimal(str(50)))
-    position_inst.update_from_order(market_sell)
+    await position_inst.update_from_order(market_sell)
     check_created_transaction(exchange_manager_inst, decimal.Decimal("-8"), decimal.Decimal("-13"))
 
     # size reduced, exit price is updated
@@ -609,7 +609,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       quantity_filled=decimal.Decimal(str(5)),
                       filled_price=decimal.Decimal(str(75)))
-    position_inst.update_from_order(market_buy)
+    await position_inst.update_from_order(market_buy)
 
     # size did not reduce, exit price is still 44.23076923076923076923076923
     assert position_inst.already_reduced_size == decimal.Decimal("-13")
@@ -623,7 +623,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        quantity_filled=decimal.Decimal(str(6)),
                        filled_price=decimal.Decimal(str(80)))
-    position_inst.update_from_order(market_sell)
+    await position_inst.update_from_order(market_sell)
     check_created_transaction(exchange_manager_inst, decimal.Decimal("-6"), decimal.Decimal("-19"))
 
     # size reduced, exit price is updated
@@ -659,7 +659,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(25)))
-    position_inst.update_from_order(market_sell)
+    await position_inst.update_from_order(market_sell)
     # a new fee transaction is created
     assert isinstance(get_latest_transaction(exchange_manager_inst), personal_data.FeeTransaction)
 
@@ -673,7 +673,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       quantity_filled=decimal.Decimal(str(5)),
                       filled_price=decimal.Decimal(str(20)))
-    position_inst.update_from_order(market_buy)
+    await position_inst.update_from_order(market_buy)
     check_created_transaction(exchange_manager_inst, decimal.Decimal("5"), decimal.Decimal("5"))
 
     # size reduced, exit price is updated
@@ -687,7 +687,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       quantity_filled=decimal.Decimal(str(8)),
                       filled_price=decimal.Decimal(str(18)))
-    position_inst.update_from_order(market_buy)
+    await position_inst.update_from_order(market_buy)
     check_created_transaction(exchange_manager_inst, decimal.Decimal("8"), decimal.Decimal("13"))
 
     # size reduced, exit price is updated
@@ -701,7 +701,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(19)))
-    position_inst.update_from_order(market_sell)
+    await position_inst.update_from_order(market_sell)
     # a new fee transaction is created
     assert isinstance(get_latest_transaction(exchange_manager_inst), personal_data.FeeTransaction)
 
@@ -715,7 +715,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       quantity_filled=decimal.Decimal(str(6)),
                       filled_price=decimal.Decimal(str(17)))
-    position_inst.update_from_order(market_buy)
+    await position_inst.update_from_order(market_buy)
     check_created_transaction(exchange_manager_inst, decimal.Decimal("6"), decimal.Decimal("19"))
 
     # size reduced, exit price is updated

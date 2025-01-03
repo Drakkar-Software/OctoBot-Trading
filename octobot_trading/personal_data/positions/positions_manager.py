@@ -153,7 +153,7 @@ class PositionsManager(util.Initializable):
             async with self.trader.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_history_update():
                 if self.trader.simulate or not require_exchange_update:
                     # update simulated positions
-                    return self._refresh_simulated_position_from_order(order)
+                    return await self._refresh_simulated_position_from_order(order)
                 if require_exchange_update and order.is_filled():
                     # on real trading when orders is filled: reload positions to ensure positions sync
                     try:
@@ -168,7 +168,7 @@ class PositionsManager(util.Initializable):
     def add_position(self, position: position_import.Position):
         self.positions[position.position_id] = position
 
-    def _refresh_simulated_position_from_order(self, order):
+    async def _refresh_simulated_position_from_order(self, order):
         if order.is_filled():
             # Don't update if order filled quantity is null
             if order.filled_quantity == 0:
@@ -177,7 +177,7 @@ class PositionsManager(util.Initializable):
             position_instance = order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(
                 order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
             try:
-                position_instance.update_from_order(order)
+                await position_instance.update_from_order(order)
                 return True
             except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
                 self.logger.exception(portfolio_negative_value_error, True,
