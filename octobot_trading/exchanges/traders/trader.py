@@ -87,9 +87,10 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, loaded: bool = False, params: dict = None,
-                           wait_for_creation=True,
-                           creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
+    async def create_order(
+        self, order, loaded: bool = False, params: dict = None, wait_for_creation=True, raise_all_creation_error=False,
+        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel.
@@ -99,6 +100,8 @@ class Trader(util.Initializable):
         :param wait_for_creation: when True, always make sure the order is completely created before returning.
         On exchanges async api, a create request will return before the order is actually live on exchange, in this case
         the associated order state will make sure that the order is creating by polling the order from the exchange.
+        :param raise_all_creation_error: when True, will raise each ceation error when possible
+        (instead of retuning None)
         :param creation_timeout: time before raising a timeout error when waiting for an order creation
         :return: The crated order instance
         """
@@ -123,27 +126,34 @@ class Trader(util.Initializable):
             # forward errors that require actions to fix the situation
             raise
         except Exception as e:
+            if raise_all_creation_error:
+                raise
             self.logger.exception(e, True, f"Unexpected error when creating order: {e}. Order: {order}")
             return None
 
         return created_order
 
-    async def create_artificial_order(self, order_type, symbol, current_price, quantity, price,
-                                      emit_trading_signals=False,
-                                      wait_for_creation=True,
-                                      creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
+    async def create_artificial_order(
+        self, order_type, symbol, current_price, quantity, price, reduce_only, close_position,
+        emit_trading_signals=False, wait_for_creation=True,
+        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ):
         """
         Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
         that is maintained internally).
         """
-        order = order_factory.create_order_instance(trader=self,
-                                                    order_type=order_type,
-                                                    symbol=symbol,
-                                                    current_price=current_price,
-                                                    quantity=quantity,
-                                                    price=price)
+        order = order_factory.create_order_instance(
+            trader=self,
+            order_type=order_type,
+            symbol=symbol,
+            current_price=current_price,
+            quantity=quantity,
+            price=price,
+            reduce_only=reduce_only,
+            close_position=close_position,
+        )
         async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
-            await signals.create_order(
+            return await signals.create_order(
                 self.exchange_manager,
                 emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                 order,

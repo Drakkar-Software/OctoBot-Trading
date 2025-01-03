@@ -143,17 +143,21 @@ class TrailingStopOrder(order_class.Order):
                                                          f"replacing stop...")
         await self._reset_events(decimal.Decimal(str(prices_manager.mark_price)), prices_manager.mark_price_set_time)
 
-    async def on_filled(self, enable_associated_orders_creation):
+    async def on_filled(self, enable_associated_orders_creation, force_artificial_orders=False):
         """
         Create an artificial when trailing stop is filled
         """
-        await order_class.Order.on_filled(self, enable_associated_orders_creation)
-        # TODO replace with chained order ?
-        await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
-                                                  if self.side is enums.TradeOrderSide.SELL
-                                                  else enums.TraderOrderType.BUY_MARKET,
-                                                  self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity, self.origin_stop_price)
+        await order_class.Order.on_filled(
+            self, enable_associated_orders_creation, force_artificial_orders=force_artificial_orders
+        )
+        order_type = (
+            enums.TraderOrderType.SELL_MARKET
+            if self.side is enums.TradeOrderSide.SELL else enums.TraderOrderType.BUY_MARKET
+        )
+        self.on_filled_artificial_order = await self.trader.create_artificial_order(
+            order_type, self.symbol, self.origin_stop_price, self.origin_quantity, self.origin_stop_price,
+            self.reduce_only, self.close_position
+        )
 
     def _clear_event_and_tasks(self):
         """

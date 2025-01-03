@@ -32,12 +32,16 @@ class TakeProfitOrder(limit_order.LimitOrder):
         # Creates a market order when filled, which is taker
         return enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
 
-    async def on_filled(self, enable_associated_orders_creation):
-        await limit_order.LimitOrder.on_filled(self, enable_associated_orders_creation)
-        if not self.trader.simulate and self.is_self_managed():
-            # TODO replace with chained order ?
-            await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
-                                                      if self.side is enums.TradeOrderSide.SELL
-                                                      else enums.TraderOrderType.BUY_MARKET,
-                                                      self.symbol, self.origin_stop_price,
-                                                      self.origin_quantity, self.origin_stop_price)
+    async def on_filled(self, enable_associated_orders_creation, force_artificial_orders=False):
+        await limit_order.LimitOrder.on_filled(
+            self, enable_associated_orders_creation, force_artificial_orders=force_artificial_orders
+        )
+        if not self.trader.simulate and (self.is_self_managed() or force_artificial_orders):
+            order_type = (
+                enums.TraderOrderType.SELL_MARKET
+                if self.side is enums.TradeOrderSide.SELL else enums.TraderOrderType.BUY_MARKET
+            )
+            self.on_filled_artificial_order = await self.trader.create_artificial_order(
+                order_type, self.symbol, self.origin_stop_price, self.origin_quantity, self.origin_stop_price,
+                self.reduce_only, self.close_position
+            )

@@ -1,3 +1,4 @@
+# pylint: disable=W0706
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -479,8 +480,12 @@ async def create_as_chained_order(order):
                 order,
                 loaded=False,
                 params=order.exchange_creation_params,
+                raise_all_creation_error=True,
                 **order.trader_creation_kwargs
             )
+        except (errors.ExchangeClosedPositionError, errors.ExchangeOrderInstantTriggerError):
+            # Order can be created and might be outdated forward error for the caller to fix it if possible
+            raise
         except Exception as err:
             # log warning to be sure to keep track of the failed order details
             logging.get_logger(LOGGER_NAME).warning(
