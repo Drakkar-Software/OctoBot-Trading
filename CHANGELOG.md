@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.140] - 2025-01-03
+### Updated
+[Positions] properly clear closed positions
+[Exchanges] handle newline error in keys
+### Fixed
+[Exchanges] don't raise on missing order description
+[Orders] fix closed pos & instant fill chained orders
+
 ## [2.4.139] - 2023-12-29
 ### Updated
 [Simulator] handle futures backtesting with market status and different ccxt classes
