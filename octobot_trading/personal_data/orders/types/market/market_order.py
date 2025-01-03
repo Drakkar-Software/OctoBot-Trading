@@ -18,6 +18,8 @@ import octobot_trading.personal_data.orders.order as order_class
 
 
 class MarketOrder(order_class.Order):
+    SUPPORTS_GROUPING = False    # False when orders of this type can't be grouped
+
     async def update_order_status(self, force_refresh=False):
         if self.trader.simulate:
             # TODO: ensure no issue un not running it in task anymore

@@ -17,6 +17,8 @@ import mock
 import pytest
 import decimal
 
+from more_itertools.more import side_effect
+
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -306,37 +308,238 @@ async def test_trigger_chained_orders(trader_simulator):
     order_mock_1 = mock.Mock(
         update_price_if_outdated=mock.AsyncMock(),
         update_quantity_with_order_fees=mock.AsyncMock(return_value=True),
-        should_be_created=mock.Mock(return_value=True)
+        should_be_created=mock.Mock(return_value=True),
+        is_cleared=mock.Mock(return_value=False)
     )
     order_mock_2 = mock.Mock(
         update_price_if_outdated=mock.AsyncMock(),
         update_quantity_with_order_fees=mock.AsyncMock(return_value=True),
-        should_be_created=mock.Mock(return_value=False)
+        should_be_created=mock.Mock(return_value=False),
+        is_cleared=mock.Mock(return_value=False)
     )
-    with mock.patch.object(order_util, "create_as_chained_order", mock.AsyncMock()) as create_as_chained_order_mock:
+    with mock.patch.object(base_order, "_create_triggered_chained_order", mock.AsyncMock()) as _create_triggered_chained_order_mock:
 
         base_order.add_chained_order(order_mock_1)
         base_order.add_chained_order(order_mock_2)
 
-        # does not triggers chained orders
+        # does not trigger chained orders
         await base_order.on_filled(False)
         order_mock_1.should_be_created.assert_not_called()
         order_mock_2.should_be_created.assert_not_called()
+        order_mock_1.is_cleared.assert_not_called()
+        order_mock_2.is_cleared.assert_not_called()
         order_mock_1.update_price_if_outdated.assert_not_called()
         order_mock_2.update_price_if_outdated.assert_not_called()
         order_mock_1.update_quantity_with_order_fees.assert_not_called()
         order_mock_2.update_quantity_with_order_fees.assert_not_called()
-        create_as_chained_order_mock.assert_not_called()
+        _create_triggered_chained_order_mock.assert_not_called()
 
         # triggers chained orders
         await base_order.on_filled(True)
         order_mock_1.should_be_created.assert_called_once()
         order_mock_2.should_be_created.assert_called_once()
+        order_mock_1.is_cleared.assert_called_once()
+        order_mock_2.is_cleared.assert_called_once()
         order_mock_1.update_price_if_outdated.assert_called_once()
         order_mock_2.update_price_if_outdated.assert_called_once()
         order_mock_1.update_quantity_with_order_fees.assert_called_once()
         order_mock_2.update_quantity_with_order_fees.assert_called_once()
-        create_as_chained_order_mock.assert_called_once_with(order_mock_1)
+        # called only once: order_mock_2 should not be created
+        _create_triggered_chained_order_mock.assert_called_once_with(order_mock_1, True)
+        _create_triggered_chained_order_mock.reset_mock()
+        order_mock_1.should_be_created.reset_mock()
+        order_mock_2.should_be_created.reset_mock()
+        order_mock_1.is_cleared.reset_mock()
+        order_mock_2.is_cleared.reset_mock()
+        order_mock_1.update_price_if_outdated.reset_mock()
+        order_mock_2.update_price_if_outdated.reset_mock()
+        order_mock_1.update_quantity_with_order_fees.reset_mock()
+        order_mock_2.update_quantity_with_order_fees.reset_mock()
+
+        # all orders should be created
+        order_mock_2.should_be_created = mock.Mock(return_value=True)
+        await base_order.on_filled(True)
+        order_mock_1.should_be_created.assert_called_once()
+        order_mock_2.should_be_created.assert_called_once()
+        order_mock_1.is_cleared.assert_called_once()
+        order_mock_2.is_cleared.assert_called_once()
+        order_mock_1.update_price_if_outdated.assert_called_once()
+        order_mock_2.update_price_if_outdated.assert_called_once()
+        order_mock_1.update_quantity_with_order_fees.assert_called_once()
+        order_mock_2.update_quantity_with_order_fees.assert_called_once()
+        assert _create_triggered_chained_order_mock.call_count == 2
+        _create_triggered_chained_order_mock.reset_mock()
+        order_mock_1.should_be_created.reset_mock()
+        order_mock_2.should_be_created.reset_mock()
+        order_mock_1.is_cleared.reset_mock()
+        order_mock_2.is_cleared.reset_mock()
+        order_mock_1.update_price_if_outdated.reset_mock()
+        order_mock_2.update_price_if_outdated.reset_mock()
+        order_mock_1.update_quantity_with_order_fees.reset_mock()
+        order_mock_2.update_quantity_with_order_fees.reset_mock()
+
+        # order 1 has been cleared
+        order_mock_1.is_cleared = mock.Mock(return_value=True)
+        await base_order.on_filled(True)
+        order_mock_1.should_be_created.assert_not_called()
+        order_mock_2.should_be_created.assert_called_once()
+        order_mock_1.is_cleared.assert_called_once()
+        order_mock_2.is_cleared.assert_called_once()
+        order_mock_1.update_price_if_outdated.assert_not_called()
+        order_mock_2.update_price_if_outdated.assert_called_once()
+        order_mock_1.update_quantity_with_order_fees.assert_not_called()
+        order_mock_2.update_quantity_with_order_fees.assert_called_once()
+        # called only once: order_mock_2 should not be created
+        _create_triggered_chained_order_mock.assert_called_once_with(order_mock_2, True)
+
+
+async def test_create_triggered_chained_order_mock(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.Order(trader_inst)
+    eq_chained_order_1 = mock.Mock(get_name=mock.Mock(return_value="plop"))
+    chained_order_1 = mock.Mock(
+        create_triggered_equivalent_order=mock.AsyncMock(return_value=eq_chained_order_1),
+    )
+
+    # normal call
+    with mock.patch.object(order_util, "create_as_chained_order", mock.AsyncMock()) as create_as_chained_order_mock:
+        await base_order._create_triggered_chained_order(chained_order_1, True)
+        create_as_chained_order_mock.assert_called_once_with(chained_order_1)
+        chained_order_1.create_triggered_equivalent_order.assert_not_called()
+
+    # random error
+    with mock.patch.object(
+        order_util, "create_as_chained_order", mock.AsyncMock(side_effect=ZeroDivisionError)
+    ) as create_as_chained_order_mock:
+        # does not raise
+        await base_order._create_triggered_chained_order(chained_order_1, False)
+        create_as_chained_order_mock.assert_called_once_with(chained_order_1,)
+        chained_order_1.create_triggered_equivalent_order.assert_not_called()
+
+    # ExchangeClosedPositionError
+    chained_order_1.status = None
+    chained_order_1.state = 1
+    with mock.patch.object(
+        order_util, "create_as_chained_order", mock.AsyncMock(side_effect=errors.ExchangeClosedPositionError)
+    ) as create_as_chained_order_mock:
+        # does not raise
+        await base_order._create_triggered_chained_order(chained_order_1, False)
+        create_as_chained_order_mock.assert_called_once_with(chained_order_1)
+        assert chained_order_1.status == enums.OrderStatus.CLOSED
+        assert chained_order_1.state is None
+        assert chained_order_1.is_cleared()
+        chained_order_1.create_triggered_equivalent_order.assert_not_called()
+
+    # ExchangeOrderInstantTriggerError
+    calls = []
+    async def _create_as_chained_order(*_):
+        if not calls:
+            calls.append(1)
+            raise errors.ExchangeOrderInstantTriggerError()
+        return
+
+    chained_order_1.status = 1
+    chained_order_1.state = 1
+    with mock.patch.object(
+        order_util, "create_as_chained_order", mock.AsyncMock(side_effect=_create_as_chained_order)
+    ) as create_as_chained_order_mock, mock.patch.object(
+        chained_order_1, "create_on_filled_artificial_order", mock.AsyncMock()
+    ) as create_on_filled_artificial_order_mock:
+        await base_order._create_triggered_chained_order(chained_order_1, True)
+        create_as_chained_order_mock.assert_called_once_with(chained_order_1)
+        create_on_filled_artificial_order_mock.assert_called_once_with(True)
+        assert chained_order_1.status == enums.OrderStatus.CLOSED
+        assert chained_order_1.state is None
+        assert chained_order_1.is_cleared()
+
+
+async def test_are_simultaneously_triggered_grouped_orders_closed(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    order = personal_data.Order(trader_inst)
+    assert order._are_simultaneously_triggered_grouped_orders_closed() is False
+
+    order_mock_1 = personal_data.Order(trader_inst)
+    order_mock_1.triggered_by=order
+    assert order_mock_1._are_simultaneously_triggered_grouped_orders_closed() is False
+
+    group = "plop"
+    equivalent_order_mock_2 = mock.Mock(
+        order_group=group,
+        is_closed=mock.Mock(return_value=False),
+        triggered_by=order,
+    )
+    order_mock_2 = personal_data.Order(trader_inst)
+    order_mock_2.order_group=group
+    order_mock_2.is_closed=mock.Mock(return_value=False)
+    order_mock_2.on_filled_artificial_order=equivalent_order_mock_2
+    order_mock_2.triggered_by=order
+    order.chained_orders=[order_mock_1, order_mock_2]
+    # not in the same group
+    assert order_mock_1._are_simultaneously_triggered_grouped_orders_closed() is False
+    assert order_mock_2._are_simultaneously_triggered_grouped_orders_closed() is False
+
+    # in the same group, orders not closed & support grouping
+    order_mock_1.order_group = group
+    assert order_mock_1._are_simultaneously_triggered_grouped_orders_closed() is False
+    assert order_mock_2._are_simultaneously_triggered_grouped_orders_closed() is False
+
+    # in the same group, 1 order closed & support grouping
+    equivalent_order_mock_2.is_closed=mock.Mock(return_value=True)
+    assert order_mock_1._are_simultaneously_triggered_grouped_orders_closed() is True
+    assert order_mock_2._are_simultaneously_triggered_grouped_orders_closed() is False  # 1 is not closed
+
+    # in the same group, 1 order not closed & doesnt support grouping
+    equivalent_order_mock_2.is_closed=mock.Mock(return_value=False)
+    equivalent_order_mock_2.SUPPORTS_GROUPING=False
+    order_mock_1.SUPPORTS_GROUPING=False
+    assert order_mock_1._are_simultaneously_triggered_grouped_orders_closed() is True
+    assert order_mock_2._are_simultaneously_triggered_grouped_orders_closed() is True
+
+
+async def test_create_on_filled_artificial_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.Order(trader_inst)
+    base_order.origin_quantity = decimal.Decimal(11)
+    base_order.order_group = "plop group"
+    base_order.symbol = "BTC/USDT"
+    base_order.reduce_only = True
+    assert await base_order.create_on_filled_artificial_order(False) is None
+
+
+    base_order = personal_data.StopLossOrder(trader_inst)
+    base_order.origin_quantity = decimal.Decimal(11)
+    base_order.origin_stop_price = decimal.Decimal(2000)
+    base_order.order_group = "plop group"
+    base_order.symbol = "BTC/USDT"
+    base_order.reduce_only = True
+    base_order.close_position = False
+
+    # simulation: disabled
+    assert await base_order.create_on_filled_artificial_order(True) is None
+
+    # disable simulation
+    trader_inst.simulate = False
+    trader_inst.allow_artificial_orders = False
+
+    async def _create_new_order(order, *_, **__):
+        return order
+
+    with mock.patch.object(
+        trader_inst, "_create_new_order", mock.AsyncMock(side_effect=_create_new_order)
+    ) as _create_new_order_mock:
+        triggered_artificial_order = await base_order.create_on_filled_artificial_order(True)
+        _create_new_order_mock.assert_called_once()
+
+        assert isinstance(triggered_artificial_order, personal_data.SellMarketOrder)
+        assert triggered_artificial_order.origin_quantity == decimal.Decimal(11)
+        assert triggered_artificial_order.created_last_price == decimal.Decimal(2000)
+        assert triggered_artificial_order.order_group == "plop group"
+        assert triggered_artificial_order.symbol == "BTC/USDT"
+        assert triggered_artificial_order.reduce_only == True
+        assert triggered_artificial_order.close_position == False
+        assert base_order.on_filled_artificial_order is triggered_artificial_order
 
 
 def test_update_quantity_with_order_fees(trader_simulator):

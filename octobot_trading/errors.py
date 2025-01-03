@@ -143,6 +143,20 @@ class ExchangeAccountSymbolPermissionError(OctoBotExchangeError):
     """
 
 
+class ExchangeClosedPositionError(OctoBotExchangeError):
+    """
+    Raised when an exchange failed to execute the given request because the associated position is closed.
+    Can happen with reduce-only orders
+    """
+
+
+class ExchangeOrderInstantTriggerError(OctoBotExchangeError):
+    """
+    Raised when an exchange failed to execute the given request because the associated order would immediately trigger.
+    Can happen with stop orders
+    """
+
+
 class PortfolioNegativeValueError(Exception):
     """
     Raised when the portfolio is being updated with a negative value
