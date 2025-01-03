@@ -742,7 +742,10 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
             self._creating_exchange_order_descriptions.add(desc)
             yield
         finally:
-            self._creating_exchange_order_descriptions.remove(desc)
+            try:
+                self._creating_exchange_order_descriptions.remove(desc)
+            except KeyError:
+                self.logger.error(f"Failed to remove {desc} from exchange order descriptions")
 
     def is_creating_order(
         self, order: dict, symbol: str
