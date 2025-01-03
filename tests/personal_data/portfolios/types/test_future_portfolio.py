@@ -1188,7 +1188,11 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
             assert position.size == constants.ZERO
-            assert position.realised_pnl == total_pnl
+            # positions is now closed
+            assert position.realised_pnl == constants.ZERO
+            assert position.unrealized_pnl == constants.ZERO
+            assert position.entry_price == constants.ZERO
+            assert position.quantity == constants.ZERO
 
 
 async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contract(

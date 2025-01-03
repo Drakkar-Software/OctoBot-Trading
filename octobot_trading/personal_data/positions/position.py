@@ -312,7 +312,7 @@ class Position(util.Initializable):
                 or (self.is_short() and order.is_short())
         )
 
-    def update_from_order(self, order):
+    async def update_from_order(self, order):
         """
         Update position size and entry price from filled order portfolio
         :param order: the filled order instance
@@ -354,6 +354,9 @@ class Position(util.Initializable):
 
         # update size and realised pnl
         self._update_size(size_update, realised_pnl_update=realised_pnl_fees_update, trigger_source=trigger_source)
+        if size_to_close and self.is_idle():
+            # don't keep previous position pnl etc when position is now idle
+            await self.close()
 
     def _update_realized_pnl_from_order(self, order):
         """
