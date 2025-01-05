@@ -42,9 +42,8 @@ async def user_select_emit_trading_signals(ctx, identifier, def_val=False) -> bo
     return is_emitting_signals
 
 
-async def set_leverage(ctx, leverage):
+async def set_leverage(ctx, leverage, side=None):
     if ctx.exchange_manager.is_future:
-        side = None
         try:
             await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(leverage)))
         except errors.ContractExistsError as e:

@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
@@ -24,12 +26,12 @@ class MarginContract:
                  contract_size=constants.ONE,
                  maximum_leverage=constants.ONE,
                  current_leverage=constants.ONE):
-        self.pair = pair
+        self.pair: str = pair
         self.margin_type = margin_type
 
-        self.contract_size = contract_size
-        self.maximum_leverage = maximum_leverage
-        self.current_leverage = current_leverage
+        self.contract_size: decimal.Decimal = contract_size
+        self.maximum_leverage: decimal.Decimal = maximum_leverage
+        self.current_leverage: decimal.Decimal = current_leverage
 
         self.risk_limit = {}
 
@@ -47,7 +49,12 @@ class MarginContract:
         :param new_leverage: the leverage value to check
         :return: True if valid
         """
-        return 0 < new_leverage if self.maximum_leverage is None else 0 < new_leverage <= self.maximum_leverage
+        dec_leverage = decimal.Decimal(str(new_leverage))
+        return (
+            constants.ZERO < dec_leverage
+            if self.maximum_leverage is None
+            else constants.ZERO < dec_leverage <= self.maximum_leverage
+        )
 
     def set_current_leverage(self, new_leverage):
         """

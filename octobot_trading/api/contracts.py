@@ -38,6 +38,10 @@ def has_pair_future_contract(exchange_manager, pair: str) -> bool:
     return exchange_manager.exchange.has_pair_future_contract(pair)
 
 
+def update_pair_contract(exchange_manager, pair: str, leverage: decimal.Decimal):
+    get_pair_contracts(exchange_manager)[pair].current_leverage = leverage
+
+
 def load_pair_contract(exchange_manager, contract_dict: dict):
     exchange_data.update_future_contract_from_dict(exchange_manager, contract_dict)
 
