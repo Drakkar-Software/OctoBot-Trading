@@ -13,6 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+import typing
+
 import octobot_commons.signals as signals
 import octobot_trading.signals.util as signal_util
 import octobot_trading.enums as trading_enums
@@ -34,10 +37,20 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
 
     def sort_signals(self):
         # https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts
-        # move cancelled order signals at the beginning of the list, leave others as is while keeping initial order
-        def _sort_key(signal):
-            return 0 if signal.content[trading_enums.TradingSignalCommonsAttrs.ACTION.value] == \
-                trading_enums.TradingSignalOrdersActions.CANCEL.value else 1
+        # sorting rules:
+        #   1. cancelled order signals at the beginning of the list
+        #   2. positions edit (such as changing leverage)
+        #   3. others as is while keeping initial order
+        def _sort_key(signal: signals.Signal):
+            return (
+                0 if (
+                    signal.content[trading_enums.TradingSignalCommonsAttrs.ACTION.value] ==
+                    trading_enums.TradingSignalOrdersActions.CANCEL.value
+                ) else (
+                    1 if signal.topic == trading_enums.TradingSignalTopics.POSITIONS.value
+                    else 2
+                )
+            )
 
         self.signals = sorted(self.signals, key=_sort_key)
         return self
@@ -122,6 +135,25 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 )
             )
 
+    def add_leverage_update(
+        self, symbol: str, side: typing.Optional[trading_enums.PositionSide],
+        leverage: decimal.Decimal, exchange_manager
+    ):
+        if not self._update_pending_positions(
+            symbol, side, exchange_manager, trading_enums.TradingSignalPositionsActions.EDIT, leverage=leverage
+        ):
+            self.register_signal(
+                trading_enums.TradingSignalTopics.POSITIONS.value,
+                signal_util.create_position_signal_content(
+                    trading_enums.TradingSignalPositionsActions.EDIT,
+                    self.strategy,
+                    exchange_manager,
+                    symbol,
+                    side,
+                    leverage
+                )
+            )
+
     def _update_pending_orders(
         self, order, exchange_manager,
         action,
@@ -189,10 +221,25 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
             pass
         return False
 
+    def _update_pending_positions(self, symbol, side, exchange_manager, action, leverage):
+        try:
+            _, position_description = self._get_position_description_from_local_positions(
+                symbol, side, exchange_manager.exchange_name
+            )
+            if action is trading_enums.TradingSignalPositionsActions.EDIT:
+                # update position edit content
+                position_description[trading_enums.TradingSignalPositionsAttrs.LEVERAGE.value] = float(leverage)
+            return True
+        except trading_errors.PositionDescriptionNotFoundError:
+            pass
+        return False
+
     def _pack_referenced_orders_together(self):
         filtered_signals = []
         order_description_by_seen_group_ids = {}
         for signal in self.signals:
+            if signal.topic != trading_enums.TradingSignalTopics.ORDERS.value:
+                continue
             include_signal = True
             try:
                 # bundled orders must be sent at the same time as the original order, add them both to the same signal
@@ -228,8 +275,26 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
 
     def _get_order_description_from_local_orders(self, order_id):
         for index, signal in enumerate(self.signals):
-            if signal.content[trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value] == order_id:
+            if (
+                signal.topic == trading_enums.TradingSignalTopics.ORDERS.value and
+                signal.content[trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value] == order_id
+            ):
                 return index, signal.content
         raise trading_errors.OrderDescriptionNotFoundError(
             f"order not found (order_id: {order_id})"
         )
+
+    def _get_position_description_from_local_positions(self, symbol, side, exchange_name):
+        for index, signal in enumerate(self.signals):
+            side_value = side.value if side else side
+            if (
+                signal.topic == trading_enums.TradingSignalTopics.POSITIONS.value and
+                signal.content[trading_enums.TradingSignalPositionsAttrs.SYMBOL.value] == symbol and
+                signal.content[trading_enums.TradingSignalPositionsAttrs.SIDE.value] == side_value and
+                signal.content[trading_enums.TradingSignalPositionsAttrs.EXCHANGE.value] == exchange_name
+            ):
+                return index, signal.content
+        raise trading_errors.PositionDescriptionNotFoundError(
+            f"position not found ({symbol, side, exchange_name})"
+        )
+

@@ -17,6 +17,7 @@ import abc
 import contextlib
 import decimal
 import copy
+import typing
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
@@ -583,6 +584,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             edited_stop_price=edited_stop_price,
             edited_current_price=edited_current_price,
             params=params
+        )
+
+    async def set_leverage(
+        self, symbol: str, side: typing.Optional[enums.PositionSide], leverage: decimal.Decimal
+    ) -> bool:
+        return await signals.set_leverage(
+            self.exchange_manager, self.should_emit_trading_signal(), symbol, side, leverage
         )
 
     async def get_additional_metadata(self, is_backtesting):

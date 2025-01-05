@@ -272,6 +272,12 @@ class OrderDescriptionNotFoundError(Exception):
     """
 
 
+class PositionDescriptionNotFoundError(Exception):
+    """
+    Raised when a position description is not found
+    """
+
+
 class AdapterError(Exception):
     """
     Raised when an error occurs in an adapter

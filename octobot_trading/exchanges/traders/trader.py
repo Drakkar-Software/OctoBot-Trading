@@ -779,13 +779,16 @@ class Trader(util.Initializable):
         async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
             await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(amount, currency)
 
-    async def set_leverage(self, symbol, side, leverage):
+    async def set_leverage(
+        self, symbol: str, side: typing.Optional[enums.PositionSide], leverage: decimal.Decimal
+    ) -> bool:
         """
         Updates the symbol contract leverage
         Can raise InvalidLeverageValue if leverage value is not matching requirements
         :param symbol: the symbol to update
         :param side: the side to update (TODO)
         :param leverage: the new leverage value
+        :return True if leverage changed
         """
         contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
         if not contract.check_leverage_update(leverage):
@@ -799,6 +802,8 @@ class Trader(util.Initializable):
                 )
             self.logger.info(f"Switching {symbol} leverage from {contract.current_leverage} to {leverage}")
             contract.set_current_leverage(leverage)
+            return True
+        return False
 
     async def set_symbol_take_profit_stop_loss_mode(self, symbol, new_mode: enums.TakeProfitStopLossMode):
         """
