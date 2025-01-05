@@ -210,6 +210,7 @@ from octobot_trading.api.contracts import (
     get_pair_contracts,
     is_handled_contract,
     has_pair_future_contract,
+    update_pair_contract,
     load_pair_contract,
     create_default_future_contract,
 )
@@ -386,6 +387,7 @@ __all__ = [
     "get_pair_contracts",
     "is_handled_contract",
     "has_pair_future_contract",
+    "update_pair_contract",
     "load_pair_contract",
     "create_default_future_contract",
     "set_is_exclusively_using_exchange_position_details",

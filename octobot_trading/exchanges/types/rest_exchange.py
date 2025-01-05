@@ -102,6 +102,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     CAN_HAVE_DELAYED_CANCELLED_ORDERS = False
     # Set True when the "limit" param when fetching order books is taken into account
     SUPPORTS_CUSTOM_LIMIT_ORDER_BOOK_FETCH = False
+    # Set False when the leverage value is set via something else that a set_leverage api (from orders for example)
+    UPDATE_LEVERAGE_FROM_API = True
 
     # text content of errors due to orders not found errors
     EXCHANGE_ORDER_NOT_FOUND_ERRORS: typing.List[typing.Iterable[str]] = []
@@ -934,7 +936,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :param leverage: the leverage
         :return: the update result
         """
-        return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol, **kwargs)
+        if self.UPDATE_LEVERAGE_FROM_API:
+            return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol, **kwargs)
+        # nothing to do when UPDATE_LEVERAGE_FROM_API is False
+        return None
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool, **kwargs: dict):
         """

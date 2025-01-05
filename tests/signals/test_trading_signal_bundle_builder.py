@@ -444,15 +444,44 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.add_created_order(sell_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.add_created_order(stop_loss_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
-    assert len(trading_signal_bundle_builder.signals) == 3
+    trading_signal_bundle_builder.add_leverage_update("BTC/USDT:USDT", None, decimal.Decimal(5), buy_limit_order.exchange_manager)
+    trading_signal_bundle_builder.add_leverage_update("BTC/USDT:USDT", None, decimal.Decimal(10), buy_limit_order.exchange_manager) # will replace the previous BTC/USDT:USDT signal
+    trading_signal_bundle_builder.add_leverage_update("BTC/USD:BTC", None, decimal.Decimal(6), buy_limit_order.exchange_manager)
+    assert len(trading_signal_bundle_builder.signals) == 5
+    order_signals = [
+        signal
+        for signal in trading_signal_bundle_builder.signals
+        if signal.topic == enums.TradingSignalTopics.ORDERS.value
+    ]
+    position_signals = [
+        signal
+        for signal in trading_signal_bundle_builder.signals
+        if signal.topic == enums.TradingSignalTopics.POSITIONS.value
+    ]
+    assert len(order_signals) == 3
+    assert len(position_signals) == 2
     assert all(signal.content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value] == []
-               for signal in trading_signal_bundle_builder.signals)
+               for signal in order_signals)
+    assert [
+        signal.content[enums.TradingSignalPositionsAttrs.SYMBOL.value]
+        for signal in position_signals
+    ] == ["BTC/USDT:USDT", "BTC/USD:BTC"]
+    assert [
+        signal.content[enums.TradingSignalPositionsAttrs.LEVERAGE.value]
+        for signal in position_signals
+    ] == [10, 6]
     pre_pack_signals = copy.copy(trading_signal_bundle_builder.signals)
     trading_signal_bundle_builder._pack_referenced_orders_together()
     # no order to be packed, no change
-    assert len(trading_signal_bundle_builder.signals) == 3
+    assert len(trading_signal_bundle_builder.signals) == 5
     assert all(signal.content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value] == []
-               for signal in trading_signal_bundle_builder.signals)
+               for signal in trading_signal_bundle_builder.signals
+               if signal.topic == enums.TradingSignalTopics.ORDERS.value)
+    assert [
+        signal.content[enums.TradingSignalPositionsAttrs.SYMBOL.value]
+        for signal in position_signals
+        if signal.topic == enums.TradingSignalTopics.POSITIONS.value
+    ] == ["BTC/USDT:USDT", "BTC/USD:BTC"]
 
     # missing id
     trading_signal_bundle_builder.logger.debug.assert_not_called()
@@ -468,7 +497,12 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
     pre_pack_signals[2].content[enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value] = "0"
     trading_signal_bundle_builder._pack_referenced_orders_together()
     # no order to be packed, no change
-    assert len(trading_signal_bundle_builder.signals) == 2
+    assert len(trading_signal_bundle_builder.signals) == 4
+    assert len([
+        signal
+        for signal in trading_signal_bundle_builder.signals
+        if signal.topic == enums.TradingSignalTopics.ORDERS.value
+    ]) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
            is pre_pack_signals[2].content
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value] \
@@ -482,7 +516,12 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
     # also chain sell limit to buy limit
     pre_pack_signals[1].content[enums.TradingSignalOrdersAttrs.CHAINED_TO.value] = "0"
     trading_signal_bundle_builder._pack_referenced_orders_together()
-    assert len(trading_signal_bundle_builder.signals) == 1
+    assert len(trading_signal_bundle_builder.signals) == 3
+    assert len([
+        signal
+        for signal in trading_signal_bundle_builder.signals
+        if signal.topic == enums.TradingSignalTopics.ORDERS.value
+    ]) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
            is pre_pack_signals[1].content
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][1] \
@@ -496,7 +535,12 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
     # also chain sell limit to buy limit
     pre_pack_signals[1].content[enums.TradingSignalOrdersAttrs.CHAINED_TO.value] = "0"
     trading_signal_bundle_builder._pack_referenced_orders_together()
-    assert len(trading_signal_bundle_builder.signals) == 1
+    assert len(trading_signal_bundle_builder.signals) == 3
+    assert len([
+        signal
+        for signal in trading_signal_bundle_builder.signals
+        if signal.topic == enums.TradingSignalTopics.ORDERS.value
+    ]) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
            is pre_pack_signals[1].content
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][1] \
@@ -511,14 +555,19 @@ def test_pack_referenced_orders_together(trading_signal_bundle_builder,
     trading_signal_bundle_builder.add_created_order(stop_loss_buy_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.signals[2].content[enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value] = None
     trading_signal_bundle_builder.signals[2].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] = "grp"
-    trading_signal_bundle_builder.signals[3].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] = "grp"
+    trading_signal_bundle_builder.signals[5].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] = "grp"
     pre_pack_signals = copy.copy(trading_signal_bundle_builder.signals)
     trading_signal_bundle_builder._pack_referenced_orders_together()
     trading_signal_bundle_builder.logger.debug.assert_not_called()
-    assert len(trading_signal_bundle_builder.signals) == 2
+    assert len(trading_signal_bundle_builder.signals) == 4
+    assert len([
+        signal
+        for signal in trading_signal_bundle_builder.signals
+        if signal.topic == enums.TradingSignalTopics.ORDERS.value
+    ]) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
            is pre_pack_signals[1].content
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value][0] \
-           is pre_pack_signals[3].content
+           is pre_pack_signals[5].content
     
     trading_signal_bundle_builder.logger.error.assert_not_called()

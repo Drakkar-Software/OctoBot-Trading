@@ -562,6 +562,7 @@ class TradingSignalOrdersAttrs(enum.Enum):
 
 class TradingSignalPositionsAttrs(enum.Enum):
     EXCHANGE = "exchange"
+    EXCHANGE_TYPE = "exchange_type"
     STRATEGY = "strategy"
     SYMBOL = "symbol"
     SIDE = "side"

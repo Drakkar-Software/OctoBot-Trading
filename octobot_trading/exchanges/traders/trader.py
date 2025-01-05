@@ -796,10 +796,7 @@ class Trader(util.Initializable):
                                               f"but maximal value is {contract.maximum_leverage}")
         if contract.current_leverage != leverage:
             if not self.simulate:
-                await self.exchange_manager.exchange.set_symbol_leverage(
-                    symbol=symbol,
-                    leverage=leverage
-                )
+                await self.exchange_manager.exchange.set_symbol_leverage(symbol, float(leverage))
             self.logger.info(f"Switching {symbol} leverage from {contract.current_leverage} to {leverage}")
             contract.set_current_leverage(leverage)
             return True

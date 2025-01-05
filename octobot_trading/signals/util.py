@@ -81,6 +81,7 @@ def create_position_signal_content(
         trading_enums.TradingSignalCommonsAttrs.ACTION.value: action.value,
         trading_enums.TradingSignalPositionsAttrs.STRATEGY.value: strategy,
         trading_enums.TradingSignalPositionsAttrs.EXCHANGE.value: exchange_manager.exchange_name,
+        trading_enums.TradingSignalPositionsAttrs.EXCHANGE_TYPE.value: exchanges.get_exchange_type(exchange_manager).value,
         trading_enums.TradingSignalPositionsAttrs.SYMBOL.value: symbol,
         trading_enums.TradingSignalPositionsAttrs.SIDE.value: side.value if side else side,
         trading_enums.TradingSignalPositionsAttrs.LEVERAGE.value: float(leverage),
