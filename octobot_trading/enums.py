@@ -521,6 +521,7 @@ class TradingSignalAttrs(enum.Enum):
 
 class TradingSignalTopics(enum.Enum):
     ORDERS = "orders"
+    POSITIONS = "positions"
     PORTFOLIO = "portfolio"
 
 
@@ -559,11 +560,23 @@ class TradingSignalOrdersAttrs(enum.Enum):
     UPDATE_WITH_TRIGGERING_ORDER_FEES = "update_with_triggering_order_fees"
 
 
+class TradingSignalPositionsAttrs(enum.Enum):
+    EXCHANGE = "exchange"
+    STRATEGY = "strategy"
+    SYMBOL = "symbol"
+    SIDE = "side"
+    LEVERAGE = "leverage"
+
+
 class TradingSignalOrdersActions(enum.Enum):
     CREATE = "create"
     ADD_TO_GROUP = "add_to_group"
     EDIT = "edit"
     CANCEL = "cancel"
+
+
+class TradingSignalPositionsActions(enum.Enum):
+    EDIT = "edit"
 
 
 class StoredOrdersAttr(enum.Enum):

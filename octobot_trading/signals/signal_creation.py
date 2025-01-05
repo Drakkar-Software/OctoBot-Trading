@@ -15,10 +15,12 @@
 #  License along with this library.
 import decimal
 import contextlib
+import typing
 
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.personal_data.orders as orders
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.signals.trading_signal_bundle_builder as trading_signal_bundle_builder
 
 import octobot_commons.logging as logging
@@ -139,5 +141,17 @@ async def edit_order(
             updated_limit_price=edited_price,
             updated_stop_price=edited_stop_price,
             updated_current_price=edited_current_price,
+        )
+    return changed
+
+
+async def set_leverage(
+    exchange_manager, should_emit_signal, symbol: str, side: typing.Optional[enums.PositionSide],
+    leverage: decimal.Decimal
+) -> bool:
+    changed = await exchange_manager.trader.set_leverage(symbol, side, leverage)
+    if should_emit_signal and changed:
+        signals.SignalPublisher.instance().get_signal_bundle_builder(symbol).add_leverage_update(
+            symbol, side, leverage, exchange_manager
         )
     return changed
