@@ -398,9 +398,8 @@ async def test_create_triggered_chained_order_mock(trader_simulator):
 
     base_order = personal_data.Order(trader_inst)
     eq_chained_order_1 = mock.Mock(get_name=mock.Mock(return_value="plop"))
-    chained_order_1 = mock.Mock(
-        create_triggered_equivalent_order=mock.AsyncMock(return_value=eq_chained_order_1),
-    )
+    chained_order_1 = personal_data.Order(trader_inst)
+    chained_order_1.create_triggered_equivalent_order=mock.AsyncMock(return_value=eq_chained_order_1)
 
     # normal call
     with mock.patch.object(order_util, "create_as_chained_order", mock.AsyncMock()) as create_as_chained_order_mock:
@@ -419,7 +418,7 @@ async def test_create_triggered_chained_order_mock(trader_simulator):
 
     # ExchangeClosedPositionError
     chained_order_1.status = None
-    chained_order_1.state = 1
+    chained_order_1.state = mock.Mock()
     with mock.patch.object(
         order_util, "create_as_chained_order", mock.AsyncMock(side_effect=errors.ExchangeClosedPositionError)
     ) as create_as_chained_order_mock:
@@ -440,7 +439,7 @@ async def test_create_triggered_chained_order_mock(trader_simulator):
         return
 
     chained_order_1.status = 1
-    chained_order_1.state = 1
+    chained_order_1.state = mock.Mock()
     with mock.patch.object(
         order_util, "create_as_chained_order", mock.AsyncMock(side_effect=_create_as_chained_order)
     ) as create_as_chained_order_mock, mock.patch.object(
