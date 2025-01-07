@@ -532,7 +532,7 @@ class Order(util.Initializable):
         except errors.ExchangeClosedPositionError as err:
             message = (
                 f"chained order is cancelled as it can't be created: position is closed "
-                f"on exchange ({err}) order: {order.id}"
+                f"on exchange ({err}) order: {order.order_id}"
             )
             if order.reduce_only:
                 # can happen on reduce only orders
