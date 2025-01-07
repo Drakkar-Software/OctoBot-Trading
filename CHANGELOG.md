@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.142] - 2025-01-07
+### Fixed
+[Order] fix _create_triggered_chained_order
+
 ## [2.4.141] - 2025-01-05
 ### Added
 [TradingSignals] add positions and leverage update
