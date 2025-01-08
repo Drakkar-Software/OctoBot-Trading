@@ -145,26 +145,38 @@ async def get_portfolio(exchange_manager, as_float=False, clear_empty=True) -> d
     }
 
 
-async def _get_open_orders(exchange_manager, symbol: str, open_orders: list):
+async def _get_open_orders(exchange_manager, symbol: str, open_orders: list, ignore_unsupported_orders: bool):
     orders = await exchange_manager.exchange.get_open_orders(symbol=symbol)
+    to_add_orders = []
+    for order in orders:
+        if (
+            ignore_unsupported_orders and
+            order[enums.ExchangeConstantsOrderColumns.TYPE.value] == enums.TradeOrderType.UNSUPPORTED.value
+        ):
+            logging.get_logger("_get_open_orders").info(
+                f"Ignored unsupported [{exchange_manager.exchange_name}] order: {order}"
+            )
+        else:
+            to_add_orders.append(order)
     open_orders.extend(
         personal_data.create_order_instance_from_raw(
             exchange_manager.trader, order, force_open_or_pending_creation=True
         ).to_dict()
-        for order in orders
+        for order in to_add_orders
     )
 
 
 async def get_open_orders(
     exchange_manager,
     exchange_data: exchange_data_import.ExchangeData,
-    symbols: list = None
+    symbols: list = None,
+    ignore_unsupported_orders: bool = True,
 ) -> list:
     open_orders = []
 
     symbols = symbols or [market.symbol for market in exchange_data.markets]
     await asyncio.gather(*(
-        _get_open_orders(exchange_manager, symbol, open_orders) for symbol in symbols
+        _get_open_orders(exchange_manager, symbol, open_orders, ignore_unsupported_orders) for symbol in symbols
     ))
     return open_orders
 

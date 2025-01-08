@@ -119,16 +119,19 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
 
     # update the same order
     buy_limit_order.order_type = enums.TraderOrderType.SELL_LIMIT
+    buy_limit_order.trigger_above = False
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_position="2%")
     assert len(trading_signal_bundle_builder.signals) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.SELL_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "2%"
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value] is False
 
     # add new order (orders are based on order_id)
     previous_order_id = buy_limit_order.order_id
     buy_limit_order.order_id = "other_id"
     buy_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
+    buy_limit_order.trigger_above = True
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_position="50")
     assert len(trading_signal_bundle_builder.signals) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
@@ -136,11 +139,13 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.SELL_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "2%"
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value] is False
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == "other_id"
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TYPE.value] == \
            enums.TraderOrderType.STOP_LOSS_LIMIT.value
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "50"
+    assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value] is True
 
 
 def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
