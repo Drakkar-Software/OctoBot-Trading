@@ -23,7 +23,10 @@ import pytest
 import time
 from mock import AsyncMock, patch, Mock
 
-from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue, OrderEditError
+from octobot_trading.errors import (
+    TooManyOpenPositionError, InvalidLeverageValue, OrderEditError,
+    ExchangeOrderCancelError, OrderNotFoundOnCancelError
+)
 from octobot_trading.personal_data import LinearPosition
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
@@ -177,6 +180,70 @@ class TestTrader:
         assert await trader_inst.cancel_order(limit_buy) is False
 
         await self.stop(exchange_manager)
+
+
+    async def test_cancel_order_error(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+
+        limit_buy = BuyLimitOrder(trader_inst)
+        limit_buy.update(order_type=TraderOrderType.SELL_LIMIT,
+                         symbol=self.DEFAULT_SYMBOL,
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
+        try:
+            trader_inst.simulate = False
+            with mock.patch.object(trader_inst, "_handle_order_cancel_error", mock.AsyncMock(
+                return_value=True
+            )) as _handle_order_cancel_error_mock:
+                with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(
+                    return_value=OrderStatus.CANCELED
+                )) as cancel_order_mock:
+                    assert await trader_inst.cancel_order(limit_buy) is True
+                    cancel_order_mock.assert_called_once()
+                    _handle_order_cancel_error_mock.assert_not_called()
+                    limit_buy.state = None
+                with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(
+                    side_effect=ExchangeOrderCancelError
+                )) as cancel_order_mock:
+                    assert await trader_inst.cancel_order(limit_buy) is True
+                    assert cancel_order_mock.call_count == 2
+                    _handle_order_cancel_error_mock.assert_called_once()
+                    _handle_order_cancel_error_mock.reset_mock()
+                    limit_buy.state = None
+                with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(
+                    side_effect=OrderNotFoundOnCancelError
+                )) as cancel_order_mock:
+                    assert await trader_inst.cancel_order(limit_buy) is True
+                    assert cancel_order_mock.call_count == 2
+                    _handle_order_cancel_error_mock.assert_called_once()
+                    _handle_order_cancel_error_mock.reset_mock()
+                    limit_buy.state = None
+
+                with trader_inst.exchange_manager.exchange_personal_data.orders_manager.disabled_order_auto_synchronization():
+                    with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(
+                        side_effect=OrderNotFoundOnCancelError
+                    )) as cancel_order_mock:
+                        assert await trader_inst.cancel_order(limit_buy) is True
+                        assert cancel_order_mock.call_count == 2
+                        _handle_order_cancel_error_mock.assert_not_called()
+                        limit_buy.state = None
+
+            with mock.patch.object(trader_inst, "_handle_order_cancel_error", mock.AsyncMock(
+                return_value=False
+            )) as _handle_order_cancel_error_mock:
+                with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(
+                    side_effect=ExchangeOrderCancelError
+                )) as cancel_order_mock:
+                    assert await trader_inst.cancel_order(limit_buy) is True
+                    assert cancel_order_mock.call_count == 2
+                    _handle_order_cancel_error_mock.assert_called_once()
+                    _handle_order_cancel_error_mock.reset_mock()
+                    limit_buy.state = None
+
+        finally:
+            trader_inst.simulate = True
+
 
     async def test_cancel_open_orders_default_symbol(self):
         config, exchange_manager, trader_inst = await self.init_default()

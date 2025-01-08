@@ -125,6 +125,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_CLOSED_POSITION_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to an order that would immediately trigger if created. Relevant for stop losses
     EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to an order that can't be cancelled on exchange (because filled or already cancelled)
+    EXCHANGE_ORDER_UNCANCELLABLE_ERRORS: typing.List[typing.Iterable[str]] = []
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
@@ -1016,6 +1018,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_exchange_order_would_immediately_trigger_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS)
+        return False
+
+    def is_exchange_order_uncancellable(self, error: BaseException) -> bool:
+        if self.EXCHANGE_ORDER_UNCANCELLABLE_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ORDER_UNCANCELLABLE_ERRORS)
         return False
 
     def is_exchange_internal_sync_error(self, error: BaseException) -> bool:

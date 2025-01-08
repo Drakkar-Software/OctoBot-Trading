@@ -389,6 +389,7 @@ class Trader(util.Initializable):
             # order will just never get created
             order.is_waiting_for_chained_trigger = False
             return success
+        order_status = None
         # if real order: cancel on exchange
         if not self.simulate and not order.is_self_managed():
             try:
@@ -408,8 +409,15 @@ class Trader(util.Initializable):
                             order.exchange_order_id, order.symbol, order.order_type
                         )
             except errors.OrderCancelError as err:
-                if await self._handle_order_cancel_error(order, err, wait_for_cancelling, cancelling_timeout):
-                    return True
+                if self.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization:
+                    if await self._handle_order_cancel_error(order, err, wait_for_cancelling, cancelling_timeout):
+                        return True
+                else:
+                    self.logger.warning(
+                        f"Impossible to cancel order ({err} {err.__class__.__name__}). "
+                        f"Considering order as cancelled {order}"
+                    )
+                    order_status = enums.OrderStatus.CANCELED
             except Exception as err:
                 self.logger.exception(err, True, f"Failed to cancel order {order}")
                 return False
@@ -602,9 +610,9 @@ class Trader(util.Initializable):
         return all_cancelled, cancelled_orders
 
     async def cancel_all_open_orders_with_currency(
-            self, currency, emit_trading_signals=False,
-            wait_for_cancelling=True,
-            cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        self, currency, emit_trading_signals=False,
+        wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
     ) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for each traded symbol containing the

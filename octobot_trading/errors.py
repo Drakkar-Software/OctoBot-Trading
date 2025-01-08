@@ -57,7 +57,13 @@ class OrderCancelError(OctoBotExchangeError):
     """
 
 
-class OrderNotFoundOnCancelError(OrderCancelError):
+class ExchangeOrderCancelError(OrderCancelError):
+    """
+    Raised when an exchange failed to execute the given request because the associated order can't be cancelled
+    """
+
+
+class OrderNotFoundOnCancelError(ExchangeOrderCancelError):
     """
     Raised upon a failed order cancel because order is not found
     """

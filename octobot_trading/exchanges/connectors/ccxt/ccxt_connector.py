@@ -672,7 +672,18 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     ) -> enums.OrderStatus:
         try:
             with self.error_describer():
-                await self.client.cancel_order(exchange_order_id, symbol=symbol, params=kwargs)
+                try:
+                    await self.client.cancel_order(exchange_order_id, symbol=symbol, params=kwargs)
+                except Exception as err:
+                    if self.exchange_manager.exchange.is_exchange_order_uncancellable(err):
+                        # handle ExchangeOrderCancelError locally not to raise it from other contexts
+                        # (such as if used in error_describer)
+                        raise octobot_trading.errors.ExchangeOrderCancelError(
+                            f"Error when handling order {html_util.get_html_summary_if_relevant(err)}. "
+                            f"Exchange is refusing to cancel this order. The order is probably filled "
+                            f"or cancelled already."
+                        ) from err
+                    raise
                 # no exception, cancel worked
             try:
                 # make sure order is canceled
