@@ -81,6 +81,24 @@ class TestOrderFactory:
         }
         assert personal_data.parse_order_type(ccxt_order_sell_limit) == (TradeOrderSide.SELL, TraderOrderType.SELL_LIMIT)
 
+        ccxt_order_stop_loss_sell = {
+            "side": TradeOrderSide.SELL,
+            "type": TradeOrderType.STOP_LOSS
+        }
+        assert personal_data.parse_order_type(ccxt_order_stop_loss_sell) == (TradeOrderSide.SELL, TraderOrderType.STOP_LOSS)
+
+        ccxt_order_stop_loss_buy = {
+            "side": TradeOrderSide.BUY,
+            "type": TradeOrderType.STOP_LOSS
+        }
+        assert personal_data.parse_order_type(ccxt_order_stop_loss_buy) == (TradeOrderSide.BUY, TraderOrderType.STOP_LOSS)
+
+        unsupported = {
+            "side": TradeOrderSide.BUY,
+            "type": TradeOrderType.UNSUPPORTED
+        }
+        assert personal_data.parse_order_type(unsupported) == (TradeOrderSide.BUY, TraderOrderType.UNSUPPORTED)
+
         await self.stop(exchange_manager)
 
     async def test_create_order_from_dict(self):
@@ -114,7 +132,35 @@ class TestOrderFactory:
         assert limit_order.exchange_creation_params == {"plop": 1, "fake_param": True}
         # associated_entry_ids are not copied
         assert created_from_dict.associated_entry_ids is None
+        assert created_from_dict.trigger_above is limit_order.trigger_above is True
         assert limit_order.associated_entry_ids == ["1"]
+
+
+        _, exchange_manager, trader_inst = await self.init_default()
+        limit_order = personal_data.create_order_instance(
+            trader_inst,
+            TraderOrderType.SELL_LIMIT,
+            self.DEFAULT_SYMBOL,
+            price,
+            quantity,
+            price=price,
+            trigger_above=False,
+        )
+        order_dict = limit_order.to_dict()
+        created_from_dict = personal_data.create_order_from_dict(trader_inst, order_dict)
+        assert created_from_dict.origin_price == limit_order.origin_price == price
+        assert created_from_dict.origin_quantity == limit_order.origin_quantity == quantity
+        assert created_from_dict.__class__ is limit_order.__class__ == personal_data.SellLimitOrder
+        assert created_from_dict.symbol == limit_order.symbol == self.DEFAULT_SYMBOL
+        assert created_from_dict.reduce_only is limit_order.reduce_only is False
+        # exchange_creation_params are not copied
+        assert created_from_dict.exchange_creation_params == {}
+        assert limit_order.exchange_creation_params == {}
+        # associated_entry_ids are not copied
+        assert created_from_dict.associated_entry_ids is None
+        assert created_from_dict.trigger_above is limit_order.trigger_above is False
+        assert limit_order.associated_entry_ids is None
+
         await self.stop(exchange_manager)
 
     async def test_create_order_from_order_storage_details_with_simple_order(self):
@@ -127,6 +173,7 @@ class TestOrderFactory:
                          current_price=decimal.Decimal("70"),
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("70"))
+            order.trigger_above = True
             order_storage_details = orders_storage._format_order(order, exchange_manager)
             order_storage_details[StoredOrdersAttr.ENTRIES.value] = ["11111"]
 
@@ -141,6 +188,7 @@ class TestOrderFactory:
             assert created_order.timestamp == order.timestamp
             assert created_order.creation_time == order.creation_time
             assert created_order.origin_price == order.origin_price
+            assert created_order.trigger_above is order.trigger_above is True
             assert created_order.__class__ is order.__class__
             # associated_entry_ids are added from order_storage_details but not in original order
             assert created_order.associated_entry_ids == ["11111"]
@@ -149,6 +197,7 @@ class TestOrderFactory:
             # updated creation_time (as with chained orders): creation_time is used to restore order
             assert created_order.creation_time != 123
             order.creation_time = 123
+            order.trigger_above = False
 
             order_storage_details = orders_storage._format_order(order, exchange_manager)
             created_order = await personal_data.create_order_from_order_storage_details(
@@ -160,6 +209,7 @@ class TestOrderFactory:
             assert created_order.timestamp == 123   # aligned with creation time
             assert created_order.creation_time == 123   # aligned with creation time
             assert created_order.origin_price == order.origin_price
+            assert created_order.trigger_above is order.trigger_above is False
             assert created_order.__class__ is order.__class__
             # associated_entry_ids are added from order_storage_details but not in original order
             assert created_order.associated_entry_ids is None

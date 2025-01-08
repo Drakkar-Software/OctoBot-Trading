@@ -21,13 +21,53 @@ import octobot_trading.signals as signals
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
-from tests.personal_data.orders import buy_limit_order, sell_limit_order
+from tests.personal_data.orders import buy_limit_order, sell_limit_order, buy_market_order
 
 import octobot_trading.personal_data as personal_data
 
 
 @pytest.mark.asyncio
-async def test_create_order_signal_description(buy_limit_order, sell_limit_order):
+async def test_create_order_signal_description(buy_limit_order, sell_limit_order, buy_market_order):
+    buy_market_order.reduce_only = True
+    buy_market_order.tag = "hello"
+    buy_market_order.symbol = "BTC/ETH"
+    buy_market_order.origin_quantity = decimal.Decimal("1.12")
+    exchange_manager = buy_market_order.exchange_manager
+    assert signals.create_order_signal_content(buy_market_order, enums.TradingSignalOrdersActions.CREATE,
+                                               "strat", exchange_manager) == {
+        enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
+        enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
+        enums.TradingSignalOrdersAttrs.STRATEGY.value: "strat",
+        enums.TradingSignalOrdersAttrs.SYMBOL.value: "BTC/ETH",
+        enums.TradingSignalOrdersAttrs.EXCHANGE.value: "binanceus",
+        enums.TradingSignalOrdersAttrs.EXCHANGE_TYPE.value: enums.ExchangeTypes.SPOT.value,
+        enums.TradingSignalOrdersAttrs.TYPE.value: enums.TraderOrderType.BUY_MARKET.value,
+        enums.TradingSignalOrdersAttrs.QUANTITY.value: float(buy_market_order.origin_quantity),
+        enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value: None,
+        enums.TradingSignalOrdersAttrs.TARGET_POSITION.value: None,
+        enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value: None,
+        enums.TradingSignalOrdersAttrs.UPDATED_TARGET_AMOUNT.value: None,
+        enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value: None,
+        enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: 0.0,
+        enums.TradingSignalOrdersAttrs.UPDATED_LIMIT_PRICE.value: 0.0,
+        enums.TradingSignalOrdersAttrs.STOP_PRICE.value: 0.0,
+        enums.TradingSignalOrdersAttrs.UPDATED_STOP_PRICE.value: 0.0,
+        enums.TradingSignalOrdersAttrs.CURRENT_PRICE.value: 0.0,
+        enums.TradingSignalOrdersAttrs.UPDATED_CURRENT_PRICE.value: 0.0,
+        enums.TradingSignalOrdersAttrs.REDUCE_ONLY.value: True,
+        enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
+        enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
+        enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TAG.value: "hello",
+        enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_market_order.order_id,
+        enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: None,
+        enums.TradingSignalOrdersAttrs.CHAINED_TO.value: None,
+        enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
+        enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: None,
+        enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False,
+    }
+
+
     buy_limit_order.reduce_only = True
     buy_limit_order.tag = "hello"
     buy_limit_order.symbol = "BTC/ETH"
@@ -47,6 +87,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.QUANTITY.value: float(buy_limit_order.origin_quantity),
         enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value: None,
         enums.TradingSignalOrdersAttrs.TARGET_POSITION.value: None,
+        enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value: False,
         enums.TradingSignalOrdersAttrs.UPDATED_TARGET_AMOUNT.value: None,
         enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value: None,
         enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: float(buy_limit_order.origin_price),
@@ -90,6 +131,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.QUANTITY.value: float(buy_limit_order.origin_quantity),
         enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value: "1%",
         enums.TradingSignalOrdersAttrs.TARGET_POSITION.value: "2",
+        enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value: False,
         enums.TradingSignalOrdersAttrs.UPDATED_TARGET_AMOUNT.value: None,
         enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value: None,
         enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: float(buy_limit_order.origin_price),
@@ -119,6 +161,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.associate_to_entry("2")
     buy_limit_order.associate_to_entry("3")
     buy_limit_order.update_with_triggering_order_fees = False
+    buy_limit_order.trigger_above = True
     final_order_desc = {
         enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
@@ -130,6 +173,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.QUANTITY.value: float(buy_limit_order.origin_quantity),
         enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value: "10",
         enums.TradingSignalOrdersAttrs.TARGET_POSITION.value: "8%",
+        enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value: True,
         enums.TradingSignalOrdersAttrs.UPDATED_TARGET_AMOUNT.value: "10",
         enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value: "8%",
         enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: 111.545445445,

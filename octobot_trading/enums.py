@@ -536,6 +536,7 @@ class TradingSignalOrdersAttrs(enum.Enum):
     EXCHANGE = "exchange"
     EXCHANGE_TYPE = "exchange_type"
     TYPE = "type"
+    TRIGGER_ABOVE = "trigger_above"
     QUANTITY = "quantity"
     TARGET_AMOUNT = "target_amount"
     TARGET_POSITION = "target_position"

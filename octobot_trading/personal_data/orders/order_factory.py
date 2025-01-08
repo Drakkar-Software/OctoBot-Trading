@@ -68,6 +68,7 @@ def create_order_instance(
     total_cost=constants.ZERO,
     timestamp=0,
     side=None,
+    trigger_above=None,
     fees_currency_side=None,
     group=None,
     tag=None,
@@ -103,7 +104,8 @@ def create_order_instance(
         quantity_currency=quantity_currency,
         close_position=close_position,
         exchange_creation_params=exchange_creation_params,
-        associated_entry_id=associated_entry_id
+        associated_entry_id=associated_entry_id,
+        trigger_above=trigger_above,
     )
     return order
 
@@ -127,6 +129,7 @@ def create_order_from_dict(trader, order_dict):
         quantity_filled=order_dict[enums.ExchangeConstantsOrderColumns.FILLED.value],
         timestamp=order_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
         side=enums.TradeOrderSide(order_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]),
+        trigger_above=order_dict[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value],
         tag=order_dict[enums.ExchangeConstantsOrderColumns.TAG.value],
         reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
     )

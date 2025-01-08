@@ -36,6 +36,7 @@ def create_order_signal_content(
         trading_enums.TradingSignalOrdersAttrs.EXCHANGE.value: exchange_manager.exchange_name,
         trading_enums.TradingSignalOrdersAttrs.EXCHANGE_TYPE.value: exchanges.get_exchange_type(exchange_manager).value,
         trading_enums.TradingSignalOrdersAttrs.SIDE.value: order.side.value,
+        trading_enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value: order.trigger_above,
         trading_enums.TradingSignalOrdersAttrs.TYPE.value: order.order_type.value,
         trading_enums.TradingSignalOrdersAttrs.QUANTITY.value: float(order.origin_quantity),
         trading_enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value: target_amount

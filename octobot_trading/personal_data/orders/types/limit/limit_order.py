@@ -29,14 +29,6 @@ class LimitOrder(order_class.Order):
         self.trigger_above = self.side is enums.TradeOrderSide.SELL
         self.allow_instant_fill = constants.ALLOW_SIMULATED_ORDERS_INSTANT_FILL
 
-    def update_from_raw(self, raw_order):
-        updated = super(LimitOrder, self).update_from_raw(raw_order)
-        if enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value in raw_order \
-                and self.trigger_above != raw_order[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value]:
-            updated = True
-            self.trigger_above = raw_order[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value]
-        return updated
-
     async def update_price_if_outdated(self):
         # price is outdated if it would trigger and instantly filled order with more than the allowed tolerance
         try:

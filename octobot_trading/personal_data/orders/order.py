@@ -59,6 +59,7 @@ class Order(util.Initializable):
         self.taker_or_maker = None
         self.timestamp = 0
         self.side = side
+        self.trigger_above = None
         self.tag = None
         self.associated_entry_ids = None
         self.broker_applied = False
@@ -138,7 +139,7 @@ class Order(util.Initializable):
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
                group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
-               associated_entry_id=None) -> bool:
+               associated_entry_id=None, trigger_above=None) -> bool:
         changed: bool = False
         should_update_total_cost = False
 
@@ -274,6 +275,10 @@ class Order(util.Initializable):
 
         if associated_entry_id is not None:
             self.associate_to_entry(associated_entry_id)
+
+        if trigger_above is not None and self.trigger_above != trigger_above:
+            changed = True
+            self.trigger_above = trigger_above
 
         if should_update_total_cost and not total_cost:
             self._update_total_cost()
@@ -725,7 +730,8 @@ class Order(util.Initializable):
             total_cost=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0) or 0.0)),
             fee=order_util.parse_raw_fees(raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None)),
             timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None),
-            reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False)
+            reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False),
+            trigger_above=raw_order.get(enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value, None)
         )
 
     async def update_from_order(self, other_order):
@@ -875,6 +881,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
             enums.ExchangeConstantsOrderColumns.TAG.value: self.tag,
+            enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value: self.trigger_above,
             enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
             enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: self.broker_applied,
         }
