@@ -145,25 +145,54 @@ async def get_portfolio(exchange_manager, as_float=False, clear_empty=True) -> d
     }
 
 
+def _parse_order_dict(
+    exchange_manager, order: dict, force_open_or_pending_creation: bool
+) -> typing.Optional[personal_data.Order]:
+    if not order:
+        return None
+    try:
+        return personal_data.create_order_instance_from_raw(
+            exchange_manager.trader, order, force_open_or_pending_creation=force_open_or_pending_creation
+        )
+    except Exception as err:
+        logging.get_logger("_parse_order_dict").exception(
+            err,
+            True,
+            f"Unexpected error when parsing [{exchange_manager.exchange_name}] "
+            f"order ({err} {err.__class__.__name__}), order ignored: {order}"
+        )
+    return None
+
+
+def _parse_order_into_dict(
+    exchange_manager, order: dict, force_open_or_pending_creation: bool, ignore_unsupported_orders: bool
+) -> typing.Optional[dict]:
+    if (
+        ignore_unsupported_orders and
+        order[enums.ExchangeConstantsOrderColumns.TYPE.value] == enums.TradeOrderType.UNSUPPORTED.value
+    ):
+        logging.get_logger("_parse_order_into_dict").warning(
+            f"Ignored unsupported [{exchange_manager.exchange_name}] order: {order}"
+        )
+        return None
+    if parsed_order := _parse_order_dict(exchange_manager, order, force_open_or_pending_creation):
+        try:
+            return parsed_order.to_dict()
+        except Exception as err:
+            logging.get_logger("_parse_order_dict").exception(
+                err,
+                True,
+                f"Unexpected error when converting [{exchange_manager.exchange_name}] order to dict" 
+                f"({err}. {err.__class__.__name__}), order: {order}"
+            )
+    return None
+
+
 async def _get_open_orders(exchange_manager, symbol: str, open_orders: list, ignore_unsupported_orders: bool):
     orders = await exchange_manager.exchange.get_open_orders(symbol=symbol)
-    to_add_orders = []
     for order in orders:
-        if (
-            ignore_unsupported_orders and
-            order[enums.ExchangeConstantsOrderColumns.TYPE.value] == enums.TradeOrderType.UNSUPPORTED.value
-        ):
-            logging.get_logger("_get_open_orders").info(
-                f"Ignored unsupported [{exchange_manager.exchange_name}] order: {order}"
-            )
-        else:
-            to_add_orders.append(order)
-    open_orders.extend(
-        personal_data.create_order_instance_from_raw(
-            exchange_manager.trader, order, force_open_or_pending_creation=True
-        ).to_dict()
-        for order in to_add_orders
-    )
+        if order_dict := _parse_order_into_dict(exchange_manager, order, True,  ignore_unsupported_orders):
+            open_orders.append(order_dict)
 
 
 async def get_open_orders(
@@ -189,25 +218,26 @@ async def get_order(
     return await exchange_manager.exchange.get_order(exchange_order_id, symbol=symbol)
 
 
-async def _get_cancelled_orders(exchange_manager, symbol: str, cancelled_orders: list):
+async def _get_cancelled_orders(exchange_manager, symbol: str, cancelled_orders: list, ignore_unsupported_orders: bool):
     orders = await exchange_manager.exchange.get_cancelled_orders(symbol=symbol)
-    cancelled_orders.extend(
-        personal_data.create_order_instance_from_raw(
-            exchange_manager.trader, order, force_open_or_pending_creation=False
-        ).to_dict()
-        for order in orders
-    )
+    for order in orders:
+        if order_dict := _parse_order_into_dict(
+            exchange_manager, order, False, ignore_unsupported_orders
+        ):
+            cancelled_orders.append(order_dict)
 
 
 async def get_cancelled_orders(
     exchange_manager,
     exchange_data: exchange_data_import.ExchangeData,
-    symbols: list = None
+    symbols: list = None,
+    ignore_unsupported_orders: bool = True,
 ) -> list:
     cancelled_orders = []
     symbols = symbols or [market.symbol for market in exchange_data.markets]
     await asyncio.gather(*(
-        _get_cancelled_orders(exchange_manager, symbol, cancelled_orders) for symbol in symbols
+        _get_cancelled_orders(exchange_manager, symbol, cancelled_orders, ignore_unsupported_orders)
+        for symbol in symbols
     ))
     return cancelled_orders
 
@@ -242,11 +272,11 @@ async def _create_order(
 ) -> typing.Optional[personal_data.Order]:
     symbol = order_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value]
     side, order_type = personal_data.parse_order_type(order_dict)
-    order_params = exchange_manager.exchange.get_order_additional_params(
-        personal_data.create_order_instance_from_raw(
-            exchange_manager.trader, order_dict, force_open_or_pending_creation=True
-        )
-    )
+    temp_order = _parse_order_dict(exchange_manager, order_dict, True)
+    if temp_order is None:
+        logging.get_logger("_create_order").error(f"Unexpected: order can't be created.")
+        return None
+    order_params = exchange_manager.exchange.get_order_additional_params(temp_order)
     created_order = await exchange_manager.exchange.create_order(
         order_type,
         symbol,
@@ -258,10 +288,9 @@ async def _create_order(
         params=order_params
     )
     # is private, to use in tests context only
-    order = personal_data.create_order_instance_from_raw(
-        exchange_manager.trader, created_order, force_open_or_pending_creation=True
-    ) if created_order else None
-    if not order:
+    order = _parse_order_dict(exchange_manager, created_order, True)
+    if order is None:
+        logging.get_logger("_create_order").error(f"Unexpected: order hasn't been created.")
         return order
     if order.status is enums.OrderStatus.PENDING_CREATION and order_creation_timeout > 0:
         try:
@@ -296,9 +325,8 @@ async def wait_for_other_status(order: personal_data.Order, timeout) -> personal
                 f"Order fetched with status different from {origin_status} after {iterations} "
                 f"iterations and {round(time.time() - t0)}s"
             )
-            return personal_data.create_order_instance_from_raw(
-                order.trader, raw_order, force_open_or_pending_creation=False
-            )
+            if parsed_order := _parse_order_dict(order.exchange_manager, raw_order, False):
+                return parsed_order
         if time.time() - t0 + constants.CREATED_ORDER_FORCED_UPDATE_PERIOD >= timeout:
             break
         await asyncio.sleep(constants.CREATED_ORDER_FORCED_UPDATE_PERIOD)

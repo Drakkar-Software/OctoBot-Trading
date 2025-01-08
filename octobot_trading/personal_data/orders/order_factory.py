@@ -129,7 +129,7 @@ def create_order_from_dict(trader, order_dict):
         quantity_filled=order_dict[enums.ExchangeConstantsOrderColumns.FILLED.value],
         timestamp=order_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
         side=enums.TradeOrderSide(order_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]),
-        trigger_above=order_dict[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value],
+        trigger_above=order_dict.get(enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value),
         tag=order_dict[enums.ExchangeConstantsOrderColumns.TAG.value],
         reduce_only=order_dict[enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value],
     )
