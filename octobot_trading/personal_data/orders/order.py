@@ -525,10 +525,10 @@ class Order(util.Initializable):
                 continue
             can_be_created = await order_util.adapt_chained_order_before_creation(self, order)
             if can_be_created and order.should_be_created():
-                logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
+                logger.info(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
                 await self._create_triggered_chained_order(order, enable_associated_orders_creation)
             else:
-                logger.debug(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
+                logger.info(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
 
     async def _create_triggered_chained_order(self, order, enable_associated_orders_creation):
         logger = logging.get_logger(self.get_logger_name())
