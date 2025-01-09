@@ -157,7 +157,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
                     return util.ExchangeMarketStatusFixer(
                         self._forced_market_statuses[symbol], price_example
                     ).market_status
-                return self._forced_market_statuses[symbol]
+                return self._forced_market_statuses[symbol], True
             except KeyError:
                 self._missing_market_statuses.add(symbol)
                 if len(self._missing_market_statuses) >= len(self.symbols) - 1:
@@ -168,7 +168,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
                     )
                 else:
                     self.logger.warning(f"Missing cached market status for {symbol}: using default market status")
-        return self._get_default_market_status()
+        return self._get_default_market_status(), False
 
     def _get_default_market_status(self):
         return {
