@@ -88,7 +88,8 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
         return self.exchange_manager.use_cached_markets
 
     def get_contract_size(self, symbol: str):
-        return ccxt_client_simulation.get_contract_size(self.get_market_status(symbol, with_fixer=False))
+        market_status, _ = self.get_market_status(symbol, with_fixer=False)
+        return ccxt_client_simulation.get_contract_size(market_status)
 
     @classmethod
     def load_user_inputs_from_class(cls, tentacles_setup_config, tentacle_config):
