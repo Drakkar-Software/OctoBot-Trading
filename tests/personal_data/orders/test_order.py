@@ -307,13 +307,13 @@ async def test_trigger_chained_orders(trader_simulator):
     # with chained orders
     order_mock_1 = mock.Mock(
         update_price_if_outdated=mock.AsyncMock(),
-        update_quantity_with_order_fees=mock.AsyncMock(return_value=True),
+        update_quantity_with_order_fees=mock.Mock(return_value=True),
         should_be_created=mock.Mock(return_value=True),
         is_cleared=mock.Mock(return_value=False)
     )
     order_mock_2 = mock.Mock(
         update_price_if_outdated=mock.AsyncMock(),
-        update_quantity_with_order_fees=mock.AsyncMock(return_value=True),
+        update_quantity_with_order_fees=mock.Mock(return_value=True),
         should_be_created=mock.Mock(return_value=False),
         is_cleared=mock.Mock(return_value=False)
     )
@@ -399,7 +399,7 @@ async def test_create_triggered_chained_order_mock(trader_simulator):
     base_order = personal_data.Order(trader_inst)
     eq_chained_order_1 = mock.Mock(get_name=mock.Mock(return_value="plop"))
     chained_order_1 = personal_data.Order(trader_inst)
-    chained_order_1.create_triggered_equivalent_order=mock.AsyncMock(return_value=eq_chained_order_1)
+    chained_order_1.create_triggered_equivalent_order = mock.AsyncMock(return_value=eq_chained_order_1)
 
     # normal call
     with mock.patch.object(order_util, "create_as_chained_order", mock.AsyncMock()) as create_as_chained_order_mock:
@@ -443,7 +443,9 @@ async def test_create_triggered_chained_order_mock(trader_simulator):
     with mock.patch.object(
         order_util, "create_as_chained_order", mock.AsyncMock(side_effect=_create_as_chained_order)
     ) as create_as_chained_order_mock, mock.patch.object(
-        chained_order_1, "create_on_filled_artificial_order", mock.AsyncMock()
+        chained_order_1, "create_on_filled_artificial_order", mock.AsyncMock(
+            return_value=mock.Mock(get_name=mock.Mock(return_value="plop"))
+        )
     ) as create_on_filled_artificial_order_mock:
         await base_order._create_triggered_chained_order(chained_order_1, True)
         create_as_chained_order_mock.assert_called_once_with(chained_order_1)
