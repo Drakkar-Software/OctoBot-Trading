@@ -109,7 +109,7 @@ class CancelOrderState(order_state.OrderState):
             async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
                 self.ensure_not_cleared(self.order)
                 await self.order.exchange_manager.exchange_personal_data.\
-                    handle_portfolio_and_position_update_from_order(self.order, False)
+                    handle_portfolio_and_position_update_from_order(self.order, require_exchange_update=False)
 
             # notify order cancelled
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
