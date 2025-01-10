@@ -45,6 +45,12 @@ class OrderCreationError(OctoBotExchangeError):
     """
 
 
+class UnsupportedOrderTypeError(OrderCreationError):
+    """
+    Raised when asking for an order type that is not supported by the exchange
+    """
+
+
 class OrderEditError(OctoBotExchangeError):
     """
     Raised upon a failed order edition
