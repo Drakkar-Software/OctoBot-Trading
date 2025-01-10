@@ -84,11 +84,12 @@ class ExchangePersonalData(util.Initializable):
             return False
 
     async def handle_portfolio_and_position_update_from_order(
-        self, order, require_exchange_update: bool = True, should_notify: bool = True
+        self, order, require_exchange_update: bool = True, expect_filled_order_update: bool = False,
+        should_notify: bool = True
     ) -> bool:
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(
-                order, require_exchange_update
+                order, require_exchange_update, expect_filled_order_update
             )
             if self.exchange_manager.is_future:
                 changed = await self.positions_manager.handle_position_update_from_order(

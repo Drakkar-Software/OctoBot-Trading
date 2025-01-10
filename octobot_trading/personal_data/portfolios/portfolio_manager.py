@@ -15,10 +15,14 @@
 #  License along with this library.
 import contextlib
 import copy
+import decimal
+import time
+import asyncio
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
 import octobot_commons.tree as commons_tree
+import octobot_commons.symbols as commons_symbols
 import octobot_commons.enums as commons_enums
 
 import octobot_trading.exchange_channel as exchange_channel
@@ -77,7 +81,9 @@ class PortfolioManager(util.Initializable):
             self._is_initialized_event_set = True
         return changed
 
-    async def handle_balance_update_from_order(self, order, require_exchange_update: bool) -> bool:
+    async def handle_balance_update_from_order(
+        self, order, require_exchange_update: bool, expect_filled_order_update: bool
+    ) -> bool:
         """
         Handle a balance update from an order update
         :param order: the order
@@ -91,8 +97,42 @@ class PortfolioManager(util.Initializable):
                     return self._refresh_simulated_trader_portfolio_from_order(order)
                 # on real trading only:
                 # reload portfolio to ensure portfolio sync
-                return await self._refresh_real_trader_portfolio()
+                return await self._refresh_real_trader_portfolio_until_order_update_applied(
+                    order, expect_filled_order_update
+                )
         return False
+
+    async def _refresh_real_trader_portfolio_until_order_update_applied(self, order, expect_filled_order_update):
+        t0 = time.time()
+        refreshed = await self._refresh_real_trader_portfolio()
+        if not expect_filled_order_update:
+            return refreshed
+        if self._has_filled_order_been_applied(order):
+            return refreshed
+        for i in range(constants.MAX_PORTFOLIO_SYNC_ATTEMPTS):
+            await asyncio.sleep(constants.SYNC_ATTEMPTS_INTERVAL)
+            refreshed = await self._refresh_real_trader_portfolio()
+            # + 2 since 1st attempt is before looping
+            self.logger.info(f"Updated portfolio fetched after {i + 2} attempts")
+            if self._has_filled_order_been_applied(order):
+                return refreshed
+        self.logger.error(f"Filled order has not be counted in portfolio after {time.time() - t0} seconds")
+        return refreshed
+
+    def _has_filled_order_been_applied(self, order):
+        if self.exchange_manager.is_future:
+            # implement futures if necessary
+            return True
+        # in spot, consider order fill if the portfolio contains at least the order's executed amount
+        base, quote = commons_symbols.parse_symbol(order.symbol).base_and_quote()
+        checked_asset = base if order.side == enums.TradeOrderSide.BUY else quote
+        checked_amount = (
+            order.origin_quantity
+            if order.side == enums.TradeOrderSide.BUY else (order.origin_quantity * order.origin_price)
+        ) * decimal.Decimal("0.95") # consider a 5% error margin
+        available_amount = self.portfolio.get_currency_portfolio(checked_asset).available
+        # if available_amount > checked_amount, then the order fill is most likely taken into account in portfolio
+        return available_amount > checked_amount
 
     async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
         """
