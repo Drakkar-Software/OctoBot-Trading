@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.145] - 2025-01-11
+### Added
+[Exceptions] add UnsupportedOrderTypeError
+### Fixed
+[Orders] avoid portfolio desync after filled order
+
 ## [2.4.144] - 2025-01-10
 ### Fixed
 [Backtesting] fix default market status + adapter issues
