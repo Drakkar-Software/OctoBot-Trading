@@ -207,7 +207,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 else:
                     raise
 
-    def get_client_symbols(self, active_only=True):
+    def get_client_symbols(self, active_only=True) -> set[str]:
         return ccxt_client_util.get_symbols(self.client, active_only)
 
     def get_client_time_frames(self):

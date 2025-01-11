@@ -726,6 +726,19 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def get_rate_limit(self):
         return self.connector.get_rate_limit()
 
+    def get_all_available_symbols(self, active_only=True) -> set[str]:
+        """
+        :return: the list of all symbols supported by the exchange
+        """
+        return self.connector.get_client_symbols(active_only=active_only)
+
+    async def get_all_tradable_symbols(self, active_only=True) -> set[str]:
+        """
+        Override if the exchange is not allowing trading for all available symbols (ex: MEXC)
+        :return: the list of all symbols supported by the exchange that can currently be traded through API
+        """
+        return self.get_all_available_symbols(active_only=active_only)
+
     async def switch_to_account(self, account_type: enums.AccountTypes):
         return await self.connector.switch_to_account(account_type=account_type)
 

@@ -277,10 +277,10 @@ class RealExchangeTester:
     async def inner_test_active_symbols(self, expected_active_symbols_count: int, expected_total_symbols_count: int):
         async with self.get_exchange_manager() as exchange_manager:
             # ensure active symbols are correctly parsed by ccxt
-            active_symbols = exchange_manager.exchange.connector.get_client_symbols(active_only=True)
+            active_symbols = exchange_manager.exchange.get_all_available_symbols(active_only=True)
             assert expected_active_symbols_count <= len(active_symbols) <= expected_active_symbols_count * 1.5, \
                 f"{len(active_symbols)=}, {expected_active_symbols_count=}"
-            all_symbols = exchange_manager.exchange.connector.get_client_symbols(active_only=False)
+            all_symbols = exchange_manager.exchange.get_all_available_symbols(active_only=False)
             assert expected_total_symbols_count <= len(all_symbols) <= expected_total_symbols_count * 1.5, \
                 f"{len(all_symbols)=}, {expected_total_symbols_count=}"
 

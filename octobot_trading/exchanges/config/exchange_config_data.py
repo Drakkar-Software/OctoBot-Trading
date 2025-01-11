@@ -83,6 +83,21 @@ class ExchangeConfig(util.Initializable):
             currencies.append(symbol.quote)
         return list(set(currencies))
 
+    async def get_untradable_symbols(self, active_only=True) -> list[octobot_commons.symbols.Symbol]:
+        exchange_tradable_symbols = await self.exchange_manager.exchange.get_all_tradable_symbols(
+            active_only=active_only
+        )
+        return [
+            symbol
+            for symbol in self.traded_symbols
+            if symbol.symbol_str not in exchange_tradable_symbols
+        ]
+
+    async def is_tradable_symbols(self, symbol, active_only=True) -> bool:
+        return symbol in await self.exchange_manager.exchange.get_all_tradable_symbols(
+            active_only=active_only
+        )
+
     def set_config_traded_pairs(self):
         self._set_config_traded_pairs()
 
