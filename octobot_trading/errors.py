@@ -51,6 +51,12 @@ class UnsupportedOrderTypeError(OrderCreationError):
     """
 
 
+class UntradableSymbolError(OrderCreationError):
+    """
+    Raised when a symbol can't currently be traded on the exchange (not in exchange.get_all_tradable_symbols)
+    """
+
+
 class OrderEditError(OctoBotExchangeError):
     """
     Raised upon a failed order edition

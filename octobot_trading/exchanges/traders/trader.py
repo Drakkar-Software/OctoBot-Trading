@@ -122,7 +122,10 @@ class Trader(util.Initializable):
                 self.logger.warning(f"Order not created on {self.exchange_manager.exchange_name} "
                                     f"(failed attempt to create: {order}). This is likely due to "
                                     f"the order being refused by the exchange.")
-        except (errors.MissingFunds, errors.AuthenticationError, errors.ExchangeCompliancyError):
+        except (
+            errors.MissingFunds, errors.AuthenticationError,
+            errors.ExchangeCompliancyError, errors.OrderCreationError
+        ):
             # forward errors that require actions to fix the situation
             raise
         except Exception as e:
