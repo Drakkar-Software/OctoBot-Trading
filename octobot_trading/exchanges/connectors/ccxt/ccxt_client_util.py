@@ -181,7 +181,7 @@ def get_ccxt_client_login_options(exchange_manager):
     return {'defaultType': 'spot'}
 
 
-def get_symbols(client, active_only):
+def get_symbols(client, active_only) -> set[str]:
     try:
         if active_only:
             return set(
