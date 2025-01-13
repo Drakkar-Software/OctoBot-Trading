@@ -718,6 +718,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.NotSupported(
                 html_util.get_html_summary_if_relevant(e)
             ) from e
+        except octobot_trading.errors.ExchangeOrderCancelError:
+            # propagate error
+            raise
         except Exception as e:
             self.logger.exception(
                 e,
