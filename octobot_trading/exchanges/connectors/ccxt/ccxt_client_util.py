@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import os
 import aiohttp
 import copy
 import logging
@@ -66,7 +67,7 @@ def create_client(
                 client = instantiate_exchange(
                     exchange_class,
                     _get_client_config(
-                        options, headers, additional_config,
+                        exchange_class, options, headers, additional_config,
                         api_key=key, secret=secret, password=password, uid=uid,
                         auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
                     ),
@@ -80,7 +81,7 @@ def create_client(
             else:
                 client = instantiate_exchange(
                     exchange_class,
-                    _get_client_config(options, headers, additional_config),
+                    _get_client_config(exchange_class, options, headers, additional_config),
                     exchange_manager.exchange_name,
                     exchange_manager.proxy_config,
                     allow_request_counter=allow_request_counter
@@ -128,7 +129,10 @@ def get_unauthenticated_exchange(
     exchange_class, options, headers, additional_config, identifier: str, proxy_config: proxy_config_import.ProxyConfig
 ) -> async_ccxt.Exchange:
     return instantiate_exchange(
-        exchange_class, _get_client_config(options, headers, additional_config), identifier, proxy_config
+        exchange_class,
+        _get_client_config(exchange_class, options, headers, additional_config),
+        identifier,
+        proxy_config
     )
 
 
@@ -303,7 +307,7 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
 
 
 def _get_client_config(
-    options, headers, additional_config,
+    exchange_class, options, headers, additional_config,
     api_key=None, secret=None, password=None, uid=None,
     auth_token=None, auth_token_header_prefix=None
 ):
@@ -324,8 +328,48 @@ def _get_client_config(
         config['password'] = password
     if uid is not None:
         config['uid'] = uid
-    config.update(additional_config or {})
+    config.update({**_get_custom_domain_config(exchange_class), **(additional_config or {})})
     return config
+
+
+def _get_custom_domain_config(exchange_class):
+    old, new = _get_replaced_custom_domains(exchange_class)
+    if not (old and new):
+        return {}
+    if url_config := exchange_class().describe()[ccxt_enums.ExchangeColumns.URLS.value]:
+        commons_logging.get_logger(__name__).info(
+            f"Using custom domain for {exchange_class.__name__}: {old} is replaced by {new}"
+        )
+        return {
+            ccxt_enums.ExchangeColumns.URLS.value: _get_patched_url_config(url_config, old, new)
+        }
+    return {}
+
+
+def _get_replaced_custom_domains(exchange_class):
+    identifier = exchange_class.__name__.upper()
+    if custom_domain := os.getenv(f"{identifier}_CUSTOM_DOMAIN"):
+        split = custom_domain.split(":")
+        if len(split) == 2:
+            return split[0], split[1]
+        else:
+            commons_logging.get_logger(__name__).error(
+                f"Invalid {identifier} custom domain config. Expected syntax is to_replace_domain:updated_domain "
+                f"Example: MEXC_CUSTOM_DOMAIN=mexc.com:mexc.co"
+            )
+    return None, None
+
+
+def _get_patched_url_config(url_config: dict, old: str, new: str):
+    updated_config = {}
+    for key, val in url_config.items():
+        if isinstance(val, dict):
+            updated_config[key] = _get_patched_url_config(val, old, new)
+        elif isinstance(val, str):
+            updated_config[key] = val.replace(old, new)
+        else:
+            updated_config[key] = val
+    return updated_config
 
 
 def _use_request_counter(identifier: str, ccxt_client: async_ccxt.Exchange):
