@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.148] - 2025-01-20
+### Added
+[Exchanges] support custom domains
+[Exchanges] add INCLUDE_DISABLED_SYMBOLS_IN_AVAILABLE_SYMBOLS
+
 ## [2.4.147] - 2025-01-13
 ### Fixed
 [Exchange] properly propagate ExchangeOrderCancelError
