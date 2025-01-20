@@ -51,6 +51,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # set True when get_fixed_market_status should adapt amounts for contract size
     # (amounts are in not kept as contract size with OctoBot)
     ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE = False
+    # set True when disabled symbols should still be considered (ex: mexc with its temporary api trading disabled symbols)
+    INCLUDE_DISABLED_SYMBOLS_IN_AVAILABLE_SYMBOLS = False
     REQUIRE_ORDER_FEES_FROM_TRADES = False  # set True when get_order is not giving fees on closed orders and fees
     # should be fetched using recent trades.
     REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES = False  # set True when get_closed_orders is not supported
@@ -731,7 +733,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         :return: the list of all symbols supported by the exchange
         """
-        return self.connector.get_client_symbols(active_only=active_only)
+        return self.connector.get_client_symbols(
+            active_only=False if self.INCLUDE_DISABLED_SYMBOLS_IN_AVAILABLE_SYMBOLS else active_only
+        )
 
     async def get_all_tradable_symbols(self, active_only=True) -> set[str]:
         """
