@@ -206,7 +206,7 @@ class ExchangeConfig(util.Initializable):
                 # add to global traded pairs
                 if is_enabled:
                     if not self.traded_cryptocurrencies[cryptocurrency]:
-                        self._logger.error(
+                        self._logger.warning(
                             f"{self.exchange_manager.exchange_name} is not supporting any {cryptocurrency} trading pair"
                             f" from the current configuration.")
                     traded_symbol_pairs_set = traded_symbol_pairs_set.union(
@@ -249,7 +249,7 @@ class ExchangeConfig(util.Initializable):
                 additional_details = f" Exchange sandbox is enabled, please make sure this pair is traded on " \
                                      f" the {self.exchange_manager.exchange_name} sandbox as sandboxes " \
                                      f"usually only support a subset of the real exchange's pairs."
-            self._logger.error(f"{self.exchange_manager.exchange_name} is not supporting the "
+            self._logger.warning(f"{self.exchange_manager.exchange_name} is not supporting the "
                                f"{symbol} trading pair.{additional_details}")
 
     @staticmethod
