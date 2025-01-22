@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import uuid
+import typing
 
 import octobot_commons.logging as logging
 
@@ -28,6 +29,7 @@ import octobot_trading.personal_data.orders.orders_manager as orders_manager
 import octobot_trading.personal_data.orders.order as order_import
 import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 import octobot_trading.personal_data.trades.trades_manager as trades_manager
+import octobot_trading.personal_data.trades.trade as trade_import
 import octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
@@ -44,11 +46,11 @@ class ExchangePersonalData(util.Initializable):
         self.trader = None
         self.exchange = None
 
-        self.portfolio_manager = None
-        self.trades_manager = None
-        self.orders_manager = None
-        self.positions_manager = None
-        self.transactions_manager = None
+        self.portfolio_manager: portfolio_manager.PortfolioManager = None
+        self.trades_manager: trades_manager.TradesManager = None
+        self.orders_manager: orders_manager.OrdersManager = None
+        self.positions_manager: positions_manager.PositionsManager = None
+        self.transactions_manager: transactions_manager.TransactionsManager = None
 
     async def initialize_impl(self):
         self.trader = self.exchange_manager.trader
@@ -360,6 +362,16 @@ class ExchangePersonalData(util.Initializable):
                       is_updated=is_updated)
         except ValueError as e:
             self.logger.error(f"Failed to send position update notification : {e}")
+
+    def get_trade_or_open_order(self, order_id: str) -> (
+        typing.Optional[trade_import.Trade], typing.Optional[order_import.Order]
+    ):
+        trade = self.trades_manager.get_trade_from_order_id(order_id)
+        try:
+            order = self.orders_manager.get_order(order_id)
+        except KeyError:
+            order = None
+        return trade, order
 
     async def stop(self):
         if self.portfolio_manager is not None:

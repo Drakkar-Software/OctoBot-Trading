@@ -36,7 +36,7 @@ class TradesManager(util.Initializable):
         self.logger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
         self.trades_initialized = False
-        self.trades = collections.OrderedDict()
+        self.trades: collections.OrderedDict[str, personal_data.Trade] = collections.OrderedDict()
 
     async def initialize_impl(self):
         await self.reload_history(False)
