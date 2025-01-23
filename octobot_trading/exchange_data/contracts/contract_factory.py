@@ -79,7 +79,7 @@ def update_future_contract_from_dict(exchange_manager, contract: dict) -> bool:
 
 
 def create_default_future_contract(
-    pair: str, leverage: decimal.Decimal, contract_type: enums.FutureContractType
+    pair: str, leverage: decimal.Decimal, contract_type: enums.FutureContractType, position_mode: enums.PositionMode
 ) -> future_contract.FutureContract:
     return future_contract.FutureContract(
         pair=pair,
@@ -88,7 +88,7 @@ def create_default_future_contract(
         contract_type=contract_type,
         maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE,
         current_leverage=leverage,
-        position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
+        position_mode=position_mode,
         maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE
     )
 

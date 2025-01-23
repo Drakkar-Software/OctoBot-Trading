@@ -161,7 +161,8 @@ class ExchangeSimulator(rest_exchange.RestExchange):
         contract = contract_factory.create_default_future_contract(
             pair,
             constants.DEFAULT_SYMBOL_LEVERAGE,
-            self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type
+            self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type,
+            constants.DEFAULT_SYMBOL_POSITION_MODE
         )
         return self.create_pair_contract(
             contract.pair,

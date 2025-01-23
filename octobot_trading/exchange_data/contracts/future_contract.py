@@ -17,6 +17,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 
 import octobot_trading.exchange_data.contracts.margin_contract as margin_contract
 
@@ -94,6 +95,15 @@ class FutureContract(margin_contract.MarginContract):
     def is_handled_contract(self):
         # unhandled / unknown contracts have None in self.contract_type
         return self.contract_type is not None
+
+    def ensure_supported_configuration(self):
+        """
+        will raise on unsupported configuration
+        """
+        if not self.is_one_way_position_mode():
+            raise errors.UnsupportedHedgeContractError(
+                f"{self.position_mode.value} position mode ({self.pair}) is not supported"
+            )
 
     def update_from_position(self, raw_position) -> bool:
         changed = super().update_from_position(raw_position)

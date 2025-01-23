@@ -224,6 +224,18 @@ class UnhandledContractError(Exception):
     """
 
 
+class UnsupportedContractConfigurationError(Exception):
+    """
+    Raised when a contract configuration is not supported
+    """
+
+
+class UnsupportedHedgeContractError(UnsupportedContractConfigurationError):
+    """
+    Raised when a hedge contract configuration is not supported
+    """
+
+
 class TooManyOpenPositionError(Exception):
     """
     Raised when changing future contract attributes without closing positions first
