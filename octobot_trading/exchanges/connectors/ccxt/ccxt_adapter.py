@@ -289,7 +289,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 if side == enums.PositionSide.LONG.value else enums.PositionSide.SHORT
             log_func = self.logger.debug
             if is_empty:
-                log_func = self.logger.error
+                log_func = self.logger.warning
             log_func(f"Unhandled {symbol} position mode ({position_mode.value}). This position can't be traded.")
         else:
             # One way position use BOTH side as there is always only one position per symbol.

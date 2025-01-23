@@ -63,6 +63,9 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                               f"Future contract symbols contain the settlement currency after ':'. "
                               f"Example: use BTC/USDT:USDT for linear BTC/USDT contracts and "
                               f"BTC/USD:BTC for inverse BTC/USD contracts.")
+        except (errors.InvalidPositionSide, errors.UnsupportedContractConfigurationError) as err:
+            self.previous_call_error_per_symbol[symbol] = err
+            self.logger.error(f"Impossible to create {symbol} order: {err}.")
         except errors.OrderCreationError as err:
             self.previous_call_error_per_symbol[symbol] = err
             self.logger.info(f"Failed {symbol} order creation on: {self.exchange_manager.exchange_name} "
@@ -114,7 +117,10 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                    except (errors.MissingMinimalExchangeTradeVolume, errors.OrderCreationError):
+                    except (
+                        errors.MissingMinimalExchangeTradeVolume, errors.OrderCreationError,
+                        errors.InvalidPositionSide, errors.UnsupportedContractConfigurationError
+                    ):
                         raise
                     except errors.MissingFunds:
                         try:

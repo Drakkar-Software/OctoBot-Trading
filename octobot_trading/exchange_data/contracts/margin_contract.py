@@ -78,6 +78,9 @@ class MarginContract:
         """
         return True
 
+    def ensure_supported_configuration(self):
+        pass
+
     def update_from_position(self, raw_position) -> bool:
         changed = False
         margin_type = raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None)

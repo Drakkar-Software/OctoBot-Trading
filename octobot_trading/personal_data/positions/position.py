@@ -746,6 +746,9 @@ class Position(util.Initializable):
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
+        position_id = (
+            self.position_id or raw_position.get(enums.ExchangeConstantsPositionColumns.LOCAL_ID.value) or symbol
+        )
         # side is managed locally, do not parse it
         return self._update(
             symbol=symbol,
@@ -763,7 +766,7 @@ class Position(util.Initializable):
             auto_deposit_margin=raw_position.get(
                 enums.ExchangeConstantsPositionColumns.AUTO_DEPOSIT_MARGIN.value, False
             ),
-            position_id=self.position_id or symbol,
+            position_id=position_id,
             exchange_position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None) or symbol),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
