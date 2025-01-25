@@ -116,13 +116,19 @@ async def add_symbols_details(
 ) -> exchange_data_import.ExchangeData:
 
     await ensure_symbol_markets(exchange_manager, reload=reload_markets, market_filter=market_filter)
-    await asyncio.gather(*(
-        _update_ohlcv(
-            exchange_manager, symbol, time_frame, exchange_data,
+    if len(symbols) == 1:
+        await _update_ohlcv(
+            exchange_manager, next(iter(symbols)), time_frame, exchange_data,
             history_size, start_time, end_time, close_price_only, include_latest_candle
         )
-        for symbol in symbols
-    ))
+    else:
+        await asyncio.gather(*(
+            _update_ohlcv(
+                exchange_manager, symbol, time_frame, exchange_data,
+                history_size, start_time, end_time, close_price_only, include_latest_candle
+            )
+            for symbol in symbols
+        ))
     return exchange_data
 
 
@@ -202,11 +208,13 @@ async def get_open_orders(
     ignore_unsupported_orders: bool = True,
 ) -> list:
     open_orders = []
-
     symbols = symbols or [market.symbol for market in exchange_data.markets]
-    await asyncio.gather(*(
-        _get_open_orders(exchange_manager, symbol, open_orders, ignore_unsupported_orders) for symbol in symbols
-    ))
+    if len(symbols) == 1:
+        await _get_open_orders(exchange_manager, next(iter(symbols)), open_orders, ignore_unsupported_orders)
+    else:
+        await asyncio.gather(*(
+            _get_open_orders(exchange_manager, symbol, open_orders, ignore_unsupported_orders) for symbol in symbols
+        ))
     return open_orders
 
 
@@ -235,10 +243,13 @@ async def get_cancelled_orders(
 ) -> list:
     cancelled_orders = []
     symbols = symbols or [market.symbol for market in exchange_data.markets]
-    await asyncio.gather(*(
-        _get_cancelled_orders(exchange_manager, symbol, cancelled_orders, ignore_unsupported_orders)
-        for symbol in symbols
-    ))
+    if len(symbols) == 1:
+        await _get_cancelled_orders(exchange_manager, next(iter(symbols)), cancelled_orders, ignore_unsupported_orders)
+    else:
+        await asyncio.gather(*(
+            _get_cancelled_orders(exchange_manager, symbol, cancelled_orders, ignore_unsupported_orders)
+            for symbol in symbols
+        ))
     return cancelled_orders
 
 
@@ -257,10 +268,13 @@ async def get_trades(
 ) -> list:
     trades = []
     symbols = symbols or [market.symbol for market in exchange_data.markets]
-    await asyncio.gather(*(
-        _get_trades(exchange_manager, symbol, trades)
-        for symbol in symbols
-    ))
+    if len(symbols) == 1:
+        await _get_trades(exchange_manager, next(iter(symbols)), trades)
+    else:
+        await asyncio.gather(*(
+            _get_trades(exchange_manager, symbol, trades)
+            for symbol in symbols
+        ))
     return trades
 
 
@@ -307,6 +321,10 @@ async def create_orders(
     order_creation_timeout: float,
     price_by_symbol: dict[str, float],
 ) -> list:
+    if len(orders) == 1:
+        return [
+            await _create_order(exchange_manager, next(iter(orders)), order_creation_timeout, price_by_symbol)
+        ]
     return await asyncio.gather(*(
         _create_order(exchange_manager, order_dict, order_creation_timeout, price_by_symbol)
         for order_dict in orders
