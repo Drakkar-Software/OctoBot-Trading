@@ -15,12 +15,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import ccxt
+import aiohttp
+import aiohttp.client_reqrep
 
 import mock
 from mock import patch
 
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
+import octobot_trading.errors
 import octobot_trading.exchange_data.contracts as contracts
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import pytest
@@ -202,6 +206,78 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                            decimal.Decimal(10000), "taker") == \
            _get_fees("taker", "BTC", future_fees_value, decimal.Decimal("0.00018"))
+
+
+async def test_error_describer(ccxt_connector):
+    with pytest.raises(ZeroDivisionError, match="plop"):
+        # random error is just forwarded
+        with ccxt_connector.error_describer():
+            raise ZeroDivisionError("plop")
+    with pytest.raises(ccxt.DDoSProtection):
+        # forwarded ccxt error
+        with ccxt_connector.error_describer():
+            raise ccxt.DDoSProtection("plop")
+    with pytest.raises(octobot_trading.errors.FailedRequest):
+        # transformed ccxt error
+        with ccxt_connector.error_describer():
+            raise ccxt.InvalidNonce("plop")
+    with pytest.raises(octobot_trading.errors.FailedRequest):
+        # transformed ccxt error
+        with ccxt_connector.error_describer():
+            raise ccxt.RequestTimeout("plop")
+    with pytest.raises(ccxt.ExchangeError):
+        # forwarded ccxt error
+        with ccxt_connector.error_describer():
+            raise ccxt.ExchangeError("plop")
+    with mock.patch.object(
+        ccxt_connector.exchange_manager.exchange, "is_authentication_error", mock.Mock(return_value=True)
+    ) as is_authentication_error_mock:
+        with pytest.raises(octobot_trading.errors.AuthenticationError):
+            # transformed ccxt error
+            with ccxt_connector.error_describer():
+                raise ccxt.ExchangeError("plop")
+        is_authentication_error_mock.assert_called_once()
+
+    # proxied errors
+    with pytest.raises(octobot_trading.errors.AuthenticationError):
+        # transformed ccxt error
+        with ccxt_connector.error_describer():
+            raise ccxt.AuthenticationError("plop")
+    with pytest.raises(octobot_trading.errors.FailedRequest):
+        # transformed ccxt error
+        with ccxt_connector.error_describer():
+            raise ccxt.ExchangeNotAvailable("plop")
+    with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # proxy connection error
+        with ccxt_connector.error_describer():
+            raise ccxt.AuthenticationError from aiohttp.ClientProxyConnectionError(
+                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+            )
+    with mock.patch.object(
+        ccxt_connector.exchange_manager.proxy_config, "get_last_proxied_request_url",
+            mock.Mock(return_value="https///plop.com/coucou")
+    ) as get_last_proxied_request_url_mock:
+        with pytest.raises(octobot_trading.errors.AuthenticationError, match="plop"):
+            # not proxied request error
+            with ccxt_connector.error_describer():
+                raise ccxt.AuthenticationError("plop")
+        get_last_proxied_request_url_mock.assert_called_once()
+        get_last_proxied_request_url_mock.reset_mock()
+        with pytest.raises(octobot_trading.errors.AuthenticationError, match="plop"):
+            # not proxied request error
+            ccxt_connector.client.last_request_url = "not_plop"
+            with ccxt_connector.error_describer():
+                raise ccxt.AuthenticationError("plop")
+        get_last_proxied_request_url_mock.assert_called_once()
+        get_last_proxied_request_url_mock.reset_mock()
+        with pytest.raises(octobot_trading.errors.AuthenticationError, match="\[Proxied request\] plop"):
+            # proxied request error: add prefix
+            ccxt_connector.client.last_request_url = "https///plop.com/coucou"
+            with ccxt_connector.error_describer():
+                raise ccxt.AuthenticationError("plop")
+        get_last_proxied_request_url_mock.assert_called_once()
+        get_last_proxied_request_url_mock.reset_mock()
+
 
 
 def _get_fees(type, currency, rate, cost):

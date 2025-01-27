@@ -408,3 +408,33 @@ def _use_request_counter(identifier: str, ccxt_client: async_ccxt.Exchange):
 
 def ccxt_exchange_class_factory(exchange_name):
     return getattr(async_ccxt, exchange_name)
+
+def reraise_with_proxy_prefix_if_relevant(ccxt_connector, cause_error: Exception, raised_error: typing.Optional[Exception]):
+    if was_latest_request_proxied(ccxt_connector):
+        raised = raised_error or cause_error
+        raise raised.__class__(f"[Proxied request] {raised}") from cause_error
+
+
+def was_latest_request_proxied(ccxt_connector) -> bool:
+    if not (
+        ccxt_connector.exchange_manager.proxy_config
+        and ccxt_connector.exchange_manager.proxy_config.get_last_proxied_request_url
+    ):
+        return False
+    last_proxied_request_url = ccxt_connector.exchange_manager.proxy_config.get_last_proxied_request_url()
+    last_client_request_url = ccxt_connector.client.last_request_url
+    # if last requests are matching: it was proxied
+    return last_proxied_request_url == last_client_request_url
+
+
+def get_proxy_error_if_any(error: Exception) -> typing.Optional[Exception]:
+    if isinstance(error, (aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError)):
+        return error
+    max_depth = 10
+    depth = 1
+    cause_error = error
+    while (cause_error := getattr(cause_error, "__cause__", None)) and depth < max_depth:
+        if isinstance(cause_error, (aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError)):
+            return cause_error
+        depth += 1
+    return None

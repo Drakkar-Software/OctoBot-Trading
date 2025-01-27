@@ -989,6 +989,21 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # 15 pairs, each on 3 time frames
         return 45
 
+    def raise_or_prefix_proxy_error_if_relevant(self, cause_error: Exception, raised_error: typing.Optional[Exception]):
+        """
+        Will raise octobot_trading.errors.ExchangeProxyError when the error is linked to a proxy
+        server of configuration issue.
+        Will re-raise a "[Proxied request] " prefix given error message if relevant, otherwise will just raise the error
+        """
+        if proxy_error := ccxt_client_util.get_proxy_error_if_any(cause_error):
+            raise octobot_trading.errors.ExchangeProxyError(proxy_error) from cause_error
+        # when api key is wrong or proxy is unavailable
+        ccxt_client_util.reraise_with_proxy_prefix_if_relevant(self, cause_error, raised_error)
+        # reraise_with_proxy_prefix_if_relevant did not raise, raise the error as is
+        if raised_error is None:
+            raise cause_error
+        raise raised_error from cause_error
+
     def log_ddos_error(self, error):
         self.logger.error(
             f"DDoSProtection triggered [{html_util.get_html_summary_if_relevant(error)} ({error.__class__.__name__})]. "
@@ -1003,26 +1018,32 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def error_describer(self):
         try:
             yield
-        except ccxt.DDoSProtection as e:
+        except ccxt.DDoSProtection as err:
             # raised upon rate limit issues, last response data might have details on what is happening
-            if self.exchange_manager.exchange.should_log_on_ddos_exception(e):
-                self.log_ddos_error(e)
+            if self.exchange_manager.exchange.should_log_on_ddos_exception(err):
+                self.log_ddos_error(err)
             raise
         except ccxt.InvalidNonce as err:
             # use 2 index to get the caller of the context manager
             caller_function_name = inspect.stack()[2].function
             exchanges.log_time_sync_error(self.logger, self.name, err, caller_function_name)
             raise octobot_trading.errors.FailedRequest(html_util.get_html_summary_if_relevant(err)) from err
-        except ccxt.RequestTimeout as e:
+        except ccxt.RequestTimeout as err:
             raise octobot_trading.errors.FailedRequest(
-                f"Request timeout: {html_util.get_html_summary_if_relevant(e)}"
-            ) from e
-        except ccxt.AuthenticationError as err:
-            raise octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err)) from err
-        except ccxt.ExchangeNotAvailable as err:
-            raise octobot_trading.errors.FailedRequest(
-                f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
+                f"Request timeout: {html_util.get_html_summary_if_relevant(err)}"
             ) from err
+        except ccxt.AuthenticationError as err:
+            self.raise_or_prefix_proxy_error_if_relevant(
+                err,
+                octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err))
+            )
+        except ccxt.ExchangeNotAvailable as err:
+            self.raise_or_prefix_proxy_error_if_relevant(
+                err,
+                octobot_trading.errors.FailedRequest(
+                    f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
+                )
+            )
         except ccxt.ExchangeError as err:
             if self.exchange_manager.exchange.is_authentication_error(err):
                 # ensure this is not an unhandled authentication error
