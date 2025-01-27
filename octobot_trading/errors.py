@@ -33,6 +33,12 @@ class MissingMinimalExchangeTradeVolume(OctoBotExchangeError):
     """
 
 
+class ExchangeProxyError(OctoBotExchangeError):
+    """
+    Raised when an issue related to an exchange proxy is encountered
+    """
+
+
 class TradingModeIncompatibility(Exception):
     """
     Raised when a trading mode is incompatible with the current situation
