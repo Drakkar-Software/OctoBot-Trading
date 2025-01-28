@@ -409,32 +409,40 @@ def _use_request_counter(identifier: str, ccxt_client: async_ccxt.Exchange):
 def ccxt_exchange_class_factory(exchange_name):
     return getattr(async_ccxt, exchange_name)
 
-def reraise_with_proxy_prefix_if_relevant(ccxt_connector, cause_error: Exception, raised_error: typing.Optional[Exception]):
-    if was_latest_request_proxied(ccxt_connector):
+def reraise_with_proxy_prefix_if_relevant(
+    ccxt_connector, cause_error: Exception, raised_error: typing.Optional[Exception]
+):
+    was_proxied, last_proxied_request_url = was_latest_request_proxied(ccxt_connector)
+    if was_proxied:
         raised = raised_error or cause_error
-        raise raised.__class__(f"[Proxied request] {raised}") from cause_error
+        raise raised.__class__(f"[Proxied] {raised} [URL: {last_proxied_request_url}]") from cause_error
 
 
-def was_latest_request_proxied(ccxt_connector) -> bool:
+def was_latest_request_proxied(ccxt_connector) -> (bool, str):
     if not (
         ccxt_connector.exchange_manager.proxy_config
         and ccxt_connector.exchange_manager.proxy_config.get_last_proxied_request_url
     ):
-        return False
+        return False, ""
     last_proxied_request_url = ccxt_connector.exchange_manager.proxy_config.get_last_proxied_request_url()
     last_client_request_url = ccxt_connector.client.last_request_url
     # if last requests are matching: it was proxied
-    return last_proxied_request_url == last_client_request_url
+    url_without_param = last_proxied_request_url.split("?")[0]
+    return last_proxied_request_url == last_client_request_url, url_without_param
 
 
-def get_proxy_error_if_any(error: Exception) -> typing.Optional[Exception]:
-    if isinstance(error, (aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError)):
-        return error
+def get_proxy_error_if_any(ccxt_connector, error: Exception) -> typing.Optional[Exception]:
+    if not ccxt_connector.exchange_manager.proxy_config:
+        return None
     max_depth = 10
     depth = 1
     cause_error = error
-    while (cause_error := getattr(cause_error, "__cause__", None)) and depth < max_depth:
-        if isinstance(cause_error, (aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError)):
+    while cause_error and depth < max_depth:
+        if isinstance(cause_error, (aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError)) or (
+            isinstance(cause_error, aiohttp.ClientConnectorError)
+            and ccxt_connector.exchange_manager.proxy_config.proxy_host in str(cause_error)
+        ):
             return cause_error
         depth += 1
+        cause_error = getattr(cause_error, "__cause__", None)
     return None

@@ -995,7 +995,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         server of configuration issue.
         Will re-raise a "[Proxied request] " prefix given error message if relevant, otherwise will just raise the error
         """
-        if proxy_error := ccxt_client_util.get_proxy_error_if_any(cause_error):
+        if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, cause_error):
             raise octobot_trading.errors.ExchangeProxyError(proxy_error) from cause_error
         # when api key is wrong or proxy is unavailable
         ccxt_client_util.reraise_with_proxy_prefix_if_relevant(self, cause_error, raised_error)
