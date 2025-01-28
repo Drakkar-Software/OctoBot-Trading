@@ -427,8 +427,10 @@ def was_latest_request_proxied(ccxt_connector) -> (bool, str):
     last_proxied_request_url = ccxt_connector.exchange_manager.proxy_config.get_last_proxied_request_url()
     last_client_request_url = ccxt_connector.client.last_request_url
     # if last requests are matching: it was proxied
-    url_without_param = last_proxied_request_url.split("?")[0]
-    return last_proxied_request_url == last_client_request_url, url_without_param
+    if last_proxied_request_url:
+        url_without_param = last_proxied_request_url.split("?")[0]
+        return last_proxied_request_url == last_client_request_url, url_without_param
+    return False, ""
 
 
 def get_proxy_error_if_any(ccxt_connector, error: Exception) -> typing.Optional[Exception]:
