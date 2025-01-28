@@ -247,6 +247,21 @@ async def test_error_describer(ccxt_connector):
         # transformed ccxt error
         with ccxt_connector.error_describer():
             raise ccxt.ExchangeNotAvailable("plop")
+    # default host, not using proxy exception for generic exception
+    with pytest.raises(octobot_trading.errors.AuthenticationError):
+        # proxy connection error
+        with ccxt_connector.error_describer():
+            raise ccxt.AuthenticationError from aiohttp.ClientConnectionError(
+                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+            )
+    # default host, using proxy exception for proxy exception
+    with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # proxy connection error
+        with ccxt_connector.error_describer():
+            raise ccxt.AuthenticationError from aiohttp.ClientProxyConnectionError(
+                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+            )
+    ccxt_connector.exchange_manager.proxy_config.proxy_host = "host"
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
         # proxy connection error
         with ccxt_connector.error_describer():
@@ -270,7 +285,7 @@ async def test_error_describer(ccxt_connector):
                 raise ccxt.AuthenticationError("plop")
         get_last_proxied_request_url_mock.assert_called_once()
         get_last_proxied_request_url_mock.reset_mock()
-        with pytest.raises(octobot_trading.errors.AuthenticationError, match="\[Proxied request\] plop"):
+        with pytest.raises(octobot_trading.errors.AuthenticationError, match="\[Proxied\] plop"):
             # proxied request error: add prefix
             ccxt_connector.client.last_request_url = "https///plop.com/coucou"
             with ccxt_connector.error_describer():

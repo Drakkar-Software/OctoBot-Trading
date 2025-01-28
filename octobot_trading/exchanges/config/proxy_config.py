@@ -34,6 +34,8 @@ class ProxyConfig:
     stop_proxy_callback: typing.Optional[typing.Callable] = None
     # if set, returns the last url given to a callback method that return "True", meaning the last url that used a proxy
     get_last_proxied_request_url: typing.Optional[typing.Callable] = None
+    # the host of this proxy, used to identify proxy connexion errors
+    proxy_host: str = "DEFAULT PROXY HOST"
 
     @classmethod
     def default_env_var_config(cls):
