@@ -257,7 +257,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         return position.state.is_active()
 
     async def register_chained_order(
-        self, main_order, price, order_type, side, quantity=None, allow_bundling=True, tag=None, reduce_only=False
+        self, main_order, price, order_type, side, quantity=None, allow_bundling=True, tag=None, reduce_only=False,
+        update_with_triggering_order_fees=None
     ) -> tuple:
         chained_order = personal_data.create_order_instance(
             trader=self.exchange_manager.trader,
@@ -273,7 +274,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         )
         params = {}
         # do not reduce chained order amounts to account for fees when trading futures
-        update_with_triggering_order_fees = not self.exchange_manager.is_future
+        if update_with_triggering_order_fees is None:
+            update_with_triggering_order_fees = not self.exchange_manager.is_future
         if allow_bundling:
             params = await self.exchange_manager.trader.bundle_chained_order_with_uncreated_order(
                 main_order, chained_order, update_with_triggering_order_fees

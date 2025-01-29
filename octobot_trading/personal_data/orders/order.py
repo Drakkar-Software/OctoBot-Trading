@@ -491,8 +491,8 @@ class Order(util.Initializable):
             return True
         return False
 
-    def update_quantity_with_order_fees(self, other_order):
-        relevant_fees_amount = order_util.get_fees_for_currency(other_order.fee, self.quantity_currency)
+    def update_quantity_with_order_fees(self, other_order_or_trade):
+        relevant_fees_amount = order_util.get_fees_for_currency(other_order_or_trade.fee, self.quantity_currency)
         if relevant_fees_amount:
             logger = logging.get_logger(self.get_logger_name())
             fees_str = f"Paid {self.quantity_currency} fees: {relevant_fees_amount}, " \
