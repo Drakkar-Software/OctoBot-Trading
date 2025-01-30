@@ -57,6 +57,7 @@ class ExchangeManager(util.Initializable):
         self.is_sandboxed: bool = False
         self.is_trading: bool = True
         self.without_auth: bool = False
+        self.disable_unauth_retry: bool = False
         self.check_credentials: bool = True
         self.enable_storage: bool = True
         self.proxy_config: exchanges.ProxyConfig = exchanges.ProxyConfig.default_env_var_config()

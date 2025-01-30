@@ -221,6 +221,7 @@ async def get_local_exchange_manager(
     exchange_name: str, exchange_config: dict, tentacles_setup_config,
     is_sandboxed: bool, ignore_config=False, builder=None, use_cached_markets=True,
     is_broker_enabled: bool = False, exchange_config_by_exchange: typing.Optional[dict[str, dict]] = None,
+    disable_unauth_retry: bool = False,
     market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
 ):
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
@@ -230,6 +231,7 @@ async def get_local_exchange_manager(
     )
     exchange_manager = await builder.use_tentacles_setup_config(tentacles_setup_config) \
         .is_checking_credentials(False) \
+        .disable_unauth_retry(disable_unauth_retry) \
         .is_sandboxed(is_sandboxed) \
         .is_using_exchange_type(exchange_type) \
         .use_exchange_config_by_exchange(exchange_config_by_exchange) \
