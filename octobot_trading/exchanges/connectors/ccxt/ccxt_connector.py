@@ -1045,7 +1045,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 )
             )
         except ccxt.ExchangeError as err:
-            if self.exchange_manager.exchange.is_authentication_error(err):
+            if (
+                self.exchange_manager.exchange.is_authentication_error(err)
+                or self.exchange_manager.exchange.is_ip_whitelist_error(err)
+            ):
                 # ensure this is not an unhandled authentication error
                 raise octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err)) from err
             # otherwise just forward exception
