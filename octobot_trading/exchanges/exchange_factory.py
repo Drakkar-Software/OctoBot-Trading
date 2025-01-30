@@ -62,10 +62,13 @@ async def create_real_exchange(exchange_manager, exchange_config_by_exchange: ty
             return
         await _initialize_exchange_backend(exchange_manager)
     except errors.AuthenticationError as err:
-        if exchange_manager.without_auth or exchange_manager.exchange.REQUIRES_AUTHENTICATION:
+        if (
+            exchange_manager.without_auth or exchange_manager.exchange.REQUIRES_AUTHENTICATION
+            or exchange_manager.disable_unauth_retry
+        ):
             # auth is required or already retried, don't loop
             exchange_manager.logger.error(
-                f"Authentication is required and created an error: impossible to connect to "
+                f"Authentication is required and raised an error: impossible to connect to "
                 f"{exchange_manager.exchange_name} exchange: {err}"
             )
             raise

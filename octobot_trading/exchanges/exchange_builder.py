@@ -257,6 +257,10 @@ class ExchangeBuilder:
         self.exchange_manager.without_auth = True
         return self
 
+    def disable_unauth_retry(self, disabled):
+        self.exchange_manager.disable_unauth_retry = disabled
+        return self
+
     def is_checking_credentials(self, check_credentials):
         self.exchange_manager.check_credentials = check_credentials
         return self
