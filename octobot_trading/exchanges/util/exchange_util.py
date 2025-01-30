@@ -289,6 +289,12 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
                 return True, True, None
         except trading_backend.TimeSyncError:
             return False, False, _get_time_sync_error_message(exchange_name, "backend.is_valid_account")
+        except trading_backend.APIKeyPermissionsError as err:
+            return False, False, f"Please update your API Key permissions: {err}"
+        except trading_backend.APIKeyIPWhitelistError as err:
+            return False, False, f"Please update your API Key IP whitelist: {err}"
+        except trading_backend.UnexpectedError as err:
+            return False, False, f"Impossible to check API key: {err}"
         except trading_backend.ExchangeAuthError:
             message = f"Invalid {exchange_name.capitalize()} authentication details"
             if is_sandboxed:
@@ -297,8 +303,6 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
                           f"{exchange_name.capitalize()} to trade and validate your api key. " \
                           f"Disable sandbox in your accounts configuration if this is not intended."
             return False, False, message
-        except trading_backend.APIKeyPermissionsError as err:
-            return False, False, f"Please update your API Key permissions: {err}"
         except (AttributeError, Exception) as e:
             return True, False, f"Error when loading exchange account: {e}"
 

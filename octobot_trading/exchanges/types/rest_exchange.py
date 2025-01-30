@@ -124,6 +124,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to unhandled authentication issues
     EXCHANGE_AUTHENTICATION_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to unhandled IP white list issues
+    EXCHANGE_IP_WHITELIST_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to a closed position on the exchange. Relevant for reduce-only orders
     EXCHANGE_CLOSED_POSITION_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to an order that would immediately trigger if created. Relevant for stop losses
@@ -1061,6 +1063,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_authentication_error(self, error: BaseException) -> bool:
         if self.EXCHANGE_AUTHENTICATION_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_AUTHENTICATION_ERRORS)
+        return False
+
+    def is_ip_whitelist_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_IP_WHITELIST_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_IP_WHITELIST_ERRORS)
         return False
 
     """
