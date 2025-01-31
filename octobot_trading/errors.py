@@ -147,6 +147,12 @@ class AuthenticationError(OctoBotExchangeError):
     """
 
 
+class InvalidAPIKeyIPWhitelistError(AuthenticationError):
+    """
+    Raised when an exchange failed to authenticate due to an IP whitelist issue
+    """
+
+
 class ExchangeInternalSyncError(OctoBotExchangeError):
     """
     Raised when an exchange is returning an error due to its internal sync process
