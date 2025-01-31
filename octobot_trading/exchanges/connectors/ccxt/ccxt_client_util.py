@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import os
+import ssl
 import aiohttp
 import copy
 import logging
@@ -143,7 +144,7 @@ def instantiate_exchange(
     client = exchange_class(config)
     _use_proxy_if_necessary(client, proxy_config)
     if constants.ENABLE_CCXT_REQUESTS_COUNTER and allow_request_counter:
-        _use_request_counter(identifier, client)
+        _use_request_counter(identifier, client, proxy_config)
     return client
 
 
@@ -304,6 +305,27 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
         client.socks_proxy = proxy_config.socks_proxy
     if proxy_config.socks_proxy_callback:
         client.socks_proxy_callback = proxy_config.socks_proxy_callback
+    if proxy_config.disable_dns_cache:
+        # rewrite of async_ccxt.exchange.client.open()
+        if client.asyncio_loop is None:
+            client.asyncio_loop = asyncio.get_running_loop()
+            client.throttle.loop = client.asyncio_loop
+
+        if client.ssl_context is None:
+            # Create our SSL context object with our CA cert file
+            client.ssl_context = ssl.create_default_context(cafile=client.cafile) if client.verify else client.verify
+        if client.session:
+            # should not happen
+            asyncio.create_task(client.session.close())
+        connector = aiohttp.TCPConnector(
+            ssl=client.ssl_context, loop=client.asyncio_loop, enable_cleanup_closed=True,
+            # local overrides
+            use_dns_cache=False
+            # end local overrides
+        )
+        client.session = aiohttp.ClientSession(
+            loop=client.asyncio_loop, connector=connector, trust_env=client.aiohttp_trust_env
+        )
 
 
 def _get_client_config(
@@ -372,7 +394,9 @@ def _get_patched_url_config(url_config: dict, old: str, new: str):
     return updated_config
 
 
-def _use_request_counter(identifier: str, ccxt_client: async_ccxt.Exchange):
+def _use_request_counter(
+    identifier: str, ccxt_client: async_ccxt.Exchange, proxy_config: proxy_config_import.ProxyConfig
+):
     """
     Replaces the given exchange async session by an aiohttp_util.CounterClientSession
     WARNING: should only be called right after creating the exchange and on the same async loop as
@@ -387,7 +411,8 @@ def _use_request_counter(identifier: str, ccxt_client: async_ccxt.Exchange):
         # same as in ccxt.async_support.exchange.py#open()
         # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
         new_connector = aiohttp.TCPConnector(
-            ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop, enable_cleanup_closed=True
+            ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop,
+            enable_cleanup_closed=True, use_dns_cache=not proxy_config.disable_dns_cache
         )
         counter_session = aiohttp_util.CounterClientSession(
             identifier,

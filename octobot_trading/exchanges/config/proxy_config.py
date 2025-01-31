@@ -36,6 +36,9 @@ class ProxyConfig:
     get_last_proxied_request_url: typing.Optional[typing.Callable] = None
     # the host of this proxy, used to identify proxy connexion errors
     proxy_host: str = "DEFAULT PROXY HOST"
+    # if DNS cache should be disabled with this proxy config. Warning: in this case, DNS cache will be
+    # completely disabled for this exchange
+    disable_dns_cache: bool = False
 
     @classmethod
     def default_env_var_config(cls):
