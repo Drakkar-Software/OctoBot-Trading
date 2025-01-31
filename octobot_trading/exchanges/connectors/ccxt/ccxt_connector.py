@@ -1033,9 +1033,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 f"Request timeout: {html_util.get_html_summary_if_relevant(err)}"
             ) from err
         except ccxt.AuthenticationError as err:
+            error_class = (
+                octobot_trading.errors.InvalidAPIKeyIPWhitelistError
+                if self.exchange_manager.exchange.is_ip_whitelist_error(err)
+                else octobot_trading.errors.AuthenticationError
+            )
             self.raise_or_prefix_proxy_error_if_relevant(
                 err,
-                octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err))
+                error_class(html_util.get_html_summary_if_relevant(err))
             )
         except ccxt.ExchangeNotAvailable as err:
             self.raise_or_prefix_proxy_error_if_relevant(
@@ -1045,11 +1050,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 )
             )
         except ccxt.ExchangeError as err:
-            if (
-                self.exchange_manager.exchange.is_authentication_error(err)
-                or self.exchange_manager.exchange.is_ip_whitelist_error(err)
-            ):
+            error_message = html_util.get_html_summary_if_relevant(err)
+            if self.exchange_manager.exchange.is_ip_whitelist_error(err):
+                # ensure this is not an IP whitelist error
+                raise octobot_trading.errors.InvalidAPIKeyIPWhitelistError(error_message) from err
+            if self.exchange_manager.exchange.is_authentication_error(err):
                 # ensure this is not an unhandled authentication error
-                raise octobot_trading.errors.AuthenticationError(html_util.get_html_summary_if_relevant(err)) from err
+                raise octobot_trading.errors.AuthenticationError(error_message) from err
             # otherwise just forward exception
             raise
