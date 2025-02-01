@@ -131,9 +131,11 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             self.logger.exception(e, True, f"Error when balancing orders: {e}")
         finally:
             # remove locally_balancing_orders from self.balancing_orders
-            self.balancing_orders = [order
-                                     for order in self.balancing_orders
-                                     if order not in locally_balancing_orders]
+            self.balancing_orders = [
+                order
+                for order in self.balancing_orders
+                if order not in locally_balancing_orders
+            ]
 
     def _get_balance(self, closed_order, ignored_orders):
         balance = {
@@ -141,9 +143,11 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             self.STOP: _SideBalance()
         }
         for order in self.get_group_open_orders():
-            if order is not closed_order \
-                    and (ignored_orders is None or order not in ignored_orders) \
-                    and order not in self.balancing_orders:
+            if (
+                order is not closed_order
+                and (ignored_orders is None or order not in ignored_orders)
+                and order not in self.balancing_orders
+            ):
                 if order_util.is_stop_order(order.order_type):
                     balance[self.STOP].add_order(order)
                 else:
