@@ -183,38 +183,23 @@ class Trader(util.Initializable):
         previous_exchange_order_id = order.exchange_order_id
         try:
             async with order.lock:
+                disabled_state_updater = self.exchange_manager.exchange_personal_data \
+                    .orders_manager.enable_order_auto_synchronization is False
                 # now that we got the lock, ensure we can edit the order
-                if not self.simulate and not order.is_self_managed() and order.state is not None:
-                    # careful here: make sure we are not editing an order on exchange that is being updated
-                    # somewhere else
-                    async with order.state.refresh_operation():
-                        self.logger.info(f"Editing order: {order} ["
-                                         f"edited_quantity: {str(edited_quantity)} "
-                                         f"edited_price: {str(edited_price)} "
-                                         f"edited_stop_price: {str(edited_stop_price)} "
-                                         f"edited_current_price: {str(edited_current_price)}"
-                                         f"]")
-                        order_params = self.exchange_manager.exchange.get_order_additional_params(order)
-                        order_params.update(params or {})
-                        # fill in every param as some exchange rely on re-creating the order altogether
-                        edited_order = await self.exchange_manager.exchange.edit_order(
-                            order.exchange_order_id,
-                            order.order_type,
-                            order.symbol,
-                            quantity=order.origin_quantity if edited_quantity is None else edited_quantity,
-                            price=order.origin_price if edited_price is None else edited_price,
-                            stop_price=edited_stop_price,
-                            side=order.side,
-                            current_price=edited_current_price,
-                            params=order_params
+                if not self.simulate and not order.is_self_managed() and (
+                    order.state is not None or disabled_state_updater
+                ):
+                    if disabled_state_updater:
+                        changed = await self._edit_order_on_exchange(
+                            order, edited_quantity, edited_price, edited_stop_price, edited_current_price, params
                         )
-                        # apply new values from returned order (even order id might have changed)
-                        self.logger.debug(f"Successfully edited order on {self.exchange_manager.exchange_name}, "
-                                          f"new order values: {edited_order}")
-                        changed = order.update_from_raw(edited_order)
-                        # update portfolio from exchange
-                        await self.exchange_manager.exchange_personal_data.\
-                            handle_portfolio_and_position_update_from_order(order)
+                    else:
+                        # careful here: make sure we are not editing an order on exchange that is being updated
+                        # somewhere else
+                        async with order.state.refresh_operation():
+                            changed = await self._edit_order_on_exchange(
+                                order, edited_quantity, edited_price, edited_stop_price, edited_current_price, params
+                            )
                 else:
                     # consider order as cancelled to release portfolio amounts
                     self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
@@ -241,6 +226,41 @@ class Trader(util.Initializable):
             if previous_exchange_order_id != order.exchange_order_id:
                 # order id changed: update orders_manager to keep consistency
                 self.exchange_manager.exchange_personal_data.orders_manager.replace_order(order.order_id, order)
+
+    async def _edit_order_on_exchange(
+        self, order,
+        edited_quantity: decimal.Decimal,
+        edited_price: decimal.Decimal,
+        edited_stop_price: decimal.Decimal,
+        edited_current_price: decimal.Decimal,
+        params: dict
+    ) -> bool:
+        self.logger.info(
+            f"Editing order: {order} [edited_quantity: {str(edited_quantity)} edited_price: {str(edited_price)} "
+            f"edited_stop_price: {str(edited_stop_price)} edited_current_price: {str(edited_current_price)}]"
+        )
+        order_params = self.exchange_manager.exchange.get_order_additional_params(order)
+        order_params.update(params or {})
+        # fill in every param as some exchange rely on re-creating the order altogether
+        edited_order = await self.exchange_manager.exchange.edit_order(
+            order.exchange_order_id,
+            order.order_type,
+            order.symbol,
+            quantity=order.origin_quantity if edited_quantity is None else edited_quantity,
+            price=order.origin_price if edited_price is None else edited_price,
+            stop_price=edited_stop_price,
+            side=order.side,
+            current_price=edited_current_price,
+            params=order_params
+        )
+        # apply new values from returned order (even order id might have changed)
+        self.logger.debug(
+            f"Successfully edited order on {self.exchange_manager.exchange_name}, new order values: {edited_order}"
+        )
+        changed = order.update_from_raw(edited_order)
+        # update portfolio from exchange
+        await self.exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order(order)
+        return changed
 
     async def _create_new_order(self, new_order, params: dict,
                                 wait_for_creation=True,
