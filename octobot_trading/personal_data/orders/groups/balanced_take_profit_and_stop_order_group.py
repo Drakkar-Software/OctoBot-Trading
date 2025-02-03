@@ -116,7 +116,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                     self.logger.error(f"Skipping order cancel: {err}")
                 updated_orders = True
             for update_data in take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]:
-                self.logger.info(f"Updating order side to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
+                self.logger.info(f"Updating order quantity to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
                                  f"order: {update_data[self.ORDER]}")
                 order = update_data[self.ORDER]
                 async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
