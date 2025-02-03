@@ -9,6 +9,7 @@ trading-backend>=1.2.35
 
 # Exchange connection requirements
 ccxt==4.3.85 # always ensure real exchanges tests (in tests_additional and authenticated exchange tests) are passing before changing the ccxt version
+aiohttp_socks==0.10.1   # used by ccxt socks proxy aiohttp connectors
 
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
