@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import aiohttp_socks
 import os
 import ssl
 import aiohttp
@@ -144,7 +145,10 @@ def instantiate_exchange(
     client = exchange_class(config)
     _use_proxy_if_necessary(client, proxy_config)
     if constants.ENABLE_CCXT_REQUESTS_COUNTER and allow_request_counter:
-        _use_request_counter(identifier, client, proxy_config)
+        if proxy_config.socks_proxy or proxy_config.socks_proxy_callback:
+            commons_logging.get_logger(__name__).error("socks proxy and request counter can't yet be used together.")
+        else:
+            _use_request_counter(identifier, client, proxy_config)
     return client
 
 
@@ -305,15 +309,27 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
         client.socks_proxy = proxy_config.socks_proxy
     if proxy_config.socks_proxy_callback:
         client.socks_proxy_callback = proxy_config.socks_proxy_callback
-    if proxy_config.disable_dns_cache:
+    if proxy_config.socks_proxy or proxy_config.socks_proxy_callback:
+        # rewrite of async_ccxt.exchange.client.fetch() ProxyConnector creation
+        _init_ccxt_client_session_requirements(client)
+        proxy_url = proxy_config.get_proxy_url()
+        if (client.socks_proxy_sessions is None):
+            client.socks_proxy_sessions = {}
+        if (proxy_url not in client.socks_proxy_sessions):
+            connector = aiohttp_socks.ProxyConnector.from_url(
+                proxy_url,
+                # extra args copied from self.open()
+                ssl=client.ssl_context,
+                loop=client.asyncio_loop,
+                use_dns_cache=not proxy_config.disable_dns_cache,
+                enable_cleanup_closed=True
+            )
+            client.socks_proxy_sessions[proxy_url] = aiohttp.ClientSession(
+                loop=client.asyncio_loop, connector=connector, trust_env=client.aiohttp_trust_env
+            )
+    elif proxy_config.disable_dns_cache:
         # rewrite of async_ccxt.exchange.client.open()
-        if client.asyncio_loop is None:
-            client.asyncio_loop = asyncio.get_running_loop()
-            client.throttle.loop = client.asyncio_loop
-
-        if client.ssl_context is None:
-            # Create our SSL context object with our CA cert file
-            client.ssl_context = ssl.create_default_context(cafile=client.cafile) if client.verify else client.verify
+        _init_ccxt_client_session_requirements(client)
         if client.session:
             # should not happen
             asyncio.create_task(client.session.close())
@@ -326,6 +342,18 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
         client.session = aiohttp.ClientSession(
             loop=client.asyncio_loop, connector=connector, trust_env=client.aiohttp_trust_env
         )
+
+
+def _init_ccxt_client_session_requirements(client):
+    # from async_ccxt.exchange.client.open()
+    if client.asyncio_loop is None:
+        client.asyncio_loop = asyncio.get_running_loop()
+        client.throttle.loop = client.asyncio_loop
+
+    if client.ssl_context is None:
+        # Create our SSL context object with our CA cert file
+        client.ssl_context = ssl.create_default_context(cafile=client.cafile) if client.verify else client.verify
+
 
 
 def _get_client_config(
