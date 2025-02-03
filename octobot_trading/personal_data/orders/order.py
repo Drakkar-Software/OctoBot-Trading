@@ -227,7 +227,7 @@ class Order(util.Initializable):
                 should_update_total_cost = True
 
         if self.trader.simulate:
-            if quantity and not self.filled_quantity:
+            if quantity and self.filled_quantity != quantity:
                 self.filled_quantity = quantity
                 changed = True
                 should_update_total_cost = True

@@ -433,7 +433,7 @@ def is_stop_trade_order_type(order_type: enums.TradeOrderType):
     ]
 
 
-def is_take_profit_order(order_type):
+def is_take_profit_order(order_type: enums.TraderOrderType):
     return order_type in [
         enums.TraderOrderType.TAKE_PROFIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
     ]
