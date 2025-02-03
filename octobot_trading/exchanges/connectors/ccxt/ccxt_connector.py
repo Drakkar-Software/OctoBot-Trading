@@ -18,6 +18,7 @@ import contextlib
 import decimal
 import ccxt.async_support as ccxt
 import ccxt.static_dependencies.ecdsa.der
+import aiohttp_socks
 import typing
 import inspect
 import binascii
@@ -1042,7 +1043,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 err,
                 error_class(html_util.get_html_summary_if_relevant(err))
             )
-        except ccxt.ExchangeNotAvailable as err:
+        except (ccxt.ExchangeNotAvailable, aiohttp_socks.ProxyConnectionError) as err:
             self.raise_or_prefix_proxy_error_if_relevant(
                 err,
                 octobot_trading.errors.FailedRequest(
