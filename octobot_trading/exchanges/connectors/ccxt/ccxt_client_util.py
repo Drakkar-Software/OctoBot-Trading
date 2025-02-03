@@ -493,7 +493,9 @@ def get_proxy_error_if_any(ccxt_connector, error: Exception) -> typing.Optional[
     depth = 1
     cause_error = error
     while cause_error and depth < max_depth:
-        if isinstance(cause_error, (aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError)) or (
+        if isinstance(cause_error, (
+            aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError, aiohttp_socks.ProxyConnectionError
+        )) or (
             isinstance(cause_error, aiohttp.ClientConnectorError)
             and ccxt_connector.exchange_manager.proxy_config.proxy_host in str(cause_error)
         ):

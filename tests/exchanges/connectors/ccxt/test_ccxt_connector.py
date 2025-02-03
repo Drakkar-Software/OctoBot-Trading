@@ -18,6 +18,7 @@ import decimal
 import ccxt
 import aiohttp
 import aiohttp.client_reqrep
+import aiohttp_socks
 
 import mock
 from mock import patch
@@ -265,7 +266,13 @@ async def test_error_describer(ccxt_connector):
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
         # proxy connection error
         with ccxt_connector.error_describer():
-            raise ccxt.AuthenticationError from aiohttp.ClientProxyConnectionError(
+            raise ccxt.AuthenticationError from aiohttp_socks.ProxyConnectionError(
+                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+            )
+    with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # proxy connection error
+        with ccxt_connector.error_describer():
+            raise aiohttp_socks.ProxyConnectionError(
                 aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
             )
     with mock.patch.object(
