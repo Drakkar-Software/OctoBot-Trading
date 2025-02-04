@@ -165,9 +165,17 @@ class TradesManager(util.Initializable):
         try:
             if self.trader.exchange_manager.storage_manager.trades_storage:
                 full_history = await self.trader.exchange_manager.storage_manager.trades_storage.get_history()
-                self.logger.debug(f"Loaded {len(full_history)} trades")
-                for trade_dict in full_history:
-                    self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
+                self.logger.debug(
+                    f"Loading {len(full_history)} {self.trader.exchange_manager.exchange_name} historical trades ..."
+                )
+                if full_history:
+                    for trade_dict in full_history:
+                        self.upsert_trade_instance(personal_data.Trade.from_dict(self.trader, trade_dict))
+                    self.logger.debug(
+                        f"Included {dict(self._get_trades_count_by_symbols())} "
+                        f"{self.trader.exchange_manager.exchange_name} trades"
+                    )
+
                 if reset:
                     # reset uploaded trades history
                     await self.trader.exchange_manager.storage_manager.trades_storage.trigger_debounced_update_auth_data(
@@ -183,13 +191,25 @@ class TradesManager(util.Initializable):
         except Exception as err:
             self.logger.exception(err, True, f"Error when loading local trade history {err}")
 
+    def _get_trades_count_by_symbols(self, trades=None):
+        return collections.Counter(
+            trade.symbol
+            for trade in (trades or self.trades.values())
+        )
+
     def _remove_oldest_trades(self, nb_to_remove):
         self.logger.info(
-            f"Clearing the {nb_to_remove} oldest historical trades as the maximum count of trades ("
-            f"{self.MAX_TRADES_COUNT}) has been reached"
+            f"Clearing the {nb_to_remove} oldest historical {self.trader.exchange_manager.exchange_name} "
+            f"trades as the maximum count of trades ({self.MAX_TRADES_COUNT}) has been reached"
         )
+        popped = []
         for _ in range(nb_to_remove):
-            self.trades.popitem(last=False)
+            popped.append(self.trades.popitem(last=False)[1])
+        self.logger.info(
+            f"Cleared the {len(popped)} {self.trader.exchange_manager.exchange_name} oldest historical trades: "
+            f"{dict(self._get_trades_count_by_symbols(trades=popped))}"
+        )
+
 
     def _set_initialized_event(self, symbol):
         # set init in updater as it's the only place we know if we fetched trades or not regardless of trades existence
