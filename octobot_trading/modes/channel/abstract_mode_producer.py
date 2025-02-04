@@ -16,6 +16,7 @@
 import contextlib
 import asyncio
 import concurrent.futures
+import typing
 
 import async_channel.enums as channel_enums
 
@@ -178,7 +179,19 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                                                                          self.exchange_manager.id).matrix_id
             await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
         await self.init_user_inputs(False)
-        await self._wait_for_bot_init(self.CONFIG_INIT_TIMEOUT)
+        await self._wait_for_bot_init(
+            self.CONFIG_INIT_TIMEOUT,
+            extra_symbol_topics=self.get_extra_init_symbol_topics(),
+            extra_global_topics=self.get_extra_global_topics()
+        )
+
+    def get_extra_init_symbol_topics(self) -> typing.Optional[list]:
+        # Implement if necessary
+        return None
+
+    def get_extra_global_topics(self) -> typing.Optional[list]:
+        # Implement if necessary
+        return None
 
     async def _subscribe_to_registration_topic(self, registration_topics, currency_filter, symbol_filter):
         for registration_topic in registration_topics:
