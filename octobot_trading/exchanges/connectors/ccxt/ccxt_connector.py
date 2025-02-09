@@ -1023,7 +1023,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             # raised upon rate limit issues, last response data might have details on what is happening
             if self.exchange_manager.exchange.should_log_on_ddos_exception(err):
                 self.log_ddos_error(err)
-            raise
+            self.raise_or_prefix_proxy_error_if_relevant(err, None)
         except ccxt.InvalidNonce as err:
             # use 2 index to get the caller of the context manager
             caller_function_name = inspect.stack()[2].function
