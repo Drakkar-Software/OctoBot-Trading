@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.156] - 2025-02-10
+### Added
+[TradingModes] add init topic methods
+### Updated
+[Amount] improve amount error
+[Exchange] add proxy error details on ddos error
+[Trades] log more details on loaded historical trades
+
 ## [2.4.155] - 2025-02-03
 ### Added
 [Exchanges] handle Socks proxies
