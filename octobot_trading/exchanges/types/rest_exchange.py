@@ -24,6 +24,7 @@ import asyncio
 
 import ccxt.async_support as ccxt
 import octobot_commons.enums as commons_enums
+import octobot_commons.symbols.symbol_util as symbol_util
 import octobot_commons.tree as commons_tree
 import octobot_commons.html_util as html_util
 
@@ -157,7 +158,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def initialize_impl(self):
         await self.connector.initialize()
-        self.symbols = self.connector.symbols
+        self.symbols = self.get_exchange_pairs()
         self.time_frames = self.connector.time_frames
 
     async def stop(self) -> None:
@@ -722,6 +723,17 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def get_exchange_pair(self, pair) -> str:
         return self.connector.get_exchange_pair(pair)
 
+    def get_exchange_pairs(self) -> set:
+        # make sure spot doesnt use futures pairs and vice versa
+        if self.exchange_manager.is_spot_only or self.exchange_manager.is_margin: 
+            return {symbol for symbol in self.connector.symbols 
+                    if symbol_util.parse_symbol(symbol).is_spot()}
+        elif self.exchange_manager.is_future:
+            return {symbol for symbol in self.connector.symbols 
+                    if symbol_util.parse_symbol(symbol).is_future()}
+        else:
+            return self.connector.symbols 
+        
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.connector.get_pair_cryptocurrency(pair)
 
