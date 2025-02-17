@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.personal_data.portfolios.asset as asset
+import octobot_trading.personal_data.portfolios.assets
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -56,10 +57,18 @@ def filter_empty_values(portfolio):
     }
 
 
-def portfolio_to_float(portfolio):
+def portfolio_to_float(portfolio, use_wallet_balance_on_futures=False):
     float_portfolio = {}
     for symbol, symbol_balance in portfolio.items():
-        if isinstance(symbol_balance, asset.Asset):
+        if (
+            isinstance(symbol_balance, octobot_trading.personal_data.portfolios.assets.FutureAsset)
+            and use_wallet_balance_on_futures
+        ):
+            float_portfolio[symbol] = {
+                commons_constants.PORTFOLIO_AVAILABLE: float(symbol_balance.available),
+                commons_constants.PORTFOLIO_TOTAL: float(symbol_balance.wallet_balance)
+            }
+        elif isinstance(symbol_balance, asset.Asset):
             float_portfolio[symbol] = {
                 commons_constants.PORTFOLIO_AVAILABLE: float(symbol_balance.available),
                 commons_constants.PORTFOLIO_TOTAL: float(symbol_balance.total)
