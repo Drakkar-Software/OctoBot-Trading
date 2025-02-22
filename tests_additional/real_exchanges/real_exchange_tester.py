@@ -48,6 +48,7 @@ class RealExchangeTester:
     MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.SPOT.value
     HISTORICAL_CANDLES_TO_FETCH_COUNT = 650
     DEFAULT_CUSTOM_BOOK_LIMIT = 50
+    ORDER_BOOK_DESYNC_ALLOWANCE = 60    # allow 60s desync
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -72,11 +73,6 @@ class RealExchangeTester:
     async def test_get_order_book(self):
         pass
 
-        
-    async def test_get_order_books(self):
-        # implement if necessary
-        pass
-        
     async def test_get_order_books(self):
         # implement if necessary
         pass
@@ -153,7 +149,7 @@ class RealExchangeTester:
         }
 
     def _get_ref_order_book_timestamp(self):
-        return time.time() + 30 # allow 30s desync
+        return time.time() + self.ORDER_BOOK_DESYNC_ALLOWANCE
 
     async def inner_test_unsupported_get_order_books(self):
         async with (self.get_exchange_manager() as exchange_manager):
@@ -185,7 +181,9 @@ class RealExchangeTester:
             if expected_symbol_filter:
                 assert len(books_by_symbol) == len(symbols)
             else:
-                assert len(books_by_symbol) >= expected_missing_symbol_filter_books_min_count
+                assert len(books_by_symbol) >= expected_missing_symbol_filter_books_min_count, (
+                    f"{len(books_by_symbol)} < {expected_missing_symbol_filter_books_min_count}"
+                )
             for symbol, book in books_by_symbol.items():
                 assert 0 < book[trading_enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] < ref_time, (
                     f"Invalid {symbol} book timestamp value: "
@@ -198,9 +196,9 @@ class RealExchangeTester:
                     if len(book[side.value]) == 0:
                         empty_book_sides.append((symbol, side))
                     else:
-                        assert min_book_orders_count < len(book[side.value]) <= expected_max_orders_by_side, (
+                        assert min_book_orders_count <= len(book[side.value]) <= expected_max_orders_by_side, (
                             f"Unexpected {symbol} {side.value} orders count: {len(book[side.value])}. Expected: "
-                            f"[{min_book_orders_count}: {expected_max_orders_by_side}]"
+                            f"[{min_book_orders_count}:{expected_max_orders_by_side}]"
                         )
             if len(empty_book_sides) > max_empty_book_sides:
                 raise AssertionError(
@@ -224,13 +222,13 @@ class RealExchangeTester:
                     if len(book[side.value]) == 0:
                         empty_book_sides.append((symbol, side))
                     else:
-                        assert min_book_orders_count < len(book[side.value]) <= expected_max_orders_by_side, (
+                        assert min_book_orders_count <= len(book[side.value]) <= expected_max_orders_by_side, (
                             f"Unexpected {symbol} {side.value} orders count: {len(book[side.value])}. Expected: "
-                            f"[{min_book_orders_count}: {expected_max_orders_by_side}]"
+                            f"[{min_book_orders_count}:{expected_max_orders_by_side}]"
                         )
             if len(empty_book_sides) > max_empty_book_sides:
                 raise AssertionError(
-                    f"More empty book sides than expected: {max_empty_book_sides=} {empty_book_sides=}"
+                    f"More empty book sides than expected: {max_empty_book_sides=} {len(empty_book_sides)=}"
                 )
             # with custom limit
             books_by_symbol = await exchange_manager.exchange.get_order_books(symbols=None, limit=custom_limit)

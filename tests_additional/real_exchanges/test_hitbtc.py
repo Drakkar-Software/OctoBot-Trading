@@ -125,8 +125,15 @@ class TestHitBtcRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
         
     async def test_get_order_books(self):
-        # implement if necessary
-        pass
+        await self.inner_test_get_order_books(
+            True,
+            1000, # asked symbols
+            5, # up to 5 orders
+            0, # up to 5 orders
+            True,
+            10,
+            140,
+        )
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()

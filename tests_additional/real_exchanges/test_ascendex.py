@@ -123,8 +123,8 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
         
     async def test_get_order_books(self):
-        # implement if necessary
-        pass
+        # not supported
+        await self.inner_test_unsupported_get_order_books()
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()

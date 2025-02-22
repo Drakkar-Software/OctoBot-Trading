@@ -133,8 +133,8 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value][0]) == 3
         
     async def test_get_order_books(self):
-        # implement if necessary
-        pass
+        # not supported
+        await self.inner_test_unsupported_get_order_books()
 
     async def test_get_recent_trades(self):
         # https://github.com/ccxt/ccxt/issues/5698
