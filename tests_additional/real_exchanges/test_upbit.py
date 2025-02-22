@@ -32,6 +32,7 @@ class TestUpbitRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
+    ORDER_BOOK_DESYNC_ALLOWANCE = 2 * 60    # allow 2x60s desync
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -119,8 +120,15 @@ class TestUpbitRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
         
     async def test_get_order_books(self):
-        # implement if necessary
-        pass
+        await self.inner_test_get_order_books(
+            True,
+            400, # asked symbols
+            15, # up to 15 orders
+            0, # up to 15 orders
+            False,
+            10,
+            10,
+        )
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()
