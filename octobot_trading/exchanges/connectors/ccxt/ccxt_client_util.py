@@ -47,11 +47,14 @@ def create_client(
     :return: the created ccxt (pro, async or sync) client
     """
     is_authenticated = False
+    should_be_authenticated_exchange = should_authenticate and not exchange_manager.is_backtesting
     if not exchange_manager.exchange_only:
         # avoid logging version on temporary exchange_only exchanges
         exchange_type = exchange_util.get_exchange_type(exchange_manager)
-        logger.info(f"Creating {exchange_class.__name__} {exchange_type.name} "
-                    f"exchange with ccxt in version {ccxt.__version__}")
+        logger.info(
+            f"Creating {'' if should_be_authenticated_exchange else 'un'}authenticated {exchange_class.__name__} "
+            f"{exchange_type.name} exchange with ccxt in version {ccxt.__version__}"
+        )
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_manager.exchange_name):
         try:
             auth_token_header_prefix = None
@@ -65,7 +68,7 @@ def create_client(
             if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
-            if should_authenticate and not exchange_manager.is_backtesting:
+            if should_be_authenticated_exchange:
                 client = instantiate_exchange(
                     exchange_class,
                     _get_client_config(

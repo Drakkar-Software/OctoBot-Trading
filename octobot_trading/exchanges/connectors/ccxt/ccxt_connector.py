@@ -267,7 +267,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def _should_authenticate(self):
         return self.force_authentication or not (
             self.exchange_manager.is_simulated or
-            self.exchange_manager.is_backtesting
+            self.exchange_manager.is_backtesting or
+            not self.exchange_manager.is_trading
         )
 
     def unauthenticated_exchange_fallback(self, err):
