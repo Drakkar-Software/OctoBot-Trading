@@ -746,6 +746,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         return self.get_all_available_symbols(active_only=active_only)
 
+    def get_alias_symbols(self) -> set[str]:
+        """
+        :return: a set of symbol of this exchange that are aliases to other symbols
+        """
+        return set()
+
     async def switch_to_account(self, account_type: enums.AccountTypes):
         return await self.connector.switch_to_account(account_type=account_type)
 
