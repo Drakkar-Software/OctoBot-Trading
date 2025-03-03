@@ -16,3 +16,4 @@
 
 CCXT_INFO = "info"
 CCXT_OPTIONS = "options"
+CCXT_FEES = "fees"
