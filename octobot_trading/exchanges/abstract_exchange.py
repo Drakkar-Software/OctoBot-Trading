@@ -755,7 +755,13 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         except decimal.DecimalException:
             quantity = octobot_trading.constants.ZERO
         try:
-            price = decimal.Decimal(str(order[enums.ExchangeConstantsOrderColumns.PRICE.value] or 0))
+            price = decimal.Decimal(str(
+                order[enums.ExchangeConstantsOrderColumns.PRICE.value]
+                # when fetching stop/tp orders PRICE might not be set, also check STOP_PRICE and TAKE_PROFIT_PRICE
+                or order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, 0)
+                or order.get(enums.ExchangeConstantsOrderColumns.TAKE_PROFIT_PRICE.value, 0)
+                or 0
+            ))
         except decimal.DecimalException:
             price = octobot_trading.constants.ZERO
         side = enums.TradeOrderSide(
