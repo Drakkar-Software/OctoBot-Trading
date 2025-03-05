@@ -188,6 +188,8 @@ class ExchangePersonalData(util.Initializable):
         if self._is_out_of_sync_order(exchange_order_id):
             self.logger.debug(f"Ignored update for order with exchange id: {exchange_order_id}: this order "
                               f"has already been closed (received raw order: {raw_order})")
+            # ensure order is not in open orders anymore
+            self._ensure_canceled_out_of_sync_order(exchange_order_id)
         else:
             try:
                 changed, order = await self.orders_manager.upsert_order_from_raw(
@@ -208,6 +210,19 @@ class ExchangePersonalData(util.Initializable):
             except Exception as e:
                 self.logger.exception(e, True, f"Failed to update order : {e}")
         return False, None
+
+    def _ensure_canceled_out_of_sync_order(self, exchange_order_id: str):
+        try:
+            out_of_sync_open_order = self.orders_manager.get_order(None, exchange_order_id=exchange_order_id)
+            # order should be removed from open orders to avoid looping in refresh
+            self.orders_manager.remove_order_instance(out_of_sync_open_order)
+            self.logger.info(
+                f"Out of sync order with exchange id {exchange_order_id} has been cancelled. "
+                f"Order: {out_of_sync_open_order}."
+            )
+        except KeyError:
+            # order is not in open orders anymore: nothing to do
+            pass
 
     async def update_order_from_stored_data(self, exchange_order_id, pending_groups):
         order = self.orders_manager.get_order(None, exchange_order_id=exchange_order_id)
