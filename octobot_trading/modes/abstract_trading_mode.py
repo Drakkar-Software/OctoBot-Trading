@@ -464,11 +464,17 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return False
 
     def get_historical_config(self) -> dict:
+        return octobot_commons.configuration.get_historical_tentacle_config(
+            self.get_historical_master_config(), self.exchange_manager.exchange.get_exchange_current_time()
+        )
+
+    def get_historical_master_config(self):
         if self.historical_master_config is None:
             self.historical_master_config = copy.deepcopy(self.trading_config)
-        return octobot_commons.configuration.get_historical_tentacle_config(
-            self.historical_master_config, self.exchange_manager.exchange.get_exchange_current_time()
-        )
+        return self.historical_master_config
+
+    def supports_historical_config(self) -> bool:
+        return common_constants.CONFIG_HISTORICAL_CONFIGURATION in self.get_historical_master_config()
 
     def has_historical_config(self) -> bool:
         try:
