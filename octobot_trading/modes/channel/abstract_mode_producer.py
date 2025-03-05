@@ -49,7 +49,6 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         common_enums.ActivationTopics.EVALUATION_CYCLE.value:
             channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
     }
-    CONFIG_INIT_TIMEOUT = 1 * common_constants.MINUTE_TO_SECONDS    # let time for orders to be fetched before
     # declaring timeout at first trigger
     PRODUCER_LOCKS_BY_EXCHANGE_ID = {}  # use to identify exchange-wide actions
 
@@ -180,7 +179,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
         await self.init_user_inputs(False)
         await self._wait_for_bot_init(
-            self.CONFIG_INIT_TIMEOUT,
+            self._get_config_init_timeout(),
             extra_symbol_topics=self.get_extra_init_symbol_topics(),
             extra_global_topics=self.get_extra_global_topics()
         )
@@ -366,7 +365,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     raise asyncio.TimeoutError(f"Trading mode producer has to be started in backtesting")
                 self.logger.debug("Waiting for orders initialization to proceed")
                 try:
-                    await asyncio.wait_for(self._is_ready_to_trade.wait(), self.CONFIG_INIT_TIMEOUT)
+                    await asyncio.wait_for(self._is_ready_to_trade.wait(), self._get_config_init_timeout())
                 except asyncio.TimeoutError as e:
                     raise errors.InitializingError() from e
                 self.logger.debug("Order initialized")
@@ -527,7 +526,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         if context.exchange_manager.is_future:
             if not self._is_ready_to_trade.is_set():
                 await util.wait_for_topic_init(
-                    self.exchange_manager, self.CONFIG_INIT_TIMEOUT,
+                    self.exchange_manager, self._get_config_init_timeout(),
                     common_enums.InitializationEventExchangeTopics.CONTRACTS.value,
                     symbols=self.trading_mode.get_init_symbols()
                 )
@@ -544,6 +543,11 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Symbol price initialization took more than {timeout} seconds")
         return False
+
+    def _get_config_init_timeout(self) -> int:
+        if self.exchange_manager and self.exchange_manager.is_backtesting:
+            return 1    # in backesting, init should be almost instant. If it's not, wait for yp to 1 second
+        return 1 * common_constants.MINUTE_TO_SECONDS  # let time for orders to be fetched before
 
     @classmethod
     def producer_exchange_wide_lock(cls, exchange_manager) -> asyncio_tools.RLock():
