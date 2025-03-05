@@ -433,9 +433,14 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     and (side is None or (side is order.side))
                     and (exchange_order_ids is None or (order.exchange_order_id in exchange_order_ids))
                 ):
-                    if await self.trading_mode.cancel_order(order):
-                        cancelled = True
-                    else:
+                    try:
+                        if await self.trading_mode.cancel_order(order):
+                            cancelled = True
+                        else:
+                            failed_to_cancel = True
+                    except errors.OctoBotExchangeError as err:
+                        # do not propagate exchange error when canceling order
+                        self.logger.exception(err, True, f"Error when cancelling order [{order}]: {err}")
                         failed_to_cancel = True
         return cancelled and not failed_to_cancel
 
