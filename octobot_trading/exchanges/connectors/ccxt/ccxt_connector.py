@@ -547,6 +547,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
+
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def create_market_buy_order_with_cost(self, symbol, cost: float, quantity: float, params=None) -> dict:
+        return self.adapter.adapt_order(
+            # use create_order instead of create_market_buy_order to pass the price argument
+            await self.client.create_market_buy_order_with_cost(symbol, cost, params=params),
+            symbol=symbol, quantity=quantity
+        )
+
+
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return self.adapter.adapt_order(
