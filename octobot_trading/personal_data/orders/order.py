@@ -900,14 +900,21 @@ class Order(util.Initializable):
         chained_order = "" if self.triggered_by is None else \
             "triggered chained order | " if self.is_created() else "untriggered chained order | "
         tag = f" | tag: {self.tag}" if self.tag else ""
-        return (f"{self.symbol} | "
-                f"{chained_order}"
-                f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
-                f"Price : {str(self.origin_price)} | "
-                f"Quantity : {str(self.origin_quantity)}{' (Reduce only)' if self.reduce_only else ''} | "
-                f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.order_id}{tag} "
-                f"exchange id: {self.exchange_order_id}")
+        fees = (
+            f"Fees : {self.fee[enums.FeePropertyColumns.COST.value]} {self.fee[enums.FeePropertyColumns.CURRENCY.value]} | "
+            if self.fee else ""
+        )
+        return (
+            f"{self.symbol} | "
+            f"{chained_order}"
+            f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
+            f"Price : {str(self.origin_price)} | "
+            f"Quantity : {str(self.origin_quantity)}{' (Reduce only)' if self.reduce_only else ''} | "
+            f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
+            f"{fees}"
+            f"id : {self.order_id}{tag} "
+            f"exchange id: {self.exchange_order_id}"
+        )
 
     def __str__(self):
         return self.to_string()
