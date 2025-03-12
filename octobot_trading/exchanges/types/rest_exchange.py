@@ -53,6 +53,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     ADAPT_MARKET_STATUS_FOR_CONTRACT_SIZE = False
     # set True when disabled symbols should still be considered (ex: mexc with its temporary api trading disabled symbols)
     INCLUDE_DISABLED_SYMBOLS_IN_AVAILABLE_SYMBOLS = False
+    # set True when create_market_buy_order_with_cost should be used to create buy market orders
+    # (useful to predict the exact spent amount)
+    ENABLE_SPOT_BUY_MARKET_WITH_COST = False
     REQUIRE_ORDER_FEES_FROM_TRADES = False  # set True when get_order is not giving fees on closed orders and fees
     # should be fetched using recent trades.
     REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES = False  # set True when get_closed_orders is not supported
@@ -438,6 +441,15 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def _create_market_buy_order(
         self, symbol, quantity, price=None, reduce_only: bool = False, params=None
         ) -> dict:
+        if self.ENABLE_SPOT_BUY_MARKET_WITH_COST and self.exchange_manager.is_spot_only:
+            if price is None:
+                raise errors.NotSupported(
+                    f"price is required for buy market orders when {self.get_name()}.ENABLE_SPOT_BUY_MARKET_WITH_COST "
+                    f"is {self.ENABLE_SPOT_BUY_MARKET_WITH_COST}"
+                )
+            return await self.connector.create_market_buy_order_with_cost(
+                symbol, quantity * price, quantity, params=params
+            )
         return await self.connector.create_market_buy_order(symbol, quantity, price=price, params=params)
 
     async def _create_limit_buy_order(
