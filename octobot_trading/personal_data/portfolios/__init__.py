@@ -43,6 +43,7 @@ from octobot_trading.personal_data.portfolios import portfolio_value_holder
 from octobot_trading.personal_data.portfolios import types
 from octobot_trading.personal_data.portfolios import portfolio_util
 from octobot_trading.personal_data.portfolios import history
+from octobot_trading.personal_data.portfolios import sub_portfolio_data
 
 
 from octobot_trading.personal_data.portfolios.portfolio_factory import (
@@ -76,16 +77,22 @@ from octobot_trading.personal_data.portfolios.assets import (
 from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
+    format_dict_portfolio_values,
     filter_empty_values,
     portfolio_to_float,
     get_draw_down,
     get_coefficient_of_determination,
     get_asset_price_from_converter_or_tickers,
+    resolve_sub_portfolios,
+    get_portfolio_filled_orders_deltas,
 )
 from octobot_trading.personal_data.portfolios.history import (
     create_historical_asset_value_from_dict_like_object,
     HistoricalAssetValue,
     HistoricalPortfolioValueManager,
+)
+from octobot_trading.personal_data.portfolios.sub_portfolio_data import (
+    SubPortfolioData,
 )
 
 __all__ = [
@@ -113,13 +120,17 @@ __all__ = [
     "SpotAsset",
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
+    "format_dict_portfolio_values",
     "filter_empty_values",
     "portfolio_to_float",
     "get_draw_down",
     "get_coefficient_of_determination",
     "get_asset_price_from_converter_or_tickers",
+    "resolve_sub_portfolios",
+    "get_portfolio_filled_orders_deltas",
     "create_historical_asset_value_from_dict_like_object",
     "get_draw_down",
     "HistoricalAssetValue",
     "HistoricalPortfolioValueManager",
+    "SubPortfolioData",
 ]

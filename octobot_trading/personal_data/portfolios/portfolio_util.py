@@ -13,10 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
 import decimal
+import typing
 
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_trading.personal_data.portfolios.assets
+import octobot_trading.personal_data.orders.order as order_import
+import octobot_trading.personal_data.portfolios.sub_portfolio_data as sub_portfolio_data
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -43,8 +47,10 @@ def parse_decimal_portfolio(portfolio, as_decimal=True):
 
 def parse_decimal_config_portfolio(portfolio):
     return {
-        symbol: {k: decimal.Decimal(str(v)) for k, v in symbol_balance.items()} if isinstance(symbol_balance, dict)
-        else decimal.Decimal(str(symbol_balance))
+        symbol: {
+            k: decimal.Decimal(str(v))
+            for k, v in symbol_balance.items()
+        } if isinstance(symbol_balance, dict) else decimal.Decimal(str(symbol_balance))
         for symbol, symbol_balance in portfolio.items()
     }
 
@@ -74,6 +80,18 @@ def portfolio_to_float(portfolio, use_wallet_balance_on_futures=False):
                 commons_constants.PORTFOLIO_TOTAL: float(symbol_balance.total)
             }
     return float_portfolio
+
+
+def format_dict_portfolio_values(
+    portfolio: dict[str, dict[str, typing.Union[float, decimal.Decimal]]], as_decimal: bool
+) -> dict[str, dict[str, typing.Union[float, decimal.Decimal]]]:
+    return {
+        asset_name: {
+            key: decimal.Decimal(str(val)) if as_decimal else float(val)
+            for key, val in asset_content.items()
+        }
+        for asset_name, asset_content in portfolio.items()
+    }
 
 
 def get_draw_down(exchange_manager):
@@ -234,3 +252,283 @@ def get_asset_price_from_converter_or_tickers(
         except KeyError:
             price = None
     return price
+
+
+def resolve_sub_portfolios(
+    master_portfolio: sub_portfolio_data.SubPortfolioData,
+    sub_portfolios: list[sub_portfolio_data.SubPortfolioData],
+    allowed_filling_assets: list[str],
+    forbidden_filling_assets: list[str],
+    market_prices: dict[str, float],
+) -> (sub_portfolio_data.SubPortfolioData, list[sub_portfolio_data.SubPortfolioData]):
+    resolved_portfolios = []
+    remaining_master_portfolio = copy.deepcopy(master_portfolio)
+    for sub_portfolio in sorted(sub_portfolios, key=lambda x: x.priority_key):
+        resolved_portfolio = _resolve_sub_portfolio(
+            remaining_master_portfolio, sub_portfolio, allowed_filling_assets, forbidden_filling_assets, market_prices
+        )
+        resolved_portfolios.append(resolved_portfolio)
+    return remaining_master_portfolio, resolved_portfolios
+
+
+def _resolve_sub_portfolio(
+    remaining_master_portfolio: sub_portfolio_data.SubPortfolioData,
+    sub_portfolio: sub_portfolio_data.SubPortfolioData,
+    allowed_filling_assets: list[str],
+    forbidden_filling_assets: list[str],
+    market_prices: dict[str, float],
+) -> sub_portfolio_data.SubPortfolioData:
+    resolved_content = {}
+    funds_deltas = {}
+    missing_funds = {}
+    forecasted_sub_portfolio_content = sub_portfolio.get_content_after_deltas()
+    missing_amount_by_asset = {}
+    for asset_name, holdings in forecasted_sub_portfolio_content.items():
+        missing_amount_in_asset = _resolve_sub_portfolio_asset(
+            asset_name, holdings, remaining_master_portfolio, resolved_content, forbidden_filling_assets
+        )
+        if missing_amount_in_asset > constants.ZERO:
+            missing_amount_by_asset[asset_name] = missing_amount_in_asset
+    # now that assets have been allocated, try to compensate missing assets
+    for asset_name, missing_amount_in_asset in missing_amount_by_asset.items():
+        _fill_missing_assets_from_allowed_filling_assets(
+            asset_name, allowed_filling_assets, market_prices,
+            remaining_master_portfolio, missing_amount_in_asset,
+            resolved_content, funds_deltas, missing_funds
+        )
+
+    return sub_portfolio_data.SubPortfolioData(
+        sub_portfolio.bot_id,
+        sub_portfolio.portfolio_id,
+        sub_portfolio.priority_key,
+        resolved_content,
+        sub_portfolio.unit,
+        funds_deltas,
+        missing_funds,
+    )
+
+
+def _resolve_sub_portfolio_asset(
+    asset_name, holdings, remaining_master_portfolio, resolved_content, forbidden_filling_assets
+) -> decimal.Decimal:
+    required_amount = holdings[commons_constants.PORTFOLIO_TOTAL]
+    missing_amount_in_asset = constants.ZERO
+    if asset_name in remaining_master_portfolio.content and asset_name not in forbidden_filling_assets:
+        remaining_master_holding = remaining_master_portfolio.content[asset_name]
+        # for now only handle available value (ignore funds in orders)
+        remaining_available = remaining_master_holding[commons_constants.PORTFOLIO_AVAILABLE]
+        if remaining_available >= required_amount * (constants.ONE - constants.SUB_PORTFOLIO_ALLOWED_MISSING_RATIO):
+            sub_portfolio_amount = min(remaining_available, required_amount)
+            # assets are available in master portfolio: reduce it from master
+            if asset_name in resolved_content:
+                resolved_content[asset_name][commons_constants.PORTFOLIO_TOTAL] += sub_portfolio_amount
+                resolved_content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] += sub_portfolio_amount
+            else:
+                resolved_content[asset_name] = {
+                    commons_constants.PORTFOLIO_TOTAL: sub_portfolio_amount,
+                    commons_constants.PORTFOLIO_AVAILABLE: sub_portfolio_amount,
+                }
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_TOTAL] -= sub_portfolio_amount
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] -= sub_portfolio_amount
+        else:
+            # not enough assets in master portfolio
+            if asset_name in resolved_content:
+                resolved_content[asset_name][commons_constants.PORTFOLIO_TOTAL] += remaining_available
+                resolved_content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] += remaining_available
+            else:
+                resolved_content[asset_name] = {
+                    commons_constants.PORTFOLIO_TOTAL: remaining_available,
+                    commons_constants.PORTFOLIO_AVAILABLE: remaining_available,
+                }
+            missing_amount_in_asset = abs(remaining_available - required_amount)
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_TOTAL] -= remaining_available
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] -= remaining_available
+    else:
+        resolved_content[asset_name] = {
+            commons_constants.PORTFOLIO_TOTAL: constants.ZERO,
+            commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO,
+        }
+        # asset not in master portfolio (anymore):
+        missing_amount_in_asset = required_amount
+    return missing_amount_in_asset
+
+
+def _fill_missing_assets_from_allowed_filling_assets(
+    asset_name, allowed_filling_assets, market_prices,
+    remaining_master_portfolio, missing_amount_in_asset, resolved_content, funds_deltas, missing_funds
+):
+    # missing funds: try to get it from allowed assets
+    for filling_asset, price in _iterate_filling_assets(
+        asset_name, allowed_filling_assets, market_prices
+    ):
+        if filling_asset in remaining_master_portfolio.content and price != constants.ZERO:
+            # use available funds only here to avoid taking funds locked in orders
+            available_funds_in_filling_asset = remaining_master_portfolio.content[filling_asset][
+                commons_constants.PORTFOLIO_AVAILABLE
+            ]
+            ideal_funds_to_add_in_filling_asset = missing_amount_in_asset * price
+            if available_funds_in_filling_asset >= ideal_funds_to_add_in_filling_asset:
+                # use a part of available filling asset to compensate missing amount in sub portfolio
+                funds_to_add_in_filling_asset = ideal_funds_to_add_in_filling_asset
+                taken_filling_asset = ideal_funds_to_add_in_filling_asset
+                missing_amount_in_asset = constants.ZERO
+            else:
+                # use all available filling asset to compensate missing amount in sub portfolio
+                funds_to_add_in_filling_asset = available_funds_in_filling_asset
+                taken_filling_asset = available_funds_in_filling_asset
+                missing_amount_in_asset = missing_amount_in_asset - (funds_to_add_in_filling_asset / price)
+            if filling_asset in resolved_content:
+                resolved_content[filling_asset][commons_constants.PORTFOLIO_TOTAL] += (
+                    funds_to_add_in_filling_asset
+                )
+                resolved_content[filling_asset][commons_constants.PORTFOLIO_AVAILABLE] += (
+                    funds_to_add_in_filling_asset
+                )
+            else:
+                resolved_content[filling_asset] = {
+                    commons_constants.PORTFOLIO_TOTAL: funds_to_add_in_filling_asset,
+                    commons_constants.PORTFOLIO_AVAILABLE: funds_to_add_in_filling_asset,
+                }
+            if filling_asset in funds_deltas:
+                funds_deltas[filling_asset][commons_constants.PORTFOLIO_TOTAL] += funds_to_add_in_filling_asset
+                funds_deltas[filling_asset][commons_constants.PORTFOLIO_AVAILABLE] += funds_to_add_in_filling_asset
+            else:
+                funds_deltas[filling_asset] = {
+                    commons_constants.PORTFOLIO_TOTAL: funds_to_add_in_filling_asset,
+                    commons_constants.PORTFOLIO_AVAILABLE: funds_to_add_in_filling_asset
+                }
+            remaining_master_portfolio.content[filling_asset][commons_constants.PORTFOLIO_AVAILABLE] -= (
+                taken_filling_asset
+            )
+            remaining_master_portfolio.content[filling_asset][commons_constants.PORTFOLIO_TOTAL] -= (
+                taken_filling_asset
+            )
+        if missing_amount_in_asset == constants.ZERO:
+            return constants.ZERO
+    if missing_amount_in_asset > constants.ZERO:
+        # can't compensate for missing funds
+        if asset_name in missing_funds:
+            missing_funds[asset_name] += missing_amount_in_asset
+        else:
+            missing_funds[asset_name] = missing_amount_in_asset
+    return missing_amount_in_asset
+
+
+def _iterate_filling_assets(
+    asset_name: str,
+    allowed_filling_assets: list[str],
+    tickers: dict[str, float],
+):
+    for allowed_filling_asset in allowed_filling_assets:
+        symbol = symbol_util.merge_currencies(asset_name, allowed_filling_asset)
+        if symbol in tickers:
+            try:
+                yield allowed_filling_asset, decimal.Decimal(str(tickers[symbol]))
+            except decimal.DecimalException as err:
+                commons_logging.get_logger(__name__).warning(
+                    f"Error when reading {symbol} price: \"{tickers[symbol]}\": {err}"
+                )
+        else:
+            reversed_symbol = symbol_util.merge_currencies(allowed_filling_asset, asset_name)
+            if reversed_symbol in tickers and tickers[reversed_symbol]:
+                yield allowed_filling_asset, constants.ONE / decimal.Decimal(str(tickers[reversed_symbol]))
+
+def get_portfolio_filled_orders_deltas(
+    previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    filled_orders: list[order_import.Order]
+) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
+    orders_asset_deltas = _get_assets_delta_from_orders(filled_orders)
+    portfolios_asset_deltas = _get_assets_delta_from_portfolio(previous_portfolio_content, updated_portfolio_content)
+    # return portfolio asset deltas that can approximately be explained by given orders
+    orders_linked_deltas = {}
+    ignored_deltas = {}
+    for asset_name, holdings_delta in portfolios_asset_deltas.items():
+        if asset_name not in orders_asset_deltas:
+            # this delta is not due to these orders: skip it
+            continue
+        order_asset_delta = orders_asset_deltas[asset_name]
+        holding_total = holdings_delta[commons_constants.PORTFOLIO_TOTAL]
+        min_allowed_equivalent_total_holding = (
+            holding_total * (constants.ONE - constants.SUB_PORTFOLIO_ALLOWED_DELTA_RATIO)
+        )
+        max_allowed_equivalent_total_holding = (
+            holding_total * (constants.ONE + constants.SUB_PORTFOLIO_ALLOWED_DELTA_RATIO)
+        )
+        if order_asset_delta * min_allowed_equivalent_total_holding < 0:
+            # different sign: incompatible, this is unexpected
+            ignored_deltas[asset_name] = holdings_delta
+        elif (
+            # approx same value
+            abs(min_allowed_equivalent_total_holding)
+            < abs(order_asset_delta)
+            < abs(max_allowed_equivalent_total_holding)
+        ):
+            # similar delta (+/- fees)
+            # this delta is due to these orders: add it
+            orders_linked_deltas[asset_name] = holdings_delta
+        elif abs(order_asset_delta) > abs(max_allowed_equivalent_total_holding):
+            # too little in portfolio delta to be from those orders: add it to ignored_deltas: there should be
+            # something in delta but there is not, this is unexpected
+            ignored_deltas[asset_name] = holdings_delta
+        elif abs(min_allowed_equivalent_total_holding) > abs(order_asset_delta):
+            # too much in portfolio delta: only take what is linked to the orders deltas
+            # todo: handle available assets when taking open orders into account (now set both available and total)
+            orders_linked_deltas[asset_name] = {
+                key: order_asset_delta
+                for key in holdings_delta
+            }
+        # check amount, adapt if necessary
+    for asset_name, order_delta in orders_asset_deltas.items():
+        if asset_name not in portfolios_asset_deltas:
+            # asset not in portfolio delta, this is unexpected, register it in ignored deltas
+            ignored_deltas[asset_name] = {
+                commons_constants.PORTFOLIO_TOTAL: order_delta,
+                commons_constants.PORTFOLIO_AVAILABLE: order_delta
+            }
+    return orders_linked_deltas, ignored_deltas
+
+
+def _get_assets_delta_from_portfolio(
+    previous_portfolio_content: dict,
+    updated_portfolio_content: dict,
+) ->  dict[str, dict[str, decimal.Decimal]]:
+    asset_deltas = {}
+    for asset_name in set(previous_portfolio_content).union(updated_portfolio_content):
+        if previous_portfolio_content.get(asset_name) != updated_portfolio_content.get(asset_name):
+            if asset_name not in previous_portfolio_content:
+                # asset has been added
+                asset_deltas[asset_name] = updated_portfolio_content[asset_name]
+            elif asset_name not in updated_portfolio_content:
+                # asset has been removed
+                asset_deltas[asset_name] = {key: -val for key, val in previous_portfolio_content[asset_name].items()}
+            else:
+                # asset was already here
+                asset_deltas[asset_name] = {}
+                for key, updated_value in updated_portfolio_content[asset_name].items():
+                    asset_deltas[asset_name][key] = updated_value - previous_portfolio_content[asset_name][key]
+    return asset_deltas
+
+
+
+def _get_assets_delta_from_orders(orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:
+    asset_deltas = {}
+    for order in orders:
+        base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
+        added_unit_and_amount = (
+            (base, order.origin_quantity)
+            if order.side is enums.TradeOrderSide.BUY else (quote, order.total_cost)
+        )
+        removed_unit_and_amount = (
+            (quote, order.total_cost)
+            if order.side is enums.TradeOrderSide.BUY else (base, order.origin_quantity)
+        )
+        for unit_and_amount, multiplier in zip(
+            (added_unit_and_amount, removed_unit_and_amount),
+            (1, -1)
+        ):
+            if unit_and_amount[0] not in asset_deltas:
+                asset_deltas[unit_and_amount[0]] = unit_and_amount[1] * multiplier
+            else:
+                asset_deltas[unit_and_amount[0]] += unit_and_amount[1] * multiplier
+    return asset_deltas
