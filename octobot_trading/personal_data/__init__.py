@@ -142,14 +142,18 @@ from octobot_trading.personal_data.portfolios import (
     SpotAsset,
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
+    format_dict_portfolio_values,
     filter_empty_values,
     portfolio_to_float,
     create_historical_asset_value_from_dict_like_object,
     get_draw_down,
     get_coefficient_of_determination,
     get_asset_price_from_converter_or_tickers,
+    resolve_sub_portfolios,
+    get_portfolio_filled_orders_deltas,
     HistoricalAssetValue,
     HistoricalPortfolioValueManager,
+    SubPortfolioData,
 )
 from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
@@ -365,6 +369,7 @@ __all__ = [
     "SpotAsset",
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
+    "format_dict_portfolio_values",
     "filter_empty_values",
     "portfolio_to_float",
     "create_historical_asset_value_from_dict_like_object",
@@ -406,6 +411,8 @@ __all__ = [
     "aggregate_trades_by_exchange_order_id",
     "ExchangePersonalData",
     "get_asset_price_from_converter_or_tickers",
+    "resolve_sub_portfolios",
+    "get_portfolio_filled_orders_deltas",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",
     "TraderOrderTypeClasses",
@@ -420,4 +427,5 @@ __all__ = [
     "create_realised_pnl_transaction",
     "create_fee_transaction",
     "create_transfer_transaction",
+    "SubPortfolioData",
 ]

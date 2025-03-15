@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import typing
 
 import octobot_commons.symbols as commons_symbols
 import octobot_trading.exchange_channel as exchange_channel
@@ -35,6 +36,10 @@ def get_portfolio_historical_values(exchange_manager, currency, time_frame, from
             currency, time_frame, from_timestamp, to_timestamp
         )
     return []
+
+
+def get_portfolio_reference_market(exchange_manager) -> str:
+    return exchange_manager.exchange_personal_data.portfolio_manager.reference_market
 
 
 def get_global_portfolio_currencies_values(exchange_managers: list) -> dict:
@@ -68,10 +73,18 @@ def set_simulated_portfolio_initial_config(exchange_manager, portfolio_content):
         )
 
 
-def format_portfolio(portfolio, as_decimal) -> dict:
-    if as_decimal:
+def format_portfolio(
+    portfolio: dict[str, typing.Union[personal_data.Asset, dict[str, typing.Union[float, decimal.Decimal]]]],
+    as_decimal: bool
+) -> dict[str, typing.Union[personal_data.Asset, dict[str, typing.Union[float, decimal.Decimal]]]]:
+    if not portfolio:
         return portfolio
-    return personal_data.portfolio_to_float(portfolio)
+    first_value = next(iter(portfolio.values()))
+    if isinstance(first_value, personal_data.Asset):
+        if as_decimal:
+            return portfolio
+        return personal_data.portfolio_to_float(portfolio)
+    return personal_data.format_dict_portfolio_values(portfolio, as_decimal)
 
 
 def parse_decimal_portfolio(portfolio, as_decimal) -> dict:
@@ -107,3 +120,25 @@ def can_convert_symbol_to_usd_like(symbol: str) -> bool:
 
 def is_usd_like_coin(coin) -> bool:
     return commons_symbols.is_usd_like_coin(coin)
+
+
+def resolve_sub_portfolios(
+    master_portfolio: personal_data.SubPortfolioData,
+    sub_portfolios: list[personal_data.SubPortfolioData],
+    allowed_filling_assets: list[str],
+    forbidden_filling_assets: list[str],
+    market_prices: dict[str, float],
+) -> (personal_data.SubPortfolioData, list[personal_data.SubPortfolioData]):
+    return personal_data.resolve_sub_portfolios(
+        master_portfolio, sub_portfolios, allowed_filling_assets, forbidden_filling_assets, market_prices
+    )
+
+
+def get_portfolio_filled_orders_deltas(
+    previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    filled_orders: list[personal_data.Order]
+) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
+    return personal_data.get_portfolio_filled_orders_deltas(
+        previous_portfolio_content, updated_portfolio_content, filled_orders
+    )

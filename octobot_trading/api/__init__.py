@@ -158,6 +158,7 @@ from octobot_trading.api.trader import (
 from octobot_trading.api.portfolio import (
     get_portfolio,
     get_portfolio_historical_values,
+    get_portfolio_reference_market,
     get_portfolio_currency,
     get_origin_portfolio,
     set_simulated_portfolio_initial_config,
@@ -170,6 +171,8 @@ from octobot_trading.api.portfolio import (
     get_usd_like_symbols_from_symbols,
     can_convert_symbol_to_usd_like,
     is_usd_like_coin,
+    resolve_sub_portfolios,
+    get_portfolio_filled_orders_deltas,
     get_global_portfolio_currencies_values,
 )
 from octobot_trading.api.profitability import (
@@ -347,6 +350,7 @@ __all__ = [
     "get_current_bot_live_id",
     "get_portfolio",
     "get_portfolio_historical_values",
+    "get_portfolio_reference_market",
     "get_portfolio_currency",
     "get_origin_portfolio",
     "set_simulated_portfolio_initial_config",
@@ -357,6 +361,8 @@ __all__ = [
     "get_usd_like_symbols_from_symbols",
     "can_convert_symbol_to_usd_like",
     "is_usd_like_coin",
+    "resolve_sub_portfolios",
+    "get_portfolio_filled_orders_deltas",
     "get_global_portfolio_currencies_values",
     "get_origin_portfolio_value",
     "get_profitability_stats",
