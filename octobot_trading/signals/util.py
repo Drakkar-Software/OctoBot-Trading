@@ -65,6 +65,10 @@ def create_order_signal_content(
         trading_enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value:
             order.update_with_triggering_order_fees,
         trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value: order.order_id,
+        trading_enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value:
+            order.trailing_profile.get_type().value if order.trailing_profile else None,
+        trading_enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value:
+            order.trailing_profile.to_dict() if order.trailing_profile else None,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
             None if order.triggered_by is None else order.triggered_by.order_id
         if order.has_been_bundled else None,

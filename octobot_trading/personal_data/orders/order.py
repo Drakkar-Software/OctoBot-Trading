@@ -26,6 +26,7 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
 import octobot_trading.exchanges.traders.trader
 import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.trailing_profiles as trailing_profiles
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.util as util
 
@@ -89,6 +90,7 @@ class Order(util.Initializable):
         self.canceled_time = 0
 
         self.order_group = None
+        self.trailing_profile: trailing_profiles.TrailingProfile = None
 
         # order state is initialized in initialize_impl()
         self.state = None
@@ -133,13 +135,15 @@ class Order(util.Initializable):
             self.logger_name = f"{self.get_name()} | {self.order_id} [exchange id: {self.exchange_order_id}]"
         return self.logger_name
 
-    def update(self, symbol, order_id="", exchange_order_id=None, status=enums.OrderStatus.OPEN,
-               current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
-               quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
-               fee=None, total_cost=constants.ZERO, timestamp=None,
-               order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
-               associated_entry_id=None, trigger_above=None) -> bool:
+    def update(
+        self, symbol, order_id="", exchange_order_id=None, status=enums.OrderStatus.OPEN,
+        current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
+        quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
+        fee=None, total_cost=constants.ZERO, timestamp=None,
+        order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
+        group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
+        associated_entry_id=None, trigger_above=None, trailing_profile: trailing_profiles.TrailingProfile = None,
+    ) -> bool:
         changed: bool = False
         should_update_total_cost = False
 
@@ -279,6 +283,10 @@ class Order(util.Initializable):
         if trigger_above is not None and self.trigger_above != trigger_above:
             changed = True
             self.trigger_above = trigger_above
+
+        if trailing_profile is not None and self.trailing_profile != trailing_profile:
+            changed = True
+            self.trailing_profile = trailing_profile
 
         if should_update_total_cost and not total_cost:
             self._update_total_cost()
@@ -793,6 +801,13 @@ class Order(util.Initializable):
         self.update_with_triggering_order_fees = order_details.get(
             enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value, False
         )
+        if trailing_profile := order_details.get(enums.StoredOrdersAttr.TRAILING_PROFILE.value):
+            self.trailing_profile = trailing_profiles.create_trailing_profile(
+                trailing_profiles.TrailingProfileTypes(
+                    trailing_profile[enums.StoredOrdersAttr.TRAILING_PROFILE_TYPE.value]
+                ),
+                trailing_profile[enums.StoredOrdersAttr.TRAILING_PROFILE_DETAILS.value],
+            )
 
     def consider_as_filled(self):
         self.status = enums.OrderStatus.FILLED
@@ -904,6 +919,7 @@ class Order(util.Initializable):
             f"Fees : {self.fee[enums.FeePropertyColumns.COST.value]} {self.fee[enums.FeePropertyColumns.CURRENCY.value]} | "
             if self.fee else ""
         )
+        trailing_profile = f"Trailing profile : {self.trailing_profile} | " if self.trailing_profile else ""
         return (
             f"{self.symbol} | "
             f"{chained_order}"
@@ -911,6 +927,7 @@ class Order(util.Initializable):
             f"Price : {str(self.origin_price)} | "
             f"Quantity : {str(self.origin_quantity)}{' (Reduce only)' if self.reduce_only else ''} | "
             f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
+            f"{trailing_profile}"
             f"{fees}"
             f"id : {self.order_id}{tag} "
             f"exchange id: {self.exchange_order_id}"

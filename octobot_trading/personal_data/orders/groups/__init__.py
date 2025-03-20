@@ -19,6 +19,11 @@ from octobot_trading.personal_data.orders.groups.balanced_take_profit_and_stop_o
     BalancedTakeProfitAndStopOrderGroup,
 )
 
+from octobot_trading.personal_data.orders.groups import trailing_on_filled_tp_balanced_order_group
+from octobot_trading.personal_data.orders.groups.trailing_on_filled_tp_balanced_order_group import (
+    TrailingOnFilledTPBalancedOrderGroup,
+)
+
 from octobot_trading.personal_data.orders.groups import one_cancels_the_other_order_group
 from octobot_trading.personal_data.orders.groups.one_cancels_the_other_order_group import (
     OneCancelsTheOtherOrderGroup,
@@ -33,6 +38,7 @@ from octobot_trading.personal_data.orders.groups.group_util import (
 
 __all__ = [
     "BalancedTakeProfitAndStopOrderGroup",
+    "TrailingOnFilledTPBalancedOrderGroup",
     "OneCancelsTheOtherOrderGroup",
     "get_group_class",
     "get_or_create_order_group_from_storage_order_details",

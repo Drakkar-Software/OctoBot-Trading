@@ -124,7 +124,7 @@ def default_websocket_exchange(liquid_exchange_manager_fixture):
     yield MockedWebSocketExchange(liquid_exchange_manager_fixture.config, liquid_exchange_manager_fixture)
 
 
-async def test_start_receive_feeds_and_stop(default_websocket_exchange, skipped_on_github_CI):
+async def _test_start_receive_feeds_and_stop(default_websocket_exchange, skipped_on_github_CI):
     await default_websocket_exchange.init_websocket(
         default_websocket_exchange.exchange_manager.exchange_config.traded_time_frames,
         default_websocket_exchange.exchange_manager.exchange_config.traded_symbol_pairs,

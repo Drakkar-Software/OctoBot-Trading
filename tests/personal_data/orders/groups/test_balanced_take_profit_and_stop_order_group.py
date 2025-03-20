@@ -40,7 +40,7 @@ def btps_group(backtesting_exchange_manager):
 
 @pytest.fixture
 def side_balance():
-    return balanced_take_profit_and_stop_order_group._SideBalance()
+    return balanced_take_profit_and_stop_order_group.SideBalance(None, False)
 
 
 async def test_on_fill(btps_group):
@@ -157,14 +157,14 @@ async def test_balance_orders(btps_group):
         btps_group.balancing_orders = base_balancing_order
         # 1. not enabled
         btps_group.enabled = False
-        await btps_group._balance_orders(order_1, ["ignored_orders"])
+        await btps_group._balance_orders(order_1, ["ignored_orders"], False)
         get_order_from_group_mock.assert_not_called()
         assert btps_group.balancing_orders == ["existing_order"]
         assert btps_group.balancing_orders is base_balancing_order
 
         # 2. enabled
         btps_group.enabled = True
-        await btps_group._balance_orders(order_4, ["ignored_orders"])
+        await btps_group._balance_orders(order_4, ["ignored_orders"], True)
         get_order_from_group_mock.assert_called_once()
         get_order_from_group_mock.reset_mock()
         order_1.trader.edit_order.assert_not_called()
@@ -188,6 +188,52 @@ async def test_balance_orders(btps_group):
         assert btps_group.balancing_orders == ["existing_order"]
         assert btps_group.balancing_orders is not base_balancing_order  # changed list during orders registration
 
+        def _get_order_update(order, updated_quantity):
+            return {
+                balanced_take_profit_and_stop_order_group.BalancedTakeProfitAndStopOrderGroup.ORDER: order,
+                balanced_take_profit_and_stop_order_group.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: updated_quantity,
+                balanced_take_profit_and_stop_order_group.BalancedTakeProfitAndStopOrderGroup.UPDATED_PRICE: decimal.Decimal(111),
+            }
+        for order in (order_1, order_2, order_3, order_4):
+            order.trader.edit_order.reset_mock()
+            order.trader.cancel_order.reset_mock()
+        # 3. with updated price
+        with mock.patch.object(
+            balanced_take_profit_and_stop_order_group.SideBalance, "get_order_update",
+            mock.Mock(side_effect=_get_order_update)
+        ) as get_order_update:
+            btps_group.enabled = True
+            await btps_group._balance_orders(order_4, ["ignored_orders"], True)
+            get_order_from_group_mock.assert_called_once()
+            get_order_from_group_mock.reset_mock()
+            order_1.trader.edit_order.assert_not_called()
+            order_1.trader.cancel_order.assert_called_once_with(
+                order_1, ignored_order=order_4, wait_for_cancelling=True,
+                cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+            )
+            order_2.trader.edit_order.assert_called_once_with(
+                order_2,
+                edited_quantity=decimal.Decimal(10),
+                edited_price=decimal.Decimal(111),
+                edited_stop_price=None,
+                edited_current_price=None,
+                params=None
+            )
+            order_2.trader.cancel_order.assert_not_called()
+            order_3.trader.edit_order.assert_called_once_with(
+                order_3,
+                edited_quantity=None,
+                edited_price=decimal.Decimal(111),
+                edited_stop_price=None,
+                edited_current_price=None,
+                params=None
+            )
+            order_3.trader.cancel_order.assert_not_called()
+            order_4.trader.edit_order.assert_not_called()
+            order_4.trader.cancel_order.assert_not_called()
+            assert btps_group.balancing_orders == ["existing_order"]
+            assert btps_group.balancing_orders is not base_balancing_order  # changed list during orders registration
+
 
 async def test_get_balance(btps_group):
     order_1 = order_mock(order_type="order_type", origin_price=decimal.Decimal(1),
@@ -197,7 +243,7 @@ async def test_get_balance(btps_group):
     with mock.patch.object(order_util, "is_stop_order", mock.Mock(return_value=False)) as is_stop_order_mock:
         with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[])) \
              as get_order_from_group_mock:
-            balance = btps_group._get_balance(order_1, None)
+            balance = btps_group._get_balance(order_1, None, True)
             assert balance[btps_group.TAKE_PROFIT].orders == []
             assert balance[btps_group.STOP].orders == []
             get_order_from_group_mock.assert_called_once()
@@ -205,7 +251,7 @@ async def test_get_balance(btps_group):
 
         with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[order_1, order_2])) \
              as get_order_from_group_mock:
-            balance = btps_group._get_balance(order_1, None)
+            balance = btps_group._get_balance(order_1, None, True)
             assert balance[btps_group.TAKE_PROFIT].orders == [order_2]
             assert balance[btps_group.STOP].orders == []
             get_order_from_group_mock.assert_called_once()
@@ -214,7 +260,7 @@ async def test_get_balance(btps_group):
 
         with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
                                mock.Mock(return_value=[order_1, order_2])) as get_order_from_group_mock:
-            balance = btps_group._get_balance(order_1, [order_2])
+            balance = btps_group._get_balance(order_1, [order_2], False)
             assert balance[btps_group.TAKE_PROFIT].orders == []
             assert balance[btps_group.STOP].orders == []
             get_order_from_group_mock.assert_called_once()
@@ -223,7 +269,7 @@ async def test_get_balance(btps_group):
     with mock.patch.object(order_util, "is_stop_order", mock.Mock(return_value=True)) as is_stop_order_mock:
         with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
                                mock.Mock(return_value=[order_1, order_2])) as get_order_from_group_mock:
-            balance = btps_group._get_balance(order_1, None)
+            balance = btps_group._get_balance(order_1, None, False)
             assert balance[btps_group.TAKE_PROFIT].orders == []
             assert balance[btps_group.STOP].orders == [order_2]
             get_order_from_group_mock.assert_called_once()
@@ -278,7 +324,10 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
     side_balance.orders = [order_0_1, order_0_2, order_0_3]
     assert side_balance.get_actions_to_balance(decimal.Decimal("3.15545145441")) == {
         personal_data.BalancedTakeProfitAndStopOrderGroup.CANCEL: [order_0_1, order_0_2],
-        personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [],
+        personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
+            personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_0_3,
+            personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: None
+        }],
     }
     order_1 = order_mock(origin_quantity=decimal.Decimal("1"))
     order_2 = order_mock(origin_quantity=decimal.Decimal("6.42"))
@@ -316,6 +365,9 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_3,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: decimal.Decimal("2.9"),
+        },{
+            personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_4,
+            personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: None,
         }],
     }
     side_balance.orders = [order_1, order_4, order_2, order_3]
