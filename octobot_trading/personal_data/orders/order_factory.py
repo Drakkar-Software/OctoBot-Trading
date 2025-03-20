@@ -76,7 +76,8 @@ def create_order_instance(
     quantity_currency=None,
     close_position=False,
     exchange_creation_params=None,
-    associated_entry_id=None
+    associated_entry_id=None,
+    trailing_profile=None,
 ):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
@@ -106,6 +107,7 @@ def create_order_instance(
         exchange_creation_params=exchange_creation_params,
         associated_entry_id=associated_entry_id,
         trigger_above=trigger_above,
+        trailing_profile=trailing_profile,
     )
     return order
 

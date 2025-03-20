@@ -58,6 +58,8 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: None,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_market_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: None,
@@ -100,6 +102,8 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: None,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: None,
@@ -144,6 +148,8 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: None,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: sell_limit_order.order_id,
@@ -162,6 +168,10 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.associate_to_entry("3")
     buy_limit_order.update_with_triggering_order_fees = False
     buy_limit_order.trigger_above = True
+    buy_limit_order.trailing_profile = personal_data.FilledTakeProfitTrailingProfile([
+        personal_data.TrailingPriceStep(price, price, True)
+        for price in (10000, 12000, 13000)
+    ])
     final_order_desc = {
         enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
@@ -186,6 +196,9 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: order_group.name,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: personal_data.OneCancelsTheOtherOrderGroup.__name__,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value:
+            personal_data.FilledTakeProfitTrailingProfile.get_type().value,
+        enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: buy_limit_order.trailing_profile.to_dict(),
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: sell_limit_order.order_id,

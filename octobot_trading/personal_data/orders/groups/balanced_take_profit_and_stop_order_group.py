@@ -13,6 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+import typing
+
+import octobot_commons.logging
+
 import octobot_trading.personal_data.orders.order_group as order_group
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.constants as constants
@@ -35,6 +40,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
     CANCEL = "cancel"
     ORDER = "order"
     UPDATED_QUANTITY = "updated_quantity"
+    UPDATED_PRICE = "updated_price"
 
     def __init__(self, name, orders_manager):
         super().__init__(name, orders_manager)
@@ -49,7 +55,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         :param filled_order: the filled order
         :param ignored_orders: orders that should be ignored
         """
-        await self._balance_orders(filled_order, ignored_orders)
+        await self._balance_orders(filled_order, ignored_orders, True)
 
     async def on_cancel(self, cancelled_order, ignored_orders=None):
         """
@@ -59,7 +65,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         :param cancelled_order: the cancelled order
         :param ignored_orders: orders that should be ignored
         """
-        await self._balance_orders(cancelled_order, ignored_orders)
+        await self._balance_orders(cancelled_order, ignored_orders, False)
 
     def can_create_order(self, order_type, quantity):
         """
@@ -68,7 +74,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         :param quantity: quantity to put in order
         :return: True when an imbalance allows it
         """
-        balance = self._get_balance(None, None)
+        balance = self._get_balance(None, None, False)
         if order_util.is_stop_order(order_type):
             return balance[self.STOP].get_balance() + quantity <= balance[self.TAKE_PROFIT].get_balance()
         return balance[self.TAKE_PROFIT].get_balance() + quantity <= balance[self.STOP].get_balance()
@@ -79,7 +85,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         :param order_type: order type to create
         :return: the balancing quantity
         """
-        balance = self._get_balance(None, None)
+        balance = self._get_balance(None, None, False)
         if order_util.is_stop_order(order_type):
             max_quantity = balance[self.TAKE_PROFIT].get_balance() - balance[self.STOP].get_balance()
         else:
@@ -91,15 +97,15 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         # setting enabled to True will trigger an order balance
         await super().enable(enabled)
         if enabled:
-            await self._balance_orders(None, None)
+            await self._balance_orders(None, None, False)
 
-    async def _balance_orders(self, closed_order, ignored_orders):
+    async def _balance_orders(self, closed_order, ignored_orders, filled):
         if not self.enabled:
             return
         locally_balancing_orders = []
         try:
             updated_orders = False
-            balance = self._get_balance(closed_order, ignored_orders)
+            balance = self._get_balance(closed_order, ignored_orders, filled)
             locally_balancing_orders = balance[self.TAKE_PROFIT].orders + balance[self.STOP].orders
             self.balancing_orders += locally_balancing_orders
             take_profit_actions = balance[self.TAKE_PROFIT].get_actions_to_balance(balance[self.STOP].get_balance())
@@ -116,15 +122,32 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                     self.logger.error(f"Skipping order cancel: {err}")
                 updated_orders = True
             for update_data in take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]:
-                self.logger.info(f"Updating order quantity to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
-                                 f"order: {update_data[self.ORDER]}")
                 order = update_data[self.ORDER]
-                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
-                    await signals.edit_order(order.trader.exchange_manager,
-                                             signals.should_emit_trading_signal(order.trader.exchange_manager),
-                                             order,
-                                             edited_quantity=update_data[self.UPDATED_QUANTITY])
-                updated_orders = True
+                update_info = ""
+                edited_quantity = None
+                edited_price = None
+                if (
+                    update_data[self.UPDATED_QUANTITY] is not None
+                    and update_data[self.UPDATED_QUANTITY] != order.origin_quantity
+                ):
+                    update_info = f"Updating order quantity to {update_data[self.UPDATED_QUANTITY]} to keep balance. "
+                    edited_quantity = update_data[self.UPDATED_QUANTITY]
+                if self.UPDATED_PRICE in update_data and update_data[self.UPDATED_PRICE] != order.origin_price:
+                    update_info = f"{update_info}Updating price to {update_data[self.UPDATED_PRICE]}. "
+                    edited_price = update_data[self.UPDATED_PRICE]
+                if edited_quantity or edited_price:
+                    self.logger.info(f"{update_info}Order: {order}")
+                    async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                        await signals.edit_order(
+                            order.trader.exchange_manager,
+                            signals.should_emit_trading_signal(order.trader.exchange_manager),
+                            order,
+                            edited_quantity=edited_quantity,
+                            edited_price=edited_price
+                        )
+                    updated_orders = True
+                else:
+                    self.logger.info(f"Order already up-to-date, skipped editing: {order}")
             if not updated_orders:
                 self.logger.debug("Nothing to update, orders are already evenly balanced")
         except Exception as e:
@@ -137,11 +160,14 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                 if order not in locally_balancing_orders
             ]
 
-    def _get_balance(self, closed_order, ignored_orders):
-        balance = {
-            self.TAKE_PROFIT: _SideBalance(),
-            self.STOP: _SideBalance()
+    def _balances_factory(self, closed_order, filled):
+        return {
+            self.TAKE_PROFIT: SideBalance(closed_order, filled),
+            self.STOP: SideBalance(closed_order, filled)
         }
+
+    def _get_balance(self, closed_order, ignored_orders, filled):
+        balance = self._balances_factory(closed_order, filled)
         for order in self.get_group_open_orders():
             if (
                 order is not closed_order
@@ -155,8 +181,10 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         return balance
 
 
-class _SideBalance:
-    def __init__(self):
+class SideBalance:
+    def __init__(self, closed_order, filled):
+        self.closed_order = closed_order
+        self.are_closed_orders_filled = filled
         self.orders = []
 
     def add_order(self, order):
@@ -171,30 +199,47 @@ class _SideBalance:
             BalancedTakeProfitAndStopOrderGroup.UPDATE: [],
         }
         balance = self.get_balance()
+        balance_update_required = True
         if target_balance < constants.ZERO:
             target_balance = abs(target_balance)
         if balance <= target_balance:
-            # only reducing the current balance is possible
-            return actions
+            # only reducing the current balance might be possible
+            balance_update_required = False
         to_be_reduced_amount = constants.ZERO
         remaining_orders = list(self.orders)
-        while remaining_orders and balance - to_be_reduced_amount > target_balance:
-            order_quantity = remaining_orders[0].origin_quantity
-            if balance - to_be_reduced_amount - order_quantity >= target_balance:
-                # cancel order and keep reducing
-                actions[BalancedTakeProfitAndStopOrderGroup.CANCEL].append(remaining_orders.pop(0))
-                to_be_reduced_amount += order_quantity
-            else:
-                # update order and stop reducing
-                actions[BalancedTakeProfitAndStopOrderGroup.UPDATE].append({
-                    BalancedTakeProfitAndStopOrderGroup.ORDER: remaining_orders.pop(0),
-                    BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY:
-                        target_balance - (balance - to_be_reduced_amount - order_quantity)
-                })
-                break
+        if balance_update_required:
+            while remaining_orders and balance - to_be_reduced_amount > target_balance:
+                order_quantity = remaining_orders[0].origin_quantity
+                if balance - to_be_reduced_amount - order_quantity >= target_balance:
+                    # cancel order and keep reducing
+                    actions[BalancedTakeProfitAndStopOrderGroup.CANCEL].append(remaining_orders.pop(0))
+                    to_be_reduced_amount += order_quantity
+                else:
+                    # update order and stop reducing
+                    actions[BalancedTakeProfitAndStopOrderGroup.UPDATE].append(
+                        self.get_order_update(
+                            remaining_orders.pop(0),
+                            target_balance - (balance - to_be_reduced_amount - order_quantity)
+                        )
+                    )
+                    break
+        for order in remaining_orders:
+            # check for other kind of update if any
+            actions[BalancedTakeProfitAndStopOrderGroup.UPDATE].append(
+                self.get_order_update(order, None)
+            )
         return actions
+
+    def get_order_update(self, order, updated_quantity: typing.Optional[decimal.Decimal]) -> dict:
+        return {
+            BalancedTakeProfitAndStopOrderGroup.ORDER: order,
+            BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: updated_quantity
+        }
 
     def get_balance(self):
         if self.orders:
             return sum(order.origin_quantity for order in self.orders)
         return constants.ZERO
+
+    def get_logger(self):
+        return octobot_commons.logging.get_logger(self.__class__.__name__)

@@ -342,3 +342,9 @@ class InitializingError(Exception):
     """
     Raised when OctoBot is still in initialization
     """
+
+
+class ExhaustedTrailingProfileError(Exception):
+    """
+    Raised when a trailing profile has no new price to produce anymore
+    """

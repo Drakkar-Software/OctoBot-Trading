@@ -234,6 +234,17 @@ async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = Non
     return decimal.Decimal(str(mark_price))
 
 
+def get_potentially_outdated_price(exchange_manager, symbol: str) -> (decimal.Decimal, bool):
+    symbol_data = exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+        symbol, allow_creation=False
+    )
+    try:
+        return symbol_data.prices_manager.get_mark_price_no_wait(), True
+    except ValueError:
+        # outdated price, return it anyway
+        return symbol_data.prices_manager.mark_price, False
+
+
 async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
                              portfolio_type=commons_constants.PORTFOLIO_AVAILABLE,
                              target_price=None):

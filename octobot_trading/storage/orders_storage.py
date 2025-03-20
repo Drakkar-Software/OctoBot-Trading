@@ -170,6 +170,15 @@ def _get_group_dict(order):
         return {}
 
 
+def get_order_trailing_profile_dict(order):
+    if not order.trailing_profile:
+        return {}
+    return {
+        enums.StoredOrdersAttr.TRAILING_PROFILE_TYPE.value: order.trailing_profile.get_type().value,
+        enums.StoredOrdersAttr.TRAILING_PROFILE_DETAILS.value: order.trailing_profile.to_dict(),
+    }
+
+
 def _get_chained_orders(order, exchange_manager):
     if not order.chained_orders:
         return []
@@ -190,6 +199,7 @@ def _format_order(order, exchange_manager):
             (enums.StoredOrdersAttr.HAS_BEEN_BUNDLED, order.has_been_bundled),
             (enums.StoredOrdersAttr.ENTRIES, order.associated_entry_ids),
             (enums.StoredOrdersAttr.GROUP, _get_group_dict(order)),
+            (enums.StoredOrdersAttr.TRAILING_PROFILE, get_order_trailing_profile_dict(order)),
             (enums.StoredOrdersAttr.CHAINED_ORDERS, _get_chained_orders(order, exchange_manager)),
             (enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES, order.update_with_triggering_order_fees),
         ):

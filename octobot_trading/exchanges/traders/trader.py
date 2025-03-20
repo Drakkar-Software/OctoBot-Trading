@@ -205,10 +205,12 @@ class Trader(util.Initializable):
                     self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
                         order, is_new_order=False
                     )
+                    updated_price = edited_stop_price if edited_price is None else edited_price
                     changed = order.update(
                         order.symbol,
                         quantity=edited_quantity,
-                        price=edited_stop_price if edited_price is None else edited_price,
+                        price=updated_price,
+                        filled_price=updated_price,
                         stop_price=edited_stop_price,
                         current_price=edited_current_price,
                     )
@@ -310,6 +312,7 @@ class Trader(util.Initializable):
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
             updated_order.associated_entry_ids = new_order.associated_entry_ids
             updated_order.update_with_triggering_order_fees = new_order.update_with_triggering_order_fees
+            updated_order.trailing_profile = new_order.trailing_profile
 
             if is_pending_creation:
                 # register order as pending order, it will then be added to live orders in order manager once open

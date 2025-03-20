@@ -18,6 +18,7 @@ import octobot_commons.logging as logging
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums
 import octobot_trading.constants as constants
+import octobot_trading.storage as storage
 
 LOGGER = logging.get_logger(constants.API_LOGGER_TAG)
 
@@ -95,3 +96,7 @@ def get_minimal_order_cost(exchange_manager, symbol, default_price=None) -> floa
         exchange_manager.exchange.get_market_status(symbol, with_fixer=False),
         default_price=default_price
     )
+
+
+def get_order_trailing_profile_dict(order: personal_data.Order) -> dict:
+    return storage.get_order_trailing_profile_dict(order)

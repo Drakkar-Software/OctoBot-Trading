@@ -978,6 +978,7 @@ class TestTrader:
         )
         assert limit_buy.origin_quantity == decimal.Decimal("4")
         assert limit_buy.origin_price == decimal.Decimal("42")
+        assert limit_buy.filled_price == decimal.Decimal("42")  # simulated orders filled prices are synchronized
         assert limit_buy.origin_stop_price == decimal.Decimal("424")
         assert limit_buy.created_last_price == decimal.Decimal("4242")
         # also updated portfolio

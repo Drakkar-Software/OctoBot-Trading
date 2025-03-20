@@ -25,9 +25,19 @@ from octobot_trading.personal_data.orders.order_group import (
 from octobot_trading.personal_data.orders import groups
 from octobot_trading.personal_data.orders.groups import (
     BalancedTakeProfitAndStopOrderGroup,
+    TrailingOnFilledTPBalancedOrderGroup,
     OneCancelsTheOtherOrderGroup,
     get_group_class,
     get_or_create_order_group_from_storage_order_details,
+)
+from octobot_trading.personal_data.orders import trailing_profiles
+from octobot_trading.personal_data.orders.trailing_profiles import (
+    TrailingPriceStep,
+    TrailingProfile,
+    FilledTakeProfitTrailingProfile,
+    TrailingProfileTypes,
+    create_trailing_profile,
+    create_filled_take_profit_trailing_profile,
 )
 from octobot_trading.personal_data.orders import order
 from octobot_trading.personal_data.orders.order import (
@@ -90,6 +100,7 @@ from octobot_trading.personal_data.orders.order_util import (
     parse_is_pending_cancel,
     parse_is_open,
     get_up_to_date_price,
+    get_potentially_outdated_price,
     get_pre_order_data,
     get_portfolio_amounts,
     get_pnl_transaction_source_from_order,
@@ -165,6 +176,7 @@ __all__ = [
     "parse_is_pending_cancel",
     "parse_is_open",
     "get_up_to_date_price",
+    "get_potentially_outdated_price",
     "get_pre_order_data",
     "get_portfolio_amounts",
     "get_pnl_transaction_source_from_order",
@@ -183,9 +195,16 @@ __all__ = [
     "OrderState",
     "OrderGroup",
     "BalancedTakeProfitAndStopOrderGroup",
+    "TrailingOnFilledTPBalancedOrderGroup",
     "OneCancelsTheOtherOrderGroup",
     "get_group_class",
     "get_or_create_order_group_from_storage_order_details",
+    "TrailingPriceStep",
+    "TrailingProfile",
+    "FilledTakeProfitTrailingProfile",
+    "TrailingProfileTypes",
+    "create_trailing_profile",
+    "create_filled_take_profit_trailing_profile",
     "OrdersUpdater",
     "adapt_price",
     "get_minimal_order_amount",
