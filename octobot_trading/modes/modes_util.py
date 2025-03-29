@@ -76,10 +76,15 @@ def get_assets_requiring_extra_price_data_to_convert(exchange_manager, sellable_
 async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, target_asset: str, tickers: dict) -> list:
     created_orders = []
     for asset in sorted(sellable_assets):
-        new_orders = await convert_asset_to_target_asset(
-            trading_mode, asset, target_asset, tickers, asset_amount=None
-        )
-        created_orders += new_orders
+        try:
+            new_orders = await convert_asset_to_target_asset(
+                trading_mode, asset, target_asset, tickers, asset_amount=None
+            )
+            created_orders += new_orders
+        except KeyError as err:
+            trading_mode.logger.exception(
+                err, True, f"Impossible to convert {asset} into {target_asset}: missing {err} market status"
+            )
     return created_orders
 
 

@@ -17,6 +17,8 @@ import mock
 import pytest
 import decimal
 
+from more_itertools.more import side_effect
+
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
 import octobot_trading.enums as trading_enums
@@ -88,6 +90,13 @@ async def test_convert_assets_to_target_asset():
         orders = await modes_util.convert_assets_to_target_asset(trading_mode, [], target_asset, {"tickers": {}})
         convert_asset_to_target_asset.assert_not_called()
         assert orders == []
+
+    with mock.patch.object(
+        modes_util, "convert_asset_to_target_asset", mock.AsyncMock(side_effect=KeyError)
+    ) as convert_asset_to_target_asset:
+        trading_mode = mock.Mock()
+        assert await modes_util.convert_assets_to_target_asset(trading_mode, sellable_assets, target_asset, tickers) == []
+        assert convert_asset_to_target_asset.call_count == len(sellable_assets)
 
 
 async def test_convert_asset_to_target_asset(backtesting_trader):
