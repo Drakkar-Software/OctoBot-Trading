@@ -649,7 +649,7 @@ async def test_update_from_order_storage(trader_simulator):
                  current_price=decimal.Decimal("70"),
                  quantity=decimal.Decimal("10"),
                  price=decimal.Decimal("70"),
-                 exchange_order_id="PLOP")
+                 exchange_order_id="PLOP",)
     origin_tag = order.tag
     origin_trader_creation_kwargs = order.trader_creation_kwargs
     origin_exchange_creation_params = order.exchange_creation_params
@@ -691,6 +691,7 @@ async def test_update_from_order_storage(trader_simulator):
             enums.ExchangeConstantsOrderColumns.ID.value: "11a",
             enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: "eee1",
             enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: True,
+            enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "taker",
         },
         enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop2": 1},
         enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value: {"ex": 2, "gg": "yesyes"},
@@ -703,6 +704,7 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.exchange_creation_params == {"ex": 2, "gg": "yesyes"} != origin_exchange_creation_params
     assert order.order_id == "11a" != origin_order_id
     assert order.broker_applied is True
+    assert order.taker_or_maker == "taker"
     assert order.exchange_order_id == "eee1" != origin_exchange_order_id
     assert order.has_been_bundled is True is not origin_has_been_bundled
     assert order.associated_entry_ids == ["ABC", "2"] != origin_associated_entry_ids

@@ -35,6 +35,9 @@ class MarketOrder(order_class.Order):
         self.update_order_filled_values(self.created_last_price)
         order_class.Order.on_fill_actions(self)
 
+    def _should_instant_fill(self):
+        return True
+
     def can_be_edited(self):
         # instantly filled orders can't be edited
         return False

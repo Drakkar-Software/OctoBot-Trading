@@ -256,13 +256,13 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=decimal.Decimal(str(50)),
+                     current_price=decimal.Decimal(str(51)),
                      quantity=decimal.Decimal(str(2)),
                      price=decimal.Decimal(str(50)))
     limit_buy_2 = BuyLimitOrder(trader)
     limit_buy_2.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=decimal.Decimal(str(50)),
+                       current_price=decimal.Decimal(str(51)),
                        quantity=decimal.Decimal(str(2)),
                        price=decimal.Decimal(str(50)))
 
