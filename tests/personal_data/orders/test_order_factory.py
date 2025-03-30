@@ -174,6 +174,7 @@ class TestOrderFactory:
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("70"))
             order.trigger_above = True
+            assert order.taker_or_maker == "taker"  # instantly filled limit order taker fee is saved
             order_storage_details = orders_storage._format_order(order, exchange_manager)
             order_storage_details[StoredOrdersAttr.ENTRIES.value] = ["11111"]
 
@@ -189,6 +190,7 @@ class TestOrderFactory:
             assert created_order.creation_time == order.creation_time
             assert created_order.origin_price == order.origin_price
             assert created_order.trigger_above is order.trigger_above is True
+            assert created_order.taker_or_maker == "taker"  # instantly filled limit order taker fee is saved
             assert created_order.__class__ is order.__class__
             # associated_entry_ids are added from order_storage_details but not in original order
             assert created_order.associated_entry_ids == ["11111"]

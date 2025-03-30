@@ -50,6 +50,10 @@ class TrailingStopOrder(order_class.Order):
         self.trailing_percent = trailing_percent
         await self._reset_events(self.origin_price, self.creation_time)
 
+
+    def _should_instant_fill(self):
+        return True
+
     async def _reset_events(self, new_price, new_price_time):
         """
         Reset events and tasks

@@ -107,8 +107,23 @@ class LimitOrder(order_class.Order):
         await asyncio.wait_for(self.limit_price_hit_event.wait(), timeout=None)
         await self.on_fill()
 
+    def _should_instant_fill(self):
+        if self._get_limit_price() and self.created_last_price:
+            if self.trigger_above:
+                # instant fill if order price is lower or equal to market price: ex spot sell order
+                return self._get_limit_price() <= self.created_last_price
+            # instant fill if order price is higher or equal to market price: ex spot buy order
+            return self._get_limit_price() >= self.created_last_price
+        return False
+
+    def _get_limit_price(self):
+        return self.origin_price
+
     def _filled_maker_or_taker(self):
-        return enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+        return (
+            enums.ExchangeConstantsMarketPropertyColumns.TAKER if self._should_instant_fill()
+            else enums.ExchangeConstantsMarketPropertyColumns.MAKER
+        ).value
 
     def on_fill_actions(self):
         self.taker_or_maker = self._filled_maker_or_taker()

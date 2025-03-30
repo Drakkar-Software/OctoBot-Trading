@@ -790,6 +790,9 @@ class Order(util.Initializable):
         self.order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.ID.value, self.order_id)
         self.exchange_order_id = order_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value,
                                                 self.exchange_order_id)
+        self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns(
+            order_dict[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
+        ).value if order_dict.get(enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value) else self.taker_or_maker
         self.trader_creation_kwargs = order_details.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value,
                                                         self.trader_creation_kwargs)
         self.exchange_creation_params = order_details.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value,
@@ -866,6 +869,11 @@ class Order(util.Initializable):
             self.exchange_order_type = enums.TradeOrderType.UNKNOWN
         self.side, self.order_type = parse_order_type(raw_order)
 
+
+    def _should_instant_fill(self):
+        # default implementation, to be overridden in subclasses
+        return False
+
     def _update_taker_maker(self):
         if self.order_type in [enums.TraderOrderType.SELL_MARKET,
                                enums.TraderOrderType.BUY_MARKET,
@@ -874,8 +882,10 @@ class Order(util.Initializable):
             self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         else:
             # true 90% of the time: impossible to know for sure the reality
-            # (should only be used for simulation anyway)
-            self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+            self.taker_or_maker = (
+                enums.ExchangeConstantsMarketPropertyColumns.TAKER if self._should_instant_fill()
+                else enums.ExchangeConstantsMarketPropertyColumns.MAKER
+            ).value
 
     def to_dict(self):
         filled_price = self.filled_price if self.filled_price > 0 else self.origin_price
@@ -899,6 +909,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value: self.trigger_above,
             enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
             enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: self.broker_applied,
+            enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: self.taker_or_maker,
         }
 
     def clear(self):
