@@ -108,16 +108,15 @@ class LimitOrder(order_class.Order):
         await self.on_fill()
 
     def _should_instant_fill(self):
-        if self._get_limit_price() and self.created_last_price:
+        open_price = self._get_open_price()
+        filling_price = self._get_filling_price()
+        if filling_price and open_price:
             if self.trigger_above:
                 # instant fill if order price is lower or equal to market price: ex spot sell order
-                return self._get_limit_price() <= self.created_last_price
+                return filling_price <= open_price
             # instant fill if order price is higher or equal to market price: ex spot buy order
-            return self._get_limit_price() >= self.created_last_price
+            return filling_price >= open_price
         return False
-
-    def _get_limit_price(self):
-        return self.origin_price
 
     def _filled_maker_or_taker(self):
         return (

@@ -278,6 +278,7 @@ async def test_set_as_chained_order(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 
     base_order = personal_data.Order(trader_inst)
+    base_order.taker_or_maker = None
 
     with pytest.raises(errors.ConflictingOrdersError):
         await base_order.set_as_chained_order(base_order, True, {}, True)
@@ -286,6 +287,7 @@ async def test_set_as_chained_order(trader_simulator):
     assert base_order.update_with_triggering_order_fees is False
     assert base_order.status is enums.OrderStatus.OPEN
     assert base_order.state is None
+    assert base_order.taker_or_maker is None
 
     chained_order = personal_data.Order(trader_inst)
     await chained_order.set_as_chained_order(base_order, True, {}, True)
@@ -293,6 +295,7 @@ async def test_set_as_chained_order(trader_simulator):
     assert chained_order.has_been_bundled is True
     assert base_order.update_with_triggering_order_fees is False
     assert chained_order.update_with_triggering_order_fees is True
+    assert chained_order.taker_or_maker == "maker"
     assert chained_order.status is enums.OrderStatus.PENDING_CREATION
     assert isinstance(chained_order.state, personal_data.PendingCreationOrderState)
 

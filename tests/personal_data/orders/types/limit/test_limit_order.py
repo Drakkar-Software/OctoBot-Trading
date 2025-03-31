@@ -116,3 +116,20 @@ async def test_update_price_if_outdated(backtesting_buy_and_sell_limit_orders):
                 trading_constants.ONE - trading_constants.CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE
             )
         )
+
+async def test_filled_maker_or_taker(backtesting_buy_and_sell_limit_orders):
+    buy_limit_order, sell_limit_order = backtesting_buy_and_sell_limit_orders
+    buy_order_price = decimal.Decimal("100")
+    buy_limit_order.update(
+        price=buy_order_price,
+        quantity=decimal_random_quantity(max_value=DEFAULT_MARKET_QUANTITY / buy_order_price),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+    )
+    assert buy_limit_order._filled_maker_or_taker() == enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+    buy_limit_order.created_last_price = decimal.Decimal("99")
+    assert buy_limit_order._filled_maker_or_taker() == enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+    await buy_limit_order.set_as_chained_order(sell_limit_order, False, {}, False)
+    sell_limit_order.origin_price = decimal.Decimal("101")
+    # now uses trigger order filling price
+    assert buy_limit_order._filled_maker_or_taker() == enums.ExchangeConstantsMarketPropertyColumns.MAKER.value

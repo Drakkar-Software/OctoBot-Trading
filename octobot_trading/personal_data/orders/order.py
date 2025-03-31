@@ -589,6 +589,8 @@ class Order(util.Initializable):
         if triggered_by is self:
             raise errors.ConflictingOrdersError("Impossible to chain an order to itself")
         self.triggered_by = triggered_by
+        # update forecasted fees as initial price will now be the triggered_by filling price
+        self._update_taker_maker()
         self.update_with_triggering_order_fees = update_with_triggering_order_fees
         self.has_been_bundled = has_been_bundled
         self.exchange_creation_params = exchange_creation_params
@@ -869,6 +871,13 @@ class Order(util.Initializable):
             self.exchange_order_type = enums.TradeOrderType.UNKNOWN
         self.side, self.order_type = parse_order_type(raw_order)
 
+    def _get_open_price(self):
+        if self.triggered_by is None:
+            return self.created_last_price
+        return self.triggered_by._get_filling_price()  # pylint: disable=protected-access
+
+    def _get_filling_price(self):
+        return self.origin_price
 
     def _should_instant_fill(self):
         # default implementation, to be overridden in subclasses
