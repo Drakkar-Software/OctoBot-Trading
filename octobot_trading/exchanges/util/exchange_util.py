@@ -399,7 +399,7 @@ def update_raw_order_from_raw_trade(order_to_update, raw_trade):
         enums.ExchangeConstantsOrderColumns.PRICE.value)
     order_to_update[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] = order_to_update.get(
         enums.ExchangeConstantsOrderColumns.TIMESTAMP.value,
-        raw_trade[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
+        raw_trade.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value))
     order_to_update[enums.ExchangeConstantsOrderColumns.STATUS.value] = enums.OrderStatus.FILLED.value
     order_to_update[enums.ExchangeConstantsOrderColumns.FILLED.value] = raw_trade.get(
         enums.ExchangeConstantsOrderColumns.AMOUNT.value)
@@ -409,6 +409,12 @@ def update_raw_order_from_raw_trade(order_to_update, raw_trade):
     order_to_update[
         enums.ExchangeConstantsOrderColumns.FEE.value
     ] = raw_trade.get(enums.ExchangeConstantsOrderColumns.FEE.value)
+    order_to_update[
+        enums.ExchangeConstantsOrderColumns.TAG.value
+    ] = raw_trade.get(enums.ExchangeConstantsOrderColumns.TAG.value)
+    order_to_update[
+        enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value
+    ] = raw_trade.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False)
     return order_to_update
 
 
