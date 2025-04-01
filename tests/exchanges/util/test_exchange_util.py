@@ -19,7 +19,7 @@ import mock
 import trading_backend.exchanges
 import octobot_commons.constants as commons_constants
 import octobot_commons.configuration as commons_configuration
-import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 
@@ -251,3 +251,44 @@ def test_is_error_on_this_type():
     assert exchange_util.is_error_on_this_type(Exception("api key doesn't exist"), errors) is True
     assert exchange_util.is_error_on_this_type(Exception("api"), errors) is False
     assert exchange_util.is_error_on_this_type(Exception("api"), errors) is False
+
+
+def test_update_raw_order_from_raw_trade():
+    required_keys = [
+        enums.ExchangeConstantsOrderColumns.INFO,
+        enums.ExchangeConstantsOrderColumns.EXCHANGE_ID,
+        enums.ExchangeConstantsOrderColumns.SYMBOL,
+        enums.ExchangeConstantsOrderColumns.TYPE,
+        enums.ExchangeConstantsOrderColumns.AMOUNT,
+        enums.ExchangeConstantsOrderColumns.DATETIME,
+        enums.ExchangeConstantsOrderColumns.SIDE,
+        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER,
+        enums.ExchangeConstantsOrderColumns.PRICE,
+        enums.ExchangeConstantsOrderColumns.TIMESTAMP,
+        enums.ExchangeConstantsOrderColumns.STATUS,
+        enums.ExchangeConstantsOrderColumns.FILLED,
+        enums.ExchangeConstantsOrderColumns.COST,
+        enums.ExchangeConstantsOrderColumns.REMAINING,
+        enums.ExchangeConstantsOrderColumns.FEE,
+        enums.ExchangeConstantsOrderColumns.TAG,
+        enums.ExchangeConstantsOrderColumns.REDUCE_ONLY,
+    ]
+    default_value = exchange_util.update_raw_order_from_raw_trade({}, {})
+    assert all(key.value in default_value for key in required_keys)
+    with_trade_values = exchange_util.update_raw_order_from_raw_trade(
+        {}, {**{k.value: k.name for k in required_keys}, **{
+            enums.ExchangeConstantsOrderColumns.ORDER.value: "EXCHANGE_ID",
+            enums.ExchangeConstantsOrderColumns.AMOUNT.value: "AMOUNT",
+        }}
+    )
+    for key in required_keys:
+        if key == enums.ExchangeConstantsOrderColumns.STATUS:
+            assert with_trade_values[key.value] == enums.OrderStatus.FILLED.value
+        elif key == enums.ExchangeConstantsOrderColumns.REMAINING:
+            assert with_trade_values[key.value] == 0
+        elif key == enums.ExchangeConstantsOrderColumns.FILLED:
+            assert with_trade_values[key.value] == "AMOUNT"
+        elif key == enums.ExchangeConstantsOrderColumns.EXCHANGE_ID:
+            assert with_trade_values[key.value] == "EXCHANGE_ID"
+        else:
+            assert with_trade_values[key.value] == key.name
