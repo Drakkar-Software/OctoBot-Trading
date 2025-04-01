@@ -29,6 +29,7 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 import octobot_trading.personal_data.orders.states.fill_order_state as fill_order_state
+import octobot_trading.personal_data.orders.order as order_import
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -374,6 +375,42 @@ def get_fees_for_currency(fee, currency):
     if fee and fee[enums.FeePropertyColumns.CURRENCY.value] == currency:
         return decimal.Decimal(str(fee[enums.FeePropertyColumns.COST.value]))
     return constants.ZERO
+
+
+def get_order_locked_amount(order: order_import.Order) -> decimal.Decimal:
+    # take fees into account when in locked asset
+    # ( a BTC/USDT order with USDT fees need to lock USDT fees to be able to pay them)
+    forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=not order.is_filled())
+    base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
+    # when buy order
+    if order.side == enums.TradeOrderSide.BUY:
+        return order.origin_quantity * order.origin_price + get_fees_for_currency(forecasted_fees, quote)
+    # when sell order
+    return order.origin_quantity + get_fees_for_currency(forecasted_fees, base)
+
+
+def get_orders_locked_amounts_by_asset(open_orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:
+    if not open_orders:
+        return {}
+    locked_funds_by_asset = {}
+    for order in open_orders:
+        base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
+        # use get_order_locked_amount just like trader simulator to ensure locked funds integrity
+        if order.side == enums.TradeOrderSide.BUY:
+            # buy orders only lock fees in quote
+            locked_quote = get_order_locked_amount(order)
+            if quote not in locked_funds_by_asset:
+                locked_funds_by_asset[quote] = locked_quote
+            else:
+                locked_funds_by_asset[quote] += locked_quote
+        else:
+            # sell orders only lock fees in base
+            locked_base = get_order_locked_amount(order)
+            if base not in locked_funds_by_asset:
+                locked_funds_by_asset[base] = locked_base
+            else:
+                locked_funds_by_asset[base] += locked_base
+    return locked_funds_by_asset
 
 
 def parse_raw_fees(raw_fees):

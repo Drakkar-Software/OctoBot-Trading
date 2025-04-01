@@ -281,11 +281,12 @@ def _resolve_sub_portfolio(
     resolved_content = {}
     funds_deltas = {}
     missing_funds = {}
-    forecasted_sub_portfolio_content = sub_portfolio.get_content_after_deltas()
     missing_amount_by_asset = {}
+    forecasted_sub_portfolio_content = sub_portfolio.get_content_after_deltas()
     for asset_name, holdings in forecasted_sub_portfolio_content.items():
         missing_amount_in_asset = _resolve_sub_portfolio_asset(
-            asset_name, holdings, remaining_master_portfolio, resolved_content, forbidden_filling_assets
+            asset_name, holdings, remaining_master_portfolio, resolved_content,
+            sub_portfolio.locked_funds_by_asset.get(asset_name, constants.ZERO), forbidden_filling_assets
         )
         if missing_amount_in_asset > constants.ZERO:
             missing_amount_by_asset[asset_name] = missing_amount_in_asset
@@ -309,47 +310,80 @@ def _resolve_sub_portfolio(
 
 
 def _resolve_sub_portfolio_asset(
-    asset_name, holdings, remaining_master_portfolio, resolved_content, forbidden_filling_assets
+    asset_name: str,
+    holdings: dict[str, decimal.Decimal],
+    remaining_master_portfolio: sub_portfolio_data.SubPortfolioData,
+    resolved_content: dict[str, dict[str, decimal.Decimal]],
+    locked_funds: decimal.Decimal,
+    forbidden_filling_assets: list[str]
 ) -> decimal.Decimal:
-    required_amount = holdings[commons_constants.PORTFOLIO_TOTAL]
+    required_total_amount = holdings[commons_constants.PORTFOLIO_TOTAL]
+    required_available_amount = holdings[commons_constants.PORTFOLIO_TOTAL] - locked_funds
     missing_amount_in_asset = constants.ZERO
     if asset_name in remaining_master_portfolio.content and asset_name not in forbidden_filling_assets:
         remaining_master_holding = remaining_master_portfolio.content[asset_name]
-        # for now only handle available value (ignore funds in orders)
+        # available = total - locked_funds
+        remaining_total = remaining_master_holding[commons_constants.PORTFOLIO_TOTAL]
         remaining_available = remaining_master_holding[commons_constants.PORTFOLIO_AVAILABLE]
-        if remaining_available >= required_amount * (constants.ONE - constants.SUB_PORTFOLIO_ALLOWED_MISSING_RATIO):
-            sub_portfolio_amount = min(remaining_available, required_amount)
+        allowed_missing_ratio_multiplier = constants.ONE - constants.SUB_PORTFOLIO_ALLOWED_MISSING_RATIO
+        if remaining_total < locked_funds * allowed_missing_ratio_multiplier:
+            # should never happen, log it in case it does
+            commons_logging.get_logger(__name__).error(
+                f"Unexpected missing locked {asset_name} funds in total portfolio {remaining_total=} {locked_funds=}"
+            )
+        # As orders are still open, their funds must be locked. Therefore, only consider available funds
+        if remaining_available >= required_available_amount * allowed_missing_ratio_multiplier:
+            if remaining_total < required_total_amount * allowed_missing_ratio_multiplier:
+                # should never happen, log it in case it does
+                commons_logging.get_logger(__name__).error(
+                    f"Unexpected missing total {asset_name} value in portfolio: ensure order funds really locked"
+                )
+            sub_portfolio_total_amount = min(remaining_total, required_total_amount)
+            # Do not use remaining_available or remaining_available here to avoid side effects due to locked fees
+            # on some exchanges and not on others. Only compute from total holdings.
+            # ex: coinbase locks 101 USDC to buy for 100 USDC + 1 USDC fee,
+            # binance will just lock 100 and given less of the bought asset
+            sub_portfolio_available_amount = sub_portfolio_total_amount - locked_funds
             # assets are available in master portfolio: reduce it from master
             if asset_name in resolved_content:
-                resolved_content[asset_name][commons_constants.PORTFOLIO_TOTAL] += sub_portfolio_amount
-                resolved_content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] += sub_portfolio_amount
+                resolved_content[asset_name][commons_constants.PORTFOLIO_TOTAL] += sub_portfolio_total_amount
+                resolved_content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] += sub_portfolio_available_amount
             else:
                 resolved_content[asset_name] = {
-                    commons_constants.PORTFOLIO_TOTAL: sub_portfolio_amount,
-                    commons_constants.PORTFOLIO_AVAILABLE: sub_portfolio_amount,
+                    commons_constants.PORTFOLIO_TOTAL: sub_portfolio_total_amount,
+                    commons_constants.PORTFOLIO_AVAILABLE: sub_portfolio_available_amount,
                 }
-            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_TOTAL] -= sub_portfolio_amount
-            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] -= sub_portfolio_amount
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_TOTAL] -= sub_portfolio_total_amount
+            # don't make remaining available negative
+            removed_portfolio_available_amount = min(remaining_available, sub_portfolio_available_amount)
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] -= removed_portfolio_available_amount
         else:
-            # not enough assets in master portfolio
+            # As orders are still open, their funds must be locked. Therefore, only consider available funds
+            # Not enough assets in master portfolio
+            usable_total = min(remaining_total, remaining_available + locked_funds)
             if asset_name in resolved_content:
-                resolved_content[asset_name][commons_constants.PORTFOLIO_TOTAL] += remaining_available
+                resolved_content[asset_name][commons_constants.PORTFOLIO_TOTAL] += usable_total
                 resolved_content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] += remaining_available
             else:
                 resolved_content[asset_name] = {
-                    commons_constants.PORTFOLIO_TOTAL: remaining_available,
+                    commons_constants.PORTFOLIO_TOTAL: usable_total,
                     commons_constants.PORTFOLIO_AVAILABLE: remaining_available,
                 }
-            missing_amount_in_asset = abs(remaining_available - required_amount)
-            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_TOTAL] -= remaining_available
+            missing_amount_in_asset = abs(remaining_available - required_available_amount)
+            remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_TOTAL] -= usable_total
             remaining_master_portfolio.content[asset_name][commons_constants.PORTFOLIO_AVAILABLE] -= remaining_available
     else:
+        if locked_funds > constants.ZERO:
+            # should never happen, log it in case it does
+            commons_logging.get_logger(__name__).error(
+                f"Unexpected missing {asset_name} value in portfolio but {locked_funds=}"
+            )
         resolved_content[asset_name] = {
             commons_constants.PORTFOLIO_TOTAL: constants.ZERO,
             commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO,
         }
         # asset not in master portfolio (anymore):
-        missing_amount_in_asset = required_amount
+        missing_amount_in_asset = required_available_amount
     return missing_amount_in_asset
 
 
@@ -473,7 +507,7 @@ def get_portfolio_filled_orders_deltas(
             ignored_deltas[asset_name] = holdings_delta
         elif abs(min_allowed_equivalent_total_holding) > abs(order_asset_delta):
             # too much in portfolio delta: only take what is linked to the orders deltas
-            # todo: handle available assets when taking open orders into account (now set both available and total)
+            # => updates both total and available
             orders_linked_deltas[asset_name] = {
                 key: order_asset_delta
                 for key in holdings_delta
