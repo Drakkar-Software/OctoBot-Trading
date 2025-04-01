@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.logging as logging
 
 import octobot_trading.personal_data as personal_data
@@ -100,3 +102,7 @@ def get_minimal_order_cost(exchange_manager, symbol, default_price=None) -> floa
 
 def get_order_trailing_profile_dict(order: personal_data.Order) -> dict:
     return storage.get_order_trailing_profile_dict(order)
+
+
+def get_orders_locked_amounts_by_asset(open_orders: list[personal_data.Order]) -> dict[str, decimal.Decimal]:
+    return personal_data.get_orders_locked_amounts_by_asset(open_orders)

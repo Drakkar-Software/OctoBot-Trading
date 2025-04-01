@@ -71,22 +71,16 @@ class SpotPortfolio(portfolio_class.Portfolio):
         """
         multiplier = constants.ONE if is_new_order else -constants.ONE
 
-        # take fees into account when in locked asset
-        # ( a BTC/USDT order with USDT fees need to lock USDT fees to be able to pay them)
-        forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=not order.is_filled())
-        base_fees = order_util.get_fees_for_currency(forecasted_fees, order.currency)
-        quote_fees = order_util.get_fees_for_currency(forecasted_fees, order.market)
-
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = - (order.origin_quantity * order.origin_price + quote_fees) * multiplier
+            new_quantity = - order_util.get_order_locked_amount(order) * multiplier
             self._update_portfolio_data(order.market,
                                         available_value=new_quantity,
                                         total_value=constants.ZERO)
 
         # when sell order
         else:
-            new_quantity = - (order.origin_quantity + base_fees) * multiplier
+            new_quantity = - order_util.get_order_locked_amount(order) * multiplier
             self._update_portfolio_data(order.currency,
                                         available_value=new_quantity,
                                         total_value=constants.ZERO)
