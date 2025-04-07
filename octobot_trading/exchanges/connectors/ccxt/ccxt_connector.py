@@ -397,8 +397,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return self.adapter.adapt_public_recent_trades(
                     await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
                 )
-        except ccxt.NotSupported:
-            raise octobot_trading.errors.NotSupported
+        except (ccxt.NotSupported, ccxt.ArgumentsRequired) as err:
+            raise octobot_trading.errors.NotSupported(err)
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(
                 f"Failed to get_recent_trades {html_util.get_html_summary_if_relevant(e)}"
@@ -553,7 +553,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
-
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_buy_order_with_cost(self, symbol, cost: float, quantity: float, params=None) -> dict:
         return self.adapter.adapt_order(
@@ -561,7 +560,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.create_market_buy_order_with_cost(symbol, cost, params=params),
             symbol=symbol, quantity=quantity
         )
-
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:

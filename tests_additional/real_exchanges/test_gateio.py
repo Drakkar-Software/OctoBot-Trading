@@ -48,7 +48,7 @@ class TestGateIORealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(5500, 6000)
+        await self.inner_test_active_symbols(5500, 5500)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():

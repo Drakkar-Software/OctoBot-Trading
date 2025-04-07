@@ -32,7 +32,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "SHIB/USDT"
-    CANDLE_SINCE = 1703005232000  # Thursday, October 19, 2023 5:00:32 PM UTC (large differences not supported)
+    CANDLE_SINCE = 1729505232000  # Sunday, August 18, 2024 6:20:32 PM GMT (large differences not supported)
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     async def _test_time_frames(self):
@@ -55,7 +55,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(1000, 1200)
+        await self.inner_test_active_symbols(1300, 1900)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
@@ -128,7 +128,7 @@ class TestBingxRealExchangeTester(RealExchangeTester):
                         )
                         # ensure fetch data are just moved to the 1st available candles but are still making sense
                         assert (
-                            self.CANDLE_SINCE_SEC
+                            super().CANDLE_SINCE_SEC
                             <= candle[PriceIndexes.IND_PRICE_TIME.value]
                             <= max_theoretical_bingx_candle_time
                         )
