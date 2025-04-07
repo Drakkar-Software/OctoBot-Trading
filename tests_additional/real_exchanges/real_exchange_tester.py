@@ -412,8 +412,12 @@ class RealExchangeTester:
             # => set expect_invalid_price_limit_values to True in call and
             # remove price limit in exchange tentacle market status fixer if this is the case
             if has_price_limit_value:
-                assert (not has_price_limit_value) or low_price_max >= min_price >= low_price_min
-            assert (not has_cost_limit_value) or low_cost_max >= min_cost >= low_cost_min
+                assert (not has_price_limit_value) or low_price_max >= min_price >= low_price_min, (
+                    f"FALSE: {low_price_max} >= {min_price} >= {low_price_min}"
+                )
+            assert (not has_cost_limit_value) or low_cost_max >= min_cost >= low_cost_min, (
+                    f"FALSE: {low_cost_max} >= {min_cost} >= {min_cost}"
+                )
         else:
             if has_price_limit_value:
                 assert (not has_price_limit_value) or normal_price_max >= min_price >= normal_price_min

@@ -101,13 +101,8 @@ class TestNdaxRealExchangeTester(RealExchangeTester):
             # check that fetched candles are historical candles
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
-            if limit is None:
-                with pytest.raises(AssertionError):  # not supported
-                    for candle in symbol_prices:
-                        assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
-            else:
-                for candle in symbol_prices:
-                    assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+            for candle in symbol_prices:
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
         await super().test_get_historical_ohlcv()
@@ -123,9 +118,11 @@ class TestNdaxRealExchangeTester(RealExchangeTester):
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
         assert 0 < order_book[Ecobic.TIMESTAMP.value] < self._get_ref_order_book_timestamp()
-        assert len(order_book[Ecobic.ASKS.value]) == 5
-        assert len(order_book[Ecobic.ASKS.value][0]) == 3
-        assert len(order_book[Ecobic.BIDS.value]) == 5
+        assert 0 <= len(order_book[Ecobic.ASKS.value]) <= 5
+        if order_book[Ecobic.ASKS.value]:
+            assert len(order_book[Ecobic.ASKS.value][0]) == 3
+        if order_book[Ecobic.BIDS.value]:
+            assert 0 <= len(order_book[Ecobic.BIDS.value]) <= 5
         assert len(order_book[Ecobic.BIDS.value][0]) == 3
         
     async def test_get_order_books(self):

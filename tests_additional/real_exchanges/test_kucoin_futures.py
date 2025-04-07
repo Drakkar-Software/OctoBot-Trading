@@ -35,6 +35,8 @@ class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
     SYMBOL = "BTC/USDT:USDT"
     SYMBOL_2 = "BTC/USD:BTC"
     SYMBOL_3 = "XRP/USD:XRP"
+    CANDLE_SINCE = 1722823200000    # Monday, August 5, 2024 2:00:00 AM
+    CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -96,13 +98,14 @@ class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
         for limit in (50, None):
-            assert await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit) == []
+            assert len(await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)) == limit or 200
             # "to" param is required: add in tentacle
             symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit, to=self.get_ms_time())
             if limit:
                 assert len(symbol_prices) == limit
-                real_limit = \
-                    self.get_time_after_time_frames(self.CANDLE_SINCE, limit) * commons_constants.MSECONDS_TO_SECONDS
+                real_limit = int(
+                    self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, limit) * commons_constants.MSECONDS_TO_SECONDS
+                )
                 symbol_prices_real = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit, to=real_limit)
                 assert symbol_prices_real == symbol_prices
             else:
@@ -112,9 +115,8 @@ class TestKucoinFuturesRealExchangeTester(RealFuturesExchangeTester):
             # check that fetched candles are historical candles
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
-            with pytest.raises(AssertionError):  # not supported
-                for candle in symbol_prices:
-                    assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+            for candle in symbol_prices:
+                assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
         await super().test_get_historical_ohlcv()

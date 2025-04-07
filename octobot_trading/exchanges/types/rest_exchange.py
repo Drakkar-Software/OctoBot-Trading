@@ -457,7 +457,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         ) -> dict:
         return await self.connector.create_limit_buy_order(
             symbol, quantity, price, params=params
-            )
+        )
 
     async def _create_market_sell_order(
         self, symbol, quantity, price=None, reduce_only: bool = False, params=None
