@@ -30,7 +30,7 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestBitfinexRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "bitfinex2"
+    EXCHANGE_NAME = "bitfinex"
     SYMBOL = "BTC/USD"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
@@ -54,7 +54,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(500, 500)
+        await self.inner_test_active_symbols(400, 400)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
@@ -137,7 +137,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        # bitfinex2 only supports 1, 25 and 100 size
+        # bitfinex only supports 1, 25 and 100 size
         # https://docs.bitfinex.com/reference#rest-public-book
         order_book = await self.get_order_book(limit=25)
         assert 0 < order_book[Ecobic.TIMESTAMP.value] < self._get_ref_order_book_timestamp()

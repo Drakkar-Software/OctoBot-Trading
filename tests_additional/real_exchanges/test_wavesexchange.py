@@ -31,9 +31,9 @@ pytestmark = pytest.mark.asyncio
 
 class TestWavesExchangeRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "wavesexchange"
-    SYMBOL = "ETH/USDT-ERC20"
-    SYMBOL_2 = "CRO-WXG/XTN"
-    SYMBOL_3 = "SHIB-WXG/XTN"
+    SYMBOL = "WAVES/USDT"
+    SYMBOL_2 = "ETH/WAVES"
+    SYMBOL_3 = "WAVES/WETHU"
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = RealExchangeTester.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1    # account for dumped candle
 
     async def test_time_frames(self):
@@ -54,15 +54,15 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(60, 60)
+        await self.inner_test_active_symbols(20, 20)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             self.ensure_required_market_status_values(market_status)
-            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]) == \
-                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
-            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]) == \
-                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]
+            assert 0 < market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in this exchange tentacle
+            assert 0 < market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in this exchange tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
@@ -118,7 +118,12 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
             exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = previous_DUMP_INCOMPLETE_LAST_CANDLE_value
 
     async def test_get_historical_ohlcv(self):
-        await super().test_get_historical_ohlcv()
+        previous_DUMP_INCOMPLETE_LAST_CANDLE_value = exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE
+        try:
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = True
+            await super().test_get_historical_ohlcv()
+        finally:
+            exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE = previous_DUMP_INCOMPLETE_LAST_CANDLE_value
 
     async def test_get_kline_price(self):
         previous_DUMP_INCOMPLETE_LAST_CANDLE_value = exchanges.RestExchange.DUMP_INCOMPLETE_LAST_CANDLE

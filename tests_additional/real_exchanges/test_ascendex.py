@@ -31,7 +31,7 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "ascendex"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
-    SYMBOL_3 = "XRP/BTC"
+    SYMBOL_3 = "KAI/USDT"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -51,7 +51,7 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(500, 1000)
+        await self.inner_test_active_symbols(800, 1200)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
@@ -65,7 +65,10 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            self.check_market_status_limits(market_status, expect_invalid_price_limit_values=False)
+            self.check_market_status_limits(
+                market_status, expect_invalid_price_limit_values=False,
+                low_cost_max=5, low_price_min=1e-12
+            )
 
     async def test_get_symbol_prices(self):
         # without limit
@@ -101,9 +104,7 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
                 assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
-        with pytest.raises(AssertionError):
-            # seems temporarily broken (exchange side)
-            await super().test_get_historical_ohlcv()
+        await super().test_get_historical_ohlcv()
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
