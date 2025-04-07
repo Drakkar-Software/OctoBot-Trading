@@ -110,7 +110,7 @@ NaN = decimal.Decimal("nan")
 FULL_CANDLE_HISTORY_EXCHANGES = [
     "ascendex",
     "binance",
-    "bitfinex2",
+    "bitfinex",
     "bitstamp",
     "bybit",
     "bingx",
@@ -148,7 +148,7 @@ TESTED_EXCHANGES = [
     "bitmart",
 ])
 DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
-SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex2", "bithumb", "bitstamp", "bitmex",
+SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex", "bithumb", "bitstamp", "bitmex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
                               "wavesexchange",])
 
