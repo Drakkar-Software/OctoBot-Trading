@@ -27,9 +27,14 @@ from octobot_trading.exchanges.config import proxy_config
 from octobot_trading.exchanges.config.proxy_config import (
     ProxyConfig,
 )
+from octobot_trading.exchanges.config import proxy_config
+from octobot_trading.exchanges.config.exchange_credentials_data import (
+    ExchangeCredentialsData,
+)
 
 __all__ = [
     "ExchangeConfig",
     "BacktestingExchangeConfig",
     "ProxyConfig",
+    "ExchangeCredentialsData",
 ]
