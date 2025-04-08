@@ -319,7 +319,8 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
         if (client.socks_proxy_sessions is None):
             client.socks_proxy_sessions = {}
         if (proxy_url not in client.socks_proxy_sessions):
-            connector = aiohttp_socks.ProxyConnector.from_url(
+            previous_aiohttp_socks_connector = client.aiohttp_socks_connector
+            client.aiohttp_socks_connector = aiohttp_socks.ProxyConnector.from_url(
                 proxy_url,
                 # extra args copied from self.open()
                 ssl=client.ssl_context,
@@ -328,8 +329,10 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
                 enable_cleanup_closed=True
             )
             client.socks_proxy_sessions[proxy_url] = aiohttp.ClientSession(
-                loop=client.asyncio_loop, connector=connector, trust_env=client.aiohttp_trust_env
+                loop=client.asyncio_loop, connector=client.aiohttp_socks_connector,
+                trust_env=client.aiohttp_trust_env
             )
+            asyncio.create_task(_close_previous_session_and_connector(None, previous_aiohttp_socks_connector))
     elif proxy_config.disable_dns_cache:
         # rewrite of async_ccxt.exchange.client.open()
         _init_ccxt_client_session_requirements(client)
@@ -351,7 +354,7 @@ def _init_ccxt_client_session_requirements(client):
     # from async_ccxt.exchange.client.open()
     if client.asyncio_loop is None:
         client.asyncio_loop = asyncio.get_running_loop()
-        client.throttle.loop = client.asyncio_loop
+        client.throttler.loop = client.asyncio_loop
 
     if client.ssl_context is None:
         # Create our SSL context object with our CA cert file
@@ -426,6 +429,13 @@ def _get_patched_url_config(url_config: dict, old: str, new: str):
     return updated_config
 
 
+async def _close_previous_session_and_connector(session, connector):
+    if connector is not None:
+        await connector.close()
+    if session is not None:
+        await session.close()
+
+
 def _use_request_counter(
     identifier: str, ccxt_client: async_ccxt.Exchange, proxy_config: proxy_config_import.ProxyConfig
 ):
@@ -439,23 +449,24 @@ def _use_request_counter(
         # 1. create ssl context and other required elements if necessary
         ccxt_client.open()
         previous_session = ccxt_client.session
+        previous_connector = ccxt_client.tcp_connector
         # 2. create patched session using the same params as a normal one
         # same as in ccxt.async_support.exchange.py#open()
         # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
-        new_connector = aiohttp.TCPConnector(
+        ccxt_client.tcp_connector = aiohttp.TCPConnector(
             ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop,
             enable_cleanup_closed=True, use_dns_cache=not proxy_config.disable_dns_cache
         )
         counter_session = aiohttp_util.CounterClientSession(
             identifier,
             loop=ccxt_client.asyncio_loop,
-            connector=new_connector,
+            connector=ccxt_client.tcp_connector,
             trust_env=previous_session.trust_env,
         )
         # 3. replace session
         ccxt_client.session = counter_session
         # 4. close replaced session in task to avoid making this function a coroutine
-        asyncio.create_task(previous_session.close())
+        asyncio.create_task(_close_previous_session_and_connector(previous_session, previous_connector))
         commons_logging.get_logger(__name__).info(f"Request counter enabled for {identifier}")
     except Exception as err:
         commons_logging.get_logger(__name__).exception(
