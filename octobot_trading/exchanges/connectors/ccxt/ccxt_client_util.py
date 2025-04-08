@@ -371,7 +371,8 @@ def _get_client_config(
         'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,
         'timeout': constants.DEFAULT_REQUEST_TIMEOUT,
         'options': options,
-        'headers': headers
+        'headers': headers,
+        'timeout_on_exit': constants.CCXT_TIMEOUT_ON_EXIT_MS,
     }
     if api_key is not None:
         config['apiKey'] = api_key
