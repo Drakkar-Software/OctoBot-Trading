@@ -30,6 +30,7 @@ import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.errors as errors
 import octobot_trading.storage as storage
+import octobot_trading.exchanges.config.exchange_credentials_data as exchange_credentials_data
 import trading_backend.exchanges
 
 
@@ -313,9 +314,10 @@ class ExchangeManager(util.Initializable):
             return False
         return True
 
-    def get_exchange_credentials(self, exchange_name):
+    def get_exchange_credentials(self, exchange_name) -> exchange_credentials_data.ExchangeCredentialsData:
+        creds = exchange_credentials_data.ExchangeCredentialsData()
         if self.ignore_config or not self.should_decrypt_token() or self.without_auth:
-            return "", "", "", "", ""
+            return creds
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
         key = configuration.decrypt_element_if_possible(
             common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None
@@ -323,16 +325,15 @@ class ExchangeManager(util.Initializable):
         secret = configuration.decrypt_element_if_possible(
             common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None
         )
-        return (
-            # remove leading and trailing ", ', newlines and whitespaces if any
-            key.strip(' "').strip("'").strip("\n") if key else key,
-            secret.strip(' "').strip("'").strip("\n") if secret else secret,
-            configuration.decrypt_element_if_possible(
-                common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
-            ),
-            config_exchange.get(common_constants.CONFIG_EXCHANGE_UID, ""),
-            config_exchange.get(common_constants.CONFIG_EXCHANGE_ACCESS_TOKEN, "")
+        # remove leading and trailing ", ', newlines and whitespaces if any
+        creds.api_key = key.strip(' "').strip("'").strip("\n") if key else key
+        creds.secret = secret.strip(' "').strip("'").strip("\n") if secret else secret
+        creds.password = configuration.decrypt_element_if_possible(
+            common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None
         )
+        creds.uid = config_exchange.get(common_constants.CONFIG_EXCHANGE_UID, "")
+        creds.auth_token = config_exchange.get(common_constants.CONFIG_EXCHANGE_ACCESS_TOKEN, "")
+        return creds
 
     def get_exchange_sub_account_id(self, exchange_name):
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
