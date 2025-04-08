@@ -34,6 +34,7 @@ import octobot_trading.errors as errors
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import octobot_trading.exchanges.config.proxy_config as proxy_config_import
+import octobot_trading.exchanges.config.exchange_credentials_data as exchange_credentials_data
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 
@@ -57,24 +58,19 @@ def create_client(
         )
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_manager.exchange_name):
         try:
-            auth_token_header_prefix = None
-            key, secret, password, uid, auth_token = exchange_manager.get_exchange_credentials(
-                exchange_manager.exchange_name
+            creds: exchange_credentials_data.ExchangeCredentialsData = (
+                exchange_manager.get_exchange_credentials(exchange_manager.exchange_name)
             )
             if keys_adapter:
-                key, secret, password, uid, auth_token, auth_token_header_prefix = keys_adapter(
-                    key, secret, password, uid, auth_token
-                )
-            if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
+                creds = keys_adapter(creds)
+            if not (creds.has_credentials()) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
             if should_be_authenticated_exchange:
                 client = instantiate_exchange(
                     exchange_class,
                     _get_client_config(
-                        exchange_class, options, headers, additional_config,
-                        api_key=key, secret=secret, password=password, uid=uid,
-                        auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
+                        exchange_class, options, headers, additional_config, creds,
                     ),
                     exchange_manager.exchange_name,
                     exchange_manager.proxy_config,
@@ -363,12 +359,10 @@ def _init_ccxt_client_session_requirements(client):
 
 
 def _get_client_config(
-    exchange_class, options, headers, additional_config,
-    api_key=None, secret=None, password=None, uid=None,
-    auth_token=None, auth_token_header_prefix=None
+    exchange_class, options, headers, additional_config, creds: exchange_credentials_data.ExchangeCredentialsData=None
 ):
-    if auth_token:
-        headers["Authorization"] = f"{auth_token_header_prefix or ''}{auth_token}"
+    if creds and creds.auth_token:
+        headers["Authorization"] = f"{creds.auth_token_header_prefix or ''}{creds.auth_token}"
     config = {
         'verbose': constants.ENABLE_CCXT_VERBOSE,
         'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,
@@ -377,14 +371,19 @@ def _get_client_config(
         'headers': headers,
         'timeout_on_exit': constants.CCXT_TIMEOUT_ON_EXIT_MS,
     }
-    if api_key is not None:
-        config['apiKey'] = api_key
-    if secret is not None:
-        config['secret'] = secret
-    if password is not None:
-        config['password'] = password
-    if uid is not None:
-        config['uid'] = uid
+    if creds:
+        if creds.api_key is not None:
+            config['apiKey'] = creds.api_key
+        if creds.secret is not None:
+            config['secret'] = creds.secret
+        if creds.password is not None:
+            config['password'] = creds.password
+        if creds.uid is not None:
+            config['uid'] = creds.uid
+        if creds.wallet_address is not None:
+            config['walletAddress'] = creds.wallet_address
+        if creds.private_key is not None:
+            config['privateKey'] = creds.private_key
     config.update({**_get_custom_domain_config(exchange_class), **(additional_config or {})})
     return config
 

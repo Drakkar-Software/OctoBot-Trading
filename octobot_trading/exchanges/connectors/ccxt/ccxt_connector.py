@@ -34,6 +34,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
+import octobot_trading.exchanges.config.exchange_credentials_data as exchange_credentials_data
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
@@ -262,7 +263,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def _create_client(self, force_unauth=False):
         self.client, self.is_authenticated = self._client_factory(force_unauth)
 
-    def _client_factory(self, force_unauth, keys_adapter=None) -> tuple:
+    def _client_factory(
+        self,
+        force_unauth,
+        keys_adapter: typing.Callable[[exchange_credentials_data.ExchangeCredentialsData], exchange_credentials_data.ExchangeCredentialsData]=None
+    ) -> tuple:
         return ccxt_client_util.create_client(
             self.exchange_type, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
