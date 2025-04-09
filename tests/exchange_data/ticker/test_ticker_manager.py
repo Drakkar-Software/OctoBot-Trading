@@ -66,6 +66,7 @@ async def test_update_and_reset_ticker(ticker_manager):
             ExchangeConstantsTickersColumns.AVERAGE.value: nan,
             ExchangeConstantsTickersColumns.SYMBOL.value: nan,
             ExchangeConstantsTickersColumns.QUOTE_VOLUME.value: nan,
+            ExchangeConstantsTickersColumns.BASE_VOLUME.value: nan,
             ExchangeConstantsTickersColumns.TIMESTAMP.value: 0,
             ExchangeConstantsTickersColumns.VWAP.value: nan
         }
