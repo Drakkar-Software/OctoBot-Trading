@@ -115,17 +115,18 @@ class TickerUpdater(ticker_channel.TickerProducer):
     def _is_valid(ticker):
         try:
             # at least require close, volume and timestamp
-            return (
-                ticker and all(
-                    ticker[field] is not None
-                    for field in (
-                        enums.ExchangeConstantsTickersColumns.CLOSE.value,
-                        enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
-                        enums.ExchangeConstantsTickersColumns.TIMESTAMP.value
-                    )
-                )
-            )
-
+            if not (
+                ticker.get(enums.ExchangeConstantsTickersColumns.CLOSE.value)
+                and ticker.get(enums.ExchangeConstantsTickersColumns.TIMESTAMP.value)
+            ):
+                return False
+            if not (
+                ticker.get(enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value)
+                or ticker.get(enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value)
+            ):
+                # require either base or quote volume
+                return False
+            return True
         except KeyError:
             return False
 
