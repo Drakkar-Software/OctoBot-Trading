@@ -20,6 +20,7 @@ import typing
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_trading.personal_data.portfolios.assets
 import octobot_trading.personal_data.orders.order as order_import
+import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.portfolios.sub_portfolio_data as sub_portfolio_data
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
@@ -473,7 +474,7 @@ def get_portfolio_filled_orders_deltas(
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     filled_orders: list[order_import.Order]
 ) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
-    orders_asset_deltas = _get_assets_delta_from_orders(filled_orders)
+    orders_asset_deltas, possible_fees_asset_deltas = _get_assets_delta_from_orders(filled_orders)
     portfolios_asset_deltas = _get_assets_delta_from_portfolio(previous_portfolio_content, updated_portfolio_content)
     # return portfolio asset deltas that can approximately be explained by given orders
     orders_linked_deltas = {}
@@ -502,9 +503,22 @@ def get_portfolio_filled_orders_deltas(
             # similar delta (+/- fees)
             # this delta is due to these orders: add it
             orders_linked_deltas[asset_name] = holdings_delta
+        elif (
+            # try while taking possible fees into account
+            # approx same value
+            asset_name in possible_fees_asset_deltas and (
+                abs(min_allowed_equivalent_total_holding)
+                < abs(order_asset_delta + possible_fees_asset_deltas[asset_name])
+                < abs(max_allowed_equivalent_total_holding)
+            )
+        ):
+            # similar delta considering fees
+            # this delta is due to these orders: add it
+            orders_linked_deltas[asset_name] = holdings_delta
         elif abs(order_asset_delta) > abs(max_allowed_equivalent_total_holding):
-            # too little in portfolio delta to be from those orders: add it to ignored_deltas: there should be
-            # something in delta but there is not, this is unexpected
+            # too little in portfolio delta to be from those orders
+            # As potential fees have already been taken into account, THIS IS UNEXPECTED.
+            # Add it to ignored_deltas
             ignored_deltas[asset_name] = holdings_delta
         elif abs(min_allowed_equivalent_total_holding) > abs(order_asset_delta):
             # too much in portfolio delta: only take what is linked to the orders deltas
@@ -546,10 +560,14 @@ def _get_assets_delta_from_portfolio(
 
 
 
-def _get_assets_delta_from_orders(orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:
+def _get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
+    dict[str, decimal.Decimal], dict[str, decimal.Decimal]
+):
     asset_deltas = {}
+    possible_fee_related_deltas = {}
     for order in orders:
         base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
+        # order "expected" related deltas
         added_unit_and_amount = (
             (base, order.origin_quantity)
             if order.side is enums.TradeOrderSide.BUY else (quote, order.total_cost)
@@ -566,4 +584,12 @@ def _get_assets_delta_from_orders(orders: list[order_import.Order]) -> dict[str,
                 asset_deltas[unit_and_amount[0]] = unit_and_amount[1] * multiplier
             else:
                 asset_deltas[unit_and_amount[0]] += unit_and_amount[1] * multiplier
-    return asset_deltas
+        # order "probable" related deltas (account for worse case fees)
+        forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=True)
+        for fee_asset in (base, quote):
+            if asset_amount := order_util.get_fees_for_currency(forecasted_fees, fee_asset):
+                if fee_asset not in possible_fee_related_deltas:
+                    possible_fee_related_deltas[fee_asset] = -asset_amount
+                else:
+                    possible_fee_related_deltas[fee_asset] += -asset_amount
+    return asset_deltas, possible_fee_related_deltas

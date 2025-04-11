@@ -337,6 +337,98 @@ def test_get_portfolio_filled_orders_deltas():
         error_log.assert_not_called()
 
 
+def test_get_portfolio_filled_orders_deltas_considering_fees():
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 600.2})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 50.2})    # paid 50 USDT in fees
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # no filled order
+        assert personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, []) == (
+            {}, {}
+        )
+        error_log.assert_not_called()
+
+        # with fees: delta is found
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 25}),
+            _order("BTC/USDT", 0.05, 450, "buy", {"USDT": 25}),
+            _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # all orders found in deltas because fees have been taken into account
+            _content({"BTC": 0.1, "USDT": -550}),
+            {}
+        )
+        error_log.assert_not_called()
+
+        # without fees explanation
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 0.025}),
+            _order("BTC/USDT", 0.05, 450, "buy", {"USDT": 0.025}),
+            _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # fees can't explain the additional -50 only consider -500
+            _content({"BTC": 0.1, "USDT": -500}),
+            {}
+        )
+        error_log.assert_not_called()
+
+        # with small numbers
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 0.2})
+        post_trade_content = _content({"BTC": 0.089, "USDT": 0.1})    # paid 0.1 USDT and 0.001 BTC in fees
+        filled_orders = [
+            _order("BTC/USDT", 0.1, 100, "sell", {"USDT": 0.1}),
+            _order("BTC/USDT", 0.09, 100, "buy", {"BTC": 0.001}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            _content({"BTC": -0.011, "USDT": -0.1}),
+            {}
+        )
+        error_log.assert_not_called()
+
+        # with USDT holdings increasing
+
+        # A. return ignored assets because no explaining fees
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 0.2})
+        post_trade_content = _content({"BTC": 0.089, "USDT": 0.8})
+        filled_orders = [
+            _order("BTC/USDT", 0.1, 100, "sell", {"USDT": 0.000001}),
+            _order("BTC/USDT", 0.09, 99.3, "buy", {"BTC": 0.000000001}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # 0.6 is NOT explained by 0.7 from order delta - 0.000001 fees
+            _content({"BTC": -0.01}),   # takes a bit too much of post trade portfolio (fees are not considered),
+            # will be adapted later on if necessary
+            _content({"USDT": 0.6}) # ignored assets
+        )
+        error_log.assert_not_called()
+
+        # B. success with  explaining fees
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 0.2})
+        post_trade_content = _content({"BTC": 0.089, "USDT": 0.8})
+        filled_orders = [
+            _order("BTC/USDT", 0.1, 100, "sell", {"USDT": 0.1}),
+            _order("BTC/USDT", 0.09, 99.3, "buy", {"BTC": 0.001}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # 0.6 is explained by 0.7 from order delta - 0.1 fees
+            _content({"BTC": -0.011, "USDT": 0.6}),
+            {}
+        )
+        error_log.assert_not_called()
+
+
 def test_resolve_sub_portfolios_with_filling_assets_with_locked_funds():
     master_pf = _sub_pf(
         0,
@@ -441,7 +533,7 @@ def _missing_funds(funds: dict[str, float]) -> dict[str, decimal.Decimal]:
         for key, val in funds.items()
     }
 
-def _order(symbol: str, quantity: float, cost: float, side: str) -> personal_data.Order:
+def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = None) -> personal_data.Order:
     trader = mock.Mock(exchange_manager=mock.Mock())
     order = personal_data.Order(trader)
     order.symbol = symbol
@@ -449,6 +541,11 @@ def _order(symbol: str, quantity: float, cost: float, side: str) -> personal_dat
     order.total_cost = decimal.Decimal(str(cost))
     order.origin_price = order.total_cost / order.origin_quantity
     order.side = enums.TradeOrderSide(side)
+    order.get_computed_fee = mock.Mock(return_value={
+        enums.FeePropertyColumns.COST.value: decimal.Decimal(str(next(iter(fee.values())) if fee else 0)),
+        enums.FeePropertyColumns.CURRENCY.value: next(iter(fee.keys())) if fee else None,
+        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
+    })
     return order
 
 def _open_order(symbol: str, quantity: float, cost: float, side: str, fee_cost: float, fee_unit: str) -> personal_data.Order:
