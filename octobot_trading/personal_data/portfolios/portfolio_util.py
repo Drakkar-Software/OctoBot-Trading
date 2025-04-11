@@ -426,7 +426,8 @@ def _fill_missing_assets_from_allowed_filling_assets(
             if filling_asset in funds_deltas:
                 funds_deltas[filling_asset][commons_constants.PORTFOLIO_TOTAL] += funds_to_add_in_filling_asset
                 funds_deltas[filling_asset][commons_constants.PORTFOLIO_AVAILABLE] += funds_to_add_in_filling_asset
-            else:
+            elif funds_to_add_in_filling_asset != constants.ZERO:
+                # only add delta when delta is not 0
                 funds_deltas[filling_asset] = {
                     commons_constants.PORTFOLIO_TOTAL: funds_to_add_in_filling_asset,
                     commons_constants.PORTFOLIO_AVAILABLE: funds_to_add_in_filling_asset

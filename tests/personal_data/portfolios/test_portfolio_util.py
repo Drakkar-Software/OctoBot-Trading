@@ -245,13 +245,13 @@ def test_resolve_sub_portfolios_with_filling_assets():
                 # 62 = 40 (for USDT) + 22 (for 11 TRX)
                 _content({"BTC": 0.04, "USDC": 0, "USDT": 0, "TRX": 0}),
                 # BTC not considered as missing since the missing amount % is very low
-                funds_deltas=_content({"USDC": 0}),
+                funds_deltas={},
                 missing_funds=_missing_funds({"TRX": 11, "USDT": 40}),
             ),
             _sub_pf(
                 5,
                 _content({"ADA": 0, "ETH": 1, "USDC": 0, "USDT": 0}),
-                funds_deltas=_content({"USDC": 0}),
+                funds_deltas={},
                 missing_funds=_missing_funds({"ADA": 1199, "USDT": 4}),
             ),
         ]
