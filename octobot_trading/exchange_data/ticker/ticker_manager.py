@@ -56,6 +56,7 @@ class TickerManager(util.Initializable):
             enums.ExchangeConstantsTickersColumns.LAST.value: math.nan,
             enums.ExchangeConstantsTickersColumns.AVERAGE.value: math.nan,
             enums.ExchangeConstantsTickersColumns.SYMBOL.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value: math.nan,
             enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value: math.nan,
             enums.ExchangeConstantsTickersColumns.TIMESTAMP.value: 0,
             enums.ExchangeConstantsTickersColumns.VWAP.value: math.nan

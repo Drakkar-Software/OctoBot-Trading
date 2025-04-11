@@ -56,7 +56,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
 
     async def test_active_symbols(self):
         # binanceus numbers
-        await self.inner_test_active_symbols(150, 500)
+        await self.inner_test_active_symbols(200, 500)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():

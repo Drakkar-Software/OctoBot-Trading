@@ -34,6 +34,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
+import octobot_trading.exchanges.config.exchange_credentials_data as exchange_credentials_data
 import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
@@ -256,7 +257,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def _create_client(self, force_unauth=False):
         self.client, self.is_authenticated = self._client_factory(force_unauth)
 
-    def _client_factory(self, force_unauth, keys_adapter=None) -> tuple:
+    def _client_factory(
+        self,
+        force_unauth,
+        keys_adapter: typing.Callable[[exchange_credentials_data.ExchangeCredentialsData], exchange_credentials_data.ExchangeCredentialsData]=None
+    ) -> tuple:
         return ccxt_client_util.create_client(
             self.exchange_type, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
@@ -391,8 +396,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return self.adapter.adapt_public_recent_trades(
                     await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
                 )
-        except ccxt.NotSupported:
-            raise octobot_trading.errors.NotSupported
+        except (ccxt.NotSupported, ccxt.ArgumentsRequired) as err:
+            raise octobot_trading.errors.NotSupported(err)
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(
                 f"Failed to get_recent_trades {html_util.get_html_summary_if_relevant(e)}"
@@ -547,7 +552,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
-
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_buy_order_with_cost(self, symbol, cost: float, quantity: float, params=None) -> dict:
         return self.adapter.adapt_order(
@@ -555,7 +559,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.create_market_buy_order_with_cost(symbol, cost, params=params),
             symbol=symbol, quantity=quantity
         )
-
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:

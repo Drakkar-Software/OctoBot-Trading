@@ -226,7 +226,7 @@ async def test_get_exchange_details(tentacles_setup_config, supported_exchanges)
         assert details.name == "Binance"
         assert details.url == "https://www.binance.com"
         assert len(details.api) > 1
-        assert "https://user-images.githubusercontent.com/" in details.logo_url
+        assert "https://github.com/user-attachments/assets" in details.logo_url
         assert details.has_websocket is False   # default value
         get_tentacle_config_mock.assert_not_called()
 

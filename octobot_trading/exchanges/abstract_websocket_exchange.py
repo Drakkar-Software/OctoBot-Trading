@@ -92,10 +92,6 @@ class AbstractWebsocketExchange:
         raise NotImplementedError("is_time_frame_supported is not implemented")
 
     def get_exchange_credentials(self):
-        """
-        Exchange credentials
-        :return: key, secret, password, uid
-        """
         return self.exchange_manager.get_exchange_credentials(self.exchange_manager.exchange_name)
 
     async def push_to_channel(self, channel_name, *args, **kwargs):

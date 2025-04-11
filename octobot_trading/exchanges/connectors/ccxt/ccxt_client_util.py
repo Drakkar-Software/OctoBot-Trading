@@ -34,6 +34,7 @@ import octobot_trading.errors as errors
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import octobot_trading.exchanges.config.proxy_config as proxy_config_import
+import octobot_trading.exchanges.config.exchange_credentials_data as exchange_credentials_data
 import octobot_trading.exchanges.util.exchange_util as exchange_util
 
 
@@ -57,24 +58,19 @@ def create_client(
         )
     if exchange_manager.ignore_config or exchange_manager.check_config(exchange_manager.exchange_name):
         try:
-            auth_token_header_prefix = None
-            key, secret, password, uid, auth_token = exchange_manager.get_exchange_credentials(
-                exchange_manager.exchange_name
+            creds: exchange_credentials_data.ExchangeCredentialsData = (
+                exchange_manager.get_exchange_credentials(exchange_manager.exchange_name)
             )
             if keys_adapter:
-                key, secret, password, uid, auth_token, auth_token_header_prefix = keys_adapter(
-                    key, secret, password, uid, auth_token
-                )
-            if not (key and secret) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
+                creds = keys_adapter(creds)
+            if not (creds.has_credentials()) and not exchange_manager.is_simulated and not exchange_manager.ignore_config:
                 logger.warning(f"No exchange API key set for {exchange_manager.exchange_name}. "
                                f"Enter your account details to enable real trading on this exchange.")
             if should_be_authenticated_exchange:
                 client = instantiate_exchange(
                     exchange_class,
                     _get_client_config(
-                        exchange_class, options, headers, additional_config,
-                        api_key=key, secret=secret, password=password, uid=uid,
-                        auth_token=auth_token, auth_token_header_prefix=auth_token_header_prefix
+                        exchange_class, options, headers, additional_config, creds,
                     ),
                     exchange_manager.exchange_name,
                     exchange_manager.proxy_config,
@@ -319,7 +315,8 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
         if (client.socks_proxy_sessions is None):
             client.socks_proxy_sessions = {}
         if (proxy_url not in client.socks_proxy_sessions):
-            connector = aiohttp_socks.ProxyConnector.from_url(
+            previous_aiohttp_socks_connector = client.aiohttp_socks_connector
+            client.aiohttp_socks_connector = aiohttp_socks.ProxyConnector.from_url(
                 proxy_url,
                 # extra args copied from self.open()
                 ssl=client.ssl_context,
@@ -328,8 +325,10 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
                 enable_cleanup_closed=True
             )
             client.socks_proxy_sessions[proxy_url] = aiohttp.ClientSession(
-                loop=client.asyncio_loop, connector=connector, trust_env=client.aiohttp_trust_env
+                loop=client.asyncio_loop, connector=client.aiohttp_socks_connector,
+                trust_env=client.aiohttp_trust_env
             )
+            asyncio.create_task(_close_previous_session_and_connector(None, previous_aiohttp_socks_connector))
     elif proxy_config.disable_dns_cache:
         # rewrite of async_ccxt.exchange.client.open()
         _init_ccxt_client_session_requirements(client)
@@ -351,7 +350,7 @@ def _init_ccxt_client_session_requirements(client):
     # from async_ccxt.exchange.client.open()
     if client.asyncio_loop is None:
         client.asyncio_loop = asyncio.get_running_loop()
-        client.throttle.loop = client.asyncio_loop
+        client.throttler.loop = client.asyncio_loop
 
     if client.ssl_context is None:
         # Create our SSL context object with our CA cert file
@@ -360,27 +359,31 @@ def _init_ccxt_client_session_requirements(client):
 
 
 def _get_client_config(
-    exchange_class, options, headers, additional_config,
-    api_key=None, secret=None, password=None, uid=None,
-    auth_token=None, auth_token_header_prefix=None
+    exchange_class, options, headers, additional_config, creds: exchange_credentials_data.ExchangeCredentialsData=None
 ):
-    if auth_token:
-        headers["Authorization"] = f"{auth_token_header_prefix or ''}{auth_token}"
+    if creds and creds.auth_token:
+        headers["Authorization"] = f"{creds.auth_token_header_prefix or ''}{creds.auth_token}"
     config = {
         'verbose': constants.ENABLE_CCXT_VERBOSE,
         'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,
         'timeout': constants.DEFAULT_REQUEST_TIMEOUT,
         'options': options,
-        'headers': headers
+        'headers': headers,
+        'timeout_on_exit': constants.CCXT_TIMEOUT_ON_EXIT_MS,
     }
-    if api_key is not None:
-        config['apiKey'] = api_key
-    if secret is not None:
-        config['secret'] = secret
-    if password is not None:
-        config['password'] = password
-    if uid is not None:
-        config['uid'] = uid
+    if creds:
+        if creds.api_key is not None:
+            config['apiKey'] = creds.api_key
+        if creds.secret is not None:
+            config['secret'] = creds.secret
+        if creds.password is not None:
+            config['password'] = creds.password
+        if creds.uid is not None:
+            config['uid'] = creds.uid
+        if creds.wallet_address is not None:
+            config['walletAddress'] = creds.wallet_address
+        if creds.private_key is not None:
+            config['privateKey'] = creds.private_key
     config.update({**_get_custom_domain_config(exchange_class), **(additional_config or {})})
     return config
 
@@ -425,6 +428,13 @@ def _get_patched_url_config(url_config: dict, old: str, new: str):
     return updated_config
 
 
+async def _close_previous_session_and_connector(session, connector):
+    if connector is not None:
+        await connector.close()
+    if session is not None:
+        await session.close()
+
+
 def _use_request_counter(
     identifier: str, ccxt_client: async_ccxt.Exchange, proxy_config: proxy_config_import.ProxyConfig
 ):
@@ -438,23 +448,24 @@ def _use_request_counter(
         # 1. create ssl context and other required elements if necessary
         ccxt_client.open()
         previous_session = ccxt_client.session
+        previous_connector = ccxt_client.tcp_connector
         # 2. create patched session using the same params as a normal one
         # same as in ccxt.async_support.exchange.py#open()
         # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
-        new_connector = aiohttp.TCPConnector(
+        ccxt_client.tcp_connector = aiohttp.TCPConnector(
             ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop,
             enable_cleanup_closed=True, use_dns_cache=not proxy_config.disable_dns_cache
         )
         counter_session = aiohttp_util.CounterClientSession(
             identifier,
             loop=ccxt_client.asyncio_loop,
-            connector=new_connector,
+            connector=ccxt_client.tcp_connector,
             trust_env=previous_session.trust_env,
         )
         # 3. replace session
         ccxt_client.session = counter_session
         # 4. close replaced session in task to avoid making this function a coroutine
-        asyncio.create_task(previous_session.close())
+        asyncio.create_task(_close_previous_session_and_connector(previous_session, previous_connector))
         commons_logging.get_logger(__name__).info(f"Request counter enabled for {identifier}")
     except Exception as err:
         commons_logging.get_logger(__name__).exception(

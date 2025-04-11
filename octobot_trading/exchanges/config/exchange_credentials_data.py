@@ -13,6 +13,27 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import dataclasses
+import typing
 
-PROJECT_NAME = "OctoBot-Trading"
-VERSION = "2.4.170"  # major.minor.revision
+
+@dataclasses.dataclass
+class ExchangeCredentialsData:
+    # CEXes
+    api_key: typing.Optional[str] = None
+    secret: typing.Optional[str] = None
+    password: typing.Optional[str] = None
+    uid: typing.Optional[str] = None
+    # Oauth
+    auth_token: typing.Optional[str] = None
+    auth_token_header_prefix: typing.Optional[str] = None
+    # DEXes
+    wallet_address: typing.Optional[str] = None
+    private_key: typing.Optional[str] = None
+
+    def has_credentials(self) -> bool:
+        return bool(
+            (self.api_key and self.secret)  # CEX
+            or (self.wallet_address and self.private_key)  # DEX
+        )
+
