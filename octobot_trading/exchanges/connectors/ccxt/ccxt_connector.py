@@ -118,12 +118,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 self._should_authenticate() and not self.exchange_manager.exchange_only
             ):
                 await self._ensure_auth()
-
-            with self.error_describer():
-                await self.load_symbol_markets(
-                    reload=not self.exchange_manager.use_cached_markets,
-                    market_filter=self.exchange_manager.market_filter,
-                )
+            else:
+                with self.error_describer():
+                    await self.load_symbol_markets(
+                        reload=not self.exchange_manager.use_cached_markets,
+                        market_filter=self.exchange_manager.market_filter,
+                    )
 
             # initialize symbols and timeframes
             self.symbols = self.exchange_manager.exchange.get_all_available_symbols(active_only=True)
@@ -245,6 +245,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     @ccxt_client_util.converted_ccxt_common_errors
     async def _ensure_auth(self):
         try:
+            # load markets before calling _ensure_auth() to avoid fetching markets status while they are cached
+            with self.error_describer():
+                await self.load_symbol_markets(
+                    reload=not self.exchange_manager.use_cached_markets,
+                    market_filter=self.exchange_manager.market_filter,
+                )
             await self.exchange_manager.exchange.get_balance()
         except (octobot_trading.errors.AuthenticationError, ccxt.AuthenticationError) as e:
             await self.client.close()
