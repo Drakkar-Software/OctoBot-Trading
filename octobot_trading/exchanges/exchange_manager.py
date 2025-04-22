@@ -144,10 +144,13 @@ class ExchangeManager(util.Initializable):
                 await self.exchange.stop()
             except Exception as err:
                 self.logger.exception(err, True, f"Error when stopping exchange: {err}")
-            exchanges.Exchanges.instance().del_exchange(
-                self.exchange.name, self.id, should_warn=warning_on_missing_elements
-            )
-            self.exchange.exchange_manager = None
+            if self.exchange is not None:
+                # ensure self.exchange still exists as await self.exchange.stop()
+                # internally uses asyncio.sleep within ccxt
+                exchanges.Exchanges.instance().del_exchange(
+                    self.exchange.name, self.id, should_warn=warning_on_missing_elements
+                )
+                self.exchange.exchange_manager = None
             self.exchange = None
         if self.exchange_personal_data is not None:
             try:
