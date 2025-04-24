@@ -334,6 +334,9 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     ENTRIES = "entries"
     VOLUME = "volume"
     BROKER_APPLIED = "broker_applied"
+    IS_ACTIVE = "is_active"
+    ACTIVE_TRIGGER_PRICE = "active_trigger_price"
+    ACTIVE_TRIGGER_ABOVE = "active_trigger_above"
 
 
 class TradeExtraConstants(enum.Enum):
@@ -552,9 +555,15 @@ class TradingSignalOrdersAttrs(enum.Enum):
     POST_ONLY = "post_only"
     GROUP_ID = "group_id"
     GROUP_TYPE = "group_type"
+    ACTIVE_SWAP_STRATEGY_TYPE = "active_swap_strategy_type"
+    ACTIVE_SWAP_STRATEGY_TIMEOUT = "active_swap_strategy_timeout"
+    ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG = "active_swap_strategy_trigger_config"
     TAG = "tag"
     ORDER_ID = "order_id"
     TRAILING_PROFILE_TYPE = "trailing_profile_type"
+    IS_ACTIVE = "is_active"
+    ACTIVE_TRIGGER_PRICE = "active_trigger_price"
+    ACTIVE_TRIGGER_ABOVE = "active_trigger_above"
     TRAILING_PROFILE = "trailing_profile"
     BUNDLED_WITH = "bundled_with"
     CHAINED_TO = "chained_to"
@@ -587,6 +596,10 @@ class StoredOrdersAttr(enum.Enum):
     GROUP = "gr"
     GROUP_ID = "gi"
     GROUP_TYPE = "gt"
+    ORDER_SWAP_STRATEGY = "oss"
+    STRATEGY_TYPE = "sty"
+    STRATEGY_TIMEOUT = "sti"
+    STRATEGY_TRIGGER_CONFIG = "stc"
     CHAINED_ORDERS = "co"
     TRAILING_PROFILE = "tp"
     TRAILING_PROFILE_TYPE = "tpt"
@@ -620,3 +633,7 @@ class TradingModeActivityType(enum.Enum):
     CREATED_ORDERS = "created_orders"
     NOTHING_TO_DO = "nothing_to_do"
     NO_ACTIVITY = None
+
+
+class ActiveOrderSwapTriggerPriceConfiguration(enum.Enum):
+    FILLING_PRICE = "filling_price"

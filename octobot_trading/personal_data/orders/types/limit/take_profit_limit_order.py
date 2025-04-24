@@ -29,7 +29,7 @@ class TakeProfitLimitOrder(limit_order.LimitOrder):
     async def update_price_if_outdated(self):
         pass
 
-    def _get_filling_price(self):
+    def get_filling_price(self):
         return (
             self.limit_price
             if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE
@@ -45,6 +45,6 @@ class TakeProfitLimitOrder(limit_order.LimitOrder):
             if self.side is enums.TradeOrderSide.SELL else enums.TraderOrderType.BUY_LIMIT
         )
         self.on_filled_artificial_order = await self.trader.create_artificial_order(
-            order_type, self.symbol, self.origin_stop_price, self.origin_quantity, self._get_filling_price(),
+            order_type, self.symbol, self.origin_stop_price, self.origin_quantity, self.get_filling_price(),
             self.reduce_only, self.close_position
         )

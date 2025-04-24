@@ -1159,7 +1159,7 @@ async def test_create_order(future_trader_simulator_with_default_linear):
     with mock.patch.object(trader_inst, "_create_new_order", mock.AsyncMock()) as _create_new_order_mock:
         assert await trader_inst.create_order(order_mock)
         _create_new_order_mock.assert_called_once_with(
-            order_mock, {}, wait_for_creation=True, creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+            order_mock, {}, True, constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
         )
     for err in (errors.MissingFunds, errors.AuthenticationError, errors.ExchangeCompliancyError):
         with mock.patch.object(
@@ -1170,7 +1170,7 @@ async def test_create_order(future_trader_simulator_with_default_linear):
                     order_mock, params="params", wait_for_creation=False, creation_timeout=1
                 )
             _create_new_order_mock.assert_called_once_with(
-                order_mock, "params", wait_for_creation=False, creation_timeout=1
+                order_mock, "params", False, 1
             )
         with mock.patch.object(
             trader_inst, "_create_new_order", mock.AsyncMock(side_effect=ZeroDivisionError)
@@ -1180,7 +1180,7 @@ async def test_create_order(future_trader_simulator_with_default_linear):
                 order_mock, params="params", wait_for_creation=False, creation_timeout=1
             ) is None
             _create_new_order_mock.assert_called_once_with(
-                order_mock, "params", wait_for_creation=False, creation_timeout=1
+                order_mock, "params", False, 1
             )
 
 

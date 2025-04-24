@@ -58,6 +58,7 @@ class Trader(util.Initializable):
         if not hasattr(self, 'simulate'):
             self.simulate = False
         self.is_enabled = self.__class__.enabled(self.config)
+        self.enable_inactive_orders = not self.simulate
 
     async def initialize_impl(self):
         self.is_enabled = self.is_enabled and self.exchange_manager.is_trading
@@ -71,6 +72,9 @@ class Trader(util.Initializable):
     @classmethod
     def enabled(cls, config):
         return util.is_trader_enabled(config)
+
+    def set_enable_inactive_orders(self, enabled: bool):
+        self.enable_inactive_orders = enabled
 
     def set_risk(self, risk):
         min_risk = decimal.Decimal(str(octobot_commons.constants.CONFIG_TRADER_RISK_MIN))
@@ -116,8 +120,7 @@ class Trader(util.Initializable):
         try:
             params = params or {}
             self.logger.info(f"Creating order: {created_order}")
-            created_order = await self._create_new_order(order, params, wait_for_creation=wait_for_creation,
-                                                         creation_timeout=creation_timeout)
+            created_order = await self._create_new_order(order, params, wait_for_creation, creation_timeout)
             if created_order is None:
                 self.logger.warning(f"Order not created on {self.exchange_manager.exchange_name} "
                                     f"(failed attempt to create: {order}). This is likely due to "
@@ -186,7 +189,7 @@ class Trader(util.Initializable):
                 disabled_state_updater = self.exchange_manager.exchange_personal_data \
                     .orders_manager.enable_order_auto_synchronization is False
                 # now that we got the lock, ensure we can edit the order
-                if not self.simulate and not order.is_self_managed() and (
+                if not self.simulate and order.is_active and not order.is_self_managed() and (
                     order.state is not None or disabled_state_updater
                 ):
                     if disabled_state_updater:
@@ -264,16 +267,18 @@ class Trader(util.Initializable):
         await self.exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order(order)
         return changed
 
-    async def _create_new_order(self, new_order, params: dict,
-                                wait_for_creation=True,
-                                creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> object:
+    async def _create_new_order(
+        self, new_order, params: dict, wait_for_creation: bool, creation_timeout: float
+    ):
         """
         Creates an exchange managed order, it might be a simulated or a real order.
         Portfolio will be updated by the created order state after order will be initialized
         """
         updated_order = new_order
         is_pending_creation = False
-        if not self.simulate and not new_order.is_self_managed():
+        if not self.simulate and not new_order.is_self_managed() and (
+            new_order.is_in_active_inactive_transition or new_order.is_active
+        ):
             order_params = self.exchange_manager.exchange.get_order_additional_params(new_order)
             order_params.update(new_order.exchange_creation_params)
             order_params.update(params)
@@ -313,6 +318,9 @@ class Trader(util.Initializable):
             updated_order.associated_entry_ids = new_order.associated_entry_ids
             updated_order.update_with_triggering_order_fees = new_order.update_with_triggering_order_fees
             updated_order.trailing_profile = new_order.trailing_profile
+            updated_order.active_trigger_price = new_order.active_trigger_price
+            updated_order.active_trigger_above = new_order.active_trigger_above
+            updated_order.is_in_active_inactive_transition = new_order.is_in_active_inactive_transition
 
             if is_pending_creation:
                 # register order as pending order, it will then be added to live orders in order manager once open
@@ -320,11 +328,19 @@ class Trader(util.Initializable):
                     updated_order
                 )
 
-        await updated_order.initialize()
-        if is_pending_creation and wait_for_creation \
-                and updated_order.state is not None and updated_order.state.is_pending()\
-                and self.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization:
-            await updated_order.state.wait_for_terminate(creation_timeout)
+        try:
+            await updated_order.initialize()
+            if is_pending_creation and wait_for_creation \
+                    and updated_order.state is not None and updated_order.state.is_pending()\
+                    and self.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization:
+                await updated_order.state.wait_for_terminate(creation_timeout)
+            if new_order.is_in_active_inactive_transition:
+                # transition successful: new_order is now inactive
+                await new_order.on_active_from_inactive()
+        finally:
+            if updated_order.is_in_active_inactive_transition:
+                # transition completed: never leave is_in_active_inactive_transition to True after transition
+                updated_order.is_in_active_inactive_transition = False
         return updated_order
 
     def get_take_profit_order_type(self, base_order, order_type: enums.TraderOrderType) -> enums.TraderOrderType:
@@ -385,6 +401,36 @@ class Trader(util.Initializable):
         order.add_chained_order(chained_order)
         self.logger.info(f"Added chained order [{chained_order}] to [{order}] order.")
 
+    async def update_order_as_inactive(
+        self, order, ignored_order=None, wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ) -> bool:
+        if self.simulate:
+            self.logger.error(f"Can't update order as inactive on simulated trading.")
+            return False
+        cancelled = False
+        if order and order.is_open():
+            with order.active_or_inactive_transition():
+                cancelled = await self._handle_order_cancellation(
+                    order, ignored_order, wait_for_cancelling, cancelling_timeout
+                )
+        else:
+            self.logger.error(f"Can't update order as inactive: {order} is not open on exchange.")
+        return cancelled
+
+    async def update_order_as_active(
+        self, order, params: dict = None, wait_for_creation=True, raise_all_creation_error=False,
+        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    ):
+        if self.simulate:
+            self.logger.error(f"Can't update order as active on simulated trading.")
+            return order
+        with order.active_or_inactive_transition():
+            return await self.create_order(
+                order, loaded=False, params=params, wait_for_creation=wait_for_creation,
+                raise_all_creation_error=raise_all_creation_error, creation_timeout=creation_timeout
+            )
+
     async def cancel_order(self, order, ignored_order=None,
                            wait_for_cancelling=True,
                            cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
@@ -400,11 +446,12 @@ class Trader(util.Initializable):
         :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
         :return: None
         """
-        if order and order.is_open():
+        if order and order.is_open() or not order.is_active:
             self.logger.info(f"Cancelling order: {order}")
             # always cancel this order first to avoid infinite loop followed by deadlock
-            return await self._handle_order_cancellation(order, ignored_order,
-                                                         wait_for_cancelling, cancelling_timeout)
+            return await self._handle_order_cancellation(
+                order, ignored_order, wait_for_cancelling, cancelling_timeout
+            )
         return False
 
     async def _handle_order_cancellation(
@@ -417,7 +464,7 @@ class Trader(util.Initializable):
             return success
         order_status = None
         # if real order: cancel on exchange
-        if not self.simulate and not order.is_self_managed():
+        if not self.simulate and order.is_active and not order.is_self_managed():
             try:
                 async with order.lock:
                     try:

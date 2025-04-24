@@ -13,7 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
 import octobot_trading.personal_data.orders.order_group as order_group
+import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.active_order_swap_strategies as active_order_swap_strategies
 import octobot_trading.errors as errors
 import octobot_trading.signals as signals
 
@@ -52,6 +55,33 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
                                                         f"for {self.__class__.__name__}")
         ignored_order = ignored_orders[0] if ignored_orders else None
         await self._cancel_orders(cancelled_order, "cancelled", ignored_order)
+
+    async def adapt_before_order_becoming_active(self, order_to_become_active) -> (list, typing.Callable[[list], None]):
+        """
+        Called before an order referencing this group is becoming active
+        """
+        # convert the other order of this group into an inactive order => cancel it on exchange
+        deactivated_orders = []
+        for order in self.get_group_open_orders():
+            if order is not order_to_become_active:
+                self.logger.info(
+                    f"Cancelling order [{order}] from order group as paired order "
+                    f"is becoming active ({order_to_become_active})"
+                )
+                if await order_util.update_order_as_inactive_on_exchange(order, False):
+                    deactivated_orders.append(order)
+        return deactivated_orders, self._reverse_active_swap
+
+    async def _reverse_active_swap(self, former_order_to_become_active, to_activate_orders):
+        for order in to_activate_orders:
+            await self.adapt_before_order_becoming_active(order)
+            await order_util.create_as_active_order_on_exchange(order, False)
+
+    def _default_active_order_swap_strategy(self, timeout: float) -> active_order_swap_strategies.ActiveOrderSwapStrategy:
+        """
+        Called when an order of this group is becoming active
+        """
+        return active_order_swap_strategies.StopFirstActiveOrderSwapStrategy(timeout)
 
     async def _cancel_orders(self, triggering_order, trigger, ignored_order):
         for order in self.get_group_open_orders():

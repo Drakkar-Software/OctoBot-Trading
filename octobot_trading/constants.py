@@ -40,6 +40,7 @@ ALLOW_SIMULATED_ORDERS_INSTANT_FILL = os_util.parse_boolean_environment_var(
 
 # Order creation
 ORDER_DATA_FETCHING_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
+ACTIVE_ORDER_STRATEGY_SWAP_TIMEOUT = 2 * commons_constants.MINUTE_TO_SECONDS
 CHAINED_ORDER_PRICE_FETCHING_TIMEOUT = 1    # should be instant or ignored
 CHAINED_ORDERS_OUTDATED_PRICE_ALLOWANCE = decimal.Decimal("0.005")  # allows 0.5% outdated price error
 # create instantly filled limit orders 0.5% beyond market
