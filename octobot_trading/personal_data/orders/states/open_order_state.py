@@ -99,9 +99,16 @@ class OpenOrderState(order_state.OrderState):
         if not self.has_terminated:
             self.log_event_message(enums.StatesMessages.OPEN)
 
-            # notify order manager of a new open order
-            await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order,
-                                                                                                  should_notify=True)
+            if self.order.is_in_active_inactive_transition:
+                # replace previous (inactive) order instance by this active order
+                self.order.exchange_manager.exchange_personal_data.orders_manager.replace_order(
+                    self.order.order_id, self.order
+                )
+            else:
+                # notify order manager of a new open order
+                await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(
+                    self.order, should_notify=True
+                )
             self.has_terminated = True
 
     def is_pending(self) -> bool:

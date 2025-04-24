@@ -41,6 +41,8 @@ from octobot_trading.signals.signal_creation import (
     cancel_order,
     edit_order,
     set_leverage,
+    update_order_as_inactive,
+    update_order_as_active,
 )
 
 
@@ -59,4 +61,6 @@ __all__ = [
     "cancel_order",
     "edit_order",
     "set_leverage",
+    "update_order_as_inactive",
+    "update_order_as_active",
 ]

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.personal_data.orders.order_group as order_group
+import octobot_trading.personal_data.orders.active_order_swap_strategies as active_order_swap_strategies
 import octobot_trading.enums as enums
 import octobot_commons.tentacles_management as tentacles_management
 import octobot_commons.logging as logging
@@ -32,9 +33,19 @@ def get_or_create_order_group_from_storage_order_details(order_details, exchange
         try:
             group_name = group.get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             if group_name:
+                active_order_swap_strategy = None
+                if swap_strategy := order_details.get(enums.StoredOrdersAttr.ORDER_SWAP_STRATEGY.value, None):
+                    active_order_swap_strategy = tentacles_management.get_deep_class_from_parent_subclasses(
+                        swap_strategy[enums.StoredOrdersAttr.STRATEGY_TYPE.value],
+                        active_order_swap_strategies.ActiveOrderSwapStrategy
+                    )(
+                        swap_timeout=swap_strategy[enums.StoredOrdersAttr.STRATEGY_TIMEOUT.value],
+                        trigger_price_configuration=swap_strategy[enums.StoredOrdersAttr.STRATEGY_TRIGGER_CONFIG.value],
+                    )
                 group = exchange_manager.exchange_personal_data.orders_manager.get_or_create_group(
                     get_group_class(group[enums.StoredOrdersAttr.GROUP_TYPE.value]),
                     group_name,
+                    active_order_swap_strategy=active_order_swap_strategy
                 )
                 logging.get_logger("GroupUtil").debug(f"Restored {group} order group")
                 return group

@@ -21,6 +21,7 @@ from octobot_commons.tests.test_config import load_test_config
 from tests import event_loop
 import octobot_trading.personal_data as personal_data
 import octobot_trading.storage.orders_storage as orders_storage
+import octobot_trading.enums as enums
 from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType, StoredOrdersAttr
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
@@ -248,7 +249,8 @@ class TestOrderFactory:
         
         order = personal_data.BuyLimitOrder(trader_inst)
         group = exchange_manager.exchange_personal_data.orders_manager.create_group(
-            personal_data.OneCancelsTheOtherOrderGroup
+            personal_data.OneCancelsTheOtherOrderGroup, group_name="plop",
+            active_order_swap_strategy=personal_data.StopFirstActiveOrderSwapStrategy(123)
         )
         order.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
@@ -257,13 +259,20 @@ class TestOrderFactory:
                      price=decimal.Decimal("70"),
                      group=group)
         order_storage_details = orders_storage._format_order(order, exchange_manager)
+        order_storage_details[enums.StoredOrdersAttr.GROUP.value][enums.StoredOrdersAttr.GROUP_ID.value] = "plop2"
     
         pending_groups = {}
         created_order = await personal_data.create_order_from_order_storage_details(
             order_storage_details, exchange_manager, pending_groups
         )
-        assert created_order.order_group is group
-        assert pending_groups == {group.name: group}
+        assert created_order.order_group == personal_data.OneCancelsTheOtherOrderGroup(
+            "plop2", exchange_manager.exchange_personal_data.orders_manager,
+            active_order_swap_strategy=personal_data.StopFirstActiveOrderSwapStrategy(123)
+        )
+        assert len(pending_groups) == 1
+        assert pending_groups["plop2"].name == "plop2"
+        assert pending_groups["plop2"].orders_manager is exchange_manager.exchange_personal_data.orders_manager
+        assert pending_groups["plop2"].active_order_swap_strategy == personal_data.StopFirstActiveOrderSwapStrategy(123)
         await self.stop(exchange_manager)
 
     async def test_create_order_from_order_storage_details_with_chained_orders_with_group_and_trailing_profile(self):
@@ -271,7 +280,8 @@ class TestOrderFactory:
     
         order = personal_data.BuyLimitOrder(trader_inst)
         group_1 = exchange_manager.exchange_personal_data.orders_manager.create_group(
-            personal_data.OneCancelsTheOtherOrderGroup
+            personal_data.OneCancelsTheOtherOrderGroup,
+            active_order_swap_strategy=personal_data.StopFirstActiveOrderSwapStrategy(123)
         )
         group_2 = exchange_manager.exchange_personal_data.orders_manager.create_group(
             personal_data.OneCancelsTheOtherOrderGroup
@@ -320,6 +330,7 @@ class TestOrderFactory:
             group_1.name: group_1,
             group_2.name: group_2,
         }
+        assert group_1.active_order_swap_strategy.swap_timeout == 123
         assert created_order.trailing_profile is None
         chained_orders = created_order.chained_orders
         assert len(chained_orders) == 2

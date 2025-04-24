@@ -21,6 +21,7 @@ import pytest
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+import octobot_trading.constants as constants
 import octobot_trading.signals as signals
 
 from tests import event_loop
@@ -126,12 +127,18 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "2%"
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value] is False
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.IS_ACTIVE.value] is True
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value] is None
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value] is None
 
     # add new order (orders are based on order_id)
     previous_order_id = buy_limit_order.order_id
     buy_limit_order.order_id = "other_id"
     buy_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
     buy_limit_order.trigger_above = True
+    buy_limit_order.is_active = False
+    buy_limit_order.active_trigger_price = decimal.Decimal(12)
+    buy_limit_order.active_trigger_above = True
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_position="50")
     assert len(trading_signal_bundle_builder.signals) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
@@ -146,6 +153,9 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] is None
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] == "50"
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.TRIGGER_ABOVE.value] is True
+    assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.IS_ACTIVE.value] is False
+    assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value] == 12
+    assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value] is True
 
 
 def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
@@ -164,6 +174,9 @@ def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
 
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_TYPE.value] is None
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value] is None
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value] is None
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value] is None
 
     order_group = personal_data.OneCancelsTheOtherOrderGroup(
         "group_name",
@@ -175,6 +188,9 @@ def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] == "group_name"
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_TYPE.value] == \
            personal_data.OneCancelsTheOtherOrderGroup.__name__
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value] is personal_data.StopFirstActiveOrderSwapStrategy.__name__
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value] == constants.ACTIVE_ORDER_STRATEGY_SWAP_TIMEOUT
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value] == enums.ActiveOrderSwapTriggerPriceConfiguration.FILLING_PRICE.value
 
     # add the same order: do not add it twice
     trading_signal_bundle_builder.add_order_to_group(buy_limit_order, buy_limit_order.exchange_manager)
@@ -185,7 +201,11 @@ def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
     # update the same order
     other_order_group = personal_data.BalancedTakeProfitAndStopOrderGroup(
         "group_name_2",
-        buy_limit_order.exchange_manager.exchange_personal_data.orders_manager
+        buy_limit_order.exchange_manager.exchange_personal_data.orders_manager,
+        active_order_swap_strategy=personal_data.StopFirstActiveOrderSwapStrategy(
+            swap_timeout=3,
+            trigger_price_configuration="plop",
+        )
     )
     buy_limit_order.add_to_order_group(other_order_group)
     trading_signal_bundle_builder.add_order_to_group(buy_limit_order, buy_limit_order.exchange_manager)
@@ -202,6 +222,9 @@ def test_add_order_to_group(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] == "group_name_2"
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.GROUP_TYPE.value] == \
            personal_data.BalancedTakeProfitAndStopOrderGroup.__name__
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value] is personal_data.StopFirstActiveOrderSwapStrategy.__name__
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value] == 3
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value] == "plop"
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.GROUP_ID.value] == "group_name"
     assert trading_signal_bundle_builder.signals[1].content[enums.TradingSignalOrdersAttrs.GROUP_TYPE.value] == \
            personal_data.OneCancelsTheOtherOrderGroup.__name__

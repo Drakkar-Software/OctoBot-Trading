@@ -59,7 +59,7 @@ def create_order_instance(
     quantity,
     price=constants.ZERO,
     stop_price=constants.ZERO,
-    status=enums.OrderStatus.OPEN,
+    status: enums.OrderStatus = enums.OrderStatus.OPEN,
     order_id=None,
     exchange_order_id=None,
     filled_price=constants.ZERO,
@@ -78,6 +78,9 @@ def create_order_instance(
     exchange_creation_params=None,
     associated_entry_id=None,
     trailing_profile=None,
+    is_active=None,
+    active_trigger_price=None,
+    active_trigger_above=None,
 ):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
@@ -108,6 +111,9 @@ def create_order_instance(
         associated_entry_id=associated_entry_id,
         trigger_above=trigger_above,
         trailing_profile=trailing_profile,
+        is_active=is_active,
+        active_trigger_price=active_trigger_price,
+        active_trigger_above=active_trigger_above
     )
     return order
 

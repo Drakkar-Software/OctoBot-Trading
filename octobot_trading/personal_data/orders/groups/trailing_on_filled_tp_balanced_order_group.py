@@ -40,6 +40,14 @@ class TrailingOnFilledTPBalancedOrderGroup(
             self.STOP: TrailingSideBalance(closed_order, filled)  # only stop orders are trailing
         }
 
+    @classmethod
+    def _get_reversed_order_update(cls, order_update: dict, included_fields: list) -> dict:
+        reversed_update = super()._get_reversed_order_update(order_update, included_fields)
+        reversed_update[cls.UPDATED_PRICE] = (
+            order_update[cls.INITIAL_PRICE] if cls.UPDATED_PRICE in included_fields else None
+        )
+        return reversed_update
+
 
 class TrailingSideBalance(balanced_take_profit_and_stop_order_group.SideBalance):
     def _get_relevant_price(self, order: order_import.Order) -> decimal.Decimal:
@@ -74,4 +82,5 @@ class TrailingSideBalance(balanced_take_profit_and_stop_order_group.SideBalance)
         # here we also want to update its price according to the trailing profile
         base_update = super().get_order_update(order, updated_quantity)
         base_update[TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE] = self._get_next_trailing_price(order)
+        base_update[TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE] = order.origin_price
         return base_update

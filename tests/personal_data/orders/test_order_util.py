@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 
+import mock
 from mock import Mock, AsyncMock
 import pytest
 
@@ -22,6 +23,8 @@ import octobot_trading.api as api
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.order_factory as order_factory
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager, simulated_exchange_manager, set_future_exchange_fees
@@ -512,6 +515,103 @@ async def test_create_as_chained_order_bundled_order_no_open_order(trader_simula
     assert base_order.is_initialized is False
     # open_order_2 got cleared
     assert open_order_2.exchange_manager is None
+
+
+@pytest.mark.asyncio
+async def test_create_as_active_order_using_strategy_if_any(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    inactive_order = personal_data.SellLimitOrder(trader_inst)
+    group = personal_data.OneCancelsTheOtherOrderGroup(
+        "plop", exchange_manager_inst.exchange_personal_data.orders_manager
+    )
+
+    with mock.patch.object(order_util, "create_as_active_order_on_exchange", mock.AsyncMock()) as create_as_active_order_on_exchange, \
+        mock.patch.object(group.active_order_swap_strategy.__class__, "execute", mock.AsyncMock()) as execute_mock:
+        # no strategy
+        await personal_data.create_as_active_order_using_strategy_if_any(inactive_order, 123, "callback")
+        create_as_active_order_on_exchange.assert_called_once_with(inactive_order, False)
+        execute_mock.assert_not_called()
+        create_as_active_order_on_exchange.reset_mock()
+
+        # with strategy
+        inactive_order.order_group = group
+        await personal_data.create_as_active_order_using_strategy_if_any(inactive_order, 123, "callback")
+        create_as_active_order_on_exchange.assert_not_called()
+        execute_mock.assert_called_once_with(inactive_order, "callback")
+
+
+@pytest.mark.asyncio
+async def test_create_as_active_order_on_exchange_with_sub_calls(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    trader_inst.simulate = False
+    inactive_order = personal_data.SellLimitOrder(trader_inst)
+    inactive_order.is_active = False
+    exchange_created_order = personal_data.SellLimitOrder(trader_inst)
+    exchange_created_order.update(
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        order_id="base_order_id",
+        symbol="BTC/USDT",
+        current_price=decimal.Decimal("55"),
+        quantity=decimal.Decimal("10"),
+        price=decimal.Decimal("70"),
+        reduce_only=False,
+        fee={
+            enums.FeePropertyColumns.COST.value: 1,
+            enums.FeePropertyColumns.CURRENCY.value: "USDT",
+        }
+    )
+    await exchange_manager_inst.exchange_personal_data.orders_manager.upsert_order_instance(inactive_order)
+    all_orders = exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders()
+    assert all_orders == [inactive_order]
+    with mock.patch.object(exchange_manager_inst.exchange, "create_order", mock.AsyncMock(return_value=exchange_created_order)) as create_order_mock, \
+        mock.patch.object(order_factory, "create_order_instance_from_raw", mock.Mock(return_value=exchange_created_order)) as create_order_instance_from_raw_mock:
+        active_order = await personal_data.create_as_active_order_on_exchange(inactive_order, True)
+        assert active_order is exchange_created_order
+        assert active_order.is_active is True
+        all_orders = exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders()
+        # inactive order is replaced by active_order
+        assert all_orders == [active_order]
+        # inactive_order is now active and cleared
+        assert inactive_order.is_active is True
+        assert inactive_order.exchange_manager is None
+        create_order_mock.assert_called_once()
+        create_order_instance_from_raw_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_order_as_inactive_on_exchange_with_sub_calls(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    trader_inst.enable_inactive_orders = True
+    trader_inst.simulate = False
+    active_order = personal_data.SellLimitOrder(trader_inst)
+    active_order.update(
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        order_id="base_order_id",
+        symbol="BTC/USDT",
+        current_price=decimal.Decimal("55"),
+        quantity=decimal.Decimal("10"),
+        price=decimal.Decimal("70"),
+        reduce_only=False,
+        active_trigger_price=decimal.Decimal("70"),
+        active_trigger_above=False,
+        fee={
+            enums.FeePropertyColumns.COST.value: 1,
+            enums.FeePropertyColumns.CURRENCY.value: "USDT",
+        }
+    )
+    await exchange_manager_inst.exchange_personal_data.orders_manager.upsert_order_instance(active_order)
+    all_orders = exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders()
+    assert all_orders == [active_order]
+    assert active_order._active_trigger_event is None
+    with mock.patch.object(exchange_manager_inst.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock:
+        assert await personal_data.update_order_as_inactive_on_exchange(active_order, False) is True
+        assert exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders() == [active_order]
+        # order is now inactive
+        assert exchange_manager_inst.exchange_personal_data.orders_manager.get_inactive_orders() == [active_order]
+        assert active_order.is_active is False
+        assert active_order.status == enums.OrderStatus.OPEN
+        assert active_order._active_trigger_event is not None
+        cancel_order_mock.assert_called_once()
 
 
 @pytest.mark.asyncio

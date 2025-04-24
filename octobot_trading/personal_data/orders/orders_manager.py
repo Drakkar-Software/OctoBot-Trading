@@ -27,6 +27,8 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.personal_data.orders.active_order_swap_strategies.active_order_swap_strategy as \
+    active_order_swap_strategy_import
 import octobot_trading.personal_data.orders.order_group as order_group_import
 
 
@@ -96,11 +98,15 @@ class OrdersManager(util.Initializable):
             if order.order_group is not None and order.order_group.name == group_name
         ]
 
-    def get_or_create_group(self, group_type, group_name):
+    def get_or_create_group(
+        self, group_type, group_name,
+        active_order_swap_strategy: typing.Optional[active_order_swap_strategy_import.ActiveOrderSwapStrategy] = None
+    ):
         """
         Should be used to manage long lasting groups that are meant to be re-used
         :param group_type: the OrderGroup class of the group
         :param group_name: the name to identify the group
+        :param active_order_swap_strategy: the order group active order swap strategy to follow
         :return: the retrieved / created group
         """
         try:
@@ -110,21 +116,24 @@ class OrdersManager(util.Initializable):
             raise errors.ConflictingOrderGroupError(f"The order group named {group_name} is of "
                                                     f"type: {group.__class__.__name__} instead of  {group_type}")
         except KeyError:
-            return self.create_group(group_type, group_name)
+            return self.create_group(
+                group_type, group_name=group_name, active_order_swap_strategy=active_order_swap_strategy
+            )
 
-    def create_group(self, group_type, group_name=None):
+    def create_group(
+        self, group_type, group_name=None,
+        active_order_swap_strategy: typing.Optional[active_order_swap_strategy_import.ActiveOrderSwapStrategy] = None
+    ):
         """
         Should be used to create temporary groups binding localized orders, where this group can be
         created once and directly associated to each order
-        :param group_type:
-        :param group_name:
         :return:
         """
         group_name = group_name or str(uuid.uuid4())
         if group_name in self.order_groups:
             raise errors.ConflictingOrderGroupError(f"Can't create a new order group named '{group_name}': "
                                                     f"one with this name already exists")
-        group = group_type(group_name, self)
+        group = group_type(group_name, self, active_order_swap_strategy=active_order_swap_strategy)
         self.order_groups[group_name] = group
         return group
 
@@ -173,6 +182,13 @@ class OrdersManager(util.Initializable):
         ] + [
             order.order_id
             for order in self.pending_creation_orders
+        ]
+
+    def get_inactive_orders(self, symbol=None) -> list:
+        return [
+            order
+            for order in self._select_orders(symbol=symbol)
+            if not order.is_active
         ]
 
     async def upsert_order_close_from_raw(self, exchange_order_id, raw_order) -> typing.Optional[order_class.Order]:
@@ -255,11 +271,11 @@ class OrdersManager(util.Initializable):
             order
             for order in self.orders.values()
             if (
-                    (state is None or order.status == state) and
-                    (symbol is None or (symbol and order.symbol == symbol)) and
-                    (since == constants.NO_DATA_LIMIT or (since and order.timestamp >= since)) and
-                    (until == constants.NO_DATA_LIMIT or (until and order.timestamp <= until)) and
-                    (tag is None or order.tag == tag)
+                (state is None or order.status == state) and
+                (symbol is None or (symbol and order.symbol == symbol)) and
+                (since == constants.NO_DATA_LIMIT or (since and order.timestamp >= since)) and
+                (until == constants.NO_DATA_LIMIT or (until and order.timestamp <= until)) and
+                (tag is None or order.tag == tag)
             )
         ]
         return orders if limit == constants.NO_DATA_LIMIT else orders[0:limit]

@@ -62,16 +62,17 @@ class LimitOrder(order_class.Order):
             self.origin_price = decimal_order_adapter.decimal_adapt_price(symbol_market, updated_price)
 
     async def update_order_status(self, force_refresh=False):
-        if self.limit_price_hit_event is None:
-            self._create_hit_event(self.creation_time)
+        if self.is_active:
+            if self.limit_price_hit_event is None:
+                self._create_hit_event(self.creation_time)
 
-        if self.wait_for_hit_event_task is None and self.limit_price_hit_event is not None:
-            if self.limit_price_hit_event.is_set():
-                # order should be filled instantly
-                await self.on_fill()
-            else:
-                # order will be filled when conditions are met
-                self._create_hit_task()
+            if self.wait_for_hit_event_task is None and self.limit_price_hit_event is not None:
+                if self.limit_price_hit_event.is_set():
+                    # order should be filled instantly
+                    await self.on_fill()
+                else:
+                    # order will be filled when conditions are met
+                    self._create_hit_task()
 
     def _on_origin_price_change(self, previous_price, price_time):
         if previous_price is not constants.ZERO:
@@ -109,7 +110,7 @@ class LimitOrder(order_class.Order):
 
     def _should_instant_fill(self):
         open_price = self._get_open_price()
-        filling_price = self._get_filling_price()
+        filling_price = self.get_filling_price()
         if filling_price and open_price:
             if self.trigger_above:
                 # instant fill if order price is lower or equal to market price: ex spot sell order
@@ -129,6 +130,6 @@ class LimitOrder(order_class.Order):
         self.update_order_filled_values(self.origin_price)
         order_class.Order.on_fill_actions(self)
 
-    def clear(self):
+    def clear_active_order_elements(self):
         self._clear_event_and_tasks()
-        order_class.Order.clear(self)
+        order_class.Order.clear_active_order_elements(self)

@@ -19,14 +19,14 @@ import octobot_trading.constants as trading_constants
 
 
 def create_order_signal_content(
-        order, action, strategy, exchange_manager,
-        target_amount=None,
-        target_position=None,
-        updated_target_amount=None,
-        updated_target_position=None,
-        updated_limit_price=trading_constants.ZERO,
-        updated_stop_price=trading_constants.ZERO,
-        updated_current_price=trading_constants.ZERO,
+    order, action, strategy, exchange_manager,
+    target_amount=None,
+    target_position=None,
+    updated_target_amount=None,
+    updated_target_position=None,
+    updated_limit_price=trading_constants.ZERO,
+    updated_stop_price=trading_constants.ZERO,
+    updated_current_price=trading_constants.ZERO,
 ) -> dict:
     # only use order.order_id to identify orders in signals (exchange_order_id is local and never shared)
     return {
@@ -60,6 +60,12 @@ def create_order_signal_content(
             None if order.order_group is None else order.order_group.name,
         trading_enums.TradingSignalOrdersAttrs.GROUP_TYPE.value:
             None if order.order_group is None else order.order_group.__class__.__name__,
+        trading_enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value: \
+            order.order_group.active_order_swap_strategy.__class__.__name__ if order.order_group else None,
+        trading_enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value: \
+            order.order_group.active_order_swap_strategy.swap_timeout if order.order_group else None,
+        trading_enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value: \
+            order.order_group.active_order_swap_strategy.trigger_price_configuration if order.order_group else None,
         trading_enums.TradingSignalOrdersAttrs.TAG.value: order.tag,
         trading_enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: order.associated_entry_ids,
         trading_enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value:
@@ -69,6 +75,10 @@ def create_order_signal_content(
             order.trailing_profile.get_type().value if order.trailing_profile else None,
         trading_enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value:
             order.trailing_profile.to_dict() if order.trailing_profile else None,
+        trading_enums.TradingSignalOrdersAttrs.IS_ACTIVE.value: order.is_active,
+        trading_enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value:
+            None if order.active_trigger_price is None else float(order.active_trigger_price),
+        trading_enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: order.active_trigger_above,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
             None if order.triggered_by is None else order.triggered_by.order_id
         if order.has_been_bundled else None,

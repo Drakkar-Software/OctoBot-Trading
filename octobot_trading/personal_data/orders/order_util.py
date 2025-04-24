@@ -31,6 +31,7 @@ import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_ord
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 import octobot_trading.personal_data.orders.states.fill_order_state as fill_order_state
 import octobot_trading.personal_data.orders.order as order_import
+import octobot_trading.signals as signals
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -532,6 +533,51 @@ def get_trade_order_type(order_type: enums.TraderOrderType) -> enums.TradeOrderT
     if order_type is enums.TraderOrderType.TAKE_PROFIT_LIMIT:
         return enums.TradeOrderType.TAKE_PROFIT_LIMIT
     raise ValueError(order_type)
+
+
+async def create_as_active_order_using_strategy_if_any(
+    order, strategy_timeout: typing.Optional[float], wait_for_fill_callback: typing.Optional[typing.Callable]
+):
+    active_swap_strategy = order.order_group.active_order_swap_strategy if order.order_group else None
+    if active_swap_strategy and strategy_timeout is not None:
+        active_swap_strategy.timeout = strategy_timeout
+    if active_swap_strategy is None:
+        # no strategy: just create this order as active
+        await create_as_active_order_on_exchange(order, False)
+    else:
+        # use strategy to process swap
+        await active_swap_strategy.execute(order, wait_for_fill_callback)
+
+
+async def create_as_active_order_on_exchange(order_to_create, emit_trading_signals: bool):
+    async with signals.remote_signal_publisher(
+        order_to_create.trader.exchange_manager, order_to_create.symbol, emit_trading_signals
+    ):
+        active_order = await signals.update_order_as_active(
+            order_to_create.trader.exchange_manager,
+            signals.should_emit_trading_signal(order_to_create.trader.exchange_manager),
+            order_to_create,
+            params=order_to_create.exchange_creation_params
+        )
+        if active_order is None:
+            logging.get_logger(order_to_create.get_logger_name()).error(
+                f"Failed to create active order for {order_to_create}"
+            )
+        return active_order
+
+
+async def update_order_as_inactive_on_exchange(order_to_cancel, emit_trading_signals: bool):
+    async with signals.remote_signal_publisher(
+        order_to_cancel.trader.exchange_manager, order_to_cancel.symbol, emit_trading_signals
+    ):
+        if not await signals.update_order_as_inactive(
+            order_to_cancel.trader.exchange_manager,
+            signals.should_emit_trading_signal(order_to_cancel.trader.exchange_manager),
+            order_to_cancel,
+        ):
+            logging.get_logger(order_to_cancel.get_logger_name()).error(f"Failed to cancel active order on exchange: {order_to_cancel}")
+            return False
+    return True
 
 
 async def create_as_chained_order(order):

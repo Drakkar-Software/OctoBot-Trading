@@ -93,7 +93,7 @@ class PortfolioManager(util.Initializable):
         """
         if self.trader.is_enabled and self._enable_portfolio_update_from_order:
             async with self.portfolio_history_update():
-                if self.trader.simulate or not require_exchange_update:
+                if (self.trader.simulate or not order.is_active) or not require_exchange_update:
                     return self._refresh_simulated_trader_portfolio_from_order(order)
                 # on real trading only:
                 # reload portfolio to ensure portfolio sync
