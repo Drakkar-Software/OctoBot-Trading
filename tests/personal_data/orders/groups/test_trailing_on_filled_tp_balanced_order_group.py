@@ -16,14 +16,22 @@
 import decimal
 import mock
 import pytest
+import asyncio
 
 import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.groups.balanced_take_profit_and_stop_order_group as \
     balanced_take_profit_and_stop_order_group
 import octobot_trading.personal_data.orders.groups.trailing_on_filled_tp_balanced_order_group as \
     trailing_on_filled_tp_balanced_order_group
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_util as order_util
 from tests.exchanges import backtesting_config, backtesting_exchange_manager, fake_backtesting
+from tests.personal_data.orders.groups import order_mock
+from tests.personal_data import DEFAULT_ORDER_SYMBOL
+from tests.personal_data.orders import created_order
+from tests.exchanges import simulated_trader, simulated_exchange_manager
 
 
 @pytest.fixture
@@ -44,7 +52,7 @@ def trailing_side_balance():
 
 
 @pytest.fixture
-def order():
+def order_f():
     trader = mock.Mock(exchange_manager=mock.Mock())
     target_order = personal_data.Order(trader)
     return target_order
@@ -58,12 +66,293 @@ def test_balances_factory(toftpb_group):
     assert isinstance(balances[toftpb_group.STOP], trailing_on_filled_tp_balanced_order_group.TrailingSideBalance)
 
 
-def test_TrailingSideBalance_get_order_update(trailing_side_balance, order):
+@pytest.mark.asyncio
+async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneous_orders(simulated_trader):
+    _, exchange_manager, trader_instance = simulated_trader
+    trader_instance.allow_artificial_orders = False
+    trader_instance.enable_inactive_orders = True
+    trader_instance.simulate = False
+    exchange_manager.is_backtesting = True  # force update_order_status
+    tbtp_group = personal_data.TrailingOnFilledTPBalancedOrderGroup(
+        "name", exchange_manager.exchange_personal_data.orders_manager
+    )
+    assert isinstance(tbtp_group.active_order_swap_strategy, personal_data.StopFirstActiveOrderSwapStrategy)
+    stop_loss_1 = created_order(personal_data.StopLossOrder, enums.TraderOrderType.STOP_LOSS,
+                              trader_instance, side=enums.TradeOrderSide.SELL)
+    stop_loss_1.update(
+        price=decimal.Decimal(8),
+        quantity=decimal.Decimal("0.8"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.STOP_LOSS,
+        group=tbtp_group,
+        is_active=True,
+        active_trigger_price=decimal.Decimal(8),
+        active_trigger_above=False,
+        exchange_order_id="e_stop_loss_1"
+
+    )
+    stop_loss_2 = created_order(personal_data.StopLossOrder, enums.TraderOrderType.STOP_LOSS,
+                              trader_instance, side=enums.TradeOrderSide.SELL)
+    stop_loss_2.update(
+        price=decimal.Decimal(10),
+        quantity=decimal.Decimal("0.2"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.STOP_LOSS,
+        group=tbtp_group,
+        is_active=True,
+        active_trigger_price=decimal.Decimal(10),
+        active_trigger_above=False,
+        exchange_order_id="e_stop_loss_2"
+    )
+    updated_stop_loss_2 = [stop_loss_2]
+    sell_limit_1 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_1.update(
+        price=decimal.Decimal(20),
+        quantity=decimal.Decimal("0.4"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=tbtp_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(20),
+        active_trigger_above=True,
+        exchange_order_id="e_sell_limit_1"
+    )
+    sell_limit_2 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_2.update(
+        price=decimal.Decimal(30),
+        quantity=decimal.Decimal("0.2"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=tbtp_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(30),
+        active_trigger_above=True,
+        exchange_order_id="e_sell_limit_2"
+    )
+    sell_limit_3 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_3.update(
+        price=decimal.Decimal(40),
+        quantity=decimal.Decimal("0.4"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=tbtp_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(40),
+        active_trigger_above=True,
+        exchange_order_id="e_sell_limit_3"
+    )
+    portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+    assert portfolio["BTC"].available == decimal.Decimal(10)
+    locked_amount = constants.ZERO
+    for order in [stop_loss_1, stop_loss_2, sell_limit_1, sell_limit_2, sell_limit_3]:
+        await order.initialize()
+        await order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
+        if order in [stop_loss_1, stop_loss_2]:
+            # stop sell limit quantity is not removed from available but stop is
+            locked_amount += order.origin_quantity
+        assert portfolio["BTC"].available == decimal.Decimal(10) - locked_amount
+    assert stop_loss_1.is_active is True
+    assert stop_loss_2.is_active is True
+    assert sorted(
+        order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders(), key=lambda x: x.origin_price
+    ) ==  sorted(
+        [sell_limit_1, sell_limit_2, sell_limit_3], key=lambda x: x.origin_price
+    )
+    assert len(tbtp_group.get_group_open_orders()) == 5
+    assert all(order in tbtp_group.get_group_open_orders()
+               for order in order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders())
+
+    async def _edit_order(*args, quantity=None, price=None, **kwargs):
+        edited_stop_loss = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                                        trader_instance, side=enums.TradeOrderSide.SELL)
+        edited_stop_loss.update(
+            price=price or decimal.Decimal(10),
+            quantity=quantity,
+            symbol=DEFAULT_ORDER_SYMBOL,
+            order_type=enums.TraderOrderType.STOP_LOSS,
+            group=tbtp_group,
+            is_active=True,
+            active_trigger_price=decimal.Decimal(10),
+            active_trigger_above=False,
+            exchange_order_id="edited_stop_loss_1"
+        )
+        order_dict = edited_stop_loss.to_dict()
+        order_dict.pop(enums.ExchangeConstantsOrderColumns.ID.value)
+        return order_dict
+
+    with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock, \
+            mock.patch.object(exchange_manager.exchange, "edit_order",
+                              mock.AsyncMock(side_effect=_edit_order)) as edit_order_mock:
+        async def step1_task():
+            # STEP 1
+            # sell_limit_1 become active: stop_loss_2 is now inactive, stop_loss_1 is reduced and remains active
+            step_1_deactivated_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_1)
+            sell_limit_1.is_active = True    # simulate now active order
+            assert step_1_deactivated_orders == [stop_loss_2]
+            cancel_order_mock.assert_called_once()
+            edit_order_mock.assert_called_once()
+            assert stop_loss_1.is_active is True
+            assert stop_loss_2.is_active is False
+            for order in [stop_loss_1, stop_loss_2, sell_limit_1, sell_limit_2, sell_limit_3]:
+                assert not order.is_cleared()
+            # stop_loss_2 is now inactive as well, sell limit could be updated to come active (done in strategy)
+            all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+            assert len(all_orders) == 5
+            assert len(tbtp_group.get_group_open_orders()) == 5
+            assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
+            assert stop_loss_1 in all_orders and stop_loss_2 in all_orders
+            assert all(order in all_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
+            inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+            assert len(inactive_orders) == 3
+            assert stop_loss_2 in inactive_orders and all(order in inactive_orders for order in [sell_limit_2, sell_limit_3])
+            # stop_loss_1 is reduced
+            assert stop_loss_1.origin_quantity == decimal.Decimal("0.6")  # 0.8 - 0.2
+            cancel_order_mock.reset_mock()
+            edit_order_mock.reset_mock()
+
+            # reverse step 1
+            exchange_created_order = personal_data.StopLossOrder(trader_instance)
+            exchange_created_order.update(
+                order_type=enums.TraderOrderType.STOP_LOSS,
+                symbol=DEFAULT_ORDER_SYMBOL,
+                quantity=stop_loss_2.origin_quantity,
+                price=stop_loss_2.origin_price,
+                status=enums.OrderStatus.OPEN,
+                exchange_order_id="recreated_stop_loss_2",
+                fee={
+                    enums.FeePropertyColumns.COST.value: 1,
+                    enums.FeePropertyColumns.CURRENCY.value: "USDT",
+                }
+            )
+            with mock.patch.object(order_factory, "create_order_instance_from_raw",
+                              mock.Mock(return_value=exchange_created_order)) as create_order_instance_from_raw_mock, \
+                 mock.patch.object(exchange_manager.exchange, "create_order",
+                                   mock.AsyncMock(return_value=exchange_created_order)) as create_order_mock:
+                await step_1_reverse(sell_limit_1, step_1_deactivated_orders)
+                # stop loss 1 gets increased, stop loss 2 gets active again (re-created) and sell_limit_1 is back to inactive
+                cancel_order_mock.assert_called_once()
+                assert cancel_order_mock.mock_calls[0].args[0] == sell_limit_1.exchange_order_id
+                edit_order_mock.assert_called_once()
+                assert edit_order_mock.mock_calls[0].args[0] == stop_loss_1.exchange_order_id
+                create_order_mock.assert_called_once()
+                assert create_order_mock.mock_calls[0].kwargs["order_type"] == enums.TraderOrderType.STOP_LOSS
+                create_order_instance_from_raw_mock.assert_called_once()
+                assert stop_loss_2.is_cleared()
+                assert stop_loss_1.origin_quantity == decimal.Decimal("0.8")
+                assert exchange_created_order.origin_quantity == stop_loss_2.origin_quantity
+                assert exchange_created_order.is_active is True
+                updated_stop_loss_2[0] = exchange_created_order
+                assert sell_limit_1.is_active is False
+                all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+                assert len(all_orders) == 5
+                assert all(order in all_orders for order in [stop_loss_1, updated_stop_loss_2[0]])
+                assert len(tbtp_group.get_group_open_orders()) == 5
+                assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
+                inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+                assert len(inactive_orders) == 3
+                assert all(order in inactive_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
+                cancel_order_mock.reset_mock()
+                edit_order_mock.reset_mock()
+                create_order_mock.reset_mock()
+                create_order_instance_from_raw_mock.reset_mock()
+
+        async def step2_task():
+            # STEP 2 => because of the group order locks, should be executed after step 1
+            # sell_limit_2 become active: updated_stop_loss_2[0] (created in step 1) is cancelled, stop_loss_1 has no change
+            step_2_deactivated_orders, step_2_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_2)
+            sell_limit_2.is_active = True    # simulate now active order
+            assert step_2_deactivated_orders == [updated_stop_loss_2[0]]   # why ? group order iterator issue ?
+            cancel_order_mock.assert_called_once()
+            edit_order_mock.assert_not_called()
+            assert stop_loss_1.is_active is True
+            assert updated_stop_loss_2[0].is_active is False
+            assert sell_limit_1.is_active is False
+            assert sell_limit_2.is_active is True
+            assert sell_limit_3.is_active is False
+            for order in [stop_loss_1, updated_stop_loss_2[0], sell_limit_1, sell_limit_2, sell_limit_3]:
+                assert not order.is_cleared()
+            # updated_stop_loss_2[0] is now inactive as well, sell limit could be updated to come active (done in strategy)
+            all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+            assert len(all_orders) == 5
+            assert len(tbtp_group.get_group_open_orders()) == 5
+            assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
+            assert stop_loss_1 in all_orders and updated_stop_loss_2[0] in all_orders
+            assert all(o in all_orders for o in [sell_limit_1, sell_limit_2, sell_limit_3])
+            inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+            assert len(inactive_orders) == 3
+            assert all(o in inactive_orders for o in [updated_stop_loss_2[0], sell_limit_1, sell_limit_3])
+            # stop_loss_1 is NOT reduced
+            assert stop_loss_1.origin_quantity == decimal.Decimal("0.8")
+            cancel_order_mock.reset_mock()
+            edit_order_mock.reset_mock()
+
+            # reverse step 2
+            exchange_created_order = personal_data.StopLossOrder(trader_instance)
+            exchange_created_order.update(
+                order_type=enums.TraderOrderType.STOP_LOSS,
+                symbol=DEFAULT_ORDER_SYMBOL,
+                quantity=stop_loss_2.origin_quantity,
+                price=stop_loss_2.origin_price,
+                status=enums.OrderStatus.OPEN,
+                exchange_order_id="re-recreated_stop_loss_2",
+                fee={
+                    enums.FeePropertyColumns.COST.value: 1,
+                    enums.FeePropertyColumns.CURRENCY.value: "USDT",
+                }
+            )
+            with mock.patch.object(order_factory, "create_order_instance_from_raw",
+                              mock.Mock(return_value=exchange_created_order)) as create_order_instance_from_raw_mock, \
+                 mock.patch.object(exchange_manager.exchange, "create_order",
+                                   mock.AsyncMock(return_value=exchange_created_order)) as create_order_mock:
+                await step_2_reverse(sell_limit_2, step_2_deactivated_orders)
+                # stop loss 1 does not change, stop loss 2 gets active again (re-created) and sell_limit_2 is back to inactive
+                cancel_order_mock.assert_called_once()
+                assert cancel_order_mock.mock_calls[0].args[0] == sell_limit_2.exchange_order_id
+                edit_order_mock.assert_not_called()
+                create_order_mock.assert_called_once()
+                assert create_order_mock.mock_calls[0].kwargs["order_type"] == enums.TraderOrderType.STOP_LOSS
+                create_order_instance_from_raw_mock.assert_called_once()
+                assert updated_stop_loss_2[0].is_cleared()
+                assert stop_loss_1.origin_quantity == decimal.Decimal("0.8")
+                assert exchange_created_order.origin_quantity == updated_stop_loss_2[0].origin_quantity
+                assert sell_limit_1.is_active is False
+                assert exchange_created_order.is_active is True
+
+                re_updated_stop_loss_2 = exchange_created_order
+                assert sell_limit_1.is_active is False
+                all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+                assert len(all_orders) == 5
+                assert all(order in all_orders for order in [stop_loss_1, re_updated_stop_loss_2])
+                assert len(tbtp_group.get_group_open_orders()) == 5
+                assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
+
+                inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+                assert len(inactive_orders) == 3
+                assert all(order in inactive_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
+                cancel_order_mock.reset_mock()
+                edit_order_mock.reset_mock()
+                create_order_mock.reset_mock()
+                create_order_instance_from_raw_mock.reset_mock()
+
+        await step1_task()
+        await step2_task()
+        # await asyncio.gather(
+        #     step1_task(),
+        #     step2_task(),
+        # )
+
+def test_TrailingSideBalance_get_order_update(trailing_side_balance, order_f):
+    order = order_f
     # no trailing profile
     assert trailing_side_balance.get_order_update(order, decimal.Decimal(12)) == {
         personal_data.TrailingOnFilledTPBalancedOrderGroup.ORDER: order,
         personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_QUANTITY: decimal.Decimal(12),
         personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE: None,
+        personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_QUANTITY: decimal.Decimal(0),
+        personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE: decimal.Decimal(0),
     }
 
     # incompatible trailing profile
@@ -72,6 +361,8 @@ def test_TrailingSideBalance_get_order_update(trailing_side_balance, order):
         personal_data.TrailingOnFilledTPBalancedOrderGroup.ORDER: order,
         personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_QUANTITY: decimal.Decimal(12),
         personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE: None,
+        personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_QUANTITY: decimal.Decimal(0),
+        personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE: decimal.Decimal(0),
     }
 
     order.trailing_profile = personal_data.FilledTakeProfitTrailingProfile([
@@ -89,6 +380,8 @@ def test_TrailingSideBalance_get_order_update(trailing_side_balance, order):
             personal_data.TrailingOnFilledTPBalancedOrderGroup.ORDER: order,
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_QUANTITY: decimal.Decimal(12),
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE: None,
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_QUANTITY: decimal.Decimal(0),
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE: decimal.Decimal(0),
         }
         get_potentially_outdated_price_mock.assert_called_once()
 
@@ -103,6 +396,8 @@ def test_TrailingSideBalance_get_order_update(trailing_side_balance, order):
             personal_data.TrailingOnFilledTPBalancedOrderGroup.ORDER: order,
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_QUANTITY: decimal.Decimal(12),
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE: decimal.Decimal(10000),
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_QUANTITY: decimal.Decimal(0),
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE: decimal.Decimal(0),
         }
         get_potentially_outdated_price_mock.assert_called_once()
 
@@ -118,6 +413,8 @@ def test_TrailingSideBalance_get_order_update(trailing_side_balance, order):
             personal_data.TrailingOnFilledTPBalancedOrderGroup.ORDER: order,
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_QUANTITY: decimal.Decimal(12),
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE: None,
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_QUANTITY: decimal.Decimal(0),
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE: decimal.Decimal(0),
         }
         get_potentially_outdated_price_mock.assert_called_once()
 
@@ -132,5 +429,7 @@ def test_TrailingSideBalance_get_order_update(trailing_side_balance, order):
             personal_data.TrailingOnFilledTPBalancedOrderGroup.ORDER: order,
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_QUANTITY: decimal.Decimal(12),
             personal_data.TrailingOnFilledTPBalancedOrderGroup.UPDATED_PRICE: decimal.Decimal(12000),
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_QUANTITY: decimal.Decimal(0),
+            personal_data.TrailingOnFilledTPBalancedOrderGroup.INITIAL_PRICE: decimal.Decimal(0),
         }
         get_potentially_outdated_price_mock.assert_called_once()

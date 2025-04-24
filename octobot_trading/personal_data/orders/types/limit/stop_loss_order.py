@@ -22,9 +22,6 @@ class StopLossOrder(limit_order.LimitOrder):
         super().__init__(trader, side)
         self.trigger_above = self.side is enums.TradeOrderSide.BUY
 
-    def is_counted_in_available_funds(self):
-        return False
-
     async def update_price_if_outdated(self):
         pass
 

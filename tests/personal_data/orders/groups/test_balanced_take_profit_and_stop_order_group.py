@@ -25,6 +25,9 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_util as order_util
 from tests.exchanges import backtesting_config, backtesting_exchange_manager, fake_backtesting
 from tests.personal_data.orders.groups import order_mock
+from tests.personal_data import DEFAULT_ORDER_SYMBOL
+from tests.personal_data.orders import created_order
+from tests.exchanges import simulated_trader, simulated_exchange_manager
 
 
 # All test coroutines will be treated as marked.
@@ -277,6 +280,202 @@ async def test_get_balance(btps_group):
             is_stop_order_mock.reset_mock()
 
 
+async def test_balanced_adapt_before_order_becoming_active_and_reverse_swap(simulated_trader):
+    _, exchange_manager, trader_instance = simulated_trader
+    trader_instance.allow_artificial_orders = False
+    trader_instance.enable_inactive_orders = True
+    trader_instance.simulate = False
+    exchange_manager.is_backtesting = True  # force update_order_status
+    btp_group = personal_data.BalancedTakeProfitAndStopOrderGroup(
+        "name", exchange_manager.exchange_personal_data.orders_manager
+    )
+    assert isinstance(btp_group.active_order_swap_strategy, personal_data.StopFirstActiveOrderSwapStrategy)
+    stop_loss_1 = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                              trader_instance, side=enums.TradeOrderSide.SELL)
+    stop_loss_1.update(
+        price=decimal.Decimal(8),
+        quantity=decimal.Decimal("0.8"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.STOP_LOSS,
+        group=btp_group,
+        is_active=True,
+        active_trigger_price=decimal.Decimal(8),
+        active_trigger_above=False,
+    )
+    stop_loss_2 = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                              trader_instance, side=enums.TradeOrderSide.SELL)
+    stop_loss_2.update(
+        price=decimal.Decimal(10),
+        quantity=decimal.Decimal("0.2"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.STOP_LOSS,
+        group=btp_group,
+        is_active=True,
+        active_trigger_price=decimal.Decimal(10),
+        active_trigger_above=False,
+    )
+    sell_limit_1 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_1.update(
+        price=decimal.Decimal(20),
+        quantity=decimal.Decimal("0.4"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=btp_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(20),
+        active_trigger_above=True,
+    )
+    sell_limit_2 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_2.update(
+        price=decimal.Decimal(30),
+        quantity=decimal.Decimal("0.25"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=btp_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(30),
+        active_trigger_above=True,
+    )
+    sell_limit_3 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_3.update(
+        price=decimal.Decimal(40),
+        quantity=decimal.Decimal("0.35"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=btp_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(40),
+        active_trigger_above=True,
+    )
+    portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+    assert portfolio["BTC"].available == decimal.Decimal(10)
+    locked_amount = constants.ZERO
+    for order in [stop_loss_1, stop_loss_2, sell_limit_1, sell_limit_2, sell_limit_3]:
+        await order.initialize()
+        await order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
+        if order in [stop_loss_1, stop_loss_2]:
+            # stop sell limit quantity is not removed from available but stop is
+            locked_amount += order.origin_quantity
+        assert portfolio["BTC"].available == decimal.Decimal(10) - locked_amount
+    assert stop_loss_1.is_active is True
+    assert stop_loss_2.is_active is True
+    assert sorted(
+        order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders(), key=lambda x: x.origin_price
+    ) ==  sorted(
+        [sell_limit_1, sell_limit_2, sell_limit_3], key=lambda x: x.origin_price
+    )
+    async def _edit_order(*args, quantity=None, price=None, **kwargs):
+        edited_stop_loss = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                                        trader_instance, side=enums.TradeOrderSide.SELL)
+        edited_stop_loss.update(
+            price=price or decimal.Decimal(10),
+            quantity=quantity,
+            symbol=DEFAULT_ORDER_SYMBOL,
+            order_type=enums.TraderOrderType.STOP_LOSS,
+            group=btp_group,
+            is_active=True,
+            active_trigger_price=decimal.Decimal(10),
+            active_trigger_above=False,
+        )
+        order_dict = edited_stop_loss.to_dict()
+        order_dict.pop(enums.ExchangeConstantsOrderColumns.ID.value)
+        return order_dict
+
+
+    with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock, \
+            mock.patch.object(exchange_manager.exchange, "edit_order",
+                              mock.AsyncMock(side_effect=_edit_order)) as edit_order_mock:
+        # sell_limit_1 become active: stop_loss_2 is now inactive, stop_loss_1 is reduced and remains active
+        deactivated_orders, _ = await btp_group.adapt_before_order_becoming_active(sell_limit_1)
+        sell_limit_1.is_active=True    # simulate now active order
+        assert deactivated_orders == [stop_loss_2]
+        cancel_order_mock.assert_called_once()
+        edit_order_mock.assert_called_once()
+        assert stop_loss_1.is_active is True
+        assert stop_loss_2.is_active is False
+        for order in [stop_loss_1, stop_loss_2, sell_limit_1, sell_limit_2, sell_limit_3]:
+            assert not order.is_cleared()
+        # stop_loss_2 is now inactive as well, sell limit could be updated to come active (done in strategy)
+        all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+        assert len(all_orders) == 5
+        assert stop_loss_1 in all_orders and stop_loss_2 in all_orders
+        assert all(order in all_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+        assert len(inactive_orders) == 3
+        assert stop_loss_2 in inactive_orders and all(order in inactive_orders for order in [sell_limit_2, sell_limit_3])
+        # stop_loss_1 is reduced
+        assert stop_loss_1.origin_quantity == decimal.Decimal("0.6")  # 0.8 - 0.2
+        cancel_order_mock.reset_mock()
+        edit_order_mock.reset_mock()
+
+        # fill sell_limit_1: stop_loss_2 gets canceled
+        await sell_limit_1.on_fill(force_fill=True)
+        # stop_loss_2 is canceled
+        assert sell_limit_1.is_closed()
+        assert stop_loss_2.is_closed()
+        assert sell_limit_1.is_cleared()
+        assert stop_loss_2.is_cleared()
+        all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+        assert len(all_orders) == 3
+        assert stop_loss_1 in all_orders and stop_loss_2 not in all_orders
+        assert all(order in all_orders for order in [sell_limit_2, sell_limit_3])
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+        assert len(inactive_orders) == 2
+        assert all(order in inactive_orders for order in [sell_limit_2, sell_limit_3])
+        assert stop_loss_1.is_active is True
+        assert sell_limit_2.is_active is False
+        assert sell_limit_3.is_active is False
+
+        # sell_limit_2 become active: stop_loss_1 is reduced and remains active
+        # stop_loss_1 is reduced again, no order is canceled
+        deactivated_orders, reverse_swap = await btp_group.adapt_before_order_becoming_active(sell_limit_2)
+        sell_limit_2.is_active=True    # simulate now active order
+        assert deactivated_orders == []
+        cancel_order_mock.assert_not_called()
+        edit_order_mock.assert_called_once()
+        assert stop_loss_1.is_active is True
+        assert sell_limit_2.is_active is True
+        assert sell_limit_3.is_active is False
+        for order in [stop_loss_1, sell_limit_2, sell_limit_3]:
+            assert not order.is_cleared()
+        # stop_loss_2 is now inactive as well, could be to update sell limit to come active (done in strategy)
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+        assert inactive_orders == [sell_limit_3]
+        # stop_loss_1 is reduced
+        assert stop_loss_1.origin_quantity == decimal.Decimal("0.35")  # 0.8 - 0.2 - 0.25
+        cancel_order_mock.reset_mock()
+        edit_order_mock.reset_mock()
+
+        # now reverse swap
+        with mock.patch.object(btp_group, "adapt_before_order_becoming_active", mock.AsyncMock()) as adapt_before_order_becoming_active_mock, \
+            mock.patch.object(order_util, "create_as_active_order_on_exchange", mock.AsyncMock()) as create_as_active_order_on_exchange_mock, \
+            mock.patch.object(btp_group, "_apply_update_order_actions", mock.AsyncMock()) as _apply_update_order_actions_mock, \
+            mock.patch.object(order_util, "update_order_as_inactive_on_exchange", mock.AsyncMock()) as update_order_as_inactive_on_exchange_mock:
+            await reverse_swap("order_0", ["order_1", "order_2"])
+            update_order_as_inactive_on_exchange_mock.assert_called_once_with("order_0", False)
+            adapt_before_order_becoming_active_mock.assert_not_called()
+            assert create_as_active_order_on_exchange_mock.call_count == 2
+            assert create_as_active_order_on_exchange_mock.mock_calls[0].args == ("order_1", False)
+            assert create_as_active_order_on_exchange_mock.mock_calls[1].args == ("order_2", False)
+            _apply_update_order_actions_mock.assert_called_once()
+            reverse_actions = _apply_update_order_actions_mock.mock_calls[0].args[0]
+            assert len(reverse_actions) == 1
+            assert reverse_actions[0][btp_group.ORDER] is stop_loss_1
+            assert reverse_actions[0][btp_group.UPDATED_QUANTITY] == decimal.Decimal("0.60")
+
+        # without deactivated orders
+        await reverse_swap(sell_limit_2, [])
+        # stop loss gets increased again and sell_limit_2 is back to inactive
+        cancel_order_mock.assert_called_once()
+        edit_order_mock.assert_called_once()
+        assert stop_loss_1.is_active is True
+        assert stop_loss_1.origin_quantity == decimal.Decimal("0.6")  # 0.8 - 0.2
+        assert sell_limit_2.is_active is False
+
+
 async def test_SideBalance_add_order(side_balance):
     assert side_balance.orders == []
     order_1 = order_mock(origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
@@ -326,7 +525,8 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.CANCEL: [order_0_1, order_0_2],
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_0_3,
-            personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: None
+            personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: None,
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal('3.15545145441')
         }],
     }
     order_1 = order_mock(origin_quantity=decimal.Decimal("1"))
@@ -337,6 +537,7 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_2,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: decimal.Decimal("3"),
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal("6.42")
         }],
     }
     side_balance.orders = [order_1, order_2]
@@ -345,6 +546,7 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_2,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: decimal.Decimal("3"),
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal("6.42")
         }],
     }
     order_2 = order_mock(origin_quantity=decimal.Decimal("6.42"))
@@ -355,6 +557,7 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_3,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: decimal.Decimal("3"),
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal("11.888998327557457")
         }],
     }
     order_4 = order_mock(origin_quantity=decimal.Decimal("0.1"))
@@ -365,9 +568,11 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_3,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: decimal.Decimal("2.9"),
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal("11.888998327557457")
         },{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_4,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: None,
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal("0.1")
         }],
     }
     side_balance.orders = [order_1, order_4, order_2, order_3]
@@ -376,6 +581,7 @@ async def test_SideBalance_get_actions_to_balance_normal_inputs(side_balance):
         personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATE: [{
             personal_data.BalancedTakeProfitAndStopOrderGroup.ORDER: order_3,
             personal_data.BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: decimal.Decimal("3"),
+            personal_data.BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: decimal.Decimal("11.888998327557457")
         }],
     }
 

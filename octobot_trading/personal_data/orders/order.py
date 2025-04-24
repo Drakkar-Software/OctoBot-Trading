@@ -52,7 +52,7 @@ class Order(util.Initializable):
         self.logger_name = None
         self.order_id = order_util.generate_order_id()        # used id; kept through instances and trading signals
         self.exchange_order_id = trader.parse_order_id(None)  # given by the exchange, local to the user account
-        self.status = enums.OrderStatus.OPEN
+        self.status: enums.OrderStatus = enums.OrderStatus.OPEN
         self.symbol = None
         self.currency = None
         self.market = None
@@ -95,6 +95,17 @@ class Order(util.Initializable):
         # order state is initialized in initialize_impl()
         self.state = None
 
+        # order activity
+        self.is_active = True   # When is_active=False order is not pushed to exchanges
+        self.active_trigger_price: decimal.Decimal = None    # price threshold from which the order becomes active
+        # when True, order becomes active when current price >= active_trigger_price
+        self.active_trigger_above: bool = None
+        self._active_trigger_event: asyncio.Event = None    # will be set when the price is hit
+        # waiter that will call on_active_trigger() when active_trigger_event is set
+        self._active_trigger_task: asyncio.Task = None
+        # True when a transition between active and inactive is being made
+        self.is_in_active_inactive_transition = False
+
         # future trading attributes
         # when True: reduce position quantity only without opening a new position if order.quantity > position.quantity
         self.reduce_only = False
@@ -136,13 +147,14 @@ class Order(util.Initializable):
         return self.logger_name
 
     def update(
-        self, symbol, order_id="", exchange_order_id=None, status=enums.OrderStatus.OPEN,
+        self, symbol=None, order_id="", exchange_order_id=None, status=enums.OrderStatus.OPEN,
         current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
         quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
         fee=None, total_cost=constants.ZERO, timestamp=None,
         order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
         group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
-        associated_entry_id=None, trigger_above=None, trailing_profile: trailing_profiles.TrailingProfile = None,
+        associated_entry_id=None, trigger_above=None, trailing_profile: trailing_profiles.TrailingProfile=None,
+        is_active=None, active_trigger_price=None, active_trigger_above=None
     ) -> bool:
         changed: bool = False
         should_update_total_cost = False
@@ -288,6 +300,18 @@ class Order(util.Initializable):
             changed = True
             self.trailing_profile = trailing_profile
 
+        if is_active is not None and self.is_active != is_active:
+            changed = True
+            self.is_active = is_active
+
+        if active_trigger_price is not None and self.active_trigger_price != active_trigger_price:
+            changed = True
+            self.active_trigger_price = active_trigger_price
+
+        if active_trigger_above is not None and self.active_trigger_above != active_trigger_above:
+            changed = True
+            self.active_trigger_above = active_trigger_above
+
         if should_update_total_cost and not total_cost:
             self._update_total_cost()
 
@@ -354,7 +378,11 @@ class Order(util.Initializable):
 
     def is_open(self):
         # also check is_initialized to avoid considering uncreated orders as open
-        return self.state is None or self.state.is_open()
+        return (
+            self.state is None or self.state.is_open() or (
+                not self.is_active and self.status is enums.OrderStatus.OPEN and not self.is_waiting_for_chained_trigger
+            )
+        )
 
     def is_filled(self):
         if self.state is None:
@@ -399,11 +427,126 @@ class Order(util.Initializable):
         raise errors.InvalidPositionSide(f"Can't determine order position side while using hedge position mode")
 
     @contextlib.contextmanager
+    def active_or_inactive_transition(self):
+        previous_value = self.is_in_active_inactive_transition
+        try:
+            self.is_in_active_inactive_transition = True
+            yield
+        finally:
+            self.is_in_active_inactive_transition = previous_value
+
+    async def set_as_inactive(self, active_trigger_price: decimal.Decimal, active_trigger_above: bool):
+        """
+        Marks the instance as inactive and ensures the inactive order watcher is scheduled.
+        """
+        if active_trigger_price is None or active_trigger_above is None:
+            raise ValueError(
+                f"Both active_trigger_price and active_trigger_above must be provided to set an order as inactive"
+            )
+        logging.get_logger(self.get_logger_name()).info("Order is switching to inactive")
+        self.is_active = False
+        self.active_trigger_price = active_trigger_price
+        self.active_trigger_above = active_trigger_above
+        # enforce attributes in case order has been canceled
+        self.status = enums.OrderStatus.OPEN
+        self.canceled_time = 0
+        await self._ensure_inactive_order_watcher()
+
+    def should_become_active(self, price_time: float, current_price: decimal.Decimal) -> bool:
+        if self.is_active:
+            return False
+        if price_time >= self.creation_time:
+            return (
+                (self.active_trigger_above and current_price >= self.active_trigger_price)
+                or (
+                    not self.active_trigger_above and current_price <= self.active_trigger_price
+                )
+            )
+        return False
+
+    async def _ensure_inactive_order_watcher(self):
+        if self.is_active:
+            # order is active, nothing to do
+            return
+        if not self.exchange_manager.trader.enable_inactive_orders or self.is_self_managed():
+            # can't be inactive
+            logging.get_logger(self.get_logger_name()).error(
+                f"Unexpected inactive order (simulated={self.simulated} self_managed={self.is_self_managed()}): {self}"
+            )
+            return
+        await self._create_active_trigger_watcher()
+
+    async def _create_active_trigger_watcher(self):
+        # ensure active triggers are ready
+        if self._active_trigger_event is None:
+            self._create_active_trigger_event(self.creation_time)
+        else:
+            self._active_trigger_event.clear()
+        if self._active_trigger_task is None or self._active_trigger_task.done():
+            if self._active_trigger_event.is_set():
+                await self.on_active_trigger(None, None)
+            else:
+                self._create_active_trigger_task()
+
+    def _create_active_trigger_event(self, price_time):
+        self._active_trigger_event = self.exchange_manager.exchange_symbols_data.\
+            get_exchange_symbol_data(self.symbol).price_events_manager.\
+            new_event(self.active_trigger_price, price_time, self.active_trigger_above, False)
+
+    async def _wait_for_active_trigger_set(self):
+        await asyncio.wait_for(self._active_trigger_event.wait(), timeout=None)
+        await self.on_active_trigger(None, None)
+
+    def _create_active_trigger_task(self):
+        self._active_trigger_task = asyncio.create_task(self._wait_for_active_trigger_set())
+
+    def _clear_active_trigger_event_and_tasks(self):
+        if self._active_trigger_task is not None:
+            if not self._active_trigger_event.is_set():
+                self._active_trigger_task.cancel()
+            self._active_trigger_task = None
+        if self._active_trigger_event is not None:
+            self.exchange_manager.exchange_symbols_data. \
+                get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self._active_trigger_event)
+
+    @contextlib.contextmanager
     def order_state_creation(self):
         try:
             yield
         except errors.InvalidOrderState as exc:
             logging.get_logger(self.get_logger_name()).exception(exc, True, f"Error when creating order state: {exc}")
+
+    async def on_inactive_from_active(self):
+        """
+        Update the order to be considered as "confirmed" inactive. Called when the order was active before
+        """
+        await self.set_as_inactive(self.active_trigger_price, self.active_trigger_above)
+        self.clear_active_order_elements()
+
+    async def on_active_from_inactive(self):
+        """
+        Update the order to be considered as "confirmed" active => the new active order was created
+        Self has already been removed from order manager by the new active order as they share the same order_id
+        """
+        self.is_active = True
+        self.clear()
+
+    async def on_active_trigger(
+        self, strategy_timeout: typing.Optional[float], wait_for_fill_callback: typing.Optional[typing.Callable]
+    ):
+        try:
+            if self.is_active:
+                logging.get_logger(self.get_logger_name()).error("Skipped active trigger for an already active order.")
+                return
+            logging.get_logger(self.get_logger_name()).info("Order is becoming active.")
+            await order_util.create_as_active_order_using_strategy_if_any(self, strategy_timeout, wait_for_fill_callback)
+        except Exception as err:
+            logging.get_logger(self.get_logger_name()).exception(
+                err,
+                True,
+                f"Unexpected error ({err.__class__.__name__}: {err}) "
+                f"when creating active order from inactive order: {self}"
+            )
 
     async def on_pending_creation(self, is_from_exchange_data=False, enable_associated_orders_creation=True):
         with self.order_state_creation():
@@ -435,7 +578,9 @@ class Order(util.Initializable):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
             else (True if enable_associated_orders_creation is None else enable_associated_orders_creation)
-        logging.get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
+        if self.is_in_active_inactive_transition:
+            logging.get_logger(self.get_logger_name()).info("Completing active-inactive transition: order is filled")
+            self.is_in_active_inactive_transition = False
         if (self.is_open() and not self.is_refreshing()) or self.is_pending_creation():
             with self.order_state_creation():
                 self.state = orders_states.FillOrderState(
@@ -688,7 +833,7 @@ class Order(util.Initializable):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
     def is_counted_in_available_funds(self):
-        return not self.is_self_managed()
+        return self.is_active and not self.is_self_managed()
 
     def is_self_managed(self):
         if self.is_cleared():
@@ -795,6 +940,14 @@ class Order(util.Initializable):
         self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns(
             order_dict[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
         ).value if order_dict.get(enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value) else self.taker_or_maker
+        self.is_active = order_dict.get(enums.ExchangeConstantsOrderColumns.IS_ACTIVE.value, self.is_active)
+        self.active_trigger_price = (
+            decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value]))
+            if order_dict.get(enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value) else None
+        )
+        self.active_trigger_above = order_dict.get(
+            enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_ABOVE.value, self.active_trigger_above
+        )
         self.trader_creation_kwargs = order_details.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value,
                                                         self.trader_creation_kwargs)
         self.exchange_creation_params = order_details.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value,
@@ -874,9 +1027,9 @@ class Order(util.Initializable):
     def _get_open_price(self):
         if self.triggered_by is None:
             return self.created_last_price
-        return self.triggered_by._get_filling_price()  # pylint: disable=protected-access
+        return self.triggered_by.get_filling_price()  # pylint: disable=protected-access
 
-    def _get_filling_price(self):
+    def get_filling_price(self):
         return self.origin_price
 
     def _should_instant_fill(self):
@@ -921,9 +1074,14 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: self.taker_or_maker,
         }
 
-    def clear(self):
+    def clear_active_order_elements(self):
         if self.state is not None:
             self.state.clear()
+
+
+    def clear(self):
+        self._clear_active_trigger_event_and_tasks()
+        self.clear_active_order_elements()
         self.trader = None
         self.exchange_manager = None
         self.trader_creation_kwargs = {}
@@ -932,6 +1090,7 @@ class Order(util.Initializable):
         return self.exchange_manager is None
 
     def to_string(self):
+        inactive = "" if self.is_active else "[Inactive] "
         chained_order = "" if self.triggered_by is None else \
             "triggered chained order | " if self.is_created() else "untriggered chained order | "
         tag = f" | tag: {self.tag}" if self.tag else ""
@@ -941,7 +1100,7 @@ class Order(util.Initializable):
         )
         trailing_profile = f"Trailing profile : {self.trailing_profile} | " if self.trailing_profile else ""
         return (
-            f"{self.symbol} | "
+            f"{inactive}{self.symbol} | "
             f"{chained_order}"
             f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
             f"Price : {str(self.origin_price)} | "

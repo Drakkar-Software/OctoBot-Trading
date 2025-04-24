@@ -170,6 +170,20 @@ def _get_group_dict(order):
         return {}
 
 
+def _get_active_order_swap_strategy_dict(order):
+    if not order.order_group:
+        return {}
+    try:
+        return {
+            enums.StoredOrdersAttr.STRATEGY_TIMEOUT.value: order.order_group.active_order_swap_strategy.swap_timeout,
+            enums.StoredOrdersAttr.STRATEGY_TRIGGER_CONFIG.value:
+                order.order_group.active_order_swap_strategy.trigger_price_configuration,
+            enums.StoredOrdersAttr.STRATEGY_TYPE.value: order.order_group.active_order_swap_strategy.__class__.__name__,
+        }
+    except KeyError:
+        return {}
+
+
 def get_order_trailing_profile_dict(order):
     if not order.trailing_profile:
         return {}
@@ -199,6 +213,7 @@ def _format_order(order, exchange_manager):
             (enums.StoredOrdersAttr.HAS_BEEN_BUNDLED, order.has_been_bundled),
             (enums.StoredOrdersAttr.ENTRIES, order.associated_entry_ids),
             (enums.StoredOrdersAttr.GROUP, _get_group_dict(order)),
+            (enums.StoredOrdersAttr.ORDER_SWAP_STRATEGY, _get_active_order_swap_strategy_dict(order)),
             (enums.StoredOrdersAttr.TRAILING_PROFILE, get_order_trailing_profile_dict(order)),
             (enums.StoredOrdersAttr.CHAINED_ORDERS, _get_chained_orders(order, exchange_manager)),
             (enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES, order.update_with_triggering_order_fees),
@@ -265,6 +280,9 @@ def restore_order_storage_origin_value(origin_val):
             decimal.Decimal(str(
                 origin_val[enums.ExchangeConstantsOrderColumns.FEE.value][enums.FeePropertyColumns.COST.value]
             ))
+    if origin_val.get(enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value) is not None:
+        origin_val[enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value] = \
+            decimal.Decimal(str(origin_val[enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value]))
     return origin_val
 
 
