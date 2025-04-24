@@ -17,6 +17,7 @@ import decimal
 import pytest
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.signals as signals
 
 from tests import event_loop
@@ -58,8 +59,14 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value: None,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value: None,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: None,
+        enums.TradingSignalOrdersAttrs.IS_ACTIVE.value: True,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: None,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_market_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: None,
@@ -76,6 +83,9 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.origin_price = decimal.Decimal("1.11")
     buy_limit_order.origin_quantity = decimal.Decimal("1.12")
     buy_limit_order.origin_stop_price = decimal.Decimal("1.13")
+    buy_limit_order.is_active = False
+    buy_limit_order.active_trigger_price = decimal.Decimal("1.14")
+    buy_limit_order.active_trigger_above = False
     exchange_manager = buy_limit_order.exchange_manager
     assert signals.create_order_signal_content(buy_limit_order, enums.TradingSignalOrdersActions.CREATE,
                                                "strat", exchange_manager) == {
@@ -102,8 +112,14 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value: None,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value: None,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: None,
+        enums.TradingSignalOrdersAttrs.IS_ACTIVE.value: False,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value: 1.14,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: False,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: None,
@@ -115,7 +131,12 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
 
     sell_limit_order.add_chained_order(buy_limit_order)
     sell_limit_order.symbol = "BTC/ETH"
+    sell_limit_order.is_active = False
+    sell_limit_order.active_trigger_price = decimal.Decimal("2.14")
+    sell_limit_order.active_trigger_above = True
     buy_limit_order.associate_to_entry("1")
+    buy_limit_order.active_trigger_price = decimal.Decimal("1.14")
+    buy_limit_order.active_trigger_above = True
     await buy_limit_order.set_as_chained_order(sell_limit_order, True, {}, True)
     assert signals.create_order_signal_content(
         buy_limit_order,
@@ -148,8 +169,14 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: None,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value: None,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value: None,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value: None,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: None,
+        enums.TradingSignalOrdersAttrs.IS_ACTIVE.value: False,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value: 1.14,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: True,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: sell_limit_order.order_id,
@@ -196,9 +223,15 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
         enums.TradingSignalOrdersAttrs.GROUP_ID.value: order_group.name,
         enums.TradingSignalOrdersAttrs.GROUP_TYPE.value: personal_data.OneCancelsTheOtherOrderGroup.__name__,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value: personal_data.StopFirstActiveOrderSwapStrategy.__name__,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value: constants.ACTIVE_ORDER_STRATEGY_SWAP_TIMEOUT,
+        enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value: enums.ActiveOrderSwapTriggerPriceConfiguration.FILLING_PRICE.value,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE_TYPE.value:
             personal_data.FilledTakeProfitTrailingProfile.get_type().value,
         enums.TradingSignalOrdersAttrs.TRAILING_PROFILE.value: buy_limit_order.trailing_profile.to_dict(),
+        enums.TradingSignalOrdersAttrs.IS_ACTIVE.value: False,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value: 1.14,
+        enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: True,
         enums.TradingSignalOrdersAttrs.TAG.value: "hello",
         enums.TradingSignalOrdersAttrs.ORDER_ID.value: buy_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value: sell_limit_order.order_id,

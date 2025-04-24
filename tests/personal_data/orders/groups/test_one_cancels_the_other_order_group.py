@@ -19,6 +19,7 @@ import mock
 import pytest
 
 import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -138,3 +139,77 @@ async def test_on_cancel(oco_group):
             cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
         )
         get_order_from_group_mock.assert_called_once_with(oco_group.name)
+
+
+async def test_oco_adapt_before_order_becoming_active(simulated_trader):
+    _, exchange_manager, trader_instance = simulated_trader
+    trader_instance.allow_artificial_orders = False
+    trader_instance.enable_inactive_orders = True
+    trader_instance.simulate = False
+    oco_group = personal_data.OneCancelsTheOtherOrderGroup("name",
+                                                           exchange_manager.exchange_personal_data.orders_manager)
+    assert isinstance(oco_group.active_order_swap_strategy, personal_data.StopFirstActiveOrderSwapStrategy)
+    stop_loss = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                              trader_instance, side=enums.TradeOrderSide.SELL)
+    stop_loss.update(
+        price=decimal.Decimal(10),
+        quantity=decimal.Decimal(1),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.STOP_LOSS,
+        group=oco_group,
+        is_active=True,
+        active_trigger_price=decimal.Decimal(10),
+        active_trigger_above=False,
+    )
+    sell_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit.update(
+        price=decimal.Decimal(20),
+        quantity=decimal.Decimal(1),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=oco_group,
+        is_active=False,
+        active_trigger_price=decimal.Decimal(20),
+        active_trigger_above=True,
+    )
+    portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+    assert portfolio["BTC"].available == decimal.Decimal(10)
+    for order in [stop_loss, sell_limit]:
+        order.exchange_manager.is_backtesting = True  # force update_order_status
+        await order.initialize()
+        await order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+            order
+        )
+        if order is stop_loss:
+            # stop sell limit quantity is not removed from available but stop is
+            assert portfolio["BTC"].available == decimal.Decimal(9)
+        else:
+            assert portfolio["BTC"].available == decimal.Decimal(9)
+    assert stop_loss.is_active is True
+    assert order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders() == [sell_limit]
+    with (mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock):
+        assert await oco_group.adapt_before_order_becoming_active(sell_limit) == ([stop_loss], oco_group._reverse_active_swap)
+        cancel_order_mock.assert_called_once()
+        assert stop_loss.is_active is False
+        assert not stop_loss.is_cleared()
+        assert not sell_limit.is_cleared()
+        # stop loss is now inactive as well, could be to update sell limit to come active (done in strategy)
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+        assert len(inactive_orders) == 2
+        assert stop_loss in inactive_orders and sell_limit in inactive_orders
+
+
+async def test_oco_reverse_active_swap(oco_group):
+    order_1 = mock.Mock()
+    order_2 = mock.Mock()
+    to_activate_orders = [order_1, order_2]
+    with mock.patch.object(oco_group, "adapt_before_order_becoming_active", mock.AsyncMock()) as adapt_before_order_becoming_active_mock, \
+        mock.patch.object(order_util, "create_as_active_order_on_exchange", mock.AsyncMock()) as create_as_active_order_on_exchange_mock:
+        await oco_group._reverse_active_swap("plop", to_activate_orders)
+        assert adapt_before_order_becoming_active_mock.call_count == 2
+        assert create_as_active_order_on_exchange_mock.call_count == 2
+        assert adapt_before_order_becoming_active_mock.mock_calls[0].args == (order_1,)
+        assert adapt_before_order_becoming_active_mock.mock_calls[1].args == (order_2,)
+        assert create_as_active_order_on_exchange_mock.mock_calls[0].args == (order_1, False)
+        assert create_as_active_order_on_exchange_mock.mock_calls[1].args == (order_2, False)

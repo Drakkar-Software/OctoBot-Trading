@@ -23,6 +23,7 @@ import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.constants as constants
 import octobot_trading.signals as signals
 import octobot_trading.errors as errors
+import octobot_trading.personal_data.orders.active_order_swap_strategies as active_order_swap_strategies
 
 
 class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
@@ -40,10 +41,15 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
     CANCEL = "cancel"
     ORDER = "order"
     UPDATED_QUANTITY = "updated_quantity"
+    INITIAL_QUANTITY = "initial_quantity"
     UPDATED_PRICE = "updated_price"
+    INITIAL_PRICE = "initial_price"
 
-    def __init__(self, name, orders_manager):
-        super().__init__(name, orders_manager)
+    def __init__(
+        self, name, orders_manager,
+        active_order_swap_strategy: typing.Optional[active_order_swap_strategies.ActiveOrderSwapStrategy] = None
+    ):
+        super().__init__(name, orders_manager, active_order_swap_strategy=active_order_swap_strategy)
         # keep track of orders being balanced to avoid nested balance issues
         self.balancing_orders = []
 
@@ -99,59 +105,26 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         if enabled:
             await self._balance_orders(None, None, False)
 
-    async def _balance_orders(self, closed_order, ignored_orders, filled):
-        if not self.enabled:
-            return
+    async def adapt_before_order_becoming_active(self, order_to_become_active) -> (list, typing.Callable[[list], None]):
+        """
+        Called before an order referencing this group is becoming active
+        """
+        # convert the other order of this group into an inactive order => cancel it on exchange
+        deactivated_orders = []
         locally_balancing_orders = []
         try:
-            updated_orders = False
-            balance = self._get_balance(closed_order, ignored_orders, filled)
-            locally_balancing_orders = balance[self.TAKE_PROFIT].orders + balance[self.STOP].orders
-            self.balancing_orders += locally_balancing_orders
-            take_profit_actions = balance[self.TAKE_PROFIT].get_actions_to_balance(balance[self.STOP].get_balance())
-            stop_actions = balance[self.STOP].get_actions_to_balance(balance[self.TAKE_PROFIT].get_balance())
-            for order in take_profit_actions[self.CANCEL] + stop_actions[self.CANCEL]:
-                try:
-                    self.logger.debug(f"Cancelling order to keep balance, order: {order} as {closed_order} is closed")
-                    async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
-                        await signals.cancel_order(order.trader.exchange_manager,
-                                                   signals.should_emit_trading_signal(order.trader.exchange_manager),
-                                                   order,
-                                                   ignored_order=closed_order)
-                except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
-                    self.logger.error(f"Skipping order cancel: {err}")
-                updated_orders = True
-            for update_data in take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]:
-                order = update_data[self.ORDER]
-                update_info = ""
-                edited_quantity = None
-                edited_price = None
-                if (
-                    update_data[self.UPDATED_QUANTITY] is not None
-                    and update_data[self.UPDATED_QUANTITY] != order.origin_quantity
-                ):
-                    update_info = f"Updating order quantity to {update_data[self.UPDATED_QUANTITY]} to keep balance. "
-                    edited_quantity = update_data[self.UPDATED_QUANTITY]
-                if self.UPDATED_PRICE in update_data and update_data[self.UPDATED_PRICE] != order.origin_price:
-                    update_info = f"{update_info}Updating price to {update_data[self.UPDATED_PRICE]}. "
-                    edited_price = update_data[self.UPDATED_PRICE]
-                if edited_quantity or edited_price:
-                    self.logger.info(f"{update_info}Order: {order}")
-                    async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
-                        await signals.edit_order(
-                            order.trader.exchange_manager,
-                            signals.should_emit_trading_signal(order.trader.exchange_manager),
-                            order,
-                            edited_quantity=edited_quantity,
-                            edited_price=edited_price
-                        )
-                    updated_orders = True
-                else:
-                    self.logger.info(f"Order already up-to-date, skipped editing: {order}")
-            if not updated_orders:
-                self.logger.debug("Nothing to update, orders are already evenly balanced")
-        except Exception as e:
-            self.logger.exception(e, True, f"Error when balancing orders: {e}")
+            cancel_actions, update_actions = self._get_orders_balance_actions(
+                order_to_become_active, None, False, locally_balancing_orders
+            )
+            self.balancing_orders.extend(locally_balancing_orders)
+            for order in cancel_actions:
+                self.logger.info(
+                    f"Cancelling order [{order}] from order group as paired order "
+                    f"is becoming active ({order_to_become_active})"
+                )
+                if await order_util.update_order_as_inactive_on_exchange(order, False):
+                    deactivated_orders.append(order)
+            applied_updates = await self._apply_update_order_actions(update_actions, False)
         finally:
             # remove locally_balancing_orders from self.balancing_orders
             self.balancing_orders = [
@@ -159,6 +132,110 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                 for order in self.balancing_orders
                 if order not in locally_balancing_orders
             ]
+
+        async def reverse_swap(former_order_to_become_active, to_activate_orders):
+            # 1. rollback the "former_order_to_become_active" into inactive state
+            await order_util.update_order_as_inactive_on_exchange(former_order_to_become_active, False)
+            # 2. in case orders have been canceled on exchange, restore them
+            for to_activate_order in to_activate_orders:
+                await order_util.create_as_active_order_on_exchange(to_activate_order, False)
+            # 3. in case orders have been edited on exchange, restore their previous values
+            if reverse_updates := [
+                # only reverse amounts, price might have changed when trailing, keep it like this
+                self._get_reversed_order_update(update_action, [self.UPDATED_QUANTITY])
+                for update_action in applied_updates
+            ]:
+                self.logger.info(f"Restoring {len(reverse_updates)} orders amounts after swap reset")
+                await self._apply_update_order_actions(reverse_updates, False)
+
+        return deactivated_orders, reverse_swap
+
+    def _default_active_order_swap_strategy(self, timeout: float) -> active_order_swap_strategies.ActiveOrderSwapStrategy:
+        """
+        Called when an order of this group is becoming active
+        """
+        return active_order_swap_strategies.StopFirstActiveOrderSwapStrategy(timeout)
+
+    def _get_orders_balance_actions(
+        self, closed_order, ignored_orders, filled, balancing_orders: list
+    ):
+        balance = self._get_balance(closed_order, ignored_orders, filled)
+        locally_balancing_orders = balance[self.TAKE_PROFIT].orders + balance[self.STOP].orders
+        balancing_orders.extend(locally_balancing_orders)
+        take_profit_actions = balance[self.TAKE_PROFIT].get_actions_to_balance(balance[self.STOP].get_balance())
+        stop_actions = balance[self.STOP].get_actions_to_balance(balance[self.TAKE_PROFIT].get_balance())
+        return (
+            take_profit_actions[self.CANCEL] + stop_actions[self.CANCEL],
+            take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]
+        )
+
+    async def _balance_orders(self, closed_order, ignored_orders, filled):
+        if not self.enabled:
+            return
+        locally_balancing_orders = []
+        async with self.lock_group():
+            try:
+                updated_orders = False
+                cancel_actions, update_actions = self._get_orders_balance_actions(
+                    closed_order, ignored_orders, filled, locally_balancing_orders
+                )
+                self.balancing_orders.extend(locally_balancing_orders)
+                for order in cancel_actions:
+                    try:
+                        self.logger.debug(f"Cancelling order to keep balance, order: {order} as {closed_order} is closed")
+                        async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                            await signals.cancel_order(order.trader.exchange_manager,
+                                                       signals.should_emit_trading_signal(order.trader.exchange_manager),
+                                                       order,
+                                                       ignored_order=closed_order)
+                    except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
+                        self.logger.error(f"Skipping order cancel: {err}")
+                    updated_orders = True
+                updated_orders = bool(
+                    await self._apply_update_order_actions(update_actions, True)
+                ) or updated_orders
+                if not updated_orders:
+                    self.logger.debug("Nothing to update, orders are already evenly balanced")
+            except Exception as e:
+                self.logger.exception(e, True, f"Error when balancing orders: {e}")
+            finally:
+                # remove locally_balancing_orders from self.balancing_orders
+                self.balancing_orders = [
+                    order
+                    for order in self.balancing_orders
+                    if order not in locally_balancing_orders
+                ]
+
+    async def _apply_update_order_actions(self, update_actions, emit_trading_signals) -> list:
+        applied_updates = []
+        for update_data in update_actions:
+            order = update_data[self.ORDER]
+            update_info = ""
+            edited_quantity = None
+            edited_price = None
+            if (
+                update_data[self.UPDATED_QUANTITY] is not None
+                and update_data[self.UPDATED_QUANTITY] != order.origin_quantity
+            ):
+                update_info = f"Updating order quantity to {update_data[self.UPDATED_QUANTITY]} to keep balance. "
+                edited_quantity = update_data[self.UPDATED_QUANTITY]
+            if self.UPDATED_PRICE in update_data and update_data[self.UPDATED_PRICE] != order.origin_price:
+                update_info = f"{update_info}Updating price to {update_data[self.UPDATED_PRICE]}. "
+                edited_price = update_data[self.UPDATED_PRICE]
+            if edited_quantity or edited_price:
+                self.logger.info(f"{update_info}Order: {order}")
+                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, emit_trading_signals):
+                    await signals.edit_order(
+                        order.trader.exchange_manager,
+                        signals.should_emit_trading_signal(order.trader.exchange_manager),
+                        order,
+                        edited_quantity=edited_quantity,
+                        edited_price=edited_price
+                    )
+                applied_updates.append(update_data)
+            else:
+                self.logger.info(f"Order already up-to-date, skipped editing: {order}")
+        return applied_updates
 
     def _balances_factory(self, closed_order, filled):
         return {
@@ -180,6 +257,14 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                     balance[self.TAKE_PROFIT].add_order(order)
         return balance
 
+    @classmethod
+    def _get_reversed_order_update(cls, order_update: dict, included_fields: list) -> dict:
+        return {
+            cls.ORDER: order_update[cls.ORDER],
+            cls.UPDATED_QUANTITY:
+                order_update[cls.INITIAL_QUANTITY] if cls.UPDATED_QUANTITY in included_fields else None,
+        }
+
 
 class SideBalance:
     def __init__(self, closed_order, filled):
@@ -193,7 +278,7 @@ class SideBalance:
         # warning: not working with negative prices
         self.orders = sorted(self.orders, key=lambda o: -abs(o.origin_price-o.created_last_price))
 
-    def get_actions_to_balance(self, target_balance):
+    def get_actions_to_balance(self, target_balance: decimal.Decimal):
         actions = {
             BalancedTakeProfitAndStopOrderGroup.CANCEL: [],
             BalancedTakeProfitAndStopOrderGroup.UPDATE: [],
@@ -233,7 +318,8 @@ class SideBalance:
     def get_order_update(self, order, updated_quantity: typing.Optional[decimal.Decimal]) -> dict:
         return {
             BalancedTakeProfitAndStopOrderGroup.ORDER: order,
-            BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: updated_quantity
+            BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY: updated_quantity,
+            BalancedTakeProfitAndStopOrderGroup.INITIAL_QUANTITY: order.origin_quantity,
         }
 
     def get_balance(self):

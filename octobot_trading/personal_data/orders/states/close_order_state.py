@@ -53,16 +53,24 @@ class CloseOrderState(order_state.OrderState):
         Handle order to trade conversion
         """
         try:
-            self.log_event_message(enums.StatesMessages.CLOSED)
+            if self.order.is_in_active_inactive_transition:
+                # orders that are in active/inactive transition should not generate trades nor be removed from open_orders
+                self.get_logger().info(
+                    f"Skipping {enums.StatesMessages.CLOSED} state terminate for {self.order} as "
+                    f"it is in active/inactive transition"
+                )
+                await self.order.on_inactive_from_active()
+            else:
+                self.log_event_message(enums.StatesMessages.CLOSED)
 
-            # add to trade history and notify
-            self.ensure_not_cleared(self.order)
-            await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-                self.order.trader.convert_order_to_trade(self.order)
-            )
+                # add to trade history and notify
+                self.ensure_not_cleared(self.order)
+                await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+                    self.order.trader.convert_order_to_trade(self.order)
+                )
 
-            # remove order from open_orders
-            self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
+                # remove order from open_orders
+                self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
         except Exception as e:
             self.get_logger().exception(
                 e, True, f"Fail to execute close state termination : {html_util.get_html_summary_if_relevant(e)}."
