@@ -43,6 +43,14 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         Implement if necessary
         """
 
+    def skip_portfolio_available_check_before_creating_orders(self) -> bool:
+        """
+        When returning true, will skip portfolio available funds check
+        before calling self.create_new_orders().
+        Override if necessary
+        """
+        return False
+
     def flush(self):
         self.trading_mode = None
         self.exchange_manager = None
@@ -149,8 +157,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
 
     # Can be overwritten
     async def can_create_order(self, symbol, state):
-        if symbol is None:
-            # can't check
+        if symbol is None or self.skip_portfolio_available_check_before_creating_orders():
+            # should not check
             return True
         currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
