@@ -299,7 +299,7 @@ class ExchangePersonalData(util.Initializable):
         self, symbol: str, current_price: decimal.Decimal, price_time: float,
         strategy_timeout: typing.Optional[float], wait_for_fill_callback: typing.Optional[typing.Callable]
     ):
-        for order in self.orders_manager.get_inactive_orders(symbol=symbol):
+        for order in self.orders_manager.get_all_orders(symbol=symbol, active=False):
             if order.should_become_active(price_time, current_price):
                 try:
                     await order.on_active_trigger(strategy_timeout, wait_for_fill_callback)

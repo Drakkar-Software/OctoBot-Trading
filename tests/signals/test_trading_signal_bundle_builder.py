@@ -137,8 +137,7 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     buy_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
     buy_limit_order.trigger_above = True
     buy_limit_order.is_active = False
-    buy_limit_order.active_trigger_price = decimal.Decimal(12)
-    buy_limit_order.active_trigger_above = True
+    buy_limit_order.use_active_trigger(personal_data.create_order_price_trigger(buy_limit_order, decimal.Decimal(12), True))
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_position="50")
     assert len(trading_signal_bundle_builder.signals) == 2
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ORDER_ID.value] == \
