@@ -158,8 +158,7 @@ async def test_oco_adapt_before_order_becoming_active(simulated_trader):
         order_type=enums.TraderOrderType.STOP_LOSS,
         group=oco_group,
         is_active=True,
-        active_trigger_price=decimal.Decimal(10),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss, decimal.Decimal(10), False),
     )
     sell_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
                                trader_instance, side=enums.TradeOrderSide.SELL)
@@ -170,8 +169,7 @@ async def test_oco_adapt_before_order_becoming_active(simulated_trader):
         order_type=enums.TraderOrderType.SELL_LIMIT,
         group=oco_group,
         is_active=False,
-        active_trigger_price=decimal.Decimal(20),
-        active_trigger_above=True,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit, decimal.Decimal(20), True),
     )
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
     assert portfolio["BTC"].available == decimal.Decimal(10)
@@ -187,7 +185,7 @@ async def test_oco_adapt_before_order_becoming_active(simulated_trader):
         else:
             assert portfolio["BTC"].available == decimal.Decimal(9)
     assert stop_loss.is_active is True
-    assert order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders() == [sell_limit]
+    assert order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False) == [sell_limit]
     with (mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock):
         assert await oco_group.adapt_before_order_becoming_active(sell_limit) == ([stop_loss], oco_group._reverse_active_swap)
         cancel_order_mock.assert_called_once()
@@ -195,7 +193,7 @@ async def test_oco_adapt_before_order_becoming_active(simulated_trader):
         assert not stop_loss.is_cleared()
         assert not sell_limit.is_cleared()
         # stop loss is now inactive as well, could be to update sell limit to come active (done in strategy)
-        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
         assert len(inactive_orders) == 2
         assert stop_loss in inactive_orders and sell_limit in inactive_orders
 

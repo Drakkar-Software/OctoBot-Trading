@@ -28,6 +28,7 @@ import octobot_trading.exchanges.traders.trader
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.trailing_profiles as trailing_profiles
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
+import octobot_trading.personal_data.orders.triggers.base_trigger as base_trigger_import
 import octobot_trading.util as util
 
 
@@ -97,14 +98,10 @@ class Order(util.Initializable):
 
         # order activity
         self.is_active = True   # When is_active=False order is not pushed to exchanges
-        self.active_trigger_price: decimal.Decimal = None    # price threshold from which the order becomes active
-        # when True, order becomes active when current price >= active_trigger_price
-        self.active_trigger_above: bool = None
-        self._active_trigger_event: asyncio.Event = None    # will be set when the price is hit
-        # waiter that will call on_active_trigger() when active_trigger_event is set
-        self._active_trigger_task: asyncio.Task = None
         # True when a transition between active and inactive is being made
         self.is_in_active_inactive_transition = False
+        # active_trigger is used for active/inactive switch trigger mechanism, it stores relevant data.
+        self.active_trigger: typing.Optional[base_trigger_import.BaseTrigger] = None
 
         # future trading attributes
         # when True: reduce position quantity only without opening a new position if order.quantity > position.quantity
@@ -154,7 +151,7 @@ class Order(util.Initializable):
         order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
         group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
         associated_entry_id=None, trigger_above=None, trailing_profile: trailing_profiles.TrailingProfile=None,
-        is_active=None, active_trigger_price=None, active_trigger_above=None
+        is_active=None, active_trigger: base_trigger_import.BaseTrigger = None,
     ) -> bool:
         changed: bool = False
         should_update_total_cost = False
@@ -304,13 +301,9 @@ class Order(util.Initializable):
             changed = True
             self.is_active = is_active
 
-        if active_trigger_price is not None and self.active_trigger_price != active_trigger_price:
+        if active_trigger is not None and active_trigger != self.active_trigger:
             changed = True
-            self.active_trigger_price = active_trigger_price
-
-        if active_trigger_above is not None and self.active_trigger_above != active_trigger_above:
-            changed = True
-            self.active_trigger_above = active_trigger_above
+            self.use_active_trigger(active_trigger)
 
         if should_update_total_cost and not total_cost:
             self._update_total_cost()
@@ -435,18 +428,28 @@ class Order(util.Initializable):
         finally:
             self.is_in_active_inactive_transition = previous_value
 
-    async def set_as_inactive(self, active_trigger_price: decimal.Decimal, active_trigger_above: bool):
+    def use_active_trigger(self, active_trigger: base_trigger_import.BaseTrigger):
+        if active_trigger is None:
+            raise ValueError("active_trigger must be provided")
+        if self.active_trigger is None:
+            self.active_trigger = active_trigger
+        elif self.active_trigger.is_pending():
+            logging.get_logger(self.get_logger_name()).error(
+                f"The current active trigger ({str(self.active_trigger)}) is still pending, canceling it "
+                f"and replacing it by this new one, this is works but is unexpected."
+            )
+            self.active_trigger.clear()
+            self.active_trigger = active_trigger
+        else:
+            self.active_trigger.update_from_other_trigger(active_trigger)
+
+    async def set_as_inactive(self, active_trigger: base_trigger_import.BaseTrigger):
         """
         Marks the instance as inactive and ensures the inactive order watcher is scheduled.
         """
-        if active_trigger_price is None or active_trigger_above is None:
-            raise ValueError(
-                f"Both active_trigger_price and active_trigger_above must be provided to set an order as inactive"
-            )
         logging.get_logger(self.get_logger_name()).info("Order is switching to inactive")
+        self.use_active_trigger(active_trigger)
         self.is_active = False
-        self.active_trigger_price = active_trigger_price
-        self.active_trigger_above = active_trigger_above
         # enforce attributes in case order has been canceled
         self.status = enums.OrderStatus.OPEN
         self.canceled_time = 0
@@ -456,12 +459,7 @@ class Order(util.Initializable):
         if self.is_active:
             return False
         if price_time >= self.creation_time:
-            return (
-                (self.active_trigger_above and current_price >= self.active_trigger_price)
-                or (
-                    not self.active_trigger_above and current_price <= self.active_trigger_price
-                )
-            )
+            return self.active_trigger.triggers(current_price)
         return False
 
     async def _ensure_inactive_order_watcher(self):
@@ -474,40 +472,10 @@ class Order(util.Initializable):
                 f"Unexpected inactive order (simulated={self.simulated} self_managed={self.is_self_managed()}): {self}"
             )
             return
-        await self._create_active_trigger_watcher()
-
-    async def _create_active_trigger_watcher(self):
-        # ensure active triggers are ready
-        if self._active_trigger_event is None:
-            self._create_active_trigger_event(self.creation_time)
-        else:
-            self._active_trigger_event.clear()
-        if self._active_trigger_task is None or self._active_trigger_task.done():
-            if self._active_trigger_event.is_set():
-                await self.on_active_trigger(None, None)
-            else:
-                self._create_active_trigger_task()
-
-    def _create_active_trigger_event(self, price_time):
-        self._active_trigger_event = self.exchange_manager.exchange_symbols_data.\
-            get_exchange_symbol_data(self.symbol).price_events_manager.\
-            new_event(self.active_trigger_price, price_time, self.active_trigger_above, False)
-
-    async def _wait_for_active_trigger_set(self):
-        await asyncio.wait_for(self._active_trigger_event.wait(), timeout=None)
-        await self.on_active_trigger(None, None)
-
-    def _create_active_trigger_task(self):
-        self._active_trigger_task = asyncio.create_task(self._wait_for_active_trigger_set())
-
-    def _clear_active_trigger_event_and_tasks(self):
-        if self._active_trigger_task is not None:
-            if not self._active_trigger_event.is_set():
-                self._active_trigger_task.cancel()
-            self._active_trigger_task = None
-        if self._active_trigger_event is not None:
-            self.exchange_manager.exchange_symbols_data. \
-                get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self._active_trigger_event)
+        if self.active_trigger is None:
+            logging.get_logger(self.get_logger_name()).error("self.active_trigger is None")
+            return
+        await self.active_trigger.create_watcher(self.exchange_manager, self.symbol, self.creation_time)
 
     @contextlib.contextmanager
     def order_state_creation(self):
@@ -520,7 +488,11 @@ class Order(util.Initializable):
         """
         Update the order to be considered as "confirmed" inactive. Called when the order was active before
         """
-        await self.set_as_inactive(self.active_trigger_price, self.active_trigger_above)
+        if self.active_trigger is None:
+            raise ValueError(
+                f"self.active_trigger must be provided to set an order as inactive"
+            )
+        await self.set_as_inactive(self.active_trigger)
         self.clear_active_order_elements()
 
     async def on_active_from_inactive(self):
@@ -941,13 +913,20 @@ class Order(util.Initializable):
             order_dict[enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value]
         ).value if order_dict.get(enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value) else self.taker_or_maker
         self.is_active = order_dict.get(enums.ExchangeConstantsOrderColumns.IS_ACTIVE.value, self.is_active)
-        self.active_trigger_price = (
-            decimal.Decimal(str(order_dict[enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value]))
-            if order_dict.get(enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_PRICE.value) else None
-        )
-        self.active_trigger_above = order_dict.get(
-            enums.ExchangeConstantsOrderColumns.ACTIVE_TRIGGER_ABOVE.value, self.active_trigger_above
-        )
+        if active_trigger := order_details.get(enums.StoredOrdersAttr.ACTIVE_TRIGGER.value):
+            active_trigger_price = (
+                decimal.Decimal(str(active_trigger[enums.StoredOrdersAttr.ACTIVE_TRIGGER_PRICE.value]))
+                if active_trigger.get(enums.StoredOrdersAttr.ACTIVE_TRIGGER_PRICE.value) else None
+            )
+            active_trigger_above = active_trigger.get(enums.StoredOrdersAttr.ACTIVE_TRIGGER_ABOVE.value)
+            if active_trigger_price is not None and active_trigger_above is not None:
+                self.use_active_trigger(
+                    order_util.create_order_price_trigger(self, active_trigger_price, active_trigger_above)
+                )
+            else:
+                logging.get_logger(self.__class__.__name__).error(
+                    f"Ignored unknown trigger configuration: {active_trigger}"
+                )
         self.trader_creation_kwargs = order_details.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value,
                                                         self.trader_creation_kwargs)
         self.exchange_creation_params = order_details.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value,
@@ -1080,7 +1059,8 @@ class Order(util.Initializable):
 
 
     def clear(self):
-        self._clear_active_trigger_event_and_tasks()
+        if self.active_trigger:
+            self.active_trigger.clear()
         self.clear_active_order_elements()
         self.trader = None
         self.exchange_manager = None

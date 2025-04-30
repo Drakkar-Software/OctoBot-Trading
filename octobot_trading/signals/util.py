@@ -77,8 +77,9 @@ def create_order_signal_content(
             order.trailing_profile.to_dict() if order.trailing_profile else None,
         trading_enums.TradingSignalOrdersAttrs.IS_ACTIVE.value: order.is_active,
         trading_enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value:
-            None if order.active_trigger_price is None else float(order.active_trigger_price),
-        trading_enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: order.active_trigger_above,
+            None if order.active_trigger is None else float(order.active_trigger.trigger_price),
+        trading_enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: None
+            if order.active_trigger is None else order.active_trigger.trigger_above,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
             None if order.triggered_by is None else order.triggered_by.order_id
         if order.has_been_bundled else None,

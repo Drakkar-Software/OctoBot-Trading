@@ -31,6 +31,7 @@ import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_ord
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 import octobot_trading.personal_data.orders.states.fill_order_state as fill_order_state
 import octobot_trading.personal_data.orders.order as order_import
+import octobot_trading.personal_data.orders.triggers.price_trigger as price_trigger
 import octobot_trading.signals as signals
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
@@ -533,6 +534,16 @@ def get_trade_order_type(order_type: enums.TraderOrderType) -> enums.TradeOrderT
     if order_type is enums.TraderOrderType.TAKE_PROFIT_LIMIT:
         return enums.TradeOrderType.TAKE_PROFIT_LIMIT
     raise ValueError(order_type)
+
+
+def create_order_price_trigger(
+    order: order_import.Order, active_trigger_price: decimal.Decimal, active_trigger_above: bool
+) -> price_trigger.PriceTrigger:
+    if active_trigger_price is None or active_trigger_above is None:
+        raise ValueError("active_trigger_price and active_trigger_above must be specified")
+    return price_trigger.PriceTrigger(
+        order.on_active_trigger, (None, None), active_trigger_price, active_trigger_above
+    )
 
 
 async def create_as_active_order_using_strategy_if_any(

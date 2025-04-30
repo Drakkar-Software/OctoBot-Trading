@@ -544,6 +544,7 @@ async def test_create_as_active_order_using_strategy_if_any(trader_simulator):
 async def test_create_as_active_order_on_exchange_with_sub_calls(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
     trader_inst.simulate = False
+    trader_inst.enable_inactive_orders = True
     inactive_order = personal_data.SellLimitOrder(trader_inst)
     inactive_order.is_active = False
     exchange_created_order = personal_data.SellLimitOrder(trader_inst)
@@ -592,8 +593,7 @@ async def test_update_order_as_inactive_on_exchange_with_sub_calls(trader_simula
         quantity=decimal.Decimal("10"),
         price=decimal.Decimal("70"),
         reduce_only=False,
-        active_trigger_price=decimal.Decimal("70"),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(active_order, decimal.Decimal("70"), False),
         fee={
             enums.FeePropertyColumns.COST.value: 1,
             enums.FeePropertyColumns.CURRENCY.value: "USDT",
@@ -602,15 +602,16 @@ async def test_update_order_as_inactive_on_exchange_with_sub_calls(trader_simula
     await exchange_manager_inst.exchange_personal_data.orders_manager.upsert_order_instance(active_order)
     all_orders = exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders()
     assert all_orders == [active_order]
-    assert active_order._active_trigger_event is None
+    assert active_order.active_trigger._trigger_event is None
     with mock.patch.object(exchange_manager_inst.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock:
         assert await personal_data.update_order_as_inactive_on_exchange(active_order, False) is True
         assert exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders() == [active_order]
         # order is now inactive
-        assert exchange_manager_inst.exchange_personal_data.orders_manager.get_inactive_orders() == [active_order]
+        assert exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders(active=False) == [active_order]
         assert active_order.is_active is False
         assert active_order.status == enums.OrderStatus.OPEN
-        assert active_order._active_trigger_event is not None
+        assert active_order.active_trigger is not None
+        assert active_order.active_trigger._trigger_event is not None
         cancel_order_mock.assert_called_once()
 
 
