@@ -53,26 +53,28 @@ class OrdersManager(util.Initializable):
 
     def get_all_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, 
-        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
+        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT,
+        tag=None, active=None):
         return self._select_orders(
             None, symbol=symbol, since=since,
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, active=active
         )
 
     def get_open_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
-        limit=constants.NO_DATA_LIMIT, tag=None):
+        limit=constants.NO_DATA_LIMIT, tag=None, active=None
+    ):
         return self._select_orders(
             enums.OrderStatus.OPEN, symbol, since=since,
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, active=active
         )
 
     def get_pending_cancel_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
-        limit=constants.NO_DATA_LIMIT, tag=None):
+        limit=constants.NO_DATA_LIMIT, tag=None, active=None):
         return self._select_orders(
             enums.OrderStatus.PENDING_CANCEL, symbol, since=since, 
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, active=active
         )
 
     def get_closed_orders(
@@ -184,13 +186,6 @@ class OrdersManager(util.Initializable):
             for order in self.pending_creation_orders
         ]
 
-    def get_inactive_orders(self, symbol=None) -> list:
-        return [
-            order
-            for order in self._select_orders(symbol=symbol)
-            if not order.is_active
-        ]
-
     async def upsert_order_close_from_raw(self, exchange_order_id, raw_order) -> typing.Optional[order_class.Order]:
         if self.has_order(None, exchange_order_id=exchange_order_id):
             order = self.get_order(None, exchange_order_id=exchange_order_id)
@@ -266,7 +261,9 @@ class OrdersManager(util.Initializable):
 
     def _select_orders(
         self, state=None, symbol=None, since=constants.NO_DATA_LIMIT, 
-        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
+        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT,
+        tag=None, active=None
+    ):
         orders = [
             order
             for order in self.orders.values()
@@ -275,7 +272,8 @@ class OrdersManager(util.Initializable):
                 (symbol is None or (symbol and order.symbol == symbol)) and
                 (since == constants.NO_DATA_LIMIT or (since and order.timestamp >= since)) and
                 (until == constants.NO_DATA_LIMIT or (until and order.timestamp <= until)) and
-                (tag is None or order.tag == tag)
+                (tag is None or order.tag == tag) and
+                (active is None or order.is_active == active)
             )
         ]
         return orders if limit == constants.NO_DATA_LIMIT else orders[0:limit]

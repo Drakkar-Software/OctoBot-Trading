@@ -335,8 +335,6 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     VOLUME = "volume"
     BROKER_APPLIED = "broker_applied"
     IS_ACTIVE = "is_active"
-    ACTIVE_TRIGGER_PRICE = "active_trigger_price"
-    ACTIVE_TRIGGER_ABOVE = "active_trigger_above"
 
 
 class TradeExtraConstants(enum.Enum):
@@ -601,6 +599,9 @@ class StoredOrdersAttr(enum.Enum):
     STRATEGY_TIMEOUT = "sti"
     STRATEGY_TRIGGER_CONFIG = "stc"
     CHAINED_ORDERS = "co"
+    ACTIVE_TRIGGER = "at"
+    ACTIVE_TRIGGER_PRICE = "atp"
+    ACTIVE_TRIGGER_ABOVE = "ata"
     TRAILING_PROFILE = "tp"
     TRAILING_PROFILE_TYPE = "tpt"
     TRAILING_PROFILE_DETAILS = "tpd"
@@ -637,3 +638,4 @@ class TradingModeActivityType(enum.Enum):
 
 class ActiveOrderSwapTriggerPriceConfiguration(enum.Enum):
     FILLING_PRICE = "filling_price"
+    ORDER_PARAMS_ONLY = "order_params_only"

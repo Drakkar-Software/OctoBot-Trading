@@ -93,8 +93,7 @@ async def test_execute_no_reverse(swap_strategy, simulated_trader):
         order_type=enums.TraderOrderType.STOP_LOSS,
         group=oco_group,
         is_active=True,
-        active_trigger_price=decimal.Decimal(8),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss, decimal.Decimal(8), False),
     )
     # stop_loss is already active
     with pytest.raises(ValueError):
@@ -110,8 +109,7 @@ async def test_execute_no_reverse(swap_strategy, simulated_trader):
         order_type=enums.TraderOrderType.SELL_LIMIT,
         group=oco_group,
         is_active=False,
-        active_trigger_price=decimal.Decimal(18),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss, decimal.Decimal(18), False),
     )
 
     for order in [stop_loss, sell_limit]:
@@ -182,8 +180,7 @@ async def test_execute_with_reverse(swap_strategy, simulated_trader):
         order_type=enums.TraderOrderType.STOP_LOSS,
         group=oco_group,
         is_active=True,
-        active_trigger_price=decimal.Decimal(8),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss, decimal.Decimal(8), False),
     )
     # stop_loss is already active
     with pytest.raises(ValueError):
@@ -199,8 +196,7 @@ async def test_execute_with_reverse(swap_strategy, simulated_trader):
         order_type=enums.TraderOrderType.SELL_LIMIT,
         group=oco_group,
         is_active=False,
-        active_trigger_price=decimal.Decimal(18),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit, decimal.Decimal(18), False),
     )
 
     for order in [stop_loss, sell_limit]:
