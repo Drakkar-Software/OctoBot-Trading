@@ -84,8 +84,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.origin_quantity = decimal.Decimal("1.12")
     buy_limit_order.origin_stop_price = decimal.Decimal("1.13")
     buy_limit_order.is_active = False
-    buy_limit_order.active_trigger_price = decimal.Decimal("1.14")
-    buy_limit_order.active_trigger_above = False
+    buy_limit_order.use_active_trigger(personal_data.create_order_price_trigger(buy_limit_order, decimal.Decimal("1.14"), False))
     exchange_manager = buy_limit_order.exchange_manager
     assert signals.create_order_signal_content(buy_limit_order, enums.TradingSignalOrdersActions.CREATE,
                                                "strat", exchange_manager) == {
@@ -132,11 +131,9 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     sell_limit_order.add_chained_order(buy_limit_order)
     sell_limit_order.symbol = "BTC/ETH"
     sell_limit_order.is_active = False
-    sell_limit_order.active_trigger_price = decimal.Decimal("2.14")
-    sell_limit_order.active_trigger_above = True
+    sell_limit_order.use_active_trigger(personal_data.create_order_price_trigger(sell_limit_order, decimal.Decimal("2.14"), True))
     buy_limit_order.associate_to_entry("1")
-    buy_limit_order.active_trigger_price = decimal.Decimal("1.14")
-    buy_limit_order.active_trigger_above = True
+    buy_limit_order.use_active_trigger(personal_data.create_order_price_trigger(buy_limit_order, decimal.Decimal("1.14"), True))
     await buy_limit_order.set_as_chained_order(sell_limit_order, True, {}, True)
     assert signals.create_order_signal_content(
         buy_limit_order,

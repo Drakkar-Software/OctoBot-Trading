@@ -86,8 +86,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         order_type=enums.TraderOrderType.STOP_LOSS,
         group=tbtp_group,
         is_active=True,
-        active_trigger_price=decimal.Decimal(8),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss_1, decimal.Decimal(8), False),
         exchange_order_id="e_stop_loss_1"
 
     )
@@ -100,8 +99,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         order_type=enums.TraderOrderType.STOP_LOSS,
         group=tbtp_group,
         is_active=True,
-        active_trigger_price=decimal.Decimal(10),
-        active_trigger_above=False,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss_2, decimal.Decimal(10), False),
         exchange_order_id="e_stop_loss_2"
     )
     updated_stop_loss_2 = [stop_loss_2]
@@ -114,8 +112,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         order_type=enums.TraderOrderType.SELL_LIMIT,
         group=tbtp_group,
         is_active=False,
-        active_trigger_price=decimal.Decimal(20),
-        active_trigger_above=True,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit_1, decimal.Decimal(20), True),
         exchange_order_id="e_sell_limit_1"
     )
     sell_limit_2 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
@@ -127,8 +124,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         order_type=enums.TraderOrderType.SELL_LIMIT,
         group=tbtp_group,
         is_active=False,
-        active_trigger_price=decimal.Decimal(30),
-        active_trigger_above=True,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit_2, decimal.Decimal(30), True),
         exchange_order_id="e_sell_limit_2"
     )
     sell_limit_3 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
@@ -140,8 +136,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         order_type=enums.TraderOrderType.SELL_LIMIT,
         group=tbtp_group,
         is_active=False,
-        active_trigger_price=decimal.Decimal(40),
-        active_trigger_above=True,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit_3, decimal.Decimal(40), True),
         exchange_order_id="e_sell_limit_3"
     )
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
@@ -157,7 +152,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
     assert stop_loss_1.is_active is True
     assert stop_loss_2.is_active is True
     assert sorted(
-        order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders(), key=lambda x: x.origin_price
+        order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False), key=lambda x: x.origin_price
     ) ==  sorted(
         [sell_limit_1, sell_limit_2, sell_limit_3], key=lambda x: x.origin_price
     )
@@ -175,8 +170,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
             order_type=enums.TraderOrderType.STOP_LOSS,
             group=tbtp_group,
             is_active=True,
-            active_trigger_price=decimal.Decimal(10),
-            active_trigger_above=False,
+            active_trigger=personal_data.create_order_price_trigger(edited_stop_loss, decimal.Decimal(10), False),
             exchange_order_id="edited_stop_loss_1"
         )
         order_dict = edited_stop_loss.to_dict()
@@ -205,7 +199,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
             assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
             assert stop_loss_1 in all_orders and stop_loss_2 in all_orders
             assert all(order in all_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
-            inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+            inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
             assert len(inactive_orders) == 3
             assert stop_loss_2 in inactive_orders and all(order in inactive_orders for order in [sell_limit_2, sell_limit_3])
             # stop_loss_1 is reduced
@@ -251,7 +245,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                 assert all(order in all_orders for order in [stop_loss_1, updated_stop_loss_2[0]])
                 assert len(tbtp_group.get_group_open_orders()) == 5
                 assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
-                inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+                inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
                 assert len(inactive_orders) == 3
                 assert all(order in inactive_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
                 cancel_order_mock.reset_mock()
@@ -281,7 +275,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
             assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
             assert stop_loss_1 in all_orders and updated_stop_loss_2[0] in all_orders
             assert all(o in all_orders for o in [sell_limit_1, sell_limit_2, sell_limit_3])
-            inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+            inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
             assert len(inactive_orders) == 3
             assert all(o in inactive_orders for o in [updated_stop_loss_2[0], sell_limit_1, sell_limit_3])
             # stop_loss_1 is NOT reduced
@@ -329,7 +323,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                 assert len(tbtp_group.get_group_open_orders()) == 5
                 assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
 
-                inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_inactive_orders()
+                inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
                 assert len(inactive_orders) == 3
                 assert all(order in inactive_orders for order in [sell_limit_1, sell_limit_2, sell_limit_3])
                 cancel_order_mock.reset_mock()

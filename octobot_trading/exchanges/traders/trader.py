@@ -318,8 +318,10 @@ class Trader(util.Initializable):
             updated_order.associated_entry_ids = new_order.associated_entry_ids
             updated_order.update_with_triggering_order_fees = new_order.update_with_triggering_order_fees
             updated_order.trailing_profile = new_order.trailing_profile
-            updated_order.active_trigger_price = new_order.active_trigger_price
-            updated_order.active_trigger_above = new_order.active_trigger_above
+            if new_order.active_trigger is not None:
+                updated_order.use_active_trigger(order_util.create_order_price_trigger(
+                    updated_order, new_order.active_trigger.trigger_price, new_order.active_trigger.trigger_above
+                ))
             updated_order.is_in_active_inactive_transition = new_order.is_in_active_inactive_transition
 
             if is_pending_creation:
@@ -405,8 +407,8 @@ class Trader(util.Initializable):
         self, order, ignored_order=None, wait_for_cancelling=True,
         cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
     ) -> bool:
-        if self.simulate:
-            self.logger.error(f"Can't update order as inactive on simulated trading.")
+        if not self.enable_inactive_orders:
+            self.logger.error(f"Can't update order as inactive when {self.enable_inactive_orders=}.")
             return False
         cancelled = False
         if order and order.is_open():
@@ -422,8 +424,8 @@ class Trader(util.Initializable):
         self, order, params: dict = None, wait_for_creation=True, raise_all_creation_error=False,
         creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
     ):
-        if self.simulate:
-            self.logger.error(f"Can't update order as active on simulated trading.")
+        if not self.enable_inactive_orders:
+            self.logger.error(f"Can't update order as active when {self.enable_inactive_orders=}.")
             return order
         with order.active_or_inactive_transition():
             return await self.create_order(

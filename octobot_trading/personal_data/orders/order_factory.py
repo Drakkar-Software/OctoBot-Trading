@@ -112,8 +112,8 @@ def create_order_instance(
         trigger_above=trigger_above,
         trailing_profile=trailing_profile,
         is_active=is_active,
-        active_trigger_price=active_trigger_price,
-        active_trigger_above=active_trigger_above
+        active_trigger=personal_data.create_order_price_trigger(order, active_trigger_price, active_trigger_above)
+            if active_trigger_price else None,
     )
     return order
 

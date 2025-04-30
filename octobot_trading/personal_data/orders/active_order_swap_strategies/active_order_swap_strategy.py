@@ -39,14 +39,25 @@ class ActiveOrderSwapStrategy:
         for order in orders:
             trigger_price = self._get_trigger_price(order)
             if self.is_priority_order(order):
-                # still register active trigger price and trigger above in case this order becomes inactive
-                order.update(active_trigger_price=trigger_price, active_trigger_above=order.trigger_above)
+                # still register active trigger in case this order becomes inactive
+                order.update(
+                    active_trigger=order_util.create_order_price_trigger(order, trigger_price, order.trigger_above)
+                )
             else:
-                await order.set_as_inactive(trigger_price, order.trigger_above)
+                await order.set_as_inactive(
+                    order_util.create_order_price_trigger(order, trigger_price, order.trigger_above)
+                )
 
     def _get_trigger_price(self, order) -> decimal.Decimal:
         if self.trigger_price_configuration == enums.ActiveOrderSwapTriggerPriceConfiguration.FILLING_PRICE.value:
             return order.get_filling_price()
+        if self.trigger_price_configuration == enums.ActiveOrderSwapTriggerPriceConfiguration.ORDER_PARAMS_ONLY.value:
+            if order.active_trigger is None or order.active_trigger.trigger_price is None:
+                raise ValueError(
+                    f"order.active_trigger.trigger_price must be set when using "
+                    f"ActiveOrderSwapTriggerPriceConfiguration.ORDER_PARAMS_ONLY. Order: {order}"
+                )
+            return order.active_trigger.trigger_price
         raise ValueError(f"Unknown trigger price configuration: {self.trigger_price_configuration}")
 
     async def execute(self, inactive_order, wait_for_fill_callback: typing.Optional[typing.Callable]):
@@ -57,6 +68,8 @@ class ActiveOrderSwapStrategy:
             active_order, now_maybe_partially_inactive_orders, reverse_update_callback = (
                 await self._update_group_and_activate_order(inactive_order)
             )
+            if active_order is None:
+                raise ValueError("No active order was created")
             if not any(self.is_priority_order(inactive_order) for inactive_order in now_maybe_partially_inactive_orders):
                 # nothing else to do: no priority order has been deactivated
                 return

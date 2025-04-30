@@ -71,6 +71,7 @@ class OrderGroup:
         """
         Called when an order of this group is becoming active
         """
+        raise NotImplementedError("_default_active_order_swap_strategy is not implemented")
 
 
     async def enable(self, enabled):
