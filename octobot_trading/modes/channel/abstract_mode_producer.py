@@ -135,7 +135,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             await self.inner_start()
         finally:
             self.logger.debug(
-                f"Ready to trade on {self.exchange_manager.exchange_name}, symbol: {self.trading_mode.symbol}"
+                f"Ready to trade on {self.exchange_manager.exchange_name if self.exchange_manager else ''}, "
+                f"symbol: {self.trading_mode.symbol if self.trading_mode.symbol else ''}"
             )
             self._is_ready_to_trade.set()
 
