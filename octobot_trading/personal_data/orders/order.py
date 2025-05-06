@@ -808,8 +808,11 @@ class Order(util.Initializable):
 
     def is_counted_in_available_funds(self):
         if self.is_active:
-            if self.reduce_only and self.exchange_manager and self.exchange_manager.is_future:
+            if self.trader.simulate or (
+                self.reduce_only and self.exchange_manager and self.exchange_manager.is_future
+            ):
                 return not (
+                    # in trading simulator, stop orders and TP do not lock funds
                     # when trading futures, reduce only stop loss and take profit orders do not lock funds
                     order_util.is_stop_order(self.order_type) or order_util.is_take_profit_order(self.order_type)
                 )
