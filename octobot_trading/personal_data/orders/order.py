@@ -807,7 +807,16 @@ class Order(util.Initializable):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
     def is_counted_in_available_funds(self):
-        return self.is_active and not self.is_self_managed()
+        if self.is_active:
+            if self.reduce_only and self.exchange_manager and self.exchange_manager.is_future:
+                return not (
+                    # when trading futures, reduce only stop loss and take profit orders do not lock funds
+                    order_util.is_stop_order(self.order_type) or order_util.is_take_profit_order(self.order_type)
+                )
+            # lock funds when not self-managed
+            return not self.is_self_managed()
+        # inactive: not locking funds
+        return False
 
     def is_self_managed(self):
         if self.is_cleared():
