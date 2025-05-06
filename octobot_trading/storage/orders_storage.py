@@ -133,20 +133,27 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         else:
             self.startup_orders = {}
 
-    def get_startup_self_managed_orders_details_from_group(self, group_id):
+    def get_startup_virtual_orders_details_from_group(self, group_id):
         return [
             order
-            for order in self.get_all_self_managed_startup_orders()
+            for order in self.get_all_virtual_startup_orders()
             if order.get(enums.StoredOrdersAttr.GROUP.value, {}).get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             == group_id
         ]
 
-    def get_all_self_managed_startup_orders(self):
+    def get_all_virtual_startup_orders(self):
         return [
             order
             for order in self.startup_orders.values()
-            if order.get(constants.STORAGE_ORIGIN_VALUE, {})
-            .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
+            if (
+                # self-managed, ex: stop loss when not supported on exchange
+                order.get(constants.STORAGE_ORIGIN_VALUE, {})
+                .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
+           ) or (
+                # inactive, ex: OCO take profit when stop loss is supported on SPOT exchange
+                order.get(constants.STORAGE_ORIGIN_VALUE, {})
+                .get(enums.ExchangeConstantsOrderColumns.IS_ACTIVE.value, True) is False
+            )
         ]
 
     @classmethod
@@ -197,7 +204,7 @@ def get_order_active_trigger_dict(order):
     if not order.active_trigger:
         return {}
     return {
-        enums.StoredOrdersAttr.ACTIVE_TRIGGER_PRICE.value: order.active_trigger.trigger_price,
+        enums.StoredOrdersAttr.ACTIVE_TRIGGER_PRICE.value: float(order.active_trigger.trigger_price),
         enums.StoredOrdersAttr.ACTIVE_TRIGGER_ABOVE.value: order.active_trigger.trigger_above,
     }
 

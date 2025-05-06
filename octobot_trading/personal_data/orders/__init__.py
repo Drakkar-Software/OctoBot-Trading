@@ -137,7 +137,7 @@ from octobot_trading.personal_data.orders import orders_storage_operations
 from octobot_trading.personal_data.orders.orders_storage_operations import (
     apply_order_storage_details_if_any,
     create_orders_storage_related_elements,
-    create_missing_self_managed_orders_from_storage_order_groups,
+    create_missing_virtual_orders_from_storage_order_groups,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -211,7 +211,7 @@ __all__ = [
     "generate_order_id",
     "wait_for_order_fill",
     "apply_order_storage_details_if_any",
-    "create_missing_self_managed_orders_from_storage_order_groups",
+    "create_missing_virtual_orders_from_storage_order_groups",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
     "OrderState",
