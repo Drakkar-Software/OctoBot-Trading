@@ -67,6 +67,187 @@ def test_balances_factory(toftpb_group):
 
 
 @pytest.mark.asyncio
+async def test_trailing_balanced_trail_after_order_fill(simulated_trader):
+    _, exchange_manager, trader_instance = simulated_trader
+    trader_instance.allow_artificial_orders = False
+    trader_instance.enable_inactive_orders = True
+    trader_instance.simulate = False
+    exchange_manager.is_backtesting = True  # force update_order_status
+    tbtp_group = personal_data.TrailingOnFilledTPBalancedOrderGroup(
+        "name", exchange_manager.exchange_personal_data.orders_manager
+    )
+    assert isinstance(tbtp_group.active_order_swap_strategy, personal_data.StopFirstActiveOrderSwapStrategy)
+    stop_loss = created_order(personal_data.StopLossOrder, enums.TraderOrderType.STOP_LOSS,
+                              trader_instance, side=enums.TradeOrderSide.SELL)
+    stop_loss.update(
+        price=decimal.Decimal(8),
+        quantity=decimal.Decimal("0.6"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.STOP_LOSS,
+        group=tbtp_group,
+        is_active=True,
+        active_trigger=personal_data.create_order_price_trigger(stop_loss, decimal.Decimal(8), False),
+        exchange_order_id="e_stop_loss_1"
+    )
+    stop_loss.trailing_profile = personal_data.FilledTakeProfitTrailingProfile([
+        personal_data.TrailingPriceStep(price, price, True)
+        for price in (20, 30)
+    ])
+    sell_limit_1 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_1.update(
+        price=decimal.Decimal(20),
+        quantity=decimal.Decimal("0.4"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=tbtp_group,
+        is_active=False,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit_1, decimal.Decimal(20), True),
+        exchange_order_id="e_sell_limit_1"
+    )
+    sell_limit_2 = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                               trader_instance, side=enums.TradeOrderSide.SELL)
+    sell_limit_2.update(
+        price=decimal.Decimal(30),
+        quantity=decimal.Decimal("0.2"),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        group=tbtp_group,
+        is_active=False,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit_2, decimal.Decimal(30), True),
+        exchange_order_id="e_sell_limit_2"
+    )
+    portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+    assert portfolio["BTC"].available == decimal.Decimal(10)
+    locked_amount = constants.ZERO
+    for order in [stop_loss, sell_limit_1, sell_limit_2]:
+        await order.initialize()
+        await order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
+        if order in [stop_loss]:
+            # stop sell limit quantity is not removed from available but stop is
+            locked_amount += order.origin_quantity
+        assert portfolio["BTC"].available == decimal.Decimal(10) - locked_amount
+    assert stop_loss.is_active is True
+    assert sorted(
+        order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False), key=lambda x: x.origin_price
+    ) ==  sorted(
+        [sell_limit_1, sell_limit_2], key=lambda x: x.origin_price
+    )
+    assert len(tbtp_group.get_group_open_orders()) == 3
+    assert all(order in tbtp_group.get_group_open_orders()
+               for order in order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders())
+
+    async def _edit_order(*args, quantity=None, price=None, **kwargs):
+        edited_stop_loss = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                                        trader_instance, side=enums.TradeOrderSide.SELL)
+        price = price or decimal.Decimal(10)
+        edited_stop_loss.update(
+            price=price,
+            quantity=quantity,
+            symbol=DEFAULT_ORDER_SYMBOL,
+            order_type=enums.TraderOrderType.STOP_LOSS,
+            group=tbtp_group,
+            is_active=True,
+            active_trigger=personal_data.create_order_price_trigger(edited_stop_loss, price, False),
+            exchange_order_id="edited_stop_loss"
+        )
+        order_dict = edited_stop_loss.to_dict()
+        order_dict.pop(enums.ExchangeConstantsOrderColumns.ID.value)
+        return order_dict
+
+    with mock.patch.object(exchange_manager.exchange, "cancel_order", mock.AsyncMock(return_value=enums.OrderStatus.CANCELED)) as cancel_order_mock, \
+            mock.patch.object(exchange_manager.exchange, "edit_order",
+                              mock.AsyncMock(side_effect=_edit_order)) as edit_order_mock:
+        # STEP 1: filling sell_limit_1
+        # sell_limit_1 become active: stop_loss is reduced and remains active
+        step_1_deactivated_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_1)
+        sell_limit_1.is_active = True    # simulate now active order
+        assert step_1_deactivated_orders == []
+        cancel_order_mock.assert_not_called()
+        edit_order_mock.assert_called_once()
+        assert stop_loss.is_active is True
+        for order in [stop_loss, sell_limit_1, sell_limit_2]:
+            assert not order.is_cleared()
+        all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+        assert len(all_orders) == 3
+        assert len(tbtp_group.get_group_open_orders()) == 3
+        assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
+        assert stop_loss in all_orders
+        assert all(order in all_orders for order in [sell_limit_1, sell_limit_2])
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
+        assert len(inactive_orders) == 1
+        assert inactive_orders == [sell_limit_2]
+        # stop_loss is reduced
+        assert stop_loss.origin_quantity == decimal.Decimal("0.2")  # 0.6 - 0.4
+        # stop_loss price is still the same (sell order is not filled)
+        assert stop_loss.origin_price == decimal.Decimal("8")
+        cancel_order_mock.reset_mock()
+        edit_order_mock.reset_mock()
+
+        # fill sell_limit_1: stop_loss price trails, no order is cancelled
+        await sell_limit_1.on_fill(force_fill=True)
+        assert sell_limit_1.is_closed()
+        assert not stop_loss.is_closed()
+        assert sell_limit_1.is_cleared()
+        assert not stop_loss.is_cleared()
+        cancel_order_mock.assert_not_called()
+        # trailing
+        edit_order_mock.assert_called_once()
+        assert edit_order_mock.mock_calls[0].args[0] == stop_loss.exchange_order_id
+        assert edit_order_mock.mock_calls[0].kwargs["quantity"] == decimal.Decimal("0.2")
+        assert edit_order_mock.mock_calls[0].kwargs["price"] == decimal.Decimal("20")
+        assert stop_loss.origin_price == decimal.Decimal("20")  # updated price
+        assert stop_loss.origin_quantity == decimal.Decimal("0.2")  # same quantity
+
+        all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+        assert len(all_orders) == 2
+        assert all(order in all_orders for order in [stop_loss, sell_limit_2])
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
+        assert inactive_orders == [sell_limit_2]
+        cancel_order_mock.reset_mock()
+        edit_order_mock.reset_mock()
+
+        # STEP 2: filling sell_limit_2
+        # sell_limit_2 become active: stop loss gets canceled
+        step_1_deactivated_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_2)
+        sell_limit_2.is_active = True    # simulate now active order
+        assert step_1_deactivated_orders == [stop_loss]
+        cancel_order_mock.assert_called_once()
+        assert cancel_order_mock.mock_calls[0].args[0] == stop_loss.exchange_order_id
+        edit_order_mock.assert_not_called()
+        assert sell_limit_2.is_active is True
+        assert stop_loss.is_active is False
+        for order in [stop_loss, sell_limit_2]:
+            assert not order.is_cleared()
+        all_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+        assert len(all_orders) == 2
+        assert len(tbtp_group.get_group_open_orders()) == 2
+        assert all(order in tbtp_group.get_group_open_orders() for order in all_orders)
+        assert all(order in all_orders for order in [stop_loss, sell_limit_2])
+        inactive_orders = order.exchange_manager.exchange_personal_data.orders_manager.get_all_orders(active=False)
+        assert inactive_orders == [stop_loss]
+        # stop_loss is not reduced
+        assert stop_loss.origin_quantity == decimal.Decimal("0.2")
+        # stop_loss price is still the same
+        assert stop_loss.origin_price == decimal.Decimal("20")
+        cancel_order_mock.reset_mock()
+        edit_order_mock.reset_mock()
+
+        # fill sell_limit_2: stop_loss is canceled
+        await sell_limit_2.on_fill(force_fill=True)
+        assert sell_limit_2.is_closed()
+        assert stop_loss.is_closed()
+        assert sell_limit_2.is_cleared()
+        assert stop_loss.is_cleared()
+        all_orders = exchange_manager.exchange_personal_data.orders_manager.get_all_orders()
+        assert all_orders == []
+        cancel_order_mock.assert_not_called()
+        edit_order_mock.assert_not_called()
+        # did not trail (got canceled instead)
+        assert stop_loss.origin_price == decimal.Decimal("20")  # same price
+        assert stop_loss.origin_quantity == decimal.Decimal("0.2")  # same quantity
+
+@pytest.mark.asyncio
 async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneous_orders(simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
     trader_instance.allow_artificial_orders = False
@@ -204,6 +385,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
             assert stop_loss_2 in inactive_orders and all(order in inactive_orders for order in [sell_limit_2, sell_limit_3])
             # stop_loss_1 is reduced
             assert stop_loss_1.origin_quantity == decimal.Decimal("0.6")  # 0.8 - 0.2
+            assert stop_loss_1.origin_price == decimal.Decimal(8)  # same price
             cancel_order_mock.reset_mock()
             edit_order_mock.reset_mock()
 
@@ -236,6 +418,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                 create_order_instance_from_raw_mock.assert_called_once()
                 assert stop_loss_2.is_cleared()
                 assert stop_loss_1.origin_quantity == decimal.Decimal("0.8")
+                assert stop_loss_1.origin_price == decimal.Decimal(8)  # same price
                 assert exchange_created_order.origin_quantity == stop_loss_2.origin_quantity
                 assert exchange_created_order.is_active is True
                 updated_stop_loss_2[0] = exchange_created_order
@@ -311,6 +494,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                 create_order_instance_from_raw_mock.assert_called_once()
                 assert updated_stop_loss_2[0].is_cleared()
                 assert stop_loss_1.origin_quantity == decimal.Decimal("0.8")
+                assert stop_loss_1.origin_price == decimal.Decimal(8)  # same price
                 assert exchange_created_order.origin_quantity == updated_stop_loss_2[0].origin_quantity
                 assert sell_limit_1.is_active is False
                 assert exchange_created_order.is_active is True
@@ -331,12 +515,10 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                 create_order_mock.reset_mock()
                 create_order_instance_from_raw_mock.reset_mock()
 
-        await step1_task()
-        await step2_task()
-        # await asyncio.gather(
-        #     step1_task(),
-        #     step2_task(),
-        # )
+        await asyncio.gather(
+            step1_task(),
+            step2_task(),
+        )
 
 def test_TrailingSideBalance_get_order_update(trailing_side_balance, order_f):
     order = order_f
