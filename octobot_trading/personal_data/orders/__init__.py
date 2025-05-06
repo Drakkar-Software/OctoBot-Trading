@@ -43,6 +43,7 @@ from octobot_trading.personal_data.orders import active_order_swap_strategies
 from octobot_trading.personal_data.orders.active_order_swap_strategies import (
     ActiveOrderSwapStrategy,
     StopFirstActiveOrderSwapStrategy,
+    TakeProfitFirstActiveOrderSwapStrategy,
 )
 from octobot_trading.personal_data.orders import triggers
 from octobot_trading.personal_data.orders.triggers import (
@@ -229,6 +230,7 @@ __all__ = [
     "create_filled_take_profit_trailing_profile",
     "ActiveOrderSwapStrategy",
     "StopFirstActiveOrderSwapStrategy",
+    "TakeProfitFirstActiveOrderSwapStrategy",
     "BaseTrigger",
     "PriceTrigger",
     "OrdersUpdater",
