@@ -34,7 +34,7 @@ def get_or_create_order_group_from_storage_order_details(order_details, exchange
             group_name = group.get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             if group_name:
                 active_order_swap_strategy = None
-                if swap_strategy := order_details.get(enums.StoredOrdersAttr.ORDER_SWAP_STRATEGY.value, None):
+                if swap_strategy := group.get(enums.StoredOrdersAttr.ORDER_SWAP_STRATEGY.value, None):
                     active_order_swap_strategy = tentacles_management.get_deep_class_from_parent_subclasses(
                         swap_strategy[enums.StoredOrdersAttr.STRATEGY_TYPE.value],
                         active_order_swap_strategies.ActiveOrderSwapStrategy
