@@ -48,6 +48,8 @@ def test_is_pending_when_not_initialized(trigger):
 def test_str_representation(trigger):
     expected = f"BaseTrigger({trigger.on_trigger_callback.__name__})"
     assert str(trigger) == expected
+    trigger.clear()
+    assert str(trigger) == f"BaseTrigger({None})"
 
 @pytest.mark.asyncio
 async def test_clear_cancels_pending_task(trigger):
@@ -55,9 +57,13 @@ async def test_clear_cancels_pending_task(trigger):
     trigger._trigger_event = asyncio.Event()
     trigger._trigger_task = asyncio.create_task(asyncio.sleep(1))
 
-    # Clear should cancel the task
+    # Clear should cancel the task and clear attributes
+    assert trigger.on_trigger_callback is not None
+    assert trigger.on_trigger_callback_args is not None
     trigger.clear()
     assert trigger._trigger_task is None
+    assert trigger.on_trigger_callback is None
+    assert trigger.on_trigger_callback_args is None
 
 @pytest.mark.asyncio
 async def test_call_callback(trigger, mock_callback):
