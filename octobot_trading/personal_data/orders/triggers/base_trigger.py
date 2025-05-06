@@ -35,7 +35,7 @@ class BaseTrigger:
         raise NotImplementedError("update_from_other_trigger is not implemented")
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.on_trigger_callback.__name__})"
+        return f"{self.__class__.__name__}({self.on_trigger_callback.__name__ if self.on_trigger_callback else None})"
 
     async def create_watcher(self, *args):
         # ensure triggers are ready
@@ -54,6 +54,8 @@ class BaseTrigger:
             if not self._trigger_event.is_set():
                 self._trigger_task.cancel()
             self._trigger_task = None
+        self.on_trigger_callback = None
+        self.on_trigger_callback_args = None
 
     def _create_trigger_event(self, *args):
         raise NotImplementedError("_create_trigger_event is not implemented")
