@@ -24,8 +24,14 @@ from octobot_trading.personal_data.orders.active_order_swap_strategies.stop_firs
     StopFirstActiveOrderSwapStrategy,
 )
 
+from octobot_trading.personal_data.orders.active_order_swap_strategies import take_profit_first_active_order_swap_strategy
+from octobot_trading.personal_data.orders.active_order_swap_strategies.take_profit_first_active_order_swap_strategy import (
+    TakeProfitFirstActiveOrderSwapStrategy,
+)
+
 
 __all__ = [
     "ActiveOrderSwapStrategy",
     "StopFirstActiveOrderSwapStrategy",
+    "TakeProfitFirstActiveOrderSwapStrategy",
 ]
