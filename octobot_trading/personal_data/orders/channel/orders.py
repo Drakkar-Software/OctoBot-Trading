@@ -79,7 +79,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                             raise
             if not are_closed:
                 if pending_groups:
-                    await orders_storage_operations.create_missing_self_managed_orders_from_storage_order_groups(
+                    await orders_storage_operations.create_missing_virtual_orders_from_storage_order_groups(
                         pending_groups, self.channel.exchange_manager
                     )
                 await self.handle_post_open_orders_update(

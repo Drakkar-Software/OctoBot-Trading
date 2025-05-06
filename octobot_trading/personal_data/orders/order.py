@@ -328,6 +328,8 @@ class Order(util.Initializable):
         await orders_states.create_order_state(self, **kwargs)
         if self.is_created() and not self.is_closed():
             await self.update_order_status()
+        if not self.is_active:
+            await self._ensure_inactive_order_watcher()
 
     def register_broker_applied_if_enabled(self):
         if not self.simulated and self.trader and self.trader.exchange_manager:
@@ -1051,6 +1053,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value: self.is_self_managed(),
             enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: self.broker_applied,
             enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: self.taker_or_maker,
+            enums.ExchangeConstantsOrderColumns.IS_ACTIVE.value: self.is_active,
         }
 
     def clear_active_order_elements(self):
