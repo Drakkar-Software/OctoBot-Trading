@@ -60,9 +60,15 @@ class ActiveOrderSwapStrategy:
             return order.active_trigger.trigger_price
         raise ValueError(f"Unknown trigger price configuration: {self.trigger_price_configuration}")
 
-    async def execute(self, inactive_order, wait_for_fill_callback: typing.Optional[typing.Callable]):
+    async def execute(
+        self,
+        inactive_order,
+        wait_for_fill_callback: typing.Optional[typing.Callable],
+        timeout: typing.Optional[float]
+    ):
         if inactive_order.order_group is None:
             raise NotImplementedError(f"Input order is not part of a group, this is unexpected: {inactive_order}")
+        timeout = self.swap_timeout if timeout is None else timeout
         # strategies should not be executed concurrently or in parallel with other group triggers
         async with inactive_order.order_group.lock_group():
             active_order, now_maybe_partially_inactive_orders, reverse_update_callback = (
@@ -76,14 +82,14 @@ class ActiveOrderSwapStrategy:
             # priority order have been deactivated: if newly active order doesn't get filled within timeout,
             # to should get back to inactivity and priority orders should get back to active
             logger = octobot_commons.logging.get_logger(active_order.get_logger_name())
-            logger.info(f"Waiting for newly active order to be filled timeout={self.swap_timeout}s")
+            logger.info(f"Waiting for newly active order to be filled timeout={timeout}s")
             await (
-                wait_for_fill_callback(active_order, self.swap_timeout) if wait_for_fill_callback
-                else order_util.wait_for_order_fill(active_order, self.swap_timeout, True)
+                wait_for_fill_callback(active_order, timeout) if wait_for_fill_callback
+                else order_util.wait_for_order_fill(active_order, timeout, True)
             )
-            if active_order.is_open():
+            if active_order.is_open() and not (active_order.is_filled() or active_order.is_closed()):
                 logger.warning(
-                    f"Newly active order was not filled within {self.swap_timeout}, reversing active "
+                    f"Newly active order was not filled within {timeout}, reversing active "
                     f"order to re-activate priority orders."
                 )
                 await reverse_update_callback(active_order, now_maybe_partially_inactive_orders)

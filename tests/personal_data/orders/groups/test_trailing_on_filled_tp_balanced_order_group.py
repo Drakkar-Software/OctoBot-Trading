@@ -160,9 +160,9 @@ async def test_trailing_balanced_trail_after_order_fill(simulated_trader):
                               mock.AsyncMock(side_effect=_edit_order)) as edit_order_mock:
         # STEP 1: filling sell_limit_1
         # sell_limit_1 become active: stop_loss is reduced and remains active
-        step_1_deactivated_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_1)
+        step_1_maybe_partially_inactive_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_1)
         sell_limit_1.is_active = True    # simulate now active order
-        assert step_1_deactivated_orders == []
+        assert step_1_maybe_partially_inactive_orders == [stop_loss]
         cancel_order_mock.assert_not_called()
         edit_order_mock.assert_called_once()
         assert stop_loss.is_active is True
@@ -209,9 +209,9 @@ async def test_trailing_balanced_trail_after_order_fill(simulated_trader):
 
         # STEP 2: filling sell_limit_2
         # sell_limit_2 become active: stop loss gets canceled
-        step_1_deactivated_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_2)
+        step_2_maybe_partially_inactive_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_2)
         sell_limit_2.is_active = True    # simulate now active order
-        assert step_1_deactivated_orders == [stop_loss]
+        assert step_2_maybe_partially_inactive_orders == [stop_loss]
         cancel_order_mock.assert_called_once()
         assert cancel_order_mock.mock_calls[0].args[0] == stop_loss.exchange_order_id
         edit_order_mock.assert_not_called()
@@ -364,9 +364,9 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         async def step1_task():
             # STEP 1
             # sell_limit_1 become active: stop_loss_2 is now inactive, stop_loss_1 is reduced and remains active
-            step_1_deactivated_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_1)
+            step_1_maybe_partially_inactive_orders, step_1_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_1)
             sell_limit_1.is_active = True    # simulate now active order
-            assert step_1_deactivated_orders == [stop_loss_2]
+            assert step_1_maybe_partially_inactive_orders == [stop_loss_2, stop_loss_1]
             cancel_order_mock.assert_called_once()
             edit_order_mock.assert_called_once()
             assert stop_loss_1.is_active is True
@@ -407,7 +407,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                               mock.Mock(return_value=exchange_created_order)) as create_order_instance_from_raw_mock, \
                  mock.patch.object(exchange_manager.exchange, "create_order",
                                    mock.AsyncMock(return_value=exchange_created_order)) as create_order_mock:
-                await step_1_reverse(sell_limit_1, step_1_deactivated_orders)
+                await step_1_reverse(sell_limit_1, step_1_maybe_partially_inactive_orders)
                 # stop loss 1 gets increased, stop loss 2 gets active again (re-created) and sell_limit_1 is back to inactive
                 cancel_order_mock.assert_called_once()
                 assert cancel_order_mock.mock_calls[0].args[0] == sell_limit_1.exchange_order_id
@@ -439,9 +439,9 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
         async def step2_task():
             # STEP 2 => because of the group order locks, should be executed after step 1
             # sell_limit_2 become active: updated_stop_loss_2[0] (created in step 1) is cancelled, stop_loss_1 has no change
-            step_2_deactivated_orders, step_2_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_2)
+            step_2_maybe_partially_inactive_orders, step_2_reverse = await tbtp_group.adapt_before_order_becoming_active(sell_limit_2)
             sell_limit_2.is_active = True    # simulate now active order
-            assert step_2_deactivated_orders == [updated_stop_loss_2[0]]   # why ? group order iterator issue ?
+            assert step_2_maybe_partially_inactive_orders == [updated_stop_loss_2[0]]
             cancel_order_mock.assert_called_once()
             edit_order_mock.assert_not_called()
             assert stop_loss_1.is_active is True
@@ -484,7 +484,7 @@ async def test_trailing_balanced_adapt_before_order_becoming_active_2_simultaneo
                               mock.Mock(return_value=exchange_created_order)) as create_order_instance_from_raw_mock, \
                  mock.patch.object(exchange_manager.exchange, "create_order",
                                    mock.AsyncMock(return_value=exchange_created_order)) as create_order_mock:
-                await step_2_reverse(sell_limit_2, step_2_deactivated_orders)
+                await step_2_reverse(sell_limit_2, step_2_maybe_partially_inactive_orders)
                 # stop loss 1 does not change, stop loss 2 gets active again (re-created) and sell_limit_2 is back to inactive
                 cancel_order_mock.assert_called_once()
                 assert cancel_order_mock.mock_calls[0].args[0] == sell_limit_2.exchange_order_id
