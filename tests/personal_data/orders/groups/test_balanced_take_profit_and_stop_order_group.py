@@ -383,9 +383,9 @@ async def test_balanced_adapt_before_order_becoming_active_and_reverse_swap(simu
             mock.patch.object(exchange_manager.exchange, "edit_order",
                               mock.AsyncMock(side_effect=_edit_order)) as edit_order_mock:
         # sell_limit_1 become active: stop_loss_2 is now inactive, stop_loss_1 is reduced and remains active
-        deactivated_orders, _ = await btp_group.adapt_before_order_becoming_active(sell_limit_1)
+        now_maybe_partially_inactive_orders, _ = await btp_group.adapt_before_order_becoming_active(sell_limit_1)
         sell_limit_1.is_active=True    # simulate now active order
-        assert deactivated_orders == [stop_loss_2]
+        assert now_maybe_partially_inactive_orders == [stop_loss_2, stop_loss_1]
         cancel_order_mock.assert_called_once()
         edit_order_mock.assert_called_once()
         assert stop_loss_1.is_active is True
@@ -425,9 +425,9 @@ async def test_balanced_adapt_before_order_becoming_active_and_reverse_swap(simu
 
         # sell_limit_2 become active: stop_loss_1 is reduced and remains active
         # stop_loss_1 is reduced again, no order is canceled
-        deactivated_orders, reverse_swap = await btp_group.adapt_before_order_becoming_active(sell_limit_2)
+        now_maybe_partially_inactive_orders, reverse_swap = await btp_group.adapt_before_order_becoming_active(sell_limit_2)
         sell_limit_2.is_active=True    # simulate now active order
-        assert deactivated_orders == []
+        assert now_maybe_partially_inactive_orders == [stop_loss_1]
         cancel_order_mock.assert_not_called()
         edit_order_mock.assert_called_once()
         assert stop_loss_1.is_active is True
@@ -451,9 +451,7 @@ async def test_balanced_adapt_before_order_becoming_active_and_reverse_swap(simu
             await reverse_swap("order_0", ["order_1", "order_2"])
             update_order_as_inactive_on_exchange_mock.assert_called_once_with("order_0", False)
             adapt_before_order_becoming_active_mock.assert_not_called()
-            assert create_as_active_order_on_exchange_mock.call_count == 2
-            assert create_as_active_order_on_exchange_mock.mock_calls[0].args == ("order_1", False)
-            assert create_as_active_order_on_exchange_mock.mock_calls[1].args == ("order_2", False)
+            create_as_active_order_on_exchange_mock.assert_not_called()   # no order to re-create (no cancelled order in previous step)
             _apply_update_order_actions_mock.assert_called_once()
             reverse_actions = _apply_update_order_actions_mock.mock_calls[0].args[0]
             assert len(reverse_actions) == 1

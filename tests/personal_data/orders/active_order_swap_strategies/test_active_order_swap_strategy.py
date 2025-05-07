@@ -81,7 +81,7 @@ async def test_execute_no_reverse(swap_strategy, simulated_trader):
     # not part of a group
     wait_for_fill_callback = mock.AsyncMock()
     with pytest.raises(NotImplementedError):
-        await swap_strategy.execute(stop_loss, wait_for_fill_callback)
+        await swap_strategy.execute(stop_loss, wait_for_fill_callback, 0)
 
     oco_group = personal_data.OneCancelsTheOtherOrderGroup("name",
                                                            exchange_manager.exchange_personal_data.orders_manager)
@@ -97,7 +97,7 @@ async def test_execute_no_reverse(swap_strategy, simulated_trader):
     )
     # stop_loss is already active
     with pytest.raises(ValueError):
-        await swap_strategy.execute(stop_loss, wait_for_fill_callback)
+        await swap_strategy.execute(stop_loss, wait_for_fill_callback, 1)
 
     sell_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
                                trader_instance, side=enums.TradeOrderSide.SELL)
@@ -143,7 +143,7 @@ async def test_execute_no_reverse(swap_strategy, simulated_trader):
         mock.patch.object(order_factory, "create_order_instance_from_raw",
                           mock.Mock(return_value=exchange_created_order)) as create_order_instance_from_raw_mock:
             # execution is not reversed: sell limit takes the place of the stop loss
-            await swap_strategy.execute(sell_limit, wait_for_fill_callback)
+            await swap_strategy.execute(sell_limit, wait_for_fill_callback, None)
             cancel_order_mock.assert_called_once()
             assert cancel_order_mock.mock_calls[0].args[0] == stop_loss.exchange_order_id
             create_order_mock.assert_called_once()
@@ -168,7 +168,7 @@ async def test_execute_with_reverse(swap_strategy, simulated_trader):
     # not part of a group
     wait_for_fill_callback = mock.AsyncMock()
     with pytest.raises(NotImplementedError):
-        await swap_strategy.execute(stop_loss, wait_for_fill_callback)
+        await swap_strategy.execute(stop_loss, wait_for_fill_callback, None)
 
     oco_group = personal_data.OneCancelsTheOtherOrderGroup("name",
                                                            exchange_manager.exchange_personal_data.orders_manager)
@@ -184,7 +184,7 @@ async def test_execute_with_reverse(swap_strategy, simulated_trader):
     )
     # stop_loss is already active
     with pytest.raises(ValueError):
-        await swap_strategy.execute(stop_loss, wait_for_fill_callback)
+        await swap_strategy.execute(stop_loss, wait_for_fill_callback, 3)
 
     sell_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
                                trader_instance, side=enums.TradeOrderSide.SELL)
@@ -232,7 +232,7 @@ async def test_execute_with_reverse(swap_strategy, simulated_trader):
                               mock.Mock(
                                   return_value=exchange_created_order)) as create_order_instance_from_raw_mock:
             # execution is reversed: stop loss is re-created
-            await swap_strategy.execute(sell_limit, wait_for_fill_callback)
+            await swap_strategy.execute(sell_limit, wait_for_fill_callback, 5)
             assert cancel_order_mock.call_count == 2
             assert cancel_order_mock.mock_calls[0].args[0] == stop_loss.exchange_order_id
             assert cancel_order_mock.mock_calls[1].args[0] == exchange_created_order.exchange_order_id

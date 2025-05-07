@@ -537,7 +537,7 @@ async def test_create_as_active_order_using_strategy_if_any(trader_simulator):
         inactive_order.order_group = group
         await personal_data.create_as_active_order_using_strategy_if_any(inactive_order, 123, "callback")
         create_as_active_order_on_exchange.assert_not_called()
-        execute_mock.assert_called_once_with(inactive_order, "callback")
+        execute_mock.assert_called_once_with(inactive_order, "callback", 123)
 
 
 @pytest.mark.asyncio

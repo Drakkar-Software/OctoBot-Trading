@@ -133,11 +133,11 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                 if order not in locally_balancing_orders
             ]
 
-        async def reverse_swap(former_order_to_become_active, to_activate_orders):
+        async def reverse_swap(former_order_to_become_active, _):
             # 1. rollback the "former_order_to_become_active" into inactive state
             await order_util.update_order_as_inactive_on_exchange(former_order_to_become_active, False)
             # 2. in case orders have been canceled on exchange, restore them
-            for to_activate_order in to_activate_orders:
+            for to_activate_order in deactivated_orders:
                 await order_util.create_as_active_order_on_exchange(to_activate_order, False)
             # 3. in case orders have been edited on exchange, restore their previous values
             if reverse_updates := [
@@ -148,7 +148,10 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                 self.logger.info(f"Restoring {len(reverse_updates)} orders amounts after swap reset")
                 await self._apply_update_order_actions(reverse_updates, False)
 
-        return deactivated_orders, reverse_swap
+        now_maybe_partially_inactive_orders = deactivated_orders + [
+            applied_update[self.ORDER] for applied_update in applied_updates
+        ]
+        return now_maybe_partially_inactive_orders, reverse_swap
 
     def _default_active_order_swap_strategy(self, timeout: float) -> active_order_swap_strategies.ActiveOrderSwapStrategy:
         """
@@ -247,7 +250,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         balance = self._balances_factory(closed_order, filled)
         for order in self.get_group_open_orders():
             if (
-                order is not closed_order
+                (closed_order is None or order.order_id != closed_order.order_id)
                 and (ignored_orders is None or order not in ignored_orders)
                 and order not in self.balancing_orders
             ):

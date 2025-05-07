@@ -549,15 +549,12 @@ def create_order_price_trigger(
 async def create_as_active_order_using_strategy_if_any(
     order, strategy_timeout: typing.Optional[float], wait_for_fill_callback: typing.Optional[typing.Callable]
 ):
-    active_swap_strategy = order.order_group.active_order_swap_strategy if order.order_group else None
-    if active_swap_strategy and strategy_timeout is not None:
-        active_swap_strategy.timeout = strategy_timeout
-    if active_swap_strategy is None:
+    if active_swap_strategy := order.order_group.active_order_swap_strategy if order.order_group else None:
+        # use strategy to process swap
+        await active_swap_strategy.execute(order, wait_for_fill_callback, strategy_timeout)
+    else:
         # no strategy: just create this order as active
         await create_as_active_order_on_exchange(order, False)
-    else:
-        # use strategy to process swap
-        await active_swap_strategy.execute(order, wait_for_fill_callback)
 
 
 async def create_as_active_order_on_exchange(order_to_create, emit_trading_signals: bool):

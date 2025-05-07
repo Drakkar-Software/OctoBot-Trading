@@ -44,8 +44,12 @@ async def create_order(exchange_manager,
     )
 
 
-def get_open_orders(exchange_manager, symbol=None) -> list:
-    return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)
+def get_open_orders(exchange_manager, symbol=None, active=None) -> list:
+    return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol, active=active)
+
+
+def get_all_orders(exchange_manager, symbol=None, active=None) -> list:
+    return exchange_manager.exchange_personal_data.orders_manager.get_all_orders(symbol=symbol, active=active)
 
 
 def get_pending_creation_orders(exchange_manager) -> list:
