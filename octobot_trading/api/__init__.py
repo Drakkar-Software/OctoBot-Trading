@@ -188,6 +188,7 @@ from octobot_trading.api.profitability import (
 )
 from octobot_trading.api.orders import (
     get_open_orders,
+    get_all_orders,
     get_pending_creation_orders,
     get_order_exchange_name,
     order_to_dict,
@@ -379,6 +380,7 @@ __all__ = [
     "get_reference_market",
     "get_initializing_currencies_prices",
     "get_open_orders",
+    "get_all_orders",
     "get_pending_creation_orders",
     "get_order_exchange_name",
     "order_to_dict",
