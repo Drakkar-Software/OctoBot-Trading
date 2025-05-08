@@ -25,6 +25,9 @@ class BaseTrigger:
         self._trigger_event: asyncio.Event = None    # will be set when the trigger is hit
         self._trigger_task: asyncio.Task = None
 
+    def triggers(self, *args) -> bool:
+        raise NotImplementedError("triggers is not implemented")
+
     def triggered(self) -> bool:
         return self._trigger_event is not None and self._trigger_event.is_set()
 
@@ -33,6 +36,9 @@ class BaseTrigger:
 
     def update_from_other_trigger(self, other_trigger):
         raise NotImplementedError("update_from_other_trigger is not implemented")
+
+    def update(self, **kwargs):
+        raise NotImplementedError("update is not implemented")
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.on_trigger_callback.__name__ if self.on_trigger_callback else None})"
