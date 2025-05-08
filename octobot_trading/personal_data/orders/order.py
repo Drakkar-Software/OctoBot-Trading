@@ -202,8 +202,9 @@ class Order(util.Initializable):
         if price and self.origin_price != price:
             previous_price = self.origin_price
             self.origin_price = price
-            self._on_origin_price_change(previous_price,
-                                         self.exchange_manager.exchange.get_exchange_current_time())
+            self._on_origin_price_change(
+                previous_price, self.exchange_manager.exchange.get_exchange_current_time()
+            )
             changed = True
             should_update_total_cost = True
 
@@ -342,6 +343,8 @@ class Order(util.Initializable):
         :param previous_price: the previous origin_price
         :param price_time: time starting from when the price should be considered
         """
+        if self.order_group and self.order_group.active_order_swap_strategy:
+            self.order_group.active_order_swap_strategy.on_order_update(self, price_time)
 
     def add_chained_order(self, chained_order):
         """

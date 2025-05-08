@@ -20,6 +20,7 @@ import pytest
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
 import octobot_trading.constants as trading_constants
+import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -65,11 +66,14 @@ async def test_sell_limit_order_trigger(sell_limit_order):
 
 async def test_sell_limit_order_on_origin_price_change(sell_limit_order):
     order_price = decimal.Decimal(100)
+    group = personal_data.OneCancelsTheOtherOrderGroup("name", sell_limit_order.exchange_manager.exchange_personal_data.orders_manager)
     sell_limit_order.update(
         price=order_price,
         quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_LIMIT,
+        group=group,
+        active_trigger=personal_data.create_order_price_trigger(sell_limit_order, order_price, True)
     )
     sell_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
     await sell_limit_order.initialize()
@@ -83,6 +87,7 @@ async def test_sell_limit_order_on_origin_price_change(sell_limit_order):
                                      timestamp=sell_limit_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not sell_limit_order.is_filled()
+    assert sell_limit_order.active_trigger.trigger_price == decimal.Decimal(100)
 
     # do not update order price
     order_price = decimal.Decimal(10)
@@ -90,6 +95,7 @@ async def test_sell_limit_order_on_origin_price_change(sell_limit_order):
         symbol=sell_limit_order.symbol,
         quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
     )
+    assert sell_limit_order.active_trigger.trigger_price == decimal.Decimal(100)    # did not change
     price_events_manager.handle_recent_trades(
         [decimal_random_recent_trade(price=decimal_random_price(max_value=order_price - trading_constants.ONE),
                                      timestamp=sell_limit_order.timestamp)])
@@ -103,6 +109,7 @@ async def test_sell_limit_order_on_origin_price_change(sell_limit_order):
         symbol=sell_limit_order.symbol,
         price=order_price
     )
+    assert sell_limit_order.active_trigger.trigger_price == decimal.Decimal(10)    # changed
     price_events_manager.handle_recent_trades([
         decimal_random_recent_trade(
             price=decimal.Decimal(20),
