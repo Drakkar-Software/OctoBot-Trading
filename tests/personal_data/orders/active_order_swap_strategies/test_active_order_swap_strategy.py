@@ -244,3 +244,43 @@ async def test_execute_with_reverse(swap_strategy, simulated_trader):
             assert stop_loss.is_closed()
             assert len(exchange_manager.exchange_personal_data.orders_manager.get_all_orders()) == 2
             assert len(exchange_manager.exchange_personal_data.orders_manager.get_open_orders()) == 2
+
+
+async def test_on_order_update(swap_strategy):
+    # Setup
+    order = mock.Mock()
+    order.active_trigger = mock.Mock()
+    order.is_synchronization_enabled = mock.Mock(return_value=True)
+    order.get_filling_price = mock.Mock(return_value=decimal.Decimal("100"))
+    update_time = 1234.56
+
+    # Test with default trigger price configuration (FILLING_PRICE)
+    swap_strategy.on_order_update(order, update_time)
+
+    # Verify
+    order.active_trigger.update.assert_called_once_with(
+        trigger_price=decimal.Decimal("100"),
+        min_trigger_time=update_time,
+        update_event=True
+    )
+
+    # Test with no active trigger
+    order.active_trigger = None
+    swap_strategy.on_order_update(order, update_time)
+    # Should not raise any error when there's no active trigger
+
+    # Test with ORDER_PARAMS_ONLY configuration
+    strategy = personal_data.ActiveOrderSwapStrategy(
+        trigger_price_configuration=enums.ActiveOrderSwapTriggerPriceConfiguration.ORDER_PARAMS_ONLY.value
+    )
+    order.active_trigger = mock.Mock()
+    order.active_trigger.trigger_price = decimal.Decimal("150")
+
+    strategy.on_order_update(order, update_time)
+
+    # Verify
+    order.active_trigger.update.assert_called_once_with(
+        trigger_price=decimal.Decimal("150"),
+        min_trigger_time=update_time,
+        update_event=True
+    )

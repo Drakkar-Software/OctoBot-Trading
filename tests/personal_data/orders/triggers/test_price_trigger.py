@@ -77,6 +77,93 @@ def test_update_from_other_trigger(price_trigger):
     # Original callback and args should remain unchanged
     assert price_trigger.on_trigger_callback_args == ("arg1", "arg2")
 
+def test_update(price_trigger):
+    # Setup
+    callback = mock.Mock()
+
+    # Test update without exchange manager (no event creation)
+    new_price = decimal.Decimal("150")
+    price_trigger.update(trigger_price=new_price)
+    assert price_trigger.trigger_price == new_price
+
+    # Setup exchange manager mock
+    price_trigger._exchange_manager = mock.Mock()
+    price_trigger._symbol = "BTC/USD"
+    price_trigger._trigger_event = mock.Mock()
+
+    # Test update with exchange manager and event creation
+    newer_price = decimal.Decimal("200")
+    min_trigger_time = 1234.56
+
+    with mock.patch.object(price_trigger, '_create_event') as mock_create_event, \
+            mock.patch.object(price_trigger, '_clear_event') as mock_clear_event:
+        price_trigger.update(
+            trigger_price=newer_price,
+            min_trigger_time=min_trigger_time,
+            update_event=True
+        )
+
+        assert price_trigger.trigger_price == newer_price
+        mock_clear_event.assert_called_once()
+        mock_create_event.assert_called_once_with(min_trigger_time)
+
+    # Test update without event update
+    newest_price = decimal.Decimal("250")
+    with mock.patch.object(price_trigger, '_create_event') as mock_create_event, \
+            mock.patch.object(price_trigger, '_clear_event') as mock_clear_event:
+        price_trigger.update(
+            trigger_price=newest_price,
+            min_trigger_time=min_trigger_time,
+            update_event=False
+        )
+
+        assert price_trigger.trigger_price == newest_price
+        mock_clear_event.assert_not_called()
+        mock_create_event.assert_not_called()
+
+    # Test update with same price (should not trigger event updates)
+    with mock.patch.object(price_trigger, '_create_event') as mock_create_event, \
+            mock.patch.object(price_trigger, '_clear_event') as mock_clear_event:
+        price_trigger.update(
+            trigger_price=newest_price,
+            min_trigger_time=min_trigger_time,
+            update_event=True
+        )
+
+        assert price_trigger.trigger_price == newest_price
+        mock_clear_event.assert_not_called()
+        mock_create_event.assert_not_called()
+
+
+def test_create_event(price_trigger):
+    # Setup
+    callback = mock.Mock()
+    # Mock exchange manager and its components
+    exchange_manager = mock.Mock()
+    symbol_data = mock.Mock()
+    price_events_manager = mock.Mock()
+
+    exchange_manager.exchange_symbols_data.get_exchange_symbol_data.return_value = symbol_data
+    symbol_data.price_events_manager = price_events_manager
+
+    # Test event creation
+    min_trigger_time = 1234.56
+    price_trigger._exchange_manager = exchange_manager
+    price_trigger._symbol = "BTC/USD"
+
+    price_trigger._create_event(min_trigger_time)
+
+    # Verify the event was created with correct parameters
+    price_events_manager.new_event.assert_called_once_with(
+        price_trigger.trigger_price,
+        min_trigger_time,
+        price_trigger.trigger_above,
+        False
+    )
+
+    # Verify the event was stored
+    assert price_trigger._trigger_event == price_events_manager.new_event.return_value
+
 
 def test_str_representation(price_trigger):
     expected = (f"PriceTrigger({price_trigger.on_trigger_callback.__name__}): "

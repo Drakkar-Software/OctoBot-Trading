@@ -43,12 +43,28 @@ class PriceTrigger(base_trigger.BaseTrigger):
         self.trigger_price = other_trigger.trigger_price
         self.trigger_above = other_trigger.trigger_above
 
+    def update(self, trigger_price=None, min_trigger_time=None, update_event=True, **kwargs):
+        if self.trigger_price != trigger_price:
+            self.trigger_price = trigger_price
+            if update_event and self._exchange_manager is not None:
+                # replace event
+                self._clear_event()
+                self._create_event(min_trigger_time)
+
     def clear(self):
         super().clear()
+        self._clear_event()
+        self._exchange_manager = None
+
+    def _create_event(self, min_trigger_time: float):
+        self._trigger_event = self._exchange_manager.exchange_symbols_data.\
+            get_exchange_symbol_data(self._symbol).price_events_manager.\
+            new_event(self.trigger_price, min_trigger_time, self.trigger_above, False)
+
+    def _clear_event(self):
         if self._trigger_event is not None and self._exchange_manager is not None:
             self._exchange_manager.exchange_symbols_data. \
                 get_exchange_symbol_data(self._symbol).price_events_manager.remove_event(self._trigger_event)
-        self._exchange_manager = None
 
     def __str__(self):
         return f"{super().__str__()}: trigger_price={self.trigger_price}, trigger_above={self.trigger_above}"
@@ -56,6 +72,4 @@ class PriceTrigger(base_trigger.BaseTrigger):
     def _create_trigger_event(self, exchange_manager, symbol: str, min_trigger_time: float):
         self._exchange_manager = exchange_manager
         self._symbol = symbol
-        self._trigger_event = self._exchange_manager.exchange_symbols_data.\
-            get_exchange_symbol_data(self._symbol).price_events_manager.\
-            new_event(self.trigger_price, min_trigger_time, self.trigger_above, False)
+        self._create_event(min_trigger_time)
