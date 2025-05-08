@@ -75,6 +75,7 @@ class LimitOrder(order_class.Order):
                     self._create_hit_task()
 
     def _on_origin_price_change(self, previous_price, price_time):
+        super()._on_origin_price_change(previous_price, price_time)
         if previous_price is not constants.ZERO:
             # no need to reset events if previous price was 0 (unset)
             self._reset_events(price_time)

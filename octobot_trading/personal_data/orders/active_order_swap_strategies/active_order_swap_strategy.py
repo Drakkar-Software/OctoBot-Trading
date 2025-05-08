@@ -48,6 +48,13 @@ class ActiveOrderSwapStrategy:
                     order_util.create_order_price_trigger(order, trigger_price, order.trigger_above)
                 )
 
+    def on_order_update(self, order, update_time):
+        if order.active_trigger:
+            order.active_trigger.update(
+                trigger_price=self._get_trigger_price(order), min_trigger_time=update_time,
+                update_event=order.is_synchronization_enabled()
+            )
+
     def _get_trigger_price(self, order) -> decimal.Decimal:
         if self.trigger_price_configuration == enums.ActiveOrderSwapTriggerPriceConfiguration.FILLING_PRICE.value:
             return order.get_filling_price()
