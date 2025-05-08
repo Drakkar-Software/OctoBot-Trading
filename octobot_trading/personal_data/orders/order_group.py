@@ -80,8 +80,14 @@ class OrderGroup:
     def get_group_open_orders(self):
         return [
             order
-            for order in self.orders_manager.get_order_from_group(self.name)
-            if order.is_open() and not order.is_cancelling()
+            for order in (
+                open_order
+                for open_order in self.orders_manager.get_order_from_group(self.name)
+                if open_order.is_open() and not (open_order.is_cancelling())
+            )
+            # when is_synchronization_enabled is disabled, orders' state might not be set and executed, also ensure
+            # orders are not filled or closed
+            if order.is_synchronization_enabled() or not (order.is_filled() or order.is_closed())
         ]
 
     def clear(self):
