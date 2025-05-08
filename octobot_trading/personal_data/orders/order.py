@@ -477,7 +477,8 @@ class Order(util.Initializable):
         if self.active_trigger is None:
             logging.get_logger(self.get_logger_name()).error("self.active_trigger is None")
             return
-        await self.active_trigger.create_watcher(self.exchange_manager, self.symbol, self.creation_time)
+        if self.is_synchronization_enabled():
+            await self.active_trigger.create_watcher(self.exchange_manager, self.symbol, self.creation_time)
 
     @contextlib.contextmanager
     def order_state_creation(self):
@@ -1041,6 +1042,12 @@ class Order(util.Initializable):
                 enums.ExchangeConstantsMarketPropertyColumns.TAKER if self._should_instant_fill()
                 else enums.ExchangeConstantsMarketPropertyColumns.MAKER
             ).value
+
+    def is_synchronization_enabled(self):
+        return (
+            self.exchange_manager is not None and
+            self.exchange_manager.exchange_personal_data.orders_manager.enable_order_auto_synchronization
+        )
 
     def to_dict(self):
         filled_price = self.filled_price if self.filled_price > 0 else self.origin_price

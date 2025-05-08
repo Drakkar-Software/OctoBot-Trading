@@ -85,7 +85,8 @@ class LimitOrder(order_class.Order):
             new_event(self.origin_price, price_time, self.trigger_above, self.allow_instant_fill)
 
     def _create_hit_task(self):
-        self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
+        if self.is_synchronization_enabled():
+            self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
 
     def _reset_events(self, price_time):
         """

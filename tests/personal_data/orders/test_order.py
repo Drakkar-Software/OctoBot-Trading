@@ -599,6 +599,23 @@ async def test_ensure_inactive_order_watcher_and_sub_functions(trader_simulator)
     assert base_order.active_trigger._trigger_task is None
     assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 0
 
+    base_order = personal_data.Order(trader_inst)
+    base_order.is_active = False
+    assert base_order.active_trigger is None
+    base_order.use_active_trigger(order_util.create_order_price_trigger(base_order, decimal.Decimal(1), True))
+    # now is_synchronization_enabled returns False
+    exchange_manager_inst.exchange_personal_data.orders_manager.enable_order_auto_synchronization = False
+    await base_order._ensure_inactive_order_watcher()
+    assert base_order.active_trigger._trigger_event is None
+    assert base_order.active_trigger._trigger_task is None
+    assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 0
+
+    base_order.clear()
+    # event and task are removed
+    assert base_order.active_trigger._trigger_event is None
+    assert base_order.active_trigger._trigger_task is None
+    assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 0
+
 
 def test_should_become_active(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
