@@ -13,15 +13,29 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+import contextlib
+
 import octobot_commons.logging as logging
+import octobot_commons.asyncio_tools as asyncio_tools
+import octobot_trading.constants as constants
+import octobot_trading.personal_data.orders.active_order_swap_strategies as active_order_swap_strategies
 
 
 class OrderGroup:
-    def __init__(self, name, orders_manager):
+    def __init__(
+        self, name, orders_manager,
+        active_order_swap_strategy: typing.Optional[active_order_swap_strategies.ActiveOrderSwapStrategy] = None
+    ):
         self.name = name
         self.orders_manager = orders_manager
+        self.active_order_swap_strategy = active_order_swap_strategy or self._default_active_order_swap_strategy(
+            constants.ACTIVE_ORDER_STRATEGY_SWAP_TIMEOUT
+        )
         self.logger = logging.get_logger(str(self))
         self.enabled = True
+
+        self._lock: typing.Optional[asyncio_tools.RLock] = None
 
     async def on_fill(self, filled_order, ignored_orders=None):
         """
@@ -41,14 +55,39 @@ class OrderGroup:
         :param ignored_orders: orders that should be ignored
         """
 
+    async def adapt_before_order_becoming_active(self, order_to_become_active) -> list:
+        """
+        Called before an order referencing this group is becoming active
+        """
+
+    @contextlib.asynccontextmanager
+    async def lock_group(self):
+        if self._lock is None:
+            self._lock = asyncio_tools.RLock()
+        async with self._lock:
+            yield
+
+    def _default_active_order_swap_strategy(self, timeout: float) -> active_order_swap_strategies.ActiveOrderSwapStrategy:
+        """
+        Called when an order of this group is becoming active
+        """
+        raise NotImplementedError("_default_active_order_swap_strategy is not implemented")
+
+
     async def enable(self, enabled):
         self.enabled = enabled
 
     def get_group_open_orders(self):
         return [
             order
-            for order in self.orders_manager.get_order_from_group(self.name)
-            if order.is_open() and not order.is_cancelling()
+            for order in (
+                open_order
+                for open_order in self.orders_manager.get_order_from_group(self.name)
+                if open_order.is_open() and not (open_order.is_cancelling())
+            )
+            # when is_synchronization_enabled is disabled, orders' state might not be set and executed, also ensure
+            # orders are not filled or closed
+            if order.is_synchronization_enabled() or not (order.is_filled() or order.is_closed())
         ]
 
     def clear(self):

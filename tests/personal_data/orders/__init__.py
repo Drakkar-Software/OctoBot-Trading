@@ -15,6 +15,7 @@
 #  License along with this library.
 import pytest
 import pytest_asyncio
+import octobot_commons.symbols
 
 # avoid circular imports when launching tests from this folder
 import octobot_trading.api  # TODO fix circular import when importing octobot_trading.exchange_data first
@@ -42,6 +43,7 @@ def created_order(order_type, order_type_enum, *args, **kwargs):
     order = order_type(*args, **kwargs)
     order.order_type = order_type_enum
     order.symbol = "BTC/USDT"
+    order.currency, order.market = octobot_commons.symbols.parse_symbol(order.symbol).base_and_quote()
     return order
 
 

@@ -39,6 +39,17 @@ from octobot_trading.personal_data.orders.trailing_profiles import (
     create_trailing_profile,
     create_filled_take_profit_trailing_profile,
 )
+from octobot_trading.personal_data.orders import active_order_swap_strategies
+from octobot_trading.personal_data.orders.active_order_swap_strategies import (
+    ActiveOrderSwapStrategy,
+    StopFirstActiveOrderSwapStrategy,
+    TakeProfitFirstActiveOrderSwapStrategy,
+)
+from octobot_trading.personal_data.orders import triggers
+from octobot_trading.personal_data.orders.triggers import (
+    BaseTrigger,
+    PriceTrigger,
+)
 from octobot_trading.personal_data.orders import order
 from octobot_trading.personal_data.orders.order import (
     Order,
@@ -110,6 +121,10 @@ from octobot_trading.personal_data.orders.order_util import (
     is_stop_trade_order_type,
     is_take_profit_order,
     get_trade_order_type,
+    create_order_price_trigger,
+    create_as_active_order_using_strategy_if_any,
+    create_as_active_order_on_exchange,
+    update_order_as_inactive_on_exchange,
     create_as_chained_order,
     is_associated_pending_order,
     apply_pending_order_from_created_order,
@@ -123,7 +138,7 @@ from octobot_trading.personal_data.orders import orders_storage_operations
 from octobot_trading.personal_data.orders.orders_storage_operations import (
     apply_order_storage_details_if_any,
     create_orders_storage_related_elements,
-    create_missing_self_managed_orders_from_storage_order_groups,
+    create_missing_virtual_orders_from_storage_order_groups,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -180,6 +195,10 @@ __all__ = [
     "parse_is_pending_cancel",
     "parse_is_open",
     "get_up_to_date_price",
+    "create_order_price_trigger",
+    "create_as_active_order_using_strategy_if_any",
+    "create_as_active_order_on_exchange",
+    "update_order_as_inactive_on_exchange",
     "get_potentially_outdated_price",
     "get_pre_order_data",
     "get_portfolio_amounts",
@@ -193,7 +212,7 @@ __all__ = [
     "generate_order_id",
     "wait_for_order_fill",
     "apply_order_storage_details_if_any",
-    "create_missing_self_managed_orders_from_storage_order_groups",
+    "create_missing_virtual_orders_from_storage_order_groups",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
     "OrderState",
@@ -209,6 +228,11 @@ __all__ = [
     "TrailingProfileTypes",
     "create_trailing_profile",
     "create_filled_take_profit_trailing_profile",
+    "ActiveOrderSwapStrategy",
+    "StopFirstActiveOrderSwapStrategy",
+    "TakeProfitFirstActiveOrderSwapStrategy",
+    "BaseTrigger",
+    "PriceTrigger",
     "OrdersUpdater",
     "adapt_price",
     "get_minimal_order_amount",

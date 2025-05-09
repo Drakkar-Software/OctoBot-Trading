@@ -16,6 +16,7 @@
 import mock
 import pytest
 import decimal
+import asyncio
 
 from more_itertools.more import side_effect
 
@@ -127,6 +128,35 @@ async def test_simulated_update(trader_simulator):
                           price=3.22)
     assert order_sim_inst.status == enums.OrderStatus.OPEN
     assert order_sim_inst.filled_quantity == order_sim_inst.origin_quantity == 100
+
+
+async def test_initialize(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    order_inst = personal_data.Order(trader_inst)
+    order_inst.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal(10000),
+                      quantity=decimal.Decimal(1),
+                      status=enums.OrderStatus.OPEN,
+                      is_active=True)
+    with mock.patch.object(order_inst, "update_order_status", mock.AsyncMock()) as update_order_status_mock, \
+        mock.patch.object(order_inst, "_ensure_inactive_order_watcher", mock.AsyncMock()) as _ensure_inactive_order_watcher_mock:
+        await order_inst.initialize()
+        update_order_status_mock.assert_called_once()
+        _ensure_inactive_order_watcher_mock.assert_not_called()
+
+    inactive_order_inst = personal_data.Order(trader_inst)
+    inactive_order_inst.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal(10000),
+                      quantity=decimal.Decimal(1),
+                      status=enums.OrderStatus.OPEN,
+                      is_active=False)
+    with mock.patch.object(inactive_order_inst, "update_order_status", mock.AsyncMock()) as update_order_status_mock, \
+        mock.patch.object(inactive_order_inst, "_ensure_inactive_order_watcher", mock.AsyncMock()) as _ensure_inactive_order_watcher_mock:
+        await inactive_order_inst.initialize()
+        update_order_status_mock.assert_called_once()
+        _ensure_inactive_order_watcher_mock.assert_called_once()
 
 
 async def test_order_state_creation(trader_simulator):
@@ -501,6 +531,155 @@ async def test_are_simultaneously_triggered_grouped_orders_closed(trader_simulat
     assert order_mock_2._are_simultaneously_triggered_grouped_orders_closed() is True
 
 
+async def test_set_as_inactive(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    base_order = personal_data.Order(trader_inst)
+    with mock.patch.object(
+        base_order, "_ensure_inactive_order_watcher", mock.AsyncMock()
+    ) as _ensure_inactive_order_watcher_mock:
+        with pytest.raises(ValueError):
+            await base_order.set_as_inactive(None)
+        with pytest.raises(ValueError):
+            await base_order.set_as_inactive(order_util.create_order_price_trigger(base_order, decimal.Decimal(1), None))
+        with pytest.raises(ValueError):
+            await base_order.set_as_inactive(order_util.create_order_price_trigger(base_order, None, True))
+        _ensure_inactive_order_watcher_mock.assert_not_called()
+        assert base_order.is_active is True
+        assert base_order.active_trigger is None
+        base_order.status = None
+        base_order.canceled_time = None
+        await base_order.set_as_inactive(order_util.create_order_price_trigger(base_order, decimal.Decimal(1), False))
+        assert base_order.is_active is False
+        assert base_order.active_trigger.trigger_price == decimal.Decimal(1)
+        assert base_order.active_trigger.trigger_above is False
+        assert base_order.active_trigger.trigger_above is False
+        base_order.status = enums.OrderStatus.OPEN
+        base_order.canceled_time = 0
+        _ensure_inactive_order_watcher_mock.assert_called_once()
+
+
+async def test_ensure_inactive_order_watcher_and_sub_functions(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    base_order = personal_data.Order(trader_inst)
+    assert base_order.active_trigger is None
+
+    # does nothing, order is active
+    await base_order._ensure_inactive_order_watcher()
+    assert base_order.active_trigger is None
+
+    trader_inst.enable_inactive_orders = False
+    # does nothing, order can't be inactive
+    await base_order._ensure_inactive_order_watcher()
+    assert base_order.active_trigger is None
+
+    trader_inst.enable_inactive_orders = True
+    base_order.is_active = False
+
+    # does nothing, order.active_trigger is None
+    await base_order._ensure_inactive_order_watcher()
+    assert base_order.active_trigger is None
+
+    base_order.use_active_trigger(order_util.create_order_price_trigger(base_order, decimal.Decimal(1), True))
+
+    # init event and task
+    await base_order._ensure_inactive_order_watcher()
+    event = base_order.active_trigger._trigger_event
+    task = base_order.active_trigger._trigger_task
+    assert not event.is_set()
+    assert not task.done()
+    assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 1
+
+    # call again, does not change task / event
+    await base_order._ensure_inactive_order_watcher()
+    assert event is base_order.active_trigger._trigger_event
+    assert task is base_order.active_trigger._trigger_task
+
+    base_order.clear()
+    # event and task are removed
+    assert base_order.active_trigger._trigger_task is None
+    assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 0
+
+    base_order = personal_data.Order(trader_inst)
+    base_order.is_active = False
+    assert base_order.active_trigger is None
+    base_order.use_active_trigger(order_util.create_order_price_trigger(base_order, decimal.Decimal(1), True))
+    # now is_synchronization_enabled returns False
+    exchange_manager_inst.exchange_personal_data.orders_manager.enable_order_auto_synchronization = False
+    await base_order._ensure_inactive_order_watcher()
+    assert base_order.active_trigger._trigger_event is None
+    assert base_order.active_trigger._trigger_task is None
+    assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 0
+
+    base_order.clear()
+    # event and task are removed
+    assert base_order.active_trigger._trigger_event is None
+    assert base_order.active_trigger._trigger_task is None
+    assert len(exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(base_order.symbol).price_events_manager.events) == 0
+
+
+def test_should_become_active(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    base_order = personal_data.Order(trader_inst)
+    assert base_order.should_become_active(123, decimal.Decimal(1)) is False    # is active
+
+    base_order.is_active = False
+    base_order.use_active_trigger(order_util.create_order_price_trigger(base_order, decimal.Decimal("0.5"), True))
+    base_order.creation_time = 123
+    assert base_order.should_become_active(124, decimal.Decimal(1)) is True
+    assert base_order.should_become_active(123, decimal.Decimal(1)) is True
+    assert base_order.should_become_active(122, decimal.Decimal(1)) is False
+    assert base_order.should_become_active(123, decimal.Decimal("0.4")) is False
+
+    base_order.active_trigger.trigger_above = False
+    assert base_order.should_become_active(123, decimal.Decimal("0.4")) is True
+    assert base_order.should_become_active(123, decimal.Decimal("1.4")) is False
+
+
+async def test_on_active_trigger(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    base_order = personal_data.Order(trader_inst)
+    with mock.patch.object(order_util, "create_as_active_order_using_strategy_if_any", mock.Mock()) as create_as_active_order_using_strategy_if_any_mock:
+        # order is active already
+        await base_order.on_active_trigger(123, "callback")
+        create_as_active_order_using_strategy_if_any_mock.assert_not_called()
+
+        base_order.is_active = False
+        await base_order.on_active_trigger(123, "callback")
+        create_as_active_order_using_strategy_if_any_mock.assert_called_once_with(base_order, 123, "callback")
+
+
+async def test_on_inactive_from_active(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    base_order = personal_data.Order(trader_inst)
+    base_order.is_active = True
+    state_mock = mock.Mock(clear=mock.Mock())
+    base_order.state = state_mock
+    with mock.patch.object(base_order, "_ensure_inactive_order_watcher", mock.AsyncMock()) as _ensure_inactive_order_watcher_mock:
+        with pytest.raises(ValueError):
+            # missing active trigger values
+            await base_order.on_inactive_from_active()
+        assert base_order.is_active is True
+        assert base_order.state == state_mock
+        _ensure_inactive_order_watcher_mock.assert_not_called()
+        base_order.state.clear.assert_not_called()
+
+        base_order.use_active_trigger(order_util.create_order_price_trigger(base_order, decimal.Decimal(1), True))
+        await base_order.on_inactive_from_active()
+        assert base_order.is_active is False
+        base_order.state.clear.assert_called_once()
+        _ensure_inactive_order_watcher_mock.assert_called_once()
+
+
+async def test_on_active_from_inactive(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    base_order = personal_data.Order(trader_inst)
+    base_order.is_active = False
+    with mock.patch.object(base_order, "clear", mock.Mock()) as clear_mock:
+        await base_order.on_active_from_inactive()
+        assert base_order.is_active is True
+        clear_mock.assert_called_once()
+
+
 async def test_create_on_filled_artificial_order(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 
@@ -652,7 +831,8 @@ async def test_update_from_order_storage(trader_simulator):
                  current_price=decimal.Decimal("70"),
                  quantity=decimal.Decimal("10"),
                  price=decimal.Decimal("70"),
-                 exchange_order_id="PLOP",)
+                 exchange_order_id="PLOP",
+                 active_trigger=personal_data.create_order_price_trigger(order, decimal.Decimal("70"), True))
     origin_tag = order.tag
     origin_trader_creation_kwargs = order.trader_creation_kwargs
     origin_exchange_creation_params = order.exchange_creation_params
@@ -686,6 +866,9 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.has_been_bundled is origin_has_been_bundled
     assert order.associated_entry_ids is origin_associated_entry_ids
     assert order.update_with_triggering_order_fees is origin_update_with_triggering_order_fees
+    assert order.active_trigger.trigger_price == decimal.Decimal(70)
+    assert order.active_trigger.trigger_above is True
+    assert order.is_active is True
 
     # full update
     order.update_from_storage_order_details({
@@ -695,12 +878,17 @@ async def test_update_from_order_storage(trader_simulator):
             enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value: "eee1",
             enums.ExchangeConstantsOrderColumns.BROKER_APPLIED.value: True,
             enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "taker",
+            enums.ExchangeConstantsOrderColumns.IS_ACTIVE.value: False,
         },
         enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value: {"plop2": 1},
         enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value: {"ex": 2, "gg": "yesyes"},
         enums.StoredOrdersAttr.HAS_BEEN_BUNDLED.value: True,
         enums.StoredOrdersAttr.ENTRIES.value: ["ABC", "2"],
         enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: True,
+        enums.StoredOrdersAttr.ACTIVE_TRIGGER.value: {
+            enums.StoredOrdersAttr.ACTIVE_TRIGGER_PRICE.value: 32,
+            enums.StoredOrdersAttr.ACTIVE_TRIGGER_ABOVE.value: False,
+        },
     })
     assert order.tag == "t1" != origin_tag
     assert order.trader_creation_kwargs == {"plop2": 1} != origin_trader_creation_kwargs
@@ -713,3 +901,6 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.associated_entry_ids == ["ABC", "2"] != origin_associated_entry_ids
     assert order.has_been_bundled is True is not origin_has_been_bundled
     assert order.update_with_triggering_order_fees is True is not origin_update_with_triggering_order_fees
+    assert order.is_active is False
+    assert order.active_trigger.trigger_price == decimal.Decimal(32)
+    assert order.active_trigger.trigger_above is False

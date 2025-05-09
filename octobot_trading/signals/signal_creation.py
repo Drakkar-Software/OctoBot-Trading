@@ -101,6 +101,34 @@ async def create_order(exchange_manager, should_emit_signal, order,
     return created_order
 
 
+async def update_order_as_inactive(
+    exchange_manager, should_emit_signal, order, ignored_order: object = None, wait_for_cancelling=True,
+    cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+) -> bool:
+    cancelled = await exchange_manager.trader.update_order_as_inactive(
+        order, ignored_order=ignored_order,
+        wait_for_cancelling=wait_for_cancelling,
+        cancelling_timeout=cancelling_timeout
+    )
+    if should_emit_signal:
+        # implement relevant signals if necessary (different from regular cancel signal)
+        logging.get_logger(__name__).error("update_order_as_inactive signals emission is not implemented.")
+    return cancelled
+
+
+async def update_order_as_active(
+    exchange_manager, should_emit_signal, order, params: dict = None, wait_for_creation=True,
+    creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+) -> bool:
+    created_order = await exchange_manager.trader.update_order_as_active(
+        order, params=params, wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
+    )
+    if should_emit_signal:
+        # implement relevant signals if necessary (different from regular create signal)
+        logging.get_logger(__name__).error("update_order_as_active signals emission is not implemented.")
+    return created_order
+
+
 async def cancel_order(exchange_manager, should_emit_signal, order, ignored_order: object = None,
                        wait_for_cancelling=True, cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
     cancelled = await exchange_manager.trader.cancel_order(
