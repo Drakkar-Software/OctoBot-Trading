@@ -173,6 +173,7 @@ from octobot_trading.api.portfolio import (
     is_usd_like_coin,
     resolve_sub_portfolios,
     get_portfolio_filled_orders_deltas,
+    get_assets_delta_from_orders,
     get_global_portfolio_currencies_values,
 )
 from octobot_trading.api.profitability import (
@@ -365,6 +366,7 @@ __all__ = [
     "is_usd_like_coin",
     "resolve_sub_portfolios",
     "get_portfolio_filled_orders_deltas",
+    "get_assets_delta_from_orders",
     "get_global_portfolio_currencies_values",
     "get_origin_portfolio_value",
     "get_profitability_stats",
