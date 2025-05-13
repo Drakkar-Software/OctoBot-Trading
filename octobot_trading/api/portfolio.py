@@ -142,3 +142,9 @@ def get_portfolio_filled_orders_deltas(
     return personal_data.get_portfolio_filled_orders_deltas(
         previous_portfolio_content, updated_portfolio_content, filled_orders
     )
+
+
+def get_assets_delta_from_orders(
+    orders: list[personal_data.Order]
+) -> (dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]):
+    return personal_data.get_assets_delta_from_orders(orders)

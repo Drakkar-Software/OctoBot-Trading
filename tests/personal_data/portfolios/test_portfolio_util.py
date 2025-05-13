@@ -336,6 +336,21 @@ def test_get_portfolio_filled_orders_deltas():
         )
         error_log.assert_not_called()
 
+        # only equivalent sell and buy orders: no BTC delta
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+        post_trade_content = _content({"BTC": 0.1, "USDT": 995})  # now has SOL but no BTC
+        filled_orders = [
+            _order("BTC/USDT", 0.05, 550, "sell"),
+            _order("BTC/USDT", 0.05, 555, "buy"),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            _content({"USDT": -5}),
+            {}, # BTC is not a missing delta as there is no delta (delta = 0)
+        )
+        error_log.assert_not_called()
+
 
 def test_get_portfolio_filled_orders_deltas_considering_fees():
     pre_trade_content = _content({"BTC": 0.1, "USDT": 600.2})
@@ -412,7 +427,7 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
         )
         error_log.assert_not_called()
 
-        # B. success with  explaining fees
+        # B. success with explaining fees
         pre_trade_content = _content({"BTC": 0.1, "USDT": 0.2})
         post_trade_content = _content({"BTC": 0.089, "USDT": 0.8})
         filled_orders = [
@@ -425,6 +440,71 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
             # 0.6 is explained by 0.7 from order delta - 0.1 fees
             _content({"BTC": -0.011, "USDT": 0.6}),
             {}
+        )
+        error_log.assert_not_called()
+
+        # only equivalent sell and buy orders: no BTC delta
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+        post_trade_content = _content({"BTC": 0.1, "USDT": 995})
+        filled_orders = [
+            _order("BTC/USDT", 0.05, 550, "sell", {"USDT": 1}),
+            _order("BTC/USDT", 0.05, 553, "buy", {"USDT": 1}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            _content({"USDT": -5}),
+            {}, # BTC is not a missing delta as there is no delta (delta = 0)
+        )
+        error_log.assert_not_called()
+
+        # actual fee currency is different from expected fee currency, delta is explained by these fees
+        BTC_fees = 0.00000109889 # 10% of computed BTC delta is fees but it's only fetched from portfolio, not expected order fees
+        pre_trade_content = _content({"BTC": 0.00226262681, "USDT": 4376.532183487584})
+        post_trade_content = _content({"BTC": 0.00227318792 - BTC_fees, "USDT": 4375.22614367084})
+        filled_orders = [
+            _order("BTC/USDT", 0.00108723, 111.778333746, "sell", {"USDT": 0.111778333746}),
+            _order("BTC/USDT", 0.00109889, 112.972595229, "buy", {"USDT": 0.111778333746}), # expects USDT as fees but was actually BTC
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # BTC delta from unexpected fees are taken into account and don't create missing deltas
+            _content({"BTC": 0.00000946222, "USDT": -1.306039816744}),
+            {},
+        )
+        error_log.assert_not_called()
+
+        # actual fee currency is different from expected fee currency, delta is explained by these fees
+        pre_trade_content = _content({"BTC": 0.00226262681, "USDT": 4376.532183487584})
+        post_trade_content = _content({"BTC": 0.00227318792, "USDT": 4375.22614367084})
+        filled_orders = [
+            _order("BTC/USDT", 0.00108723, 111.778333746, "sell", {"USDT": 0.111778333746}), # expects USDT as fees but was actually something else (like BNB)
+            _order("BTC/USDT", 0.00109779111, 112.972595229, "buy", {"USDT": 0.111778333746}), # expects USDT as fees but was actually something else (like BNB)
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # USDT delta == 4375.22614367084 - 4376.532183487584
+            _content({"USDT": -1.306039816744, "BTC": 0.00001056111}),
+            {},
+        )
+        error_log.assert_not_called()
+
+        actual_fees = 0.2775394125  # 0.6% fees
+        # actual fees is much smaller than expected, portfolio delta is accepted
+        pre_trade_content = _content({"MANA": 103.42087452540375, "USDC": actual_fees})
+        post_trade_content = _content({"MANA": 72.65087452540375, "USDC": 0.0827944124999931})
+        filled_orders = [
+            _order("MANA/USDC", 103.05, 37.005255, "sell", {"USDC": actual_fees * 2}), # expects 1.2% fees
+            _order("MANA/USDC", 72.28, 36.644921175, "buy", {"USDC": actual_fees * 2}),    # expects 1.2% fees
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # USDC delta from portfolio is accepted and not considered as missing
+            _content({"MANA": -30.77, "USDC": -0.1947450000000069}),
+            {},
         )
         error_log.assert_not_called()
 
