@@ -517,9 +517,9 @@ def get_portfolio_filled_orders_deltas(
                     < abs(max_allowed_equivalent_total_holding)
                     for expected_fee in (
                         # try with smaller fees in case user is paying less fees (when having large volume)
-                        expected_fee_related_deltas[asset_name] / decimal.Decimal(4),
-                        expected_fee_related_deltas[asset_name] / decimal.Decimal(2),
-                        expected_fee_related_deltas[asset_name],
+                        # test from 10% up to 100% fees
+                        expected_fee_related_deltas[asset_name] * decimal.Decimal(multiplier / 10)
+                        for multiplier in range(1, 11)
                     )
                 )
             )
