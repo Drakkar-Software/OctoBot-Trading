@@ -80,9 +80,10 @@ class Context(databases.CacheClient):
         backtesting_id,
         optimizer_id,
         optimization_campaign_name=None,
-        backtesting_analysis_settings=None,
+        analysis_settings=None,
+        live_id=None,
     ):
-        # no cache if live trading to ensure cache is always writen
+        # no cache if live trading to ensure cache is always written
         super().__init__(
             tentacle,
             exchange_name,
@@ -91,12 +92,13 @@ class Context(databases.CacheClient):
             exchange_manager.tentacles_setup_config if exchange_manager else None,
             not exchange_manager.is_backtesting if exchange_manager else False
         )
-        self.backtesting_analysis_settings = backtesting_analysis_settings
+        self.analysis_settings = analysis_settings
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.matrix_id = matrix_id
         self.cryptocurrency = cryptocurrency
         self.logger = logger
+        self.live_id = live_id
         bot_id = exchange_manager.bot_id if \
             (exchange_manager is not None) \
             and (exchange_manager.bot_id is not None) \
@@ -219,7 +221,7 @@ class Context(databases.CacheClient):
 
     @staticmethod
     def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id,
-                optimizer_id, optimization_campaign_name, backtesting_analysis_settings):
+                optimizer_id, optimization_campaign_name, analysis_settings, live_id=None):
         return Context(
             None,
             None,
@@ -237,7 +239,8 @@ class Context(databases.CacheClient):
             backtesting_id,
             optimizer_id,
             optimization_campaign_name,
-            backtesting_analysis_settings,
+            analysis_settings,
+            live_id=live_id,
         )
 
     @contextlib.asynccontextmanager
@@ -257,7 +260,7 @@ class Context(databases.CacheClient):
             self.trigger_source,
             self.trigger_value,
             self.backtesting_id,
-            self.optimizer_id
+            self.optimizer_id,
         )
         context.is_nested_tentacle = self.is_nested_tentacle
         context.config_name = self.config_name
@@ -498,10 +501,13 @@ class Context(databases.CacheClient):
         display = commons_display.display_translator_factory()
         run_dbs_identifier = databases.RunDatabasesIdentifier(
             self.trading_mode_class,
-            self.optimization_campaign_name or optimization_campaign.OptimizationCampaign.get_campaign_name(),
+            None if self.live_id else (
+                self.optimization_campaign_name 
+                or optimization_campaign.OptimizationCampaign.get_campaign_name()),
             database_adaptor=database_adaptor,
             backtesting_id=self.backtesting_id,
             optimizer_id=self.optimizer_id,
+            live_id=self.live_id,
             context=self
         )
         if not await run_dbs_identifier.exchange_base_identifier_exists(self.exchange_name):
