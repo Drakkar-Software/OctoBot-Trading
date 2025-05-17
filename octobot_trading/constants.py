@@ -136,6 +136,7 @@ TESTED_EXCHANGES = [
     "coinbase",
     "cryptocom",
     "htx",
+    "hyperliquid",
     "bitget",
     "gateio",
     "ascendex",
