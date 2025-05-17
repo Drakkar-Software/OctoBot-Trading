@@ -37,7 +37,10 @@ class CancelOrderState(order_state.OrderState):
         if forced:
             self._force_final_state()
 
-        if self.order.order_group and self.enable_associated_orders_creation:
+        if (
+            self.order.order_group and self.enable_associated_orders_creation
+            and not self.order.is_in_active_inactive_transition
+        ):
             await self.order.order_group.on_cancel(self.order, ignored_orders=[ignored_order])
 
         await super().initialize_impl()

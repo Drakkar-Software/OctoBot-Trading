@@ -55,20 +55,20 @@ async def create_order_from_storage_data(order_desc: dict, exchange_manager, pen
     return created_order
 
 
-async def _create_storage_self_managed_orders_from_group(pending_group_id, exchange_manager, pending_groups):
+async def _create_storage_virtual_orders_from_group(pending_group_id, exchange_manager, pending_groups):
     try:
         to_create_orders = exchange_manager.storage_manager.orders_storage \
-            .get_startup_self_managed_orders_details_from_group(pending_group_id)
+            .get_startup_virtual_orders_details_from_group(pending_group_id)
         for order_desc in to_create_orders:
             await create_order_from_storage_data(order_desc, exchange_manager, pending_groups)
     except Exception as err:
         logging.get_logger(LOGGER_NAME).exception(
-            err, True, f"Error when creating {pending_group_id} group self-managed orders with stored data: {err}"
+            err, True, f"Error when creating {pending_group_id} group virtual orders with stored data: {err}"
         )
 
 
 async def create_required_virtual_orders(pending_groups, exchange_manager):
-    virtual_orders = exchange_manager.storage_manager.orders_storage.get_all_self_managed_startup_orders()
+    virtual_orders = exchange_manager.storage_manager.orders_storage.get_all_virtual_startup_orders()
     # virtual order that are not within a group will only be restored here
     virtual_non_grouped_order_details = [
         order
@@ -84,18 +84,18 @@ async def create_required_virtual_orders(pending_groups, exchange_manager):
             logger.exception(err, True, f"Error when restoring virtual order order using stored data: {err}")
 
 
-async def create_missing_self_managed_orders_from_storage_order_groups(pending_groups, exchange_manager):
-    # create order groups' associated self-managed orders if any
+async def create_missing_virtual_orders_from_storage_order_groups(pending_groups, exchange_manager):
+    # create order groups' associated self-managed and inactive orders if any
     to_complete_groups = list(pending_groups.keys())
     completed_groups = set()
     max_allowed_nested_chained_orders_groups = 100
-    # Loop as created self_managed orders might carry chained orders
+    # Loop as created virtual orders might carry chained orders
     # themselves linked to a group with self-managed orders.
     # This would be seen after each iteration only
     # However only loop a max amount of time as a huge looping amount would indicate an error.
     for _ in range(max_allowed_nested_chained_orders_groups):
         for pending_group_id in to_complete_groups:
-            await _create_storage_self_managed_orders_from_group(pending_group_id, exchange_manager, pending_groups)
+            await _create_storage_virtual_orders_from_group(pending_group_id, exchange_manager, pending_groups)
         # do not process the same group twice
         completed_groups = completed_groups.union(set(to_complete_groups))
         to_complete_groups = [

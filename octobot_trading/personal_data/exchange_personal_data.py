@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 import uuid
 import typing
 
@@ -293,6 +294,24 @@ class ExchangePersonalData(util.Initializable):
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
+
+    async def check_and_update_inactive_orders_when_necessary(
+        self, symbol: str, current_price: decimal.Decimal, price_time: float,
+        strategy_timeout: typing.Optional[float], wait_for_fill_callback: typing.Optional[typing.Callable]
+    ) -> int:
+        handled_orders_count = 0
+        sorted_inactive_orders = sorted(
+            self.orders_manager.get_all_orders(symbol=symbol, active=False),
+            key= lambda o: o.origin_price if o.trigger_above else -o.origin_price
+        )
+        for order in sorted_inactive_orders:
+            if order.should_become_active(price_time, current_price):
+                handled_orders_count += 1
+                try:
+                    await order.on_active_trigger(strategy_timeout, wait_for_fill_callback)
+                except Exception as err:
+                    self.logger.exception(err, True, f"Failed order on_active_trigger {err} (order: {order})")
+        return handled_orders_count
 
     async def handle_trade_update(self, symbol, trade_id, trade,
                                   is_old_trade: bool = False, should_notify: bool = True):

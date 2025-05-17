@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order as order_class
 
@@ -21,6 +22,11 @@ class MarketOrder(order_class.Order):
     SUPPORTS_GROUPING = False    # False when orders of this type can't be grouped
 
     async def update_order_status(self, force_refresh=False):
+        if not self.is_active:
+            octobot_commons.logging.get_logger(self.logger_name).error(
+                f"UNEXPECTED: a {self.get_name()} can't be inactive"
+            )
+            return
         if self.trader.simulate:
             # TODO: ensure no issue un not running it in task anymore
             await self.on_fill(force_fill=True)

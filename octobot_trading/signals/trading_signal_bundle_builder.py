@@ -185,6 +185,12 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 order_description[trading_enums.TradingSignalOrdersAttrs.GROUP_ID.value] = order.order_group.name
                 order_description[trading_enums.TradingSignalOrdersAttrs.GROUP_TYPE.value] = \
                     order.order_group.__class__.__name__
+                order_description[trading_enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TYPE.value] = \
+                    order.order_group.active_order_swap_strategy.__class__.__name__
+                order_description[trading_enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TIMEOUT.value] = \
+                    order.order_group.active_order_swap_strategy.swap_timeout
+                order_description[trading_enums.TradingSignalOrdersAttrs.ACTIVE_SWAP_STRATEGY_TRIGGER_CONFIG.value] = \
+                    order.order_group.active_order_swap_strategy.trigger_price_configuration
             elif action is trading_enums.TradingSignalOrdersActions.EDIT:
                 # avoid editing order that are not yet created
                 order_description[trading_enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] = \

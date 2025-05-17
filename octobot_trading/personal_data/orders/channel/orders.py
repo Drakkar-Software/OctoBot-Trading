@@ -79,7 +79,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                             raise
             if not are_closed:
                 if pending_groups:
-                    await orders_storage_operations.create_missing_self_managed_orders_from_storage_order_groups(
+                    await orders_storage_operations.create_missing_virtual_orders_from_storage_order_groups(
                         pending_groups, self.channel.exchange_manager
                     )
                 await self.handle_post_open_orders_update(
@@ -234,9 +234,9 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             set(
                 order.exchange_order_id for order in
                 self.channel.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
-                    symbol
+                    symbol, active=True
                 ) + self.channel.exchange_manager.exchange_personal_data.orders_manager.get_pending_cancel_orders(
-                    symbol
+                    symbol, active=True
                 )
                 if not (order.is_cleared() or order.is_self_managed())) -
             set(

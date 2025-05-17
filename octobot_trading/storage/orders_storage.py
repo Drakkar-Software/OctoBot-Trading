@@ -133,20 +133,27 @@ class OrdersStorage(abstract_storage.AbstractStorage):
         else:
             self.startup_orders = {}
 
-    def get_startup_self_managed_orders_details_from_group(self, group_id):
+    def get_startup_virtual_orders_details_from_group(self, group_id):
         return [
             order
-            for order in self.get_all_self_managed_startup_orders()
+            for order in self.get_all_virtual_startup_orders()
             if order.get(enums.StoredOrdersAttr.GROUP.value, {}).get(enums.StoredOrdersAttr.GROUP_ID.value, None)
             == group_id
         ]
 
-    def get_all_self_managed_startup_orders(self):
+    def get_all_virtual_startup_orders(self):
         return [
             order
             for order in self.startup_orders.values()
-            if order.get(constants.STORAGE_ORIGIN_VALUE, {})
-            .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
+            if (
+                # self-managed, ex: stop loss when not supported on exchange
+                order.get(constants.STORAGE_ORIGIN_VALUE, {})
+                .get(enums.ExchangeConstantsOrderColumns.SELF_MANAGED.value, False)
+           ) or (
+                # inactive, ex: OCO take profit when stop loss is supported on SPOT exchange
+                order.get(constants.STORAGE_ORIGIN_VALUE, {})
+                .get(enums.ExchangeConstantsOrderColumns.IS_ACTIVE.value, True) is False
+            )
         ]
 
     @classmethod
@@ -165,6 +172,21 @@ def _get_group_dict(order):
         return {
             enums.StoredOrdersAttr.GROUP_ID.value: order.order_group.name,
             enums.StoredOrdersAttr.GROUP_TYPE.value: order.order_group.__class__.__name__,
+            enums.StoredOrdersAttr.ORDER_SWAP_STRATEGY.value: _get_active_order_swap_strategy_dict(
+                order.order_group.active_order_swap_strategy
+            ),
+        }
+    except KeyError:
+        return {}
+
+
+def _get_active_order_swap_strategy_dict(active_order_swap_strategy):
+    try:
+        return {
+            enums.StoredOrdersAttr.STRATEGY_TIMEOUT.value: active_order_swap_strategy.swap_timeout,
+            enums.StoredOrdersAttr.STRATEGY_TRIGGER_CONFIG.value:
+                active_order_swap_strategy.trigger_price_configuration,
+            enums.StoredOrdersAttr.STRATEGY_TYPE.value: active_order_swap_strategy.__class__.__name__,
         }
     except KeyError:
         return {}
@@ -176,6 +198,15 @@ def get_order_trailing_profile_dict(order):
     return {
         enums.StoredOrdersAttr.TRAILING_PROFILE_TYPE.value: order.trailing_profile.get_type().value,
         enums.StoredOrdersAttr.TRAILING_PROFILE_DETAILS.value: order.trailing_profile.to_dict(),
+    }
+
+
+def get_order_active_trigger_dict(order):
+    if not order.active_trigger:
+        return {}
+    return {
+        enums.StoredOrdersAttr.ACTIVE_TRIGGER_PRICE.value: float(order.active_trigger.trigger_price),
+        enums.StoredOrdersAttr.ACTIVE_TRIGGER_ABOVE.value: order.active_trigger.trigger_above,
     }
 
 
@@ -200,6 +231,7 @@ def _format_order(order, exchange_manager):
             (enums.StoredOrdersAttr.ENTRIES, order.associated_entry_ids),
             (enums.StoredOrdersAttr.GROUP, _get_group_dict(order)),
             (enums.StoredOrdersAttr.TRAILING_PROFILE, get_order_trailing_profile_dict(order)),
+            (enums.StoredOrdersAttr.ACTIVE_TRIGGER, get_order_active_trigger_dict(order)),
             (enums.StoredOrdersAttr.CHAINED_ORDERS, _get_chained_orders(order, exchange_manager)),
             (enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES, order.update_with_triggering_order_fees),
         ):
