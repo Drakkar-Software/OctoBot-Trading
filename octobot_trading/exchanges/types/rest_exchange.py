@@ -204,7 +204,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                     stop_price=stop_price, side=side, current_price=current_price,
                     reduce_only=reduce_only, params=params)
                 self.logger.debug(f"Created order: {created_order}")
-                return await self._verify_order(created_order, order_type, symbol, price, side)
+                return await self._verify_order(created_order, order_type, symbol, price, quantity, side)
         return None
 
     async def edit_order(self, exchange_order_id: str, order_type: enums.TraderOrderType, symbol: str,
@@ -225,7 +225,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             edited_order = await self._edit_order(exchange_order_id, order_type, symbol, quantity=float_quantity,
                                                   price=float_price, stop_price=float_stop_price, side=side,
                                                   current_price=float_current_price, params=params)
-            order = await self._verify_order(edited_order, order_type, symbol, price, side)
+            order = await self._verify_order(edited_order, order_type, symbol, price, quantity, side)
             return order
         return None
 
@@ -310,7 +310,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 f"Unexpected error during order operation: {html_util.get_html_summary_if_relevant(e)}"
             )
 
-    async def _verify_order(self, created_order, order_type, symbol, price, side, get_order_params=None):
+    async def _verify_order(self, created_order, order_type, symbol, price, quantity, side, get_order_params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.EXCHANGE_ID.value in created_order:
@@ -332,9 +332,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 else:
                     created_order = fetched_order
 
-        # on some exchange, market order are not including price, add it manually to ensure uniformity
-        if created_order is not None and created_order[ecoc.PRICE.value] is None and price is not None:
-            created_order[ecoc.PRICE.value] = float(price)
+        if created_order is not None:
+            # on some exchange, market order are not including price, add it manually to ensure uniformity
+            if created_order[ecoc.PRICE.value] is None and price is not None:
+                created_order[ecoc.PRICE.value] = float(price)
+            # sometimes, amount is 0, this is impossible. If it is, restore amount
+            if not created_order[ecoc.AMOUNT.value] and quantity is not None:
+                created_order[ecoc.AMOUNT.value] = float(quantity)
 
         return created_order
 
