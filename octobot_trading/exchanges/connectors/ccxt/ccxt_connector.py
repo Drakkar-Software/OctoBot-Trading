@@ -177,8 +177,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     raise ccxt.AuthenticationError(
                         f"Invalid key format ({html_util.get_html_summary_if_relevant(err)})"
                     ) from err
-                # should never happen: if it does, propagate it
-                self.logger.error(f"Unexpected error when loading markets: {err} ({err.__class__.__name__})")
+                # should not happen: if it does, propagate it
+                if self.exchange_manager.exchange.CAN_MAKE_AUTHENTICATED_REQUESTS_WHEN_LOADING_MARKETS:
+                    # can happen, just warn
+                    self.logger.warning(f"{err.__class__.__name__} when loading markets: {err}")
+                else:
+                    # unexpected: notify
+                    self.logger.error(f"Unexpected error when loading markets: {err} ({err.__class__.__name__})")
                 raise
             except ccxt.ExchangeNotAvailable as err:
                 raise octobot_trading.errors.FailedRequest(
