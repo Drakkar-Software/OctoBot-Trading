@@ -96,6 +96,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self._is_trigger_completed = asyncio.Event()
         self._is_trigger_completed.set()
 
+        # used to avoid spamming critical issues
+        self._sent_critical_notifications: set[str] = set()
+
         self.last_activity: mode_activity.TradingModeActivity = mode_activity.TradingModeActivity()
 
     def on_reload_config(self):
@@ -570,3 +573,19 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             cls.PRODUCER_LOCKS_BY_EXCHANGE_ID.pop(
                 exchange_manager.id, None
             )
+
+    async def sent_once_critical_notification(self, title: str, description: str):
+        if description not in self._sent_critical_notifications:
+            try:
+                import octobot_services.api as services_api
+                import octobot_services.enums as services_enum
+                self.logger.error(f"Critical error: {title}: {description}")
+                await services_api.send_notification(services_api.create_notification(
+                    description, title=title, markdown_text=description,
+                    level=services_enum.NotificationLevel.CRITICAL,
+                    category=services_enum.NotificationCategory.GLOBAL_INFO
+                ))
+            except ImportError as e:
+                self.logger.exception(e, True, f"Impossible to send notification: {e}")
+            finally:
+                self._sent_critical_notifications.add(description)
