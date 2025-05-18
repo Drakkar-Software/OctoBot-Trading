@@ -67,7 +67,7 @@ async def create_real_exchange(exchange_manager, exchange_config_by_exchange: ty
             or exchange_manager.disable_unauth_retry
         ):
             # auth is required or already retried, don't loop
-            exchange_manager.logger.error(
+            exchange_manager.logger.warning(
                 f"Authentication is required and raised an error: impossible to connect to "
                 f"{exchange_manager.exchange_name} exchange: {err}"
             )

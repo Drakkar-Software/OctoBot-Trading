@@ -72,6 +72,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
     # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
     REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
+    # set True when even loading markets can make auth calls when creds are set
+    CAN_MAKE_AUTHENTICATED_REQUESTS_WHEN_LOADING_MARKETS = False
     HAS_FETCHED_DETAILS = False  # set True when this exchange details (urls etc) have to be fetched before
     # starting the exchange
     IS_SKIPPING_EMPTY_CANDLES_IN_OHLCV_FETCH = False    # set True when the exchange is known for not returning any
