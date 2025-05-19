@@ -62,12 +62,12 @@ class Position(util.Initializable):
         self.fee_to_close = constants.ZERO
 
         # Size
-        self.quantity = constants.ZERO
-        self.size = constants.ZERO
+        self.quantity = constants.ZERO  # unleverage size
+        self.size = constants.ZERO  # size of the position (in asset)
         self.already_reduced_size = constants.ZERO
-        self.value = constants.ZERO
-        self.initial_margin = constants.ZERO
-        self.margin = constants.ZERO
+        self.value = constants.ZERO # value of the position
+        self.initial_margin = constants.ZERO    # locked funds from the wallet to maintain position
+        self.margin = constants.ZERO    # initial_margin + fee to close
         self.auto_deposit_margin = False
 
         # PNL
@@ -349,6 +349,9 @@ class Position(util.Initializable):
             if self.size == constants.ZERO:
                 self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             self.update_average_entry_price(size_update, order.filled_price)
+        elif self._is_update_reversing_side(size_update):
+            # don't use size_update here as it is larger than size
+            self._update_exit_data(size_to_close, self.mark_price)
         elif self._is_update_decreasing_size(size_update):
             self._update_exit_data(size_update, self.mark_price)
 
@@ -413,6 +416,15 @@ class Position(util.Initializable):
             return size_update < constants.ZERO
         return size_update > constants.ZERO
 
+    def _is_update_reversing_side(self, size_update):
+        """
+        :param size_update: the size update
+        :return: True if this update will reverse position side
+        """
+        if self.is_long():
+            return self.size + size_update < constants.ZERO
+        return self.size + size_update > constants.ZERO
+
     def _is_update_closing(self, size_update):
         """
         :param size_update: the size update
@@ -440,10 +452,16 @@ class Position(util.Initializable):
         """
         margin_update = constants.ZERO
         is_update_increasing_position_size = self._is_update_increasing_size(size_update)
-        if self._is_update_decreasing_size(size_update):
+        if self._is_update_reversing_side(size_update):
+            realised_pnl_update += self._update_realized_pnl_from_size_update(
+                self.get_quantity_to_close(), is_closing=True,
+                update_price=self.mark_price, trigger_source=trigger_source
+            )
+        elif self._is_update_decreasing_size(size_update):
             realised_pnl_update += self._update_realized_pnl_from_size_update(
                 size_update, is_closing=self._is_update_closing(size_update),
-                update_price=self.mark_price, trigger_source=trigger_source)
+                update_price=self.mark_price, trigger_source=trigger_source
+            )
         self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side(True)
@@ -510,7 +528,7 @@ class Position(util.Initializable):
 
     def _update_quantity(self):
         """
-        Update position quantity from position quantity
+        Update position quantity from position size
         """
         self.quantity = self.size / self.symbol_contract.current_leverage
 
@@ -714,6 +732,7 @@ class Position(util.Initializable):
         if reset_entry_price:
             self._reset_entry_price()
         self.exit_price = constants.ZERO
+        self.already_reduced_size = constants.ZERO
         # use update_timestamp when available, use exchange time otherwise
         self.creation_time = creation_timestamp or self.exchange_manager.exchange.get_exchange_current_time()
         logging.get_logger(self.get_logger_name()).debug(f"Changed position side: now {self.side.name}")
