@@ -323,10 +323,12 @@ async def test_get_futures_max_order_size(future_trader_simulator_with_default_l
            (l1_current_symbol_holding * default_contract.current_leverage).quantize(compare_accuracy)
     assert l2_market_quantity.quantize(compare_accuracy) == \
            (l1_market_quantity * default_contract.current_leverage).quantize(compare_accuracy)
-    assert personal_data.get_futures_max_order_size(
+    full_buy_size, increasing = personal_data.get_futures_max_order_size(
         exchange_manager_inst, symbol, enums.TradeOrderSide.BUY,
         decimal.Decimal("37000"), False, l2_current_symbol_holding, l2_market_quantity
-    ) == (decimal.Decimal('0.1346503937177512307045985802'), True)
+    )
+    assert (full_buy_size, increasing) == (decimal.Decimal('0.1346503937177512307045985802'), True)
+
     # reduce only (position is empty)
     assert personal_data.get_futures_max_order_size(
         exchange_manager_inst, symbol, enums.TradeOrderSide.BUY,
@@ -334,25 +336,65 @@ async def test_get_futures_max_order_size(future_trader_simulator_with_default_l
     ) == (constants.ZERO, False)
 
     # with short position
-    assert personal_data.get_futures_max_order_size(
+    full_sell_size, increasing = personal_data.get_futures_max_order_size(
         exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
         decimal.Decimal("37000"), False, l2_current_symbol_holding, l2_market_quantity
-    ) == (decimal.Decimal('0.1345431452958334678764786291'), True)
+    )
+    assert (full_sell_size, increasing) == (decimal.Decimal('0.1345431452958334678764786291'), True)
     # reduce only (position is empty)
     assert personal_data.get_futures_max_order_size(
         exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
         decimal.Decimal("37000"), True, l2_current_symbol_holding, l2_market_quantity
     ) == (constants.ZERO, False)
 
+    # LONG POSITION
     # reduce only (position is NOT empty)
     position = exchange_manager_inst.exchange_personal_data.positions_manager.get_symbol_positions(symbol)[0]
     await position.update(mark_price=decimal.Decimal(37000), update_margin=decimal.Decimal(4))
+    # position is now long
     position_size = position.size
     assert position_size == decimal.Decimal("0.0005405405405405405405405405405")
     assert personal_data.get_futures_max_order_size(
         exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
         decimal.Decimal("37000"), True, l2_current_symbol_holding, l2_market_quantity
     ) == (position_size, False)
+
+    # not reduce only and long position: can reverse position
+    position_size = position.size
+    assert position_size == decimal.Decimal("0.0005405405405405405405405405405")    # still the same size
+    max_size, increasing = personal_data.get_futures_max_order_size(
+        exchange_manager_inst, symbol, enums.TradeOrderSide.SELL,
+        decimal.Decimal("37000"), False, l2_current_symbol_holding, l2_market_quantity
+    )
+    assert increasing is True
+    assert max_size > position_size
+    # higher than when just opening a position with full free funds
+    assert max_size > full_sell_size
+    assert max_size == decimal.Decimal("0.1352986545732659722297027996")
+
+    # SHORT POSITION
+    # reduce only (position is NOT empty)
+    await position.update(mark_price=decimal.Decimal(37000), update_margin=decimal.Decimal(-500))
+    # position is now short
+    position_size = position.size
+    assert position_size == decimal.Decimal("-0.06702702702702702702702702703")
+    assert personal_data.get_futures_max_order_size(
+        exchange_manager_inst, symbol, enums.TradeOrderSide.BUY,
+        decimal.Decimal("37000"), True, l2_current_symbol_holding, l2_market_quantity
+    ) == (-position_size, False)
+
+    # not reduce only and short position: can reverse position
+    position_size = position.size
+    assert position_size == decimal.Decimal("-0.06702702702702702702702702703")    # still the same size
+    max_size, increasing = personal_data.get_futures_max_order_size(
+        exchange_manager_inst, symbol, enums.TradeOrderSide.BUY,
+        decimal.Decimal("37000"), False, l2_current_symbol_holding, l2_market_quantity
+    )
+    assert increasing is True
+    assert max_size > abs(position_size)
+    # higher than when just opening a position with full free funds
+    assert max_size > full_sell_size
+    assert max_size == decimal.Decimal("0.2149168523362071749168523362")
 
 
 @pytest.mark.asyncio

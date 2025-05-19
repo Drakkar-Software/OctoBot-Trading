@@ -298,24 +298,35 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
 
     contract_current_symbol_holding = current_symbol_holding
     contract_market_quantity = market_quantity
+    added_quantity_from_reverse = constants.ZERO
+    might_reverse_position = False
     if current_position.symbol_contract.is_inverse_contract():
         # use USD (in BTC/USD) for order sizes on inverse, convert BTC values into USD ones
         contract_current_symbol_holding = current_symbol_holding * current_price
         contract_market_quantity = market_quantity * current_price
     if side is enums.TradeOrderSide.SELL and current_position.is_long():
         # can also sell the position size in long
-        contract_current_symbol_holding = current_position.size if reduce_only \
-            else contract_current_symbol_holding + current_position.size
+        contract_current_symbol_holding = current_position.size
+        might_reverse_position = not reduce_only
+        added_quantity_from_reverse = current_position.initial_margin
     elif side is enums.TradeOrderSide.BUY and current_position.is_short():
         # can also buy the position size in short
-        contract_market_quantity = abs(current_position.size) if reduce_only \
-            else contract_market_quantity + abs(current_position.size)
-    if (new_position_side is enums.PositionSide.LONG and side is enums.TradeOrderSide.BUY) \
-            or (new_position_side is enums.PositionSide.SHORT and
-                side is enums.TradeOrderSide.SELL):
+        contract_market_quantity = abs(current_position.size)
+        might_reverse_position = not reduce_only
+        added_quantity_from_reverse = current_position.initial_margin
+    max_reducing_position_order_size = (
+        contract_market_quantity if side is enums.TradeOrderSide.BUY else contract_current_symbol_holding
+    )
+    if (
+        (new_position_side is enums.PositionSide.LONG and side is enums.TradeOrderSide.BUY)
+        or (new_position_side is enums.PositionSide.SHORT and  side is enums.TradeOrderSide.SELL)
+        or might_reverse_position
+    ):
         quantity = market_quantity if current_position.symbol_contract.is_inverse_contract() \
             else market_quantity * current_price
-        unleveraged_quantity = quantity / current_position.symbol_contract.current_leverage
+        # include added_quantity_from_reverse in case funds get freed from reversing a position
+        usable_quantity = quantity + added_quantity_from_reverse
+        unleveraged_quantity = usable_quantity / current_position.symbol_contract.current_leverage
         max_position_increased_order_quantity = get_max_order_quantity_for_price(
             current_position, unleveraged_quantity, current_price, new_position_side, symbol
         )
@@ -326,8 +337,11 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
             max_position_increased_order_quantity *= \
                 exchange_manager.exchange.MAX_INCREASED_POSITION_QUANTITY_MULTIPLIER
         # increasing position: always use the same currency
-        return max_position_increased_order_quantity, True
-    return contract_market_quantity if side is enums.TradeOrderSide.BUY else contract_current_symbol_holding, False
+        return max_position_increased_order_quantity + (
+            # include reducing position amount to process reverse
+            max_reducing_position_order_size if might_reverse_position else constants.ZERO
+        ), True
+    return max_reducing_position_order_size, False
 
 
 def get_max_order_quantity_for_price(position, available_quantity, price, side, symbol):

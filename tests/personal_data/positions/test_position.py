@@ -360,6 +360,35 @@ async def test_update_size_from_order_with_long_one_way_position(btc_usdt_future
                       price=decimal.Decimal(20))
     await position_inst.update_from_order(limit_sell)
     assert position_inst.size == decimal.Decimal(98)
+    assert position_inst.is_long()
+
+
+async def test_update_size_from_reversing_order_with_long_one_way_position(btc_usdt_future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_linear
+
+    symbol_contract = default_contract
+    symbol_contract.set_position_mode(is_one_way=True)
+    await position_inst.update(update_size=constants.ONE_HUNDRED)
+
+    limit_sell = SellLimitOrder(trader_inst)
+    limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=constants.ONE_HUNDRED + decimal.Decimal(50), # selling 150 => end size is -50
+                      price=decimal.Decimal(20),
+                      filled_price=decimal.Decimal(20))
+    position_inst.entry_price = decimal.Decimal(10)
+    await position_inst.update_from_order(limit_sell)
+    assert position_inst.size == decimal.Decimal(-50)
+    assert position_inst.is_short()
+    assert position_inst.already_reduced_size == constants.ZERO
+    # ensure PNL is properly saved
+    assert position_inst.realised_pnl == decimal.Decimal(1000)
+    assert [
+        t.realised_pnl
+        for t in exchange_manager_inst.exchange_personal_data.transactions_manager.transactions.values()
+        if isinstance(t, personal_data.RealisedPnlTransaction)
+    ] == [decimal.Decimal(1000)]
 
 
 async def test_update_size_from_order_with_long_close_position_one_way_position(
@@ -444,6 +473,33 @@ async def test_update_size_from_order_with_short_one_way_position(btc_usdt_futur
                      price=decimal.Decimal(20))
     await position_inst.update_from_order(buy_limit)
     assert position_inst.size == decimal.Decimal(-98)
+
+
+async def test_update_size_from_reversing_order_with_short_one_way_position(btc_usdt_future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
+    symbol_contract.set_position_mode(is_one_way=True)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
+
+    buy_limit = BuyLimitOrder(trader_inst)
+    buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                     symbol=DEFAULT_FUTURE_SYMBOL,
+                     current_price=decimal.Decimal(10),
+                     quantity=constants.ONE_HUNDRED + decimal.Decimal(50), # buying 150 => end size is +50
+                     price=decimal.Decimal(10),
+                     filled_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(20)
+    await position_inst.update_from_order(buy_limit)
+    assert position_inst.size == decimal.Decimal(50)
+    assert position_inst.is_long()
+    assert position_inst.already_reduced_size == constants.ZERO
+    # ensure PNL is properly saved
+    assert position_inst.realised_pnl == decimal.Decimal(1000)
+    assert [
+        t.realised_pnl
+        for t in exchange_manager_inst.exchange_personal_data.transactions_manager.transactions.values()
+        if isinstance(t, personal_data.RealisedPnlTransaction)
+    ] == [decimal.Decimal(1000)]
 
 
 async def test_update_size_from_order_with_short_close_position_one_way_position(
