@@ -258,6 +258,21 @@ def test_resolve_sub_portfolios_with_filling_assets():
     )
 
 
+def test_resolve_sub_portfolios_with_unexpected_deltas():
+    # more delta in post trade portfolio than actual orders => do not result in negative subportfolio
+    master_pf = _sub_pf(0, _content({"BTC": 0.05, "TRX": 0, "USDT": 200}))
+    sub_pft = _sub_pf(
+        0,
+        _content({"BTC": 0.05, "TRX": 13.1, "USDT": 100}),
+        funds_deltas=_content({"BTC": -0.05, "TRX": -13.2, "USDT": 100}),
+    )
+
+    assert personal_data.resolve_sub_portfolios(master_pf, [sub_pft], [], [], {}) == (
+        _sub_pf(0,  _content({"BTC": 0.05, "TRX": 0, "USDT": 0})),
+        [_sub_pf(0, _content({"BTC": 0, "TRX": 0, "USDT": 200}))]
+    )
+
+
 def test_get_portfolio_filled_orders_deltas():
     pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
     post_trade_content = _content({"BTC": 0.2, "USDT": 500})
