@@ -18,6 +18,7 @@ import asyncio
 import decimal
 import contextlib
 import uuid
+import typing
 
 import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
@@ -109,8 +110,14 @@ def check_cost(total_order_price, min_cost):
 
 
 def get_valid_split_orders(
-    quantity: decimal.Decimal, prices: list[decimal.Decimal], symbol_market
+    quantity: decimal.Decimal, prices: list[decimal.Decimal], symbol_market,
+    amount_ratio_per_order: typing.Optional[list[decimal.Decimal]] = None
 ) -> (list[decimal.Decimal], list[decimal.Decimal]):
+    if amount_ratio_per_order:
+        if len(amount_ratio_per_order) != len(prices):
+            raise ValueError(f"amount_ratio_per_order must have {len(prices)} elements")
+        if any(amount_ratio <= constants.ZERO for amount_ratio in amount_ratio_per_order):
+            raise ValueError(f"all amount_ratio_per_order must by > {constants.ZERO}")
     if len(prices) < 1:
         return [], []
     if len(prices) < 2:
@@ -125,17 +132,23 @@ def get_valid_split_orders(
     # try to split quantity evenly amount prices
     current_supported_orders_count = decimal.Decimal(str(len(prices)))
     while current_supported_orders_count > constants.ONE:
-        order_vol = quantity / current_supported_orders_count
+        if amount_ratio_per_order:
+            used_amount_ratio_per_order = amount_ratio_per_order[:int(current_supported_orders_count)]
+            total_ratios = sum(used_amount_ratio_per_order)
+            candidate_volumes = [
+                quantity * ratio_per_order / total_ratios
+                for ratio_per_order in used_amount_ratio_per_order
+            ]
+        else:
+            candidate_volumes = [quantity / current_supported_orders_count] * int(current_supported_orders_count)
         candidate_prices = prices[:int(current_supported_orders_count)]
-        first_price = min(candidate_prices)
-        last_price = max(candidate_prices)
-        if _are_orders_too_small(min_quantity, min_cost, min_price, first_price, order_vol):
+        if _are_orders_too_small(min_quantity, min_cost, min_price, min(candidate_prices), min(candidate_volumes)):
             # reduce orders count to increase quantity
             current_supported_orders_count -= 1
-        elif _are_orders_too_large(max_quantity, max_cost, max_price, last_price, order_vol):
-            raise errors.InvalidArgumentError(f"Order volume ({order_vol}) is too large")
+        elif _are_orders_too_large(max_quantity, max_cost, max_price, max(candidate_prices), max(candidate_volumes)):
+            raise errors.InvalidArgumentError(f"Order volume ({max(candidate_volumes)}) is too large")
         else:
-            return [order_vol] * int(current_supported_orders_count), candidate_prices
+            return candidate_volumes, candidate_prices
     # default to full quantity and first price
     return [quantity], [prices[0]]
 
