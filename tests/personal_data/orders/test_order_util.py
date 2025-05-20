@@ -664,6 +664,119 @@ def test_get_valid_split_orders():
     ) == ([decimal.Decimal('0.14985')], [decimal.Decimal('0.0006963')])
 
 
+def test_get_valid_split_orders_with_amount_ratio_per_order():
+    # example SOL/BTC values from 12/09/2023
+    symbol_market = {
+        enums.ExchangeConstantsMarketStatusColumns.LIMITS.value: {
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MIN.value: 0.01,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MAX.value: 90000000.0,
+            },
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST_MIN.value: 0.0001,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST_MAX.value: 9000000.0
+            },
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value: 1e-07,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value: 1000.0
+            },
+        },
+        enums.ExchangeConstantsMarketStatusColumns.PRECISION.value: {
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value: 7,
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value: 2
+        }
+    }
+
+    # all valid values
+    input_prices = [
+        decimal.Decimal("0.0006858"),
+        decimal.Decimal("0.0006908"),
+        decimal.Decimal("0.0006938"),
+        decimal.Decimal("0.0006958"),
+    ]
+    amount_ratio_per_order = [
+        decimal.Decimal("0.12"),
+        decimal.Decimal("0.24"),
+        decimal.Decimal("0.36"),
+        decimal.Decimal("0.28"),
+    ]
+    # invalid inputs
+    with pytest.raises(ValueError):
+        personal_data.get_valid_split_orders(
+            decimal.Decimal("2"),
+            input_prices,
+            symbol_market,
+            amount_ratio_per_order=[1, 2, 3]    # not enough values
+        )
+    with pytest.raises(ValueError):
+        personal_data.get_valid_split_orders(
+            decimal.Decimal("2"),
+            [decimal.Decimal("0.5")],
+            symbol_market,
+            amount_ratio_per_order=[decimal.Decimal(0)]    # 0 values
+        )
+    with pytest.raises(ValueError):
+        personal_data.get_valid_split_orders(
+            decimal.Decimal("2"),
+            [decimal.Decimal("0.5")],
+            symbol_market,
+            amount_ratio_per_order=[decimal.Decimal(-1.2)]    # negative values
+        )
+
+    # valid inputs
+    volumes, prices = personal_data.get_valid_split_orders(
+        decimal.Decimal("2"),
+        input_prices,
+        symbol_market,
+        amount_ratio_per_order=amount_ratio_per_order
+    )
+    assert (volumes, prices) == (
+        [decimal.Decimal("2") * amount_ratio for amount_ratio in amount_ratio_per_order],
+        prices
+    )
+    assert sum(volumes) == decimal.Decimal("2")
+
+    # too small amount for cost: adapt to 2 orders
+    amount_ratio_per_order = [decimal.Decimal(33), decimal.Decimal(44), decimal.Decimal(55), decimal.Decimal(66)]
+    total_ratio = sum(amount_ratio_per_order[:2])
+    volumes, prices = personal_data.get_valid_split_orders(
+        decimal.Decimal("0.5"),
+        input_prices,
+        symbol_market,
+        amount_ratio_per_order=amount_ratio_per_order
+    )
+    assert (volumes, prices) == (
+        [decimal.Decimal("0.5") * amount_ratio/total_ratio for amount_ratio in amount_ratio_per_order[:2]],
+        prices
+    )
+    assert sum(volumes) == decimal.Decimal("0.5")
+
+    # too small amount for cost: adapt to 1 order
+    volumes, prices = personal_data.get_valid_split_orders(
+        decimal.Decimal("0.1"),
+        input_prices,
+        symbol_market,
+        amount_ratio_per_order=amount_ratio_per_order
+    )
+    assert (volumes, prices) == ([decimal.Decimal('0.1')], [decimal.Decimal('0.0006858')])
+
+    # too small amount for cost (because of the lowest price order amount that gets truncated because of
+    # exchange precision rules): adapt to 0 orders
+
+    input_prices = [
+        decimal.Decimal("0.0006963"),
+        decimal.Decimal("0.0006908"),
+        decimal.Decimal("0.0006938"),
+        decimal.Decimal("0.0006958"),
+    ]
+    assert personal_data.get_valid_split_orders(
+        decimal.Decimal("0.14985"),
+        input_prices,
+        symbol_market,
+        amount_ratio_per_order=amount_ratio_per_order
+    ) == ([decimal.Decimal('0.14985')], [decimal.Decimal('0.0006963')])
+
+
 def test_get_split_orders_count_and_increment():
     # example SOL/BTC values from 12/09/2023
     symbol_market = {
