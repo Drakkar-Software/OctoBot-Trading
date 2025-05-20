@@ -58,6 +58,12 @@ class SubPortfolioData:
                     commons_constants.PORTFOLIO_TOTAL: delta_values[commons_constants.PORTFOLIO_TOTAL],
                     commons_constants.PORTFOLIO_AVAILABLE: delta_values[commons_constants.PORTFOLIO_AVAILABLE],
                 }
+            for key in (commons_constants.PORTFOLIO_TOTAL, commons_constants.PORTFOLIO_AVAILABLE):
+                if updated_content[asset][key] < constants.ZERO:
+                    commons_logging.get_logger(__name__).warning(
+                        f"{asset} portfolio {key} value: {updated_content[asset][key]} is < 0. Replacing with zero."
+                    )
+                    updated_content[asset][key] = constants.ZERO
         return updated_content
 
     def get_content_from_total_deltas_and_locked_funds(self) -> dict[str, dict[str, decimal.Decimal]]:
