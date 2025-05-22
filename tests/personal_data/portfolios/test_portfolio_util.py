@@ -524,6 +524,100 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
         error_log.assert_not_called()
 
 
+def test_get_portfolio_filled_orders_deltas_considering_different_fee_tiers():
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # base 1.2% fees
+        pre_trade_usdc = 2.203362439822
+        pre_trade_content = _content({"ETH": 0.01145892, "USDC": pre_trade_usdc, 'BTC': 0.01937857})
+        filled_orders = [
+            _order("BTC/USDC", 0.00091181, 99.2684993932, "sell", {"USDC": 1.1912219927184}),
+            _order("XRP/USDC", 3.840399, 9.1942992459, "buy", {"USDC": 0.1103315909508}),
+            _order("XLM/USDC", 33.59950349, 9.79704799822749, "buy", {"USDC": 0.11756457597873}),
+            _order("SUI/USDC", 2.4, 9.35448, "buy", {"USDC": 0.11225376}),
+            _order("SOL/USDC", 0.05705159, 9.78999848, "buy", {"USDC": 0.11747998176}),
+            _order("LINK/USDC", 0.61, 9.73987, "buy", {"USDC": 0.11687844}),
+            _order("ETH/USDC", 0.00387595, 9.7899907885, "buy", {"USDC": 0.117479889462}),
+            _order("DOGE/USDC", 42.3, 9.778068, "buy", {"USDC": 0.117336816}),
+            _order("BTC/USDC", 0.00008992, 9.7895661216, "buy", {"USDC": 0.1174747934592}),
+            _order("AVAX/USDC", 0.42769768, 9.7899998952, "buy", {"USDC": 0.1174799987424}),
+            _order("ADA/USDC", 12.75318927, 9.796999997214, "buy", {"USDC": 0.117563999966568}),
+        ]
+        max_fees_deltas = {
+            "XRP": 3.840399, "SUI": 2.4, "XLM": 33.59950349, "SOL": 0.05705159, "LINK": 0.61, "DOGE": 42.3,
+            "AVAX": 0.42769768, "ADA": 12.75318927, "ETH": 0.00387595, "USDC": 0.095113027520412,
+            "BTC": -0.00082189
+        }
+        post_trade_content = _content({
+            "XRP": 3.840399, "SUI": 2.4, "XLM": 33.59950349, "SOL": 0.05705159, "LINK": 0.61, "DOGE": 42.3,
+            "AVAX": 0.42769768, "ADA": 12.75318927, "ETH": 0.01533487, "USDC": 2.298475467342412, "BTC": 0.01855668
+        })
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (_content(max_fees_deltas), {})
+        error_log.assert_not_called()
+
+        # use coinbase fees tiers for this test
+        expected_fees_percent = 1.2
+        for real_fee_percent in (1.2, 0.75, 0.4, 0.25, 0.20, 0.16, 0.14, 0.10, 0.08, 0.05):
+            total_real_paid_fees = [decimal.Decimal(0)]
+
+            def _get_expected_fees(cost):
+                real_paid_fees = decimal.Decimal(str(cost)) * decimal.Decimal(str(real_fee_percent)) / decimal.Decimal(100)
+                expected_paid_fees = decimal.Decimal(str(cost)) * decimal.Decimal(str(expected_fees_percent)) / decimal.Decimal(100)
+                total_real_paid_fees[0] = total_real_paid_fees[0] + real_paid_fees
+                # expected fees are always 1.2%
+                return float(expected_paid_fees)
+
+            filled_orders = [
+                _order("BTC/USDC", 0.00091181, 99.2684993932, "sell", {"USDC": _get_expected_fees(99.2684993932)}),
+                _order("XRP/USDC", 3.840399, 9.1942992459, "buy", {"USDC": _get_expected_fees(9.1942992459)}),
+                _order("XLM/USDC", 33.59950349, 9.79704799822749, "buy", {"USDC": _get_expected_fees(9.79704799822749)}),
+                _order("SUI/USDC", 2.4, 9.35448, "buy", {"USDC": _get_expected_fees(9.35448)}),
+                _order("SOL/USDC", 0.05705159, 9.78999848, "buy", {"USDC": _get_expected_fees(9.78999848)}),
+                _order("LINK/USDC", 0.61, 9.73987, "buy", {"USDC": _get_expected_fees(9.73987)}),
+                _order("ETH/USDC", 0.00387595, 9.7899907885, "buy", {"USDC": _get_expected_fees(9.7899907885)}),
+                _order("DOGE/USDC", 42.3, 9.778068, "buy", {"USDC": _get_expected_fees(9.778068)}),
+                _order("BTC/USDC", 0.00008992, 9.7895661216, "buy", {"USDC": _get_expected_fees(9.7895661216)}),
+                _order("AVAX/USDC", 0.42769768, 9.7899998952, "buy", {"USDC": _get_expected_fees(9.7899998952)}),
+                _order("ADA/USDC", 12.75318927, 9.796999997214, "buy", {"USDC": _get_expected_fees(9.796999997214)}),
+            ]
+
+            post_trade_usdc = (
+                decimal.Decimal(str(pre_trade_usdc))
+                + sum(decimal.Decimal(str(o.total_cost)) for o in filled_orders if o.side == enums.TradeOrderSide.SELL)
+                - sum(decimal.Decimal(str(o.total_cost)) for o in filled_orders if o.side == enums.TradeOrderSide.BUY)
+                - total_real_paid_fees[0]
+            )
+            post_trade_content = _content({
+                "XRP": 3.840399, "SUI": 2.4, "XLM": 33.59950349, "SOL": 0.05705159, "LINK": 0.61, "DOGE": 42.3,
+                "AVAX": 0.42769768, "ADA": 12.75318927, "ETH": 0.01533487, "USDC": float(post_trade_usdc), "BTC": 0.01855668
+            })
+            local_fees_deltas = {
+                "XRP": 3.840399, "SUI": 2.4, "XLM": 33.59950349, "SOL": 0.05705159, "LINK": 0.61, "DOGE": 42.3,
+                "AVAX": 0.42769768, "ADA": 12.75318927, "ETH": 0.00387595, "BTC": -0.00082189,
+                "USDC": float(post_trade_usdc - decimal.Decimal(str(pre_trade_usdc))),
+            }
+
+            if real_fee_percent == 1.2:
+                # same result as previous (non looping) test
+                assert personal_data.get_portfolio_filled_orders_deltas(
+                    pre_trade_content, post_trade_content, filled_orders
+                ) == (_content(max_fees_deltas), {})
+            else:
+                deltas, missing_deltas = personal_data.get_portfolio_filled_orders_deltas(
+                    pre_trade_content, post_trade_content, filled_orders
+                )
+                # fix rounding issues
+                local_fees_deltas["USDC"] = float(round(decimal.Decimal(local_fees_deltas["USDC"]), 8))
+                assert missing_deltas == {}, f"{real_fee_percent=} {missing_deltas=}"
+                for key in (octobot_commons.constants.PORTFOLIO_AVAILABLE, octobot_commons.constants.PORTFOLIO_TOTAL):
+                    deltas["USDC"][key] = round(deltas["USDC"][key], 8)
+                assert deltas == _content(local_fees_deltas), f"{real_fee_percent=}"
+
+            error_log.assert_not_called()
+
+
 def test_resolve_sub_portfolios_with_filling_assets_with_locked_funds():
     master_pf = _sub_pf(
         0,
