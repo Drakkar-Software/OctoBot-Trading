@@ -507,6 +507,11 @@ def get_portfolio_filled_orders_deltas(
             # similar delta (+/- fees)
             # this delta is due to these orders: add it
             orders_linked_deltas[asset_name] = holdings_delta
+        elif asset_name in expected_fee_related_deltas and (
+            abs(expected_fee_related_deltas[asset_name]) > abs(holdings_delta[commons_constants.PORTFOLIO_AVAILABLE])
+        ):
+            # paid fees are higher than holding delta: mostly paid fees, validate this delta
+            orders_linked_deltas[asset_name] = holdings_delta
         elif (
             # try while taking expected and lower than expected fees into account
             asset_name in expected_fee_related_deltas and (
