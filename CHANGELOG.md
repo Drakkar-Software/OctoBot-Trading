@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.178] - 2025-05-23
+### Updated
+[CCXT] update ccxt to 4.4.85
+
 ## [2.4.177] - 2025-05-20
 ### Added 
 [Orders] add inactive orders to handle simultaneous stop & Take profit spot orders
