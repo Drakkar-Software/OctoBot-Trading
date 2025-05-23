@@ -114,16 +114,16 @@ class TestUpbitRealExchangeTester(RealExchangeTester):
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
         assert 0 < order_book[Ecobic.TIMESTAMP.value] < self._get_ref_order_book_timestamp()
-        assert len(order_book[Ecobic.ASKS.value]) == 15
+        assert len(order_book[Ecobic.ASKS.value]) == 30
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 15
+        assert len(order_book[Ecobic.BIDS.value]) == 30
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
         
     async def test_get_order_books(self):
         await self.inner_test_get_order_books(
             True,
             400, # asked symbols
-            15, # up to 15 orders
+            30, # up to 15 orders
             0, # up to 15 orders
             False,
             10,
