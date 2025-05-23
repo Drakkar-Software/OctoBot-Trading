@@ -995,7 +995,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :return: the update result
         """
         if self.SUPPORTS_SET_MARGIN_TYPE:
-            return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated, **kwargs)
+            try:
+                return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated, **kwargs)
+            except Exception as e:
+                if self.is_api_permission_error(e):
+                    # invalid api key or missing trading rights
+                    raise errors.AuthenticationError(
+                        f"Error when handling order {html_util.get_html_summary_if_relevant(e)}. "
+                        f"Please make sure that trading permissions are on for this API key."
+                    ) from e
+                raise
         raise errors.NotSupported(f"set_symbol_margin_type is not supported on {self.get_name()}")
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):

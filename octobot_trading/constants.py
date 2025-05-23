@@ -109,7 +109,7 @@ NaN = decimal.Decimal("nan")
 
 # exchanges where test_get_historical_symbol_prices is successful can be listed here
 FULL_CANDLE_HISTORY_EXCHANGES = [
-    "ascendex",
+    # "ascendex",   broken since ccxt==4.4.85
     "binance",
     "bitfinex",
     "bitstamp",
