@@ -75,16 +75,16 @@ def test_parse_quantity_types():
     assert script_keywords.parse_quantity("%p") == (script_keywords.QuantityType.POSITION_PERCENT, None)
     assert script_keywords.parse_quantity("-0.11p%") == (
         script_keywords.QuantityType.POSITION_PERCENT, decimal.Decimal("-0.11"))
-    assert script_keywords.parse_quantity("-0.11%p") == (
-        script_keywords.QuantityType.POSITION_PERCENT, decimal.Decimal("-0.11"))
+    assert script_keywords.parse_quantity("-0.11p") == (
+        script_keywords.QuantityType.POSITION_PERCENT_ALIAS, decimal.Decimal("-0.11"))
     assert script_keywords.parse_quantity("%p-0.11") == (
         script_keywords.QuantityType.POSITION_PERCENT, decimal.Decimal("-0.11"))
 
-    assert script_keywords.parse_quantity("p") == (script_keywords.QuantityType.POSITION, None)
+    assert script_keywords.parse_quantity("p") == (script_keywords.QuantityType.POSITION_PERCENT_ALIAS, None)
     assert script_keywords.parse_quantity("-0.11p") == (
-        script_keywords.QuantityType.POSITION, decimal.Decimal("-0.11"))
+        script_keywords.QuantityType.POSITION_PERCENT_ALIAS, decimal.Decimal("-0.11"))
     assert script_keywords.parse_quantity("p-0.11") == (
-        script_keywords.QuantityType.POSITION, decimal.Decimal("-0.11"))
+        script_keywords.QuantityType.POSITION_PERCENT_ALIAS, decimal.Decimal("-0.11"))
 
     assert script_keywords.parse_quantity("@") == (script_keywords.QuantityType.FLAT, None)
     assert script_keywords.parse_quantity("-0.11@") == (script_keywords.QuantityType.FLAT, decimal.Decimal("-0.11"))

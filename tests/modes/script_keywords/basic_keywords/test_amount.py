@@ -265,7 +265,7 @@ async def test_get_amount_from_input_amount_for_position(null_context):
     ) as is_in_one_way_position_mode_mock:
         with pytest.raises(NotImplementedError):
             await script_keywords.get_amount_from_input_amount(
-                null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT.value}"
+                null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT_ALIAS.value}"
             )
         is_in_one_way_position_mode_mock.assert_called_once_with(null_context)
 
@@ -276,7 +276,7 @@ async def test_get_amount_from_input_amount_for_position(null_context):
             as get_position_mock, mock.patch.object(account_balance, "adapt_amount_to_holdings",
           mock.AsyncMock(return_value=decimal.Decimal(1))) as adapt_amount_to_holdings_mock):
         assert await script_keywords.get_amount_from_input_amount(
-            null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT.value}"
+            null_context, f"1{script_keywords.QuantityType.POSITION_PERCENT_ALIAS.value}"
         ) == decimal.Decimal(1)
         is_in_one_way_position_mode_mock.assert_called_once_with(null_context)
         get_position_mock.assert_called_once()

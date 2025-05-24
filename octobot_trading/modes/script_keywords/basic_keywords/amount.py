@@ -77,7 +77,7 @@ async def get_amount_from_input_amount(
                 assets, commons_symbols.parse_symbol(context.symbol).base
             )
         amount_value = total_symbol_assets_holdings_value * amount_value / trading_constants.ONE_HUNDRED
-    elif amount_type is dsl.QuantityType.POSITION_PERCENT:
+    elif amount_type in (dsl.QuantityType.POSITION_PERCENT, dsl.QuantityType.POSITION_PERCENT_ALIAS):
         if context.exchange_manager.is_future:
             if position_kw.is_in_one_way_position_mode(context):
                 # use abs() since short positions have negative size
