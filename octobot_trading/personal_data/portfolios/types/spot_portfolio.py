@@ -65,22 +65,14 @@ class SpotPortfolio(portfolio_class.Portfolio):
 
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
-        Realise portfolio availability update
+        Realize portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param is_new_order: True when the order is being created, False when cancelled
+        :param is_new_order: True when the order is being created, False when canceled
         """
         multiplier = constants.ONE if is_new_order else -constants.ONE
 
-        # when buy order
-        if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = - order_util.get_order_locked_amount(order) * multiplier
-            self._update_portfolio_data(order.market,
-                                        available_value=new_quantity,
-                                        total_value=constants.ZERO)
-
-        # when sell order
-        else:
-            new_quantity = - order_util.get_order_locked_amount(order) * multiplier
-            self._update_portfolio_data(order.currency,
-                                        available_value=new_quantity,
-                                        total_value=constants.ZERO)
+        # force_use_origin_quantity_and_price is True here to ensure symetry between funds locked to open orders and
+        # funds released orders are not open anymore
+        new_quantity = -order_util.get_order_locked_amount(order, force_use_origin_quantity_and_price=True) * multiplier
+        unit = order.market if order.side == enums.TradeOrderSide.BUY else order.currency
+        self._update_portfolio_data(unit, available_value=new_quantity, total_value=constants.ZERO)

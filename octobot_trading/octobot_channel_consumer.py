@@ -76,7 +76,7 @@ async def _handle_creation(bot_id, action, data):
                 modes.get_activated_trading_mode(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value])
             except commons_errors.ConfigTradingError:
                 logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
-                    f"No configured trading mode. in order to trade, selected a profile with a trading mode."
+                    f"No configured trading mode. In order to trade, selected a profile with a trading mode."
                 )
                 # do not raise on missing trading mode
                 exchange_builder.disable_trading_mode()

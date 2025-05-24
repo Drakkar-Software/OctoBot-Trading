@@ -406,10 +406,11 @@ def get_fees_for_currency(fee, currency):
     return constants.ZERO
 
 
-def get_order_locked_amount(order: order_import.Order) -> decimal.Decimal:
+def get_order_locked_amount(order: order_import.Order, force_use_origin_quantity_and_price=False) -> decimal.Decimal:
     # take fees into account when in locked asset
     # ( a BTC/USDT order with USDT fees need to lock USDT fees to be able to pay them)
-    forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=not order.is_filled())
+    use_origin_quantity_and_price = force_use_origin_quantity_and_price or not order.is_filled()
+    forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=use_origin_quantity_and_price)
     base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
     # when buy order
     if order.side == enums.TradeOrderSide.BUY:
