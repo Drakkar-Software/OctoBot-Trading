@@ -14,14 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
-
+import mock
 import pytest
-from octobot_commons.constants import PORTFOLIO_TOTAL, PORTFOLIO_AVAILABLE
 
-from octobot_trading.enums import TraderOrderType
-from octobot_trading.personal_data.orders.types.limit.sell_limit_order import SellLimitOrder
-from octobot_trading.personal_data.orders.types.market.buy_market_order import BuyMarketOrder
-from octobot_trading.personal_data.portfolios.types.spot_portfolio import SpotPortfolio
+import octobot_trading.enums
+import octobot_trading.personal_data as personal_data
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 
 # All test coroutines will be treated as marked.
@@ -32,7 +29,7 @@ async def test_initial_portfolio(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
-    assert isinstance(portfolio_manager.portfolio, SpotPortfolio)
+    assert isinstance(portfolio_manager.portfolio, personal_data.SpotPortfolio)
 
 
 async def test_update_portfolio_data_from_order(backtesting_trader):
@@ -46,8 +43,8 @@ async def test_update_portfolio_available_from_order(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy = personal_data.BuyMarketOrder(trader)
+    market_buy.update(order_type=octobot_trading.enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=70,
                       quantity=10,
@@ -68,8 +65,8 @@ async def test_update_portfolio_available_from_order(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     # Test sell order
-    limit_sell = SellLimitOrder(trader)
-    limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
+    limit_sell = personal_data.SellLimitOrder(trader)
+    limit_sell.update(order_type=octobot_trading.enums.TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
                       current_price=60,
                       quantity=8,
@@ -88,3 +85,49 @@ async def test_update_portfolio_available_from_order(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+    # Test buy order with large USDT fee
+    limit_buy = personal_data.BuyLimitOrder(trader)
+    limit_buy.update(order_type=octobot_trading.enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=60,
+                      quantity=8,
+                      price=60)
+    fee = {
+        octobot_trading.enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
+        octobot_trading.enums.FeePropertyColumns.COST.value: 54.111111,
+        octobot_trading.enums.FeePropertyColumns.CURRENCY.value: "USDT",
+    }
+
+    # even if order is filled, always update available funds with use_origin_quantity_and_price and taker fees
+    with (mock.patch.object(limit_buy, "is_filled", mock.Mock(return_value=True)) as is_filled_value_mock,
+          mock.patch.object(limit_buy.exchange_manager.exchange, "get_trade_fee", mock.Mock(return_value=fee)) as get_trade_fee_mock):
+        # test buy order creation
+        portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
+        get_trade_fee_mock.assert_called_once_with(
+            limit_buy.symbol, limit_buy.order_type, limit_buy.origin_quantity, limit_buy.origin_price,
+            octobot_trading.enums.ExchangeConstantsOrderColumns.TAKER.value,
+        )
+        get_trade_fee_mock.reset_mock()
+        is_filled_value_mock.assert_not_called()
+        assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
+        # cost with fees = 60 * 8 + 54.111111 = 534.111111
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == (
+            decimal.Decimal('1000') - decimal.Decimal('534.111111')
+        )
+        assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+        # test buy order canceled --> return to init state and the update_portfolio will sync TOTAL with AVAILABLE
+        portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
+        get_trade_fee_mock.assert_called_once_with(
+            limit_buy.symbol, limit_buy.order_type, limit_buy.origin_quantity, limit_buy.origin_price,
+            octobot_trading.enums.ExchangeConstantsOrderColumns.TAKER.value,
+        )
+        get_trade_fee_mock.reset_mock()
+        is_filled_value_mock.assert_not_called()
+        assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+        assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+

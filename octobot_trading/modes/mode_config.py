@@ -38,8 +38,8 @@ def get_activated_trading_mode(tentacles_setup_config):
 
             if len(trading_modes) > 1:
                 raise errors.ConfigTradingError(
-                    f"More than one activated trading mode found in your tentacle configuration, "
-                    f"please activate only one")
+                    f"More than one activated trading mode found in your tentacle configuration: "
+                    f"{', '.join(trading_modes)}, please activate only one.")
 
             elif trading_modes:
                 trading_mode_class = class_inspector.get_deep_class_from_parent_subclasses(trading_modes[0],
