@@ -384,11 +384,11 @@ def _get_client_config(
             config['walletAddress'] = creds.wallet_address
         if creds.private_key is not None:
             config['privateKey'] = creds.private_key
-    config.update({**_get_custom_domain_config(exchange_class), **(additional_config or {})})
+    config.update({**get_custom_domain_config(exchange_class), **(additional_config or {})})
     return config
 
 
-def _get_custom_domain_config(exchange_class):
+def get_custom_domain_config(exchange_class):
     old, new = _get_replaced_custom_domains(exchange_class)
     if not (old and new):
         return {}
