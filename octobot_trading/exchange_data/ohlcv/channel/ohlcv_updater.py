@@ -150,6 +150,9 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             candles: list = await self._get_init_candles(time_frame, pair)
         except errors.FailedRequest as e:
             self.logger.warning(str(e))
+        if self.channel.exchange_manager.exchange_symbols_data is None:
+            # exchange stopped
+            return None
         if candles and len(candles) > 1:
             self._set_initialized(pair, time_frame, True)
             await self.channel.exchange_manager.get_symbol_data(pair) \
