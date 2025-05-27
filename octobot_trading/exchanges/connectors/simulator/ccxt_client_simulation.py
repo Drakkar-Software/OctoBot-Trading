@@ -19,7 +19,9 @@ import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client
 
 
 def parse_markets(exchange_name, market_filter) -> dict:
-    client = ccxt_client_util.ccxt_exchange_class_factory(exchange_name)()
+    exchange_class = ccxt_client_util.ccxt_exchange_class_factory(exchange_name)
+    config = ccxt_client_util.get_custom_domain_config(exchange_class)
+    client = exchange_class(config)
     ccxt_client_util.load_markets_from_cache(client, market_filter)
     return client.markets
 
