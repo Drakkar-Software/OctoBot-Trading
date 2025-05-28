@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.180] - 2025-05-28
+### Fixed
+[Orders] fix adapt_order_quantity_because_fees to count all orders
+[Exchanges] fix cache when using custom domains
+[OHLCV] fix error on stopped exchange
+
 ## [2.4.179] - 2025-05-24
 ### Added 
 [Amounts] "p" as position percent alias
