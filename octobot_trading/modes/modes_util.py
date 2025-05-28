@@ -216,7 +216,7 @@ def _get_available_or_target_quantity(trading_mode, symbol, order_type, price, a
         else trading_enums.TradeOrderSide.BUY
     )
 
-    currency_available, market_available, market_quantity = trading_personal_data.get_portfolio_amounts(
+    currency_available, _, market_quantity = trading_personal_data.get_portfolio_amounts(
         trading_mode.exchange_manager, symbol, price, portfolio_type=common_constants.PORTFOLIO_AVAILABLE
     )
     if asset_amount is None:
@@ -228,9 +228,7 @@ def _get_available_or_target_quantity(trading_mode, symbol, order_type, price, a
             quantity = constants.ZERO
 
     adapted_quantity = trading_personal_data.decimal_adapt_order_quantity_because_fees(
-        trading_mode.exchange_manager, symbol, order_type, quantity, price,
-        trading_enums.ExchangeConstantsMarketPropertyColumns.TAKER, side,
-        currency_available if side is trading_enums.TradeOrderSide.SELL else market_available
+        trading_mode.exchange_manager, symbol, order_type, quantity, price, side
     )
     return adapted_quantity
 

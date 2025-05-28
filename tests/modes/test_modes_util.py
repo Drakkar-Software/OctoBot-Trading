@@ -261,7 +261,7 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         assert order.origin_quantity == decimal.Decimal("0.3")
         assert order.created_last_price == decimal.Decimal(1500)
         assert order.is_filled()
-        assert get_trade_fee_mock.call_count == 4
+        assert get_trade_fee_mock.call_count == 5
         get_trade_fee_mock.reset_mock()
         trading_mode.create_order.assert_called_once()
         trading_mode.create_order.reset_mock()
@@ -275,10 +275,10 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         order = orders[0]
         assert order.order_type == trading_enums.TraderOrderType.BUY_MARKET
         assert order.symbol == "ETH/USDT"
-        assert order.origin_quantity == decimal.Decimal("0.66400000")   # lower than 0.66666666 when fees is 0 USDT
+        assert order.origin_quantity == decimal.Decimal("0.665")   # lower than 0.66666666 when fees is 0 USDT
         assert order.created_last_price == decimal.Decimal(1500)
         assert order.is_filled()
-        assert get_trade_fee_mock.call_count == 4
+        assert get_trade_fee_mock.call_count == 5
         trading_mode.create_order.assert_called_once()
         trading_mode.create_order.reset_mock()
 
