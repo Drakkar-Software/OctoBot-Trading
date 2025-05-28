@@ -698,10 +698,12 @@ def test_decimal_adapt_order_quantity_because_fees_with_existing_orders():
     existing_order_1.symbol = "BTC/USDT"
     existing_order_1.origin_quantity = decimal.Decimal("0.4")
     existing_order_1.origin_price = decimal.Decimal("5000")
+    existing_order_1.side = enums.TradeOrderSide.BUY
     existing_order_2 = mock.Mock()
     existing_order_2.symbol = "BTC/USDT"
     existing_order_2.origin_quantity = decimal.Decimal("0.6")
     existing_order_2.origin_price = decimal.Decimal("5000")
+    existing_order_2.side = enums.TradeOrderSide.BUY
 
     orders_manager = mock.Mock()
     orders_manager.get_open_orders.return_value = [existing_order_1, existing_order_2]
@@ -730,6 +732,33 @@ def test_decimal_adapt_order_quantity_because_fees_with_existing_orders():
     )
 
     # Result should be less than original quantity due to existing orders
+    assert result < quantity
+    assert result == quantity - (fees_cost * constants.FEES_SAFETY_MARGIN) / price
+
+    # all orders are not on this side
+    # open orders are taking all funds (available funds are negative)
+    existing_order_3 = mock.Mock()
+    existing_order_3.symbol = "BTC/USDT"
+    existing_order_3.origin_quantity = decimal.Decimal("0.6")
+    existing_order_3.origin_price = decimal.Decimal("5000")
+    existing_order_3.side = enums.TradeOrderSide.SELL
+    existing_order_4 = mock.Mock()
+    existing_order_4.symbol = "BTC/USDT"
+    existing_order_4.origin_quantity = decimal.Decimal("0.6")
+    existing_order_4.origin_price = decimal.Decimal("5000")
+    existing_order_4.side = enums.TradeOrderSide.SELL
+    orders_manager.get_open_orders.return_value = [existing_order_1, existing_order_2, existing_order_3, existing_order_4]
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # Result should be less than original quantity due to existing orders but same as previous step (new orders are sell)
     assert result < quantity
     assert result == quantity - (fees_cost * constants.FEES_SAFETY_MARGIN) / price
 

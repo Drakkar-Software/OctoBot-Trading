@@ -147,7 +147,11 @@ def decimal_adapt_order_quantity_because_fees(
         total_quote_amount_locked_in_orders_ignoring_fees = sum(
             order.origin_quantity * order.origin_price
             for order in exchange_manager.exchange_personal_data.orders_manager.get_open_orders(active=True)
-            if commons_symbols.parse_symbol(order.symbol).quote == quote and order.is_counted_in_available_funds()
+            if (
+                order.side == side
+                and commons_symbols.parse_symbol(order.symbol).quote == quote
+                and order.is_counted_in_available_funds()
+            )
         )
         # if fee paid in quote, ensure enough remaining quote asset in available portfolio
         if max_order_quote_fee := personal_data.get_fees_for_currency(max_possible_computed_fee, quote):
