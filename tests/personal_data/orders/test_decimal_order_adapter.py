@@ -522,92 +522,245 @@ async def test_decimal_trunc_with_n_decimal_digits():
     assert math.isnan(personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(math.nan), 12))
 
 
-async def test_decimal_adapt_order_quantity_because_fees():
-    fees = {
-        enums.FeePropertyColumns.TYPE.value: enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
-        enums.FeePropertyColumns.CURRENCY.value: "BTC",
-        enums.FeePropertyColumns.RATE.value: 0.001,
-        enums.FeePropertyColumns.COST.value: decimal.Decimal("0.000001"),
-        enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
-    }
-    def _get_trade_fee(symbol: str, order_type, quantity, price, taker_or_maker):
-        return fees
-
-    exchange_manager = mock.Mock(
-        is_future=False,
-        exchange=mock.Mock(
-            get_trade_fee=mock.Mock(side_effect=_get_trade_fee)
-        )
-    )
-    symbol = "BTC/USDT"
-
-    origin_quantity = decimal.Decimal("1")
-    price = decimal.Decimal("30000")
-    taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER
-    quote_available_funds = decimal.Decimal("40000")
-
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.SELL, quote_available_funds
-    )
-    # sell: no effect
-    assert adapted is origin_quantity
-
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # buy but fees in BTC, quantity unchanged
-    assert adapted is origin_quantity
-
-    fees[enums.FeePropertyColumns.CURRENCY.value] = "USDT"
-    fees[enums.FeePropertyColumns.COST.value] = 40
-
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # sell: no still effect
-    assert adapted is origin_quantity
-
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # buy and fees in USDT but enough in quote_available_funds, quantity kept
-    assert adapted is origin_quantity
-
-    quote_available_funds = origin_quantity * price
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # buy and fees in USDT and not enough in quote_available_funds, quantity updated
-    assert adapted == origin_quantity - 2 * fees[enums.FeePropertyColumns.COST.value] / price
-
-    quote_available_funds = decimal.Decimal(100)
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # buy and fees in USDT and not enough in quote_available_funds, quantity greatly reduced
-    assert adapted == decimal.Decimal(100) / price - 2 * (fees[enums.FeePropertyColumns.COST.value] / price)
-
-    quote_available_funds = decimal.Decimal(10)
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # buy and fees in USDT and not enough in quote_available_funds to pay fees, quantity set to 0
-    assert adapted == constants.ZERO
-
+def test_decimal_adapt_order_quantity_because_fees_futures():
+    """Test that futures orders are not modified by fees"""
+    exchange_manager = mock.Mock()
     exchange_manager.is_future = True
-    quote_available_funds = decimal.Decimal(10)
-    adapted = personal_data.decimal_adapt_order_quantity_because_fees(
-        exchange_manager, symbol, enums.TraderOrderType.BUY_LIMIT, origin_quantity,
-        price, taker_or_maker, enums.TradeOrderSide.BUY, quote_available_funds
-    )
-    # futures trading: no effect
-    assert adapted is origin_quantity
 
+    quantity = decimal.Decimal("100")
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=decimal.Decimal("50000"),
+        side=enums.TradeOrderSide.BUY
+    )
+
+    assert result == quantity
+
+
+def test_decimal_adapt_order_quantity_because_fees_spot_sell():
+    """Test that spot sell orders are not modified by fees"""
+    exchange_manager = mock.Mock()
     exchange_manager.is_future = False
+
+    quantity = decimal.Decimal("100")
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.SELL_LIMIT,
+        quantity=quantity,
+        price=decimal.Decimal("50000"),
+        side=enums.TradeOrderSide.SELL
+    )
+
+    assert result == quantity
+
+
+def test_decimal_adapt_order_quantity_because_fees_spot_buy():
+    """Test spot buy order quantity adaptation with fees"""
+    exchange_manager = mock.Mock()
+    exchange_manager.is_future = False
+
+    # Setup portfolio
+    portfolio_manager = mock.Mock()
+    portfolio = mock.Mock()
+    portfolio.get_currency_portfolio.return_value.total = decimal.Decimal("10000")  # 10000 USDT
+    exchange_manager.exchange_personal_data.portfolio_manager = portfolio_manager
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio = portfolio
+
+    # Setup orders manager with no existing orders
+    orders_manager = mock.Mock()
+    orders_manager.get_open_orders.return_value = []
+    exchange_manager.exchange_personal_data.orders_manager = orders_manager
+
+    # Setup exchange fees (0.1%)
+    fees_cost = decimal.Decimal('5') # 5 USDT fee
+    exchange = mock.Mock()
+    exchange.get_trade_fee.return_value = {
+        enums.FeePropertyColumns.RATE.value: decimal.Decimal('0.001'),
+        enums.FeePropertyColumns.COST.value: fees_cost,
+        enums.FeePropertyColumns.CURRENCY.value: 'USDT'
+    }
+    exchange_manager.exchange = exchange
+
+    quantity = decimal.Decimal("100")
+    price = decimal.Decimal("50")
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # Expected quantity should be == to quantity as no adaptation is required
+    # (10k is enough to cover the 5K + 5 USDT required amount)
+    assert result == quantity
+
+    quantity = decimal.Decimal("100")
+    price = decimal.Decimal("100")
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # Expected quantity should be < to quantity to account for fees
+    assert result == quantity - (fees_cost * constants.FEES_SAFETY_MARGIN) / price
+
+    # fee is now in other currency
+    exchange.get_trade_fee.return_value = {
+        enums.FeePropertyColumns.RATE.value: decimal.Decimal('0.001'),
+        enums.FeePropertyColumns.COST.value: fees_cost,
+        enums.FeePropertyColumns.CURRENCY.value: 'BNB'
+    }
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # Expected quantity should be == to quantity as fees are not taken in this currency
+    assert result == quantity
+
+
+def test_decimal_adapt_order_quantity_because_fees_insufficient_funds():
+    """Test spot buy order with insufficient funds after fees"""
+    exchange_manager = mock.Mock()
+    exchange_manager.is_future = False
+
+    # Setup portfolio with very low balance
+    portfolio_manager = mock.Mock()
+    portfolio = mock.Mock()
+    portfolio.get_currency_portfolio.return_value.total = decimal.Decimal("100")  # 100 USDT
+    exchange_manager.exchange_personal_data.portfolio_manager = portfolio_manager
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio = portfolio
+
+    # Setup orders manager with no existing orders
+    orders_manager = mock.Mock()
+    orders_manager.get_open_orders.return_value = []
+    exchange_manager.exchange_personal_data.orders_manager = orders_manager
+
+    # Setup exchange fees (0.1%)
+    exchange = mock.Mock()
+    fees_cost = decimal.Decimal('1')   # 1 USDT fee
+    exchange.get_trade_fee.return_value = {
+        'rate': decimal.Decimal('0.001'),
+        'cost': fees_cost,
+        'currency': 'USDT'
+    }
+    exchange_manager.exchange = exchange
+
+    quantity = decimal.Decimal("1000")  # Try to buy more than possible
+    price = decimal.Decimal("1")
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # Result should be less than original quantity due to insufficient funds
+    assert result < quantity
+    assert result > decimal.Decimal("0")
+    assert result == decimal.Decimal("100") - (fees_cost * constants.FEES_SAFETY_MARGIN) / price
+
+
+def test_decimal_adapt_order_quantity_because_fees_with_existing_orders():
+    """Test spot buy order adaptation with existing orders"""
+    exchange_manager = mock.Mock()
+    exchange_manager.is_future = False
+
+    # Setup portfolio
+    portfolio_manager = mock.Mock()
+    portfolio = mock.Mock()
+    portfolio.get_currency_portfolio.return_value.total = decimal.Decimal("10000")  # 10000 USDT
+    exchange_manager.exchange_personal_data.portfolio_manager = portfolio_manager
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio = portfolio
+
+    # Setup orders manager with existing orders
+    existing_order_1 = mock.Mock()
+    existing_order_1.symbol = "BTC/USDT"
+    existing_order_1.origin_quantity = decimal.Decimal("0.4")
+    existing_order_1.origin_price = decimal.Decimal("5000")
+    existing_order_2 = mock.Mock()
+    existing_order_2.symbol = "BTC/USDT"
+    existing_order_2.origin_quantity = decimal.Decimal("0.6")
+    existing_order_2.origin_price = decimal.Decimal("5000")
+
+    orders_manager = mock.Mock()
+    orders_manager.get_open_orders.return_value = [existing_order_1, existing_order_2]
+    exchange_manager.exchange_personal_data.orders_manager = orders_manager
+
+    # Setup exchange fees (0.1%)
+    exchange = mock.Mock()
+    fees_cost = decimal.Decimal('5')   # 5 USDT fee
+    exchange.get_trade_fee.return_value = {
+        'rate': decimal.Decimal('0.001'),
+        'cost': fees_cost,
+        'currency': 'USDT'
+    }
+    exchange_manager.exchange = exchange
+
+    quantity = decimal.Decimal("100")
+    price = decimal.Decimal("50")
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # Result should be less than original quantity due to existing orders
+    assert result < quantity
+    assert result == quantity - (fees_cost * constants.FEES_SAFETY_MARGIN) / price
+
+    # open orders are taking all funds (available funds are negative)
+    orders_manager.get_open_orders.return_value = [existing_order_1, existing_order_2, existing_order_1, existing_order_2]
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # can't create order
+    assert result == constants.ZERO
+
+    # open orders are taking all funds (available funds are 0)
+    portfolio.get_currency_portfolio.return_value.total = (
+        decimal.Decimal("10000") + fees_cost * constants.FEES_SAFETY_MARGIN  # 10006.25 USDT
+    )
+
+    result = personal_data.decimal_adapt_order_quantity_because_fees(
+        exchange_manager=exchange_manager,
+        symbol="BTC/USDT",
+        order_type=enums.TraderOrderType.BUY_LIMIT,
+        quantity=quantity,
+        price=price,
+        side=enums.TradeOrderSide.BUY
+    )
+
+    # can't create order
+    assert result == constants.ZERO

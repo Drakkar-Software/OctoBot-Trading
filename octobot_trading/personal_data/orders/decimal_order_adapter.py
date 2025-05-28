@@ -130,24 +130,42 @@ def decimal_adapt_order_quantity_because_price(limiting_value, max_value, price,
 
 def decimal_adapt_order_quantity_because_fees(
     exchange_manager, symbol: str, order_type: enums.TraderOrderType, quantity: decimal.Decimal, price: decimal.Decimal,
-    taker_or_maker: enums.ExchangeConstantsMarketPropertyColumns, side: enums.TradeOrderSide,
-    quote_available_funds: decimal.Decimal
+    side: enums.TradeOrderSide
 ) -> decimal.Decimal:
     if not exchange_manager.is_future and side == enums.TradeOrderSide.BUY:
         # only buy orders are affected
-        computed_fee = exchange_manager.exchange.get_trade_fee(
-            symbol, order_type, quantity, price, taker_or_maker.value
-        )
+        # consider worse case: simulate all total buying funds with taker fees locked into buy orders
         quote = commons_symbols.parse_symbol(symbol).quote
+        total_quote_amount = exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
+            quote
+        ).total
+        max_base_quantity_ignoring_fees = (total_quote_amount / price) if price else constants.ZERO
+        max_possible_computed_fee = exchange_manager.exchange.get_trade_fee(
+            symbol, order_type, max_base_quantity_ignoring_fees, price,
+            enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+        )
+        total_quote_amount_locked_in_orders_ignoring_fees = sum(
+            order.origin_quantity * order.origin_price
+            for order in exchange_manager.exchange_personal_data.orders_manager.get_open_orders(active=True)
+            if commons_symbols.parse_symbol(order.symbol).quote == quote and order.is_counted_in_available_funds()
+        )
         # if fee paid in quote, ensure enough remaining quote asset in available portfolio
-        if currency_fee := personal_data.get_fees_for_currency(computed_fee, quote):
-            fees_in_base = (currency_fee / price) if price else constants.ZERO
-            base_quantity_from_quote = quote_available_funds / price
-            required_base_fees = fees_in_base * 2  # use 2x the fees to be sure exchanges won't refuse it
-            total_required_quote_quantity = (required_base_fees + quantity) * price
-            if quote_available_funds < total_required_quote_quantity:
-                # use maximum quantity considering fees
-                quantity = max(base_quantity_from_quote - required_base_fees, constants.ZERO)
+        if max_order_quote_fee := personal_data.get_fees_for_currency(max_possible_computed_fee, quote):
+            # add a safety margin to the max fees to be sure exchanges won't round it differently
+            adapted_max_order_quote_fee = max_order_quote_fee * constants.FEES_SAFETY_MARGIN
+            max_usable_quote_funds = (
+                total_quote_amount - total_quote_amount_locked_in_orders_ignoring_fees - adapted_max_order_quote_fee
+            )
+            local_order_computed_fee = exchange_manager.exchange.get_trade_fee(
+                symbol, order_type, quantity, price, enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+            )
+            local_order_required_quote_fees = personal_data.get_fees_for_currency(local_order_computed_fee, quote)
+            total_required_quote_quantity = (quantity * price) + local_order_required_quote_fees
+            if max_usable_quote_funds < total_required_quote_quantity:
+                # can't create this order: not enough remaining funds in portfolio after considering all orders fees
+                # => use maximum usable quantity considering fees
+                max_usable_base_funds_considering_fees = (max_usable_quote_funds / price) if price else constants.ZERO
+                quantity = max(max_usable_base_funds_considering_fees, constants.ZERO)
     return quantity
 
 
