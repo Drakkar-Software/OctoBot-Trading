@@ -120,6 +120,7 @@ class ExchangeWrapperLibs(enum.Enum):
 class ExchangeColumns(enum.Enum):
     WEBSITE = "www"
     URLS = "urls"
+    HOSTNAME = "hostname"
     API = "api"
     REST = "rest"
     WEBSOCKET = "ws"
