@@ -394,10 +394,11 @@ def get_custom_domain_config(exchange_class):
         return {}
     if url_config := exchange_class().describe()[ccxt_enums.ExchangeColumns.URLS.value]:
         commons_logging.get_logger(__name__).info(
-            f"Using custom domain for {exchange_class.__name__}: {old} is replaced by {new}"
+            f"Using custom domain for {exchange_class.__name__}: {old} is replaced by {new}, hostname has been updated"
         )
         return {
-            ccxt_enums.ExchangeColumns.URLS.value: _get_patched_url_config(url_config, old, new)
+            ccxt_enums.ExchangeColumns.URLS.value: _get_patched_url_config(url_config, old, new),
+            ccxt_enums.ExchangeColumns.HOSTNAME.value: new
         }
     return {}
 
