@@ -564,10 +564,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
         )
 
-    async def cancel_order(self, order, ignored_order: object = None) -> bool:
+    async def cancel_order(self, order, ignored_order: object = None, wait_for_cancelling: bool = True) -> bool:
         return await signals.cancel_order(
             self.exchange_manager, self.should_emit_trading_signal(), order,
-            ignored_order=ignored_order
+            ignored_order=ignored_order,
+            wait_for_cancelling=wait_for_cancelling
         )
 
     async def cancel_all_orders(
