@@ -527,15 +527,26 @@ class Trader(util.Initializable):
                 f"it impossible to handle this the issue. Please report it if you see it. "
                 f"Order: {order}"
             ) from err
-        # trigger forced refresh to get an update of the order
         if order.state.is_refreshing():
-            await order.state.wait_for_next_state(cancelling_timeout)
+            # can't wait for the order state to fully refresh as it will require a portfolio lock which might
+            # be locked by this ask already (and create a deadlock)
+            # => be optimistic and consider refreshing state as end state
+            if order.is_refreshing_filling_state():
+                raise errors.FilledOrderError(f"Order is filled, it can't be cancelled. Order: {order}") from err
+            if order.is_refreshing_canceling_state():
+                self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
+                return True
         else:
+            # trigger forced refresh to get an update of the order
             previous_status = order.status
             await order.state.synchronize(force_synchronization=True)
             if previous_status != order.status:
-                # status changed: wait for state change
-                await order.state.wait_for_next_state(cancelling_timeout)
+                # don't wait for new state to avoid potential deadlock
+                if order.is_refreshing_filling_state():
+                    raise errors.FilledOrderError(f"Order is filled, it can't be cancelled. Order: {order}") from err
+                if order.is_refreshing_canceling_state():
+                    self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
+                    return True
         if order.is_cancelled():
             self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
             return True
