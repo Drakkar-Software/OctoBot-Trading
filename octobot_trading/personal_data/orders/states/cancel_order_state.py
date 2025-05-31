@@ -109,10 +109,14 @@ class CancelOrderState(order_state.OrderState):
             self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
 
             # update portfolio after close
-            async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-                self.ensure_not_cleared(self.order)
-                await self.order.exchange_manager.exchange_personal_data.\
-                    handle_portfolio_and_position_update_from_order(self.order, require_exchange_update=False)
+            # Note: never lock portfolio in state as this code can be executed in independent refresh tasks
+            # and trigger a deadlock with other tasks requiring portfolio.lock (such as a trading mode consumer
+            # when waiting for an order cancel while method is already running)
+            # Concurrency is can happen in real trading, in this case exchange will refuse orders if funds
+            # are missing due to outdated portfolio.
+            # This is better than creating a deadlock that will largely delay the trading mode execution
+            await self.order.exchange_manager.exchange_personal_data.\
+                handle_portfolio_and_position_update_from_order(self.order, require_exchange_update=False)
 
             # notify order cancelled
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(

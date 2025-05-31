@@ -117,10 +117,14 @@ class FillOrderState(order_state.OrderState):
                 # always make sure this order has not been cleared when the is a risk to avoid AttributeError
                 self.ensure_not_cleared(self.order)
                 # update portfolio with filled order and position if any
-                async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-                    self.ensure_not_cleared(self.order)
-                    await self.order.exchange_manager.exchange_personal_data.\
-                        handle_portfolio_and_position_update_from_order(self.order, expect_filled_order_update=True)
+                # Note: never lock portfolio in state as this code can be executed in independent refresh tasks
+                # and trigger a deadlock with other tasks requiring portfolio.lock (such as a trading mode consumer
+                # when waiting for an order cancel while method is already running)
+                # Concurrency is can happen in real trading, in this case exchange will refuse orders if funds
+                # are missing due to outdated portfolio.
+                # This is better than creating a deadlock that will largely delay the trading mode execution
+                await self.order.exchange_manager.exchange_personal_data.\
+                    handle_portfolio_and_position_update_from_order(self.order, expect_filled_order_update=True)
 
                 # notify order filled
                 await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
