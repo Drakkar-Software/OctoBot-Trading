@@ -368,13 +368,13 @@ class Order(util.Initializable):
     def get_total_fees(self, currency):
         return order_util.get_fees_for_currency(self.fee, currency)
 
-    def is_created(self):
+    def is_created(self) -> bool:
         return self.state is None or self.state.is_created()
 
-    def is_pending_creation(self):
+    def is_pending_creation(self) -> bool:
         return isinstance(self.state, orders_states.PendingCreationOrderState)
 
-    def is_open(self):
+    def is_open(self) -> bool:
         # also check is_initialized to avoid considering uncreated orders as open
         return (
             self.state is None or self.state.is_open() or (
@@ -382,30 +382,39 @@ class Order(util.Initializable):
             )
         )
 
-    def is_filled(self):
+    def is_filled(self) -> bool:
         if self.state is None:
             return self.status is enums.OrderStatus.FILLED
         return self.state.is_filled() or (self.state.is_closed() and self.status is enums.OrderStatus.FILLED)
 
-    def is_cancelled(self):
+    def is_cancelled(self) -> bool:
         if self.state is None:
             return self.status is enums.OrderStatus.CANCELED
         return self.state.is_canceled() or (self.state.is_closed() and self.status is enums.OrderStatus.CANCELED)
 
-    def is_cancelling(self):
+    def is_cancelling(self) -> bool:
         if self.state is None:
             return self.status is enums.OrderStatus.PENDING_CANCEL
         return self.state.state is enums.OrderStates.CANCELING or self.status is enums.OrderStatus.PENDING_CANCEL
 
-    def is_closed(self):
+    def is_closed(self) -> bool:
         if self.state is None:
             return self.status is enums.OrderStatus.CLOSED
         return self.state.is_closed() if self.state is not None else self.status is enums.OrderStatus.CLOSED
 
-    def is_refreshing(self):
+    def is_refreshing(self) -> bool:
         return self.state is not None and self.state.is_refreshing()
 
-    def can_be_edited(self):
+    def is_refreshing_filling_state(self) -> bool:
+        return self._is_refreshing_state(orders_states.FillOrderState)
+
+    def is_refreshing_canceling_state(self) -> bool:
+        return self._is_refreshing_state(orders_states.CancelOrderState)
+
+    def _is_refreshing_state(self, state_type) -> bool:
+        return self.is_refreshing() and isinstance(self.state, state_type)
+
+    def can_be_edited(self) -> bool:
         # orders that are not yet open or already open can be edited
         return self.state is None or (self.state.is_open() and not self.is_refreshing())
 
