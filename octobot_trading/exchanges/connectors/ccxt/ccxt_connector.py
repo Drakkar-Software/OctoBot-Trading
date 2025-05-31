@@ -669,12 +669,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             # can't set price in market orders
             price_to_use = None
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
-        return self.adapter.adapt_order(
-            await self.client.edit_order(
+        if self.exchange_manager.exchange.SUPPORTS_NATIVE_EDIT_ORDER:
+            edited_order = await self.client.edit_order(
                 exchange_order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params
-            ),
-            symbol=symbol, quantity=quantity
-        )
+            )
+        else:
+            # ccxt exchange edit order is disabled: force ccxt.exchange default edit order behavior
+            await self.client.cancel_order(exchange_order_id, symbol)
+            edited_order = await self.client.create_order(symbol, ccxt_order_type, side, quantity, price_to_use, params)
+        return self.adapter.adapt_order(edited_order, symbol=symbol, quantity=quantity)
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
