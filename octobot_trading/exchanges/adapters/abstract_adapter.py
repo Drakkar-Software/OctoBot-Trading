@@ -148,8 +148,9 @@ class AbstractAdapter:
 
     def fix_order(self, raw, **kwargs):
         # id is reserved for octobot managed id. store exchange id in EXCHANGE_ID
-        raw[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = \
-            raw.pop(enums.ExchangeConstantsOrderColumns.ID.value, None)
+        if enums.ExchangeConstantsOrderColumns.ID.value in raw:
+            raw[enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value] = \
+                raw.pop(enums.ExchangeConstantsOrderColumns.ID.value, None)
         # add generic logic if necessary
         return raw
 

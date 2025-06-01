@@ -22,6 +22,7 @@ import aiohttp_socks
 import typing
 import inspect
 import binascii
+import copy
 
 import octobot_commons.enums
 import octobot_commons.logging
@@ -596,52 +597,67 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             symbol=symbol, quantity=quantity
         )
 
-    @ccxt_client_util.converted_ccxt_common_errors
-    async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
-        if self.client.has.get("createStopMarketOrder"):
-            try:
-                return self.adapter.adapt_order(
-                    await self.client.createStopMarketOrder(
-                        symbol,
-                        side=side,
-                        amount=quantity,
-                        stopPrice=price,
-                        params=params,
-                    ),
-                    symbol=symbol, quantity=quantity
-                )
-            except ccxt.OrderImmediatelyFillable:
-                # make sure stop always stops
-                created_order = await self.exchange_manager.exchange.create_order(
-                    order_type=(enums.TraderOrderType.BUY_MARKET
-                                if side == enums.TradeOrderSide.BUY.value
-                                else enums.TraderOrderType.SELL_MARKET),
-                    symbol=symbol,
-                    quantity=decimal.Decimal(str(quantity)),
-                    price=decimal.Decimal(str(price)),
-                    current_price=decimal.Decimal(str(current_price))
-                )
-                created_order[enums.ExchangeConstantsOrderColumns.TYPE.value] = (
-                    enums.TraderOrderType.STOP_LOSS.value
-                    )
-                return created_order
-        raise NotImplementedError("create_market_stop_loss_order is not implemented")
+    def _add_stop_loss_price_param(self, params: dict, price: float):
+        params = params or {}
+        if ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value not in params:
+            params[ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value] = price
+        return params
+
+    def _add_edit_stop_loss_price_param(self, params: dict, price: float):
+        params = params or {}
+        if self.exchange_manager.exchange.STOP_LOSS_EDIT_PRICE_PARAM not in params:
+            params[self.exchange_manager.exchange.STOP_LOSS_EDIT_PRICE_PARAM] = price
+        return params
 
     @ccxt_client_util.converted_ccxt_common_errors
-    async def create_limit_stop_loss_order(self, symbol, quantity, price, stop_price, side, params=None) -> dict:
-        if self.client.has.get("createStopLimitOrder"):
+    async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        try:
+            params = self._add_stop_loss_price_param(params, price)
             return self.adapter.adapt_order(
-                await self.client.create_stop_limit_order(
+                await self.client.create_order(
                     symbol,
-                    side=side,
-                    amount=quantity,
-                    price=price,
-                    stopPrice=stop_price,
+                    enums.TradeOrderType.MARKET.value,
+                    side,
+                    quantity,
                     params=params,
                 ),
                 symbol=symbol, quantity=quantity
             )
-        raise NotImplementedError("create_limit_stop_loss_order is not implemented")
+        except ccxt.NotSupported as err:
+            raise NotImplementedError(f"create_market_stop_loss_order is not supported {err}")
+        except ccxt.OrderImmediatelyFillable:
+            # make sure stop always stops
+            created_order = await self.exchange_manager.exchange.create_order(
+                order_type=(enums.TraderOrderType.BUY_MARKET
+                            if side == enums.TradeOrderSide.BUY.value
+                            else enums.TraderOrderType.SELL_MARKET),
+                symbol=symbol,
+                quantity=decimal.Decimal(str(quantity)),
+                price=decimal.Decimal(str(price)),
+                current_price=decimal.Decimal(str(current_price))
+            )
+            created_order[enums.ExchangeConstantsOrderColumns.TYPE.value] = (
+                enums.TraderOrderType.STOP_LOSS.value
+                )
+            return created_order
+
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def create_limit_stop_loss_order(self, symbol, quantity, price, stop_price, side, params=None) -> dict:
+        try:
+            params = self._add_stop_loss_price_param(params, stop_price)
+            return self.adapter.adapt_order(
+                await self.client.create_order(
+                    symbol,
+                    enums.TradeOrderType.LIMIT.value,
+                    side,
+                    quantity,
+                    price=price,
+                    params=params,
+                ),
+                symbol=symbol, quantity=quantity
+            )
+        except ccxt.NotSupported as err:
+            raise NotImplementedError(f"create_limit_stop_loss_order is not supported {err}")
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
@@ -664,20 +680,46 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                          quantity: float, price: float, stop_price: float = None, side: str = None,
                          current_price: float = None, params: dict = None):
         ccxt_order_type = self.get_ccxt_order_type(order_type)
+        local_params = copy.copy(params)
+        if order_type == enums.TraderOrderType.STOP_LOSS:
+            local_params = self._add_edit_stop_loss_price_param(local_params, stop_price or price)
+        elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
+            local_params = self._add_edit_stop_loss_price_param(local_params, stop_price)
+        if self.exchange_manager.exchange.supports_native_edit_order(order_type):
+            price_to_use = price
+            if ccxt_order_type == enums.TradeOrderType.MARKET.value:
+                # can't set price in market orders
+                price_to_use = None
+            edited_order = await self.client.edit_order(
+                exchange_order_id, symbol, ccxt_order_type, side, quantity, price_to_use, local_params
+            )
+            if edited_order is not None:
+                # sometimes exchanges don't return the edited order details (ex: coinbase)
+                # => fill it with what we know and verify_order will fetch the rest
+                if not edited_order.get(ecoc.ID.value):
+                    edited_order[ecoc.ID.value] = exchange_order_id
+                if not edited_order.get(ecoc.SYMBOL.value):
+                    edited_order[ecoc.SYMBOL.value] = symbol
+        else:
+            # ccxt exchange edit order is disabled: force ccxt.exchange default edit order behavior
+            edited_order = await self._edit_order_by_cancel_and_create(
+                exchange_order_id, symbol, order_type, side, quantity, price, params
+            )
+        return self.adapter.adapt_order(edited_order, symbol=symbol, quantity=quantity)
+
+    async def _edit_order_by_cancel_and_create(
+        self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType,
+        side: str, quantity: float, price: float, params: dict
+    ) -> dict:
+        await self.client.cancel_order(exchange_order_id, symbol)
         price_to_use = price
+        local_params = copy.copy(params)
+        ccxt_order_type = self.get_ccxt_order_type(order_type)
         if ccxt_order_type == enums.TradeOrderType.MARKET.value:
             # can't set price in market orders
             price_to_use = None
-        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
-        if self.exchange_manager.exchange.SUPPORTS_NATIVE_EDIT_ORDER:
-            edited_order = await self.client.edit_order(
-                exchange_order_id, symbol, ccxt_order_type, side, quantity, price_to_use, params
-            )
-        else:
-            # ccxt exchange edit order is disabled: force ccxt.exchange default edit order behavior
-            await self.client.cancel_order(exchange_order_id, symbol)
-            edited_order = await self.client.create_order(symbol, ccxt_order_type, side, quantity, price_to_use, params)
-        return self.adapter.adapt_order(edited_order, symbol=symbol, quantity=quantity)
+            local_params = self._add_stop_loss_price_param(local_params, price)
+        return await self.client.create_order(symbol, ccxt_order_type, side, quantity, price_to_use, local_params)
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
