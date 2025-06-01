@@ -112,6 +112,29 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     MARGIN_MODE = "marginMode"
 
 
+class ExchangeOrderCCXTUnifiedParams(enum.Enum):
+    # see https://docs.ccxt.com/ for details
+    REDUCE_ONLY = "reduceOnly"  # bool
+
+    # when creating orders
+    STOP_LOSS_PRICE = "stopLossPrice" # float
+    TAKE_PROFIT_PRICE = "takeProfitPrice" # float
+
+    # when editing orders
+    STOP_PRICE = "stopPrice"    # float
+
+    # for trigger orders
+    TRIGGER_DIRECTION = "triggerDirection"    # ascending/descending
+    TRIGGER_PRICE = "triggerPrice"    # float
+    STOP_LOSS = "stopLoss"    # dict with price and triggerPrice
+    TAKE_PROFIT = "takeProfit"  # dict with  price and triggerPrice
+
+    # for trailing orders
+    TRAILING_PERCENT = "trailingPercent" # float [0:100]
+    TRAILING_AMOUNT = "trailingAmount"  # float
+    TRAILING_TRIGGER_PRICE = "trailingTriggerPrice"    # float
+
+
 class ExchangeWrapperLibs(enum.Enum):
     ASYNC_CCXT = "async_ccxt"
     CCXT = "ccxt"

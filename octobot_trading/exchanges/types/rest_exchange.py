@@ -34,6 +34,7 @@ import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.exchanges.util as exchanges_util
 import octobot_trading.exchanges.connectors.ccxt.ccxt_connector as ccxt_connector
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data.contracts as contracts
@@ -69,8 +70,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
     SUPPORTS_SET_MARGIN_TYPE = True  # set False when there is no API to switch between cross and isolated margin types
     # set False when the exchange refuses to change margin type when an associated position is open
     SUPPORTS_SET_MARGIN_TYPE_ON_OPEN_POSITIONS = True
-    # set False when default edit_order can't be used and order should always be canceled and recreated instead
-    SUPPORTS_NATIVE_EDIT_ORDER = True
     EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
     # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
     REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
@@ -81,6 +80,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     IS_SKIPPING_EMPTY_CANDLES_IN_OHLCV_FETCH = False    # set True when the exchange is known for not returning any
     # candle when no traded happened during a candle time frame. In this case, a missing candle in backtesting won't
     # trigger an error
+    # Name of the price param to give ccxt to edit a stop loss
+    STOP_LOSS_EDIT_PRICE_PARAM = ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -201,6 +202,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
                            reduce_only: bool = False, params: dict = None) -> typing.Optional[dict]:
+        if self.exchange_manager.is_future:
+            # on futures exchange expects, quantity in contracts: convert quantity into contracts
+            quantity = quantity / self.get_contract_size(symbol)
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             with self.creating_order(side, symbol, quantity, price):
                 created_order = await self._create_order_with_retry(
@@ -218,6 +222,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
                          params: dict = None):
         # Note: on most exchange, this implementation will just replace the order by cancelling the one
         # which id is given and create a new one
+        if self.exchange_manager.is_future:
+            # on futures exchange expects, quantity in contracts: convert quantity into contracts
+            quantity = quantity / self.get_contract_size(symbol)
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             float_quantity = float(quantity)
             float_price = float(price)
@@ -1025,6 +1032,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     def supports_trading_type(self, symbol, trading_type: enums.FutureContractType):
         return self.connector.supports_trading_type(symbol, trading_type)
+
+    def supports_native_edit_order(self, order_type: enums.TraderOrderType) -> bool:
+        # return False when default edit_order can't be used and order should always be canceled and recreated instead
+        return True
 
     def is_linear_symbol(self, symbol):
         """
