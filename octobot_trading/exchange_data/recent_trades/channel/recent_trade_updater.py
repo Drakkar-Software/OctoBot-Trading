@@ -34,6 +34,7 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
         self.refresh_time = RecentTradeUpdater.RECENT_TRADE_REFRESH_TIME
 
     async def init_recent_trades(self):
+        pair = None
         try:
             for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                 recent_trades = await self.channel.exchange_manager.exchange.\
@@ -45,7 +46,7 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
             self.logger.exception(
                 e,
                 True,
-                f"Fail to initialize recent trades : {html_util.get_html_summary_if_relevant(e)}"
+                f"Fail to initialize {pair} recent trades : {html_util.get_html_summary_if_relevant(e)}"
             )
 
     async def start(self):
