@@ -200,10 +200,10 @@ class OrdersUpdater(orders_channel.OrdersProducer):
 
         if raw_order is not None:
             self.logger.info(f"Received update for {order} on {exchange_name}: {raw_order}")
-
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                 order.exchange_order_id, raw_order, should_notify=should_notify
             )
+            self.logger.info(f"Completed update for {order} on {exchange_name}")
         else:
             self.logger.info(f"Can't received update for {order} on {exchange_name}: received order is None")
 

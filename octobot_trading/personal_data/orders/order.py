@@ -405,14 +405,23 @@ class Order(util.Initializable):
     def is_refreshing(self) -> bool:
         return self.state is not None and self.state.is_refreshing()
 
+    def is_pending(self) -> bool:
+        return self.state is not None and self.state.is_pending()
+
     def is_refreshing_filling_state(self) -> bool:
         return self._is_refreshing_state(orders_states.FillOrderState)
 
     def is_refreshing_canceling_state(self) -> bool:
         return self._is_refreshing_state(orders_states.CancelOrderState)
 
+    def is_pending_cancel_state(self) -> bool:
+        return self._is_pending_state(orders_states.CancelOrderState)
+
     def _is_refreshing_state(self, state_type) -> bool:
         return self.is_refreshing() and isinstance(self.state, state_type)
+
+    def _is_pending_state(self, state_type) -> bool:
+        return self.is_pending() and isinstance(self.state, state_type)
 
     def can_be_edited(self) -> bool:
         # orders that are not yet open or already open can be edited
