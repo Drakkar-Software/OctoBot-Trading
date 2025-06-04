@@ -465,6 +465,7 @@ class Trader(util.Initializable):
             order.is_waiting_for_chained_trigger = False
             return success
         order_status = None
+        is_order_refreshing = False
         # if real order: cancel on exchange
         if not self.simulate and order.is_active and not order.is_self_managed():
             try:
@@ -496,6 +497,7 @@ class Trader(util.Initializable):
             except Exception as err:
                 self.logger.exception(err, True, f"Failed to cancel order {order}")
                 return False
+            is_order_refreshing = order.is_refreshing()
             if order_status is enums.OrderStatus.CANCELED:
                 order.status = octobot_trading.enums.OrderStatus.CANCELED
                 self.logger.debug(f"Successfully cancelled order {order}")
@@ -505,11 +507,14 @@ class Trader(util.Initializable):
         else:
             order.status = octobot_trading.enums.OrderStatus.CANCELED
 
-        await order.on_cancel(force_cancel=order.status is octobot_trading.enums.OrderStatus.CANCELED,
-                              is_from_exchange_data=False,
-                              ignored_order=ignored_order)
-        if wait_for_cancelling and order.state is not None and order.state.is_pending():
-            await self._wait_for_order_cancel(order, cancelling_timeout)
+        if not is_order_refreshing:
+            # don't override state if order is already refreshing (most likely from open orders updater)
+            await order.on_cancel(force_cancel=order.status is octobot_trading.enums.OrderStatus.CANCELED,
+                                  is_from_exchange_data=False,
+                                  ignored_order=ignored_order)
+        if wait_for_cancelling and (order.is_refreshing() or order.is_pending()):
+            # Don't wait for new state to avoid potential deadlock. Will raise if cancel is not in process
+            self._ensure_probably_canceled_order(order, None)
         return True
 
     async def _handle_order_cancel_error(self, order, err, wait_for_cancelling, cancelling_timeout):
@@ -531,10 +536,7 @@ class Trader(util.Initializable):
             # can't wait for the order state to fully refresh as it will require a portfolio lock which might
             # be locked by this ask already (and create a deadlock)
             # => be optimistic and consider refreshing state as end state
-            if order.is_refreshing_filling_state():
-                raise errors.FilledOrderError(f"Order is filled, it can't be cancelled. Order: {order}") from err
-            if order.is_refreshing_canceling_state():
-                self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
+            if self._ensure_probably_canceled_order(order, err):
                 return True
         else:
             # trigger forced refresh to get an update of the order
@@ -542,17 +544,14 @@ class Trader(util.Initializable):
             await order.state.synchronize(force_synchronization=True)
             if previous_status != order.status:
                 # don't wait for new state to avoid potential deadlock
-                if order.is_refreshing_filling_state():
-                    raise errors.FilledOrderError(f"Order is filled, it can't be cancelled. Order: {order}") from err
-                if order.is_refreshing_canceling_state():
-                    self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
+                if self._ensure_probably_canceled_order(order, err):
                     return True
         if order.is_cancelled():
             self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
             return True
         if order.is_cancelling():
-            if wait_for_cancelling:
-                await self._wait_for_order_cancel(order, cancelling_timeout)
+            # don't wait for new state to avoid potential deadlock, just check that order is not filling
+            self._ensure_probably_canceled_order(order, err)
             return True
         elif order.is_open():
             if isinstance(err, errors.OrderNotFoundOnCancelError):
@@ -573,6 +572,20 @@ class Trader(util.Initializable):
             raise errors.OrderCancelError(
                 f"Can't cancel order and unknown post sync order state for order: {order}."
             ) from err
+
+    def _ensure_probably_canceled_order(self, order, err: typing.Optional[Exception]) -> bool:
+        if order.is_refreshing_filling_state():
+            filled_err = errors.FilledOrderError(f"Order is filled, it can't be cancelled. Order: {order}")
+            if err is None:
+                raise filled_err
+            raise filled_err from err
+        if order.is_refreshing_canceling_state():
+            self.logger.debug(f"Tried to cancel an already cancelled order. Order: {order}")
+            return True
+        if order.is_pending_cancel_state():
+            self.logger.debug(f"Tried to cancel a pending cancel order. Order: {order}")
+            return True
+        return False
 
     async def cancel_all_orders(
         self,

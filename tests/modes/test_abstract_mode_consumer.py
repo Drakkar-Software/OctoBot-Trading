@@ -316,7 +316,6 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
 
         _origin_handle_portfolio_and_position_update_from_order_calls = []
         _synchronize_with_exchange_calls = []
-        origin_handle_portfolio_and_position_update_from_order = exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order
         assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
         with mock.patch.object(
             consumer, "create_new_orders", mock.AsyncMock(side_effect=_create_new_orders)
@@ -393,7 +392,6 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
 
         _origin_handle_portfolio_and_position_update_from_order_calls = []
         _synchronize_with_exchange_calls = []
-        origin_handle_portfolio_and_position_update_from_order = exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order
         assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
         with mock.patch.object(
             consumer, "create_new_orders", mock.AsyncMock(side_effect=_create_new_orders)
@@ -420,6 +418,155 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
             consumer.previous_call_error_per_symbol.clear()
         assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == []   # order no more open
 
+
+        # 5. no concurrent task: open_order ends up in PENDING_CANCEL state after exchange.cancel() call
+        #   order.on_cancel() and don't dead lock in cancelled order state
+        #   => create_order_if_possible (which has portfolio lock) will not wait for cancel order state terminate
+        open_order = await _create_initialized_open_order(exchange_manager, symbol)
+        open_order.simulated = False    # force real order simulation
+        assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
+        completed_tasks.clear()
+
+        async def _synchronize_with_exchange(*_, **__):
+            # will not set order in final state => don't do anything, order stays pending
+            _synchronize_with_exchange_calls.append(1)
+            _synchronize_with_exchange_calls.append(1)
+
+        async def _create_new_orders(*_, **__):
+            # for now order is open
+            assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
+            assert open_order.status == octobot_trading.enums.OrderStatus.OPEN
+            assert isinstance(open_order.state, personal_data.OpenOrderState)
+            # order cancel will end up in PENDING_CANCEL
+            await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is True
+            # order now in pending cancel state
+            assert isinstance(open_order.state, personal_data.CancelOrderState)
+            assert open_order.is_pending_cancel_state() is True
+            for _ in range(10):
+                # wait a few cycles to make sure handle_portfolio_and_position_update_from_order_calls
+                # really don't get called (locked by consumer lock
+                await asyncio_tools.wait_asyncio_next_cycle()
+            # _synchronize_with_exchange_calls started and completed
+            assert _synchronize_with_exchange_calls == [1, 1]
+
+        async def _on_cancel(*args, **kwargs):
+            await origin_on_cancel(*args, **kwargs)
+
+
+        _synchronize_with_exchange_calls = []
+        _origin_handle_portfolio_and_position_update_from_order_calls = []
+        origin_on_cancel = open_order.on_cancel
+        assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
+        with mock.patch.object(
+            consumer, "create_new_orders", mock.AsyncMock(side_effect=_create_new_orders)
+        ) as _create_new_orders_mock, mock.patch.object(
+            open_order, "on_cancel", mock.AsyncMock(side_effect=_on_cancel)
+        ) as _on_cancel_mock, \
+        mock.patch.object(
+            exchange_manager.exchange_personal_data, "handle_portfolio_and_position_update_from_order", mock.AsyncMock()
+        ) as handle_portfolio_and_position_update_from_order_mock, \
+        mock.patch.object(
+            personal_data.CancelOrderState, "_synchronize_with_exchange", mock.AsyncMock(side_effect=_synchronize_with_exchange)
+        ) as _synchronize_with_exchange_mock, \
+        mock.patch.object(
+            exchange_manager.exchange, "cancel_order", mock.AsyncMock(return_value=octobot_trading.enums.OrderStatus.PENDING_CANCEL)
+        ) as cancel_order_mock:
+            # doesn't create a concurrent cancel order task let, it will be created from then on_cancel() call
+            await asyncio.gather(_create_order_if_possible_task(), _timeout_task(timeout))
+            _create_new_orders_mock.assert_called_once_with(symbol, -1, octobot_trading.enums.EvaluatorStates.VERY_LONG.value)
+            cancel_order_mock.assert_called_once()
+            _on_cancel_mock.assert_called_once()
+            handle_portfolio_and_position_update_from_order_mock.assert_not_called()    # call has been skipped for the test
+            _synchronize_with_exchange_mock.assert_called_once()
+            # ensure no error was raised
+            assert symbol not in consumer.previous_call_error_per_symbol
+            consumer.previous_call_error_per_symbol.clear()
+        assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == []   # order no more open
+
+
+        # 6. concurrent task: open_order ends up in PENDING_CANCEL state after exchange.cancel() call
+        #   because order is already refreshing (ex: from open orders updater)
+        #   => create_order_if_possible (which has portfolio lock) will not wait for cancel order state terminate
+        open_order = await _create_initialized_open_order(exchange_manager, symbol)
+        open_order.simulated = False    # force real order simulation
+        assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
+        completed_tasks.clear()
+
+        async def _synchronize_with_exchange(*_, **__):
+            # will not set order in final state => don't do anything, order stays pending
+            _synchronize_with_exchange_calls.append(1)
+            for _ in range(10):
+                # wait a few cycles to let _cancel_order trading_mode.cancel_order
+                await asyncio_tools.wait_asyncio_next_cycle()
+            _synchronize_with_exchange_calls.append(1)
+
+        async def _create_new_orders(*_, **__):
+            assert _origin_handle_portfolio_and_position_update_from_order_calls == []
+            # for now order is open
+            assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
+            assert open_order.status == octobot_trading.enums.OrderStatus.OPEN
+            assert isinstance(open_order.state, personal_data.OpenOrderState)
+            # order cancel will end up in PENDING_CANCEL
+            await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is True
+            # _synchronize_with_exchange_calls is still waiting
+            assert _synchronize_with_exchange_calls == [1]
+            assert open_order.is_refreshing() is True
+            # order now in pending cancel state
+            assert isinstance(open_order.state, personal_data.CancelOrderState)
+            assert open_order.is_refreshing_canceling_state() is True
+            for _ in range(10):
+                # wait a few cycles to make sure _origin_handle_portfolio_and_position_update_from_order_calls
+                # really don't get called (locked by consumer lock
+                await asyncio_tools.wait_asyncio_next_cycle()
+            # _delayed_handle_portfolio_and_position_update_from_order is waiting for consumer to release lock
+            assert _origin_handle_portfolio_and_position_update_from_order_calls == []
+            # _synchronize_with_exchange_calls is now completed
+            assert _synchronize_with_exchange_calls == [1, 1]
+
+        async def _on_cancel(*args, **kwargs):
+            await origin_on_cancel(*args, **kwargs)
+
+        async def _cancel_order(*args, **kwargs):
+            # simulate an on_cancel call from somewhere else => triggers a canceling state
+            open_order.status = octobot_trading.enums.OrderStatus.PENDING_CANCEL
+            asyncio.create_task(open_order.on_cancel()) # will leave order in refreshing
+            await asyncio_tools.wait_asyncio_next_cycle()   # let task run once (trigger refreshing state)
+            return octobot_trading.enums.OrderStatus.PENDING_CANCEL
+
+        _origin_handle_portfolio_and_position_update_from_order_calls = []
+        _synchronize_with_exchange_calls = []
+        origin_on_cancel = open_order.on_cancel
+        origin_ensure_probably_canceled_order = exchange_manager.trader._ensure_probably_canceled_order
+        assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
+        with mock.patch.object(
+            consumer, "create_new_orders", mock.AsyncMock(side_effect=_create_new_orders)
+        ) as _create_new_orders_mock, mock.patch.object(
+            open_order, "on_cancel", mock.AsyncMock(side_effect=_on_cancel)
+        ) as _on_cancel_mock, \
+        mock.patch.object(
+            exchange_manager.exchange_personal_data, "handle_portfolio_and_position_update_from_order", mock.AsyncMock()
+        ) as handle_portfolio_and_position_update_from_order_mock, \
+        mock.patch.object(
+            personal_data.CancelOrderState, "_synchronize_with_exchange", mock.AsyncMock(side_effect=_synchronize_with_exchange)
+        ) as _synchronize_with_exchange_mock, \
+        mock.patch.object(
+            exchange_manager.exchange, "cancel_order", mock.AsyncMock(side_effect=_cancel_order)
+        ) as cancel_order_mock, \
+        mock.patch.object(
+            exchange_manager.trader, "_ensure_probably_canceled_order", mock.AsyncMock(side_effect=origin_ensure_probably_canceled_order)
+        ) as _ensure_probably_canceled_order_mock:
+            # doesn't create a concurrent cancel order task let, it will be created from then on_cancel() call
+            await asyncio.gather(_create_order_if_possible_task(), _timeout_task(timeout))
+            _create_new_orders_mock.assert_called_once_with(symbol, -1, octobot_trading.enums.EvaluatorStates.VERY_LONG.value)
+            cancel_order_mock.assert_called_once()
+            _on_cancel_mock.assert_called_once()
+            handle_portfolio_and_position_update_from_order_mock.assert_not_called()    # call has been skipped for the test
+            _synchronize_with_exchange_mock.assert_called_once()
+            _ensure_probably_canceled_order_mock.assert_called_once()
+            # ensure no error was raised
+            assert symbol not in consumer.previous_call_error_per_symbol
+            consumer.previous_call_error_per_symbol.clear()
+        assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == []   # order no more open
 
 
 async def _create_initialized_open_order(exchange_manager, symbol):
