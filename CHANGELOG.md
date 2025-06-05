@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.186] - 2025-06-05
+### Updated
+[Orders] add ensure_orders_limit
+[Exchange] add get_max_orders_count
+
 ## [2.4.185] - 2025-06-04
 ### Updated
 [Exchanges] add supports_api_leverage_update
