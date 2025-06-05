@@ -1138,7 +1138,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def fetch_exchange_config(
         cls, exchange_config_by_exchange: typing.Optional[dict[str, dict]], exchange_manager
     ):
-        raise NotImplementedError("fetch_exchange_config")
+        raise NotImplementedError("fetch_exchange_config is not implemented")
+
+    @classmethod
+    def get_custom_url_config(cls, tentacle_config: dict, exchange_name: str) -> dict:
+        raise NotImplementedError("get_custom_url_config is not implemented")
 
     @classmethod
     def supported_autofill_exchanges(cls, tentacle_config):
