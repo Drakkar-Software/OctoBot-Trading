@@ -107,7 +107,7 @@ class TestHollaexRealExchangeTester(RealExchangeTester):
         await super().test_get_historical_ohlcv()
 
     async def test_get_kline_price(self):
-        kline_price = await self.get_kline_price()
+        kline_price = await self.get_kline_price(time_frame=TimeFrames.ONE_HOUR)
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
         kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
