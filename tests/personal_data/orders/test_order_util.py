@@ -22,6 +22,7 @@ import pytest
 import octobot_trading.api as api
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.errors
 import octobot_trading.personal_data as personal_data
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.order_factory as order_factory
@@ -940,3 +941,56 @@ def test_get_split_orders_count_and_increment():
         symbol_market,
         False
     ) == (0, decimal.Decimal('0'))
+
+
+def test_ensure_orders_limit():
+    symbol = "BTC/USDT"
+    exchange_manager = mock.Mock(
+        exchange = mock.Mock(
+            get_max_orders_count = mock.Mock(return_value=5),
+        ),
+        exchange_personal_data = mock.Mock(
+            orders_manager = mock.Mock(
+                get_open_orders = mock.Mock(
+                    return_value=[
+                        mock.Mock(order_type=enums.TraderOrderType.BUY_LIMIT),
+                        mock.Mock(order_type=enums.TraderOrderType.SELL_LIMIT),
+                        mock.Mock(order_type=enums.TraderOrderType.STOP_LOSS),
+                        mock.Mock(order_type=enums.TraderOrderType.STOP_LOSS),
+                        mock.Mock(order_type=enums.TraderOrderType.STOP_LOSS),
+                    ],
+                )
+            )
+        )
+    )
+
+    # do not raise
+    order_util.ensure_orders_limit(exchange_manager, symbol, [])
+    assert exchange_manager.exchange.get_max_orders_count.call_count == 2
+    assert exchange_manager.exchange.get_max_orders_count.mock_calls[0].args == (
+        symbol, enums.TraderOrderType.SELL_LIMIT
+    )
+    assert exchange_manager.exchange.get_max_orders_count.mock_calls[1].args == (
+        symbol, enums.TraderOrderType.STOP_LOSS
+    )
+    exchange_manager.exchange_personal_data.orders_manager.get_open_orders.assert_called_once_with(
+        symbol=symbol, active=None
+    )
+
+    # ok added limit orders
+    order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.BUY_LIMIT]*2)
+    order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.BUY_LIMIT]*3)
+    # too many added limit orders
+    with pytest.raises(octobot_trading.errors.MaxOpenOrderReachedForSymbolError):
+        order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.BUY_LIMIT]*4)
+    with pytest.raises(octobot_trading.errors.MaxOpenOrderReachedForSymbolError):
+        order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.BUY_LIMIT]*10)
+
+    # ok added stop orders
+    order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.STOP_LOSS])
+    order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.STOP_LOSS_LIMIT]*2)
+    # too many added stop orders
+    with pytest.raises(octobot_trading.errors.MaxOpenOrderReachedForSymbolError):
+        order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.STOP_LOSS]*3)
+    with pytest.raises(octobot_trading.errors.MaxOpenOrderReachedForSymbolError):
+        order_util.ensure_orders_limit(exchange_manager, symbol, [enums.TraderOrderType.STOP_LOSS_LIMIT]*10)

@@ -517,6 +517,28 @@ def is_take_profit_order(order_type: enums.TraderOrderType):
     ]
 
 
+def ensure_orders_limit(exchange_manager, symbol, added_orders: list[enums.TraderOrderType]):
+    max_limit_orders = exchange_manager.exchange.get_max_orders_count(symbol, enums.TraderOrderType.SELL_LIMIT)
+    max_stop_orders = exchange_manager.exchange.get_max_orders_count(symbol, enums.TraderOrderType.STOP_LOSS)
+    open_orders = exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+        symbol=symbol, active=None  # consider both active and inactive orders of this symbol
+    )
+    stop_orders_count = len([o for o in open_orders if is_stop_order(o.order_type)]) + len(
+        [o_type for o_type in added_orders if is_stop_order(o_type)]
+    )
+    limit_orders_count = len(open_orders) + len(added_orders) - stop_orders_count
+    if limit_orders_count > max_limit_orders:
+        raise errors.MaxOpenOrderReachedForSymbolError(
+            f"{symbol} max open limit orders reached: "
+            f"limit = {max_limit_orders}, orders count = {limit_orders_count}"
+        )
+    if stop_orders_count > max_stop_orders:
+        raise errors.MaxOpenOrderReachedForSymbolError(
+            f"{symbol} max open stop orders reached: "
+            f"limit = {max_stop_orders}, orders count = {stop_orders_count}"
+        )
+
+
 def get_trade_order_type(order_type: enums.TraderOrderType) -> enums.TradeOrderType:
     if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET):
         return enums.TradeOrderType.MARKET

@@ -63,6 +63,12 @@ class UntradableSymbolError(OrderCreationError):
     """
 
 
+class MaxOpenOrderReachedForSymbolError(OrderCreationError):
+    """
+    Raised when an order can't be created because the maximum amount of orders of this time has been reached
+    """
+
+
 class OrderEditError(OctoBotExchangeError):
     """
     Raised upon a failed order edition
