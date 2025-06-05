@@ -317,9 +317,9 @@ class RealExchangeTester:
         end = self.get_time_after_time_frames(start, self.HISTORICAL_CANDLES_TO_FETCH_COUNT)
         return start, end
 
-    async def get_kline_price(self, **kwargs):
+    async def get_kline_price(self, time_frame=None, **kwargs):
         async with self.get_exchange_manager() as exchange_manager:
-            return await exchange_manager.exchange.get_kline_price(self.SYMBOL, self.TIME_FRAME, **kwargs)
+            return await exchange_manager.exchange.get_kline_price(self.SYMBOL, time_frame or self.TIME_FRAME, **kwargs)
 
     async def get_order_book(self, **kwargs):
         async with self.get_exchange_manager() as exchange_manager:
