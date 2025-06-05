@@ -66,23 +66,39 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
 
         # init _forced_market_statuses when allowed
         if self.exchange_manager.use_cached_markets:
-            self._init_forced_market_statuses()
+            additional_client_config = await self._get_additional_client_config()
+            self._init_forced_market_statuses(additional_client_config)
 
     def get_adapter_class(self, adapter_class):
         return adapter_class or exchange_simulator_adapter.ExchangeSimulatorAdapter
 
-    def _init_forced_market_statuses(self):
+    def _init_forced_market_statuses(self, additional_client_config):
         def market_filter(market):
             return market[enums.ExchangeConstantsMarketStatusColumns.SYMBOL.value] in self.symbols
 
         self._forced_market_statuses = ccxt_client_simulation.parse_markets(
-            self._get_exchange_class_rest_name(), market_filter
+            self._get_exchange_class_rest_name(), additional_client_config, market_filter
         )
 
     def _get_exchange_class_rest_name(self):
         if self.exchange_manager.exchange.exchange_tentacle_class:
             return self.exchange_manager.exchange.exchange_tentacle_class.get_rest_name(self.exchange_manager)
         return self.exchange_manager.exchange_class_string
+
+    async def _get_additional_client_config(self) -> dict:
+        if (
+            self.exchange_manager.exchange.exchange_tentacle_class
+            and self.exchange_manager.exchange.exchange_tentacle_class.HAS_FETCHED_DETAILS
+        ):
+            await self.exchange_manager.exchange.exchange_tentacle_class.fetch_exchange_config(
+                self.exchange_manager.exchange.exchange_config_by_exchange, self.exchange_manager
+            )
+            return self.exchange_manager.exchange.exchange_tentacle_class.get_custom_url_config(
+                self.exchange_manager.exchange.exchange_config_by_exchange.get(
+                    self.exchange_manager.exchange.exchange_tentacle_class.__name__, {}
+                ), self.exchange_manager.exchange_name
+            )
+        return {}
 
     def should_adapt_market_statuses(self) -> bool:
         return self.exchange_manager.use_cached_markets

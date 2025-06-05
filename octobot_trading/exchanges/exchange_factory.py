@@ -29,7 +29,7 @@ async def create_exchanges(exchange_manager, exchange_config_by_exchange: typing
 
     if exchange_manager.is_backtesting:
         # simulated : create exchange simulator instance
-        await create_simulated_exchange(exchange_manager)
+        await create_simulated_exchange(exchange_manager, exchange_config_by_exchange)
         exchange_manager.load_constants()
     else:
         # real : create a rest or websocket exchange instance
@@ -139,9 +139,10 @@ async def _create_rest_exchange(
         raise Exception(f"Can't create an exchange instance that match the exchange configuration ({exchange_manager})")
 
 
-async def create_simulated_exchange(exchange_manager):
+async def create_simulated_exchange(exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
     exchange_manager.exchange = exchanges.ExchangeSimulator(
-        exchange_manager.config, exchange_manager, exchange_manager.backtesting
+        exchange_manager.config, exchange_manager, exchange_manager.backtesting,
+        exchange_config_by_exchange=exchange_config_by_exchange
     )
 
     await exchange_manager.exchange.initialize()

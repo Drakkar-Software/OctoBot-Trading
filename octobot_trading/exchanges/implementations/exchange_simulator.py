@@ -34,6 +34,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
         self.exchange_importers = []
         self.exchange_tentacle_class = None
         self.exchange_tentacle = None
+        self.exchange_config_by_exchange = exchange_config_by_exchange
         super().__init__(config, exchange_manager, exchange_config_by_exchange)
 
     def _create_connector(self, config, exchange_manager, connector_class):
@@ -46,7 +47,8 @@ class ExchangeSimulator(rest_exchange.RestExchange):
 
     async def initialize_impl(self):
         self.exchange_tentacle_class = exchange_util.get_rest_exchange_class(
-            self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config, None
+            self.exchange_manager.exchange_name, self.exchange_manager.tentacles_setup_config,
+            self.exchange_config_by_exchange
         )
         await super().initialize_impl()
         self.exchange_importers = self.connector.exchange_importers
@@ -61,7 +63,7 @@ class ExchangeSimulator(rest_exchange.RestExchange):
             # initialize a locale exchange_tentacle to be able to access adapters for market statuses
             if self.exchange_tentacle_class:
                 self.exchange_tentacle = self.exchange_tentacle_class(
-                    self.exchange_manager.config, self.exchange_manager, None
+                    self.exchange_manager.config, self.exchange_manager, self.exchange_config_by_exchange
                 )
         finally:
             self.exchange_manager.ignore_config = origin_ignore_config
