@@ -559,6 +559,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
             return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
         return market_status
 
+    def get_max_orders_count(self, symbol: str, order_type: enums.TraderOrderType) -> int:
+        return (
+            constants.DEFAULT_MAX_STOP_ORDERS_COUNT if orders.is_stop_order(order_type)
+            else constants.DEFAULT_MAX_DEFAULT_ORDERS_COUNT
+        )
+
     def _apply_contract_size(self, value, contract_size):
         if value is None:
             return value
