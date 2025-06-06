@@ -599,8 +599,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def _add_stop_loss_price_param(self, params: dict, price: float):
         params = params or {}
-        if ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value not in params:
-            params[ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value] = price
+        if self.exchange_manager.exchange.STOP_LOSS_CREATE_PRICE_PARAM not in params:
+            params[self.exchange_manager.exchange.STOP_LOSS_CREATE_PRICE_PARAM] = price
         return params
 
     def _add_edit_stop_loss_price_param(self, params: dict, price: float):
