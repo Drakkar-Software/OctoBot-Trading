@@ -399,6 +399,13 @@ class ExchangeConstantsMarketPropertyColumns(enum.Enum):
     TAKER = "taker"  # trading
     MAKER = "maker"  # trading
     FEE = "fee"  # withdraw
+    FEE_SIDE = "feeSide"  # pay fees in the currency you give or get
+
+
+class ExchangeFeeSides(enum.Enum):
+    GET = "get"  # the fee is always in the currency you get
+    GIVE = "give"  # the fee is always in the currency you give
+    QUOTE = "quote"  # the fee is always in quote currency
 
 
 class ExchangeConstantsLeveragePropertyColumns(enum.Enum):

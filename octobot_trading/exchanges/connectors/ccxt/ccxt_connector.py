@@ -889,19 +889,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         raise RuntimeError(f"Unknown order type: {order_type}")
 
     def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
-        limit_or_market_order_type = (
-            enums.TradeOrderType.MARKET
-            if taker_or_maker == enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
-            else enums.TradeOrderType.LIMIT
-        )
-        fees = self.client.calculate_fee(
-            symbol=symbol,
-            type=limit_or_market_order_type.value,
-            side=exchanges.get_order_side(order_type),
-            amount=float(quantity),
-            price=float(price),
-            takerOrMaker=taker_or_maker
-        )
+        fees = self.calculate_fees(symbol, order_type, quantity, price, taker_or_maker)
         fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = False
         fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(
             str(fees.get(enums.FeePropertyColumns.COST.value) or 0)
@@ -919,6 +907,24 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
                 fees[enums.FeePropertyColumns.CURRENCY.value] = parsed_symbol.quote
         return fees
+
+    def calculate_fees(
+        self, symbol: str, order_type: enums.TraderOrderType,
+        quantity: decimal.Decimal, price: decimal.Decimal, taker_or_maker: str
+    ):
+        limit_or_market_order_type = (
+            enums.TradeOrderType.MARKET
+            if taker_or_maker == enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+            else enums.TradeOrderType.LIMIT
+        )
+        return self.client.calculate_fee(
+            symbol=symbol,
+            type=limit_or_market_order_type.value,
+            side=exchanges.get_order_side(order_type),
+            amount=float(quantity),
+            price=float(price),
+            takerOrMaker=taker_or_maker
+        )
 
     def get_fees(self, symbol):
         try:

@@ -118,6 +118,7 @@ async def test_init_exchange_tentacle(backtesting_trader):
     init_adapter = mock.Mock()
 
     class AdapterTentacle:
+        DEFAULT_CONNECTOR_CLASS = mock.Mock()
         def __init__(self, *_, **__):
             self.get_adapter_class = mock.Mock(
                 return_value=init_adapter
@@ -125,6 +126,7 @@ async def test_init_exchange_tentacle(backtesting_trader):
             self.stop = mock.AsyncMock()
 
     class NoAdapterTentacle:
+        DEFAULT_CONNECTOR_CLASS = mock.Mock()
         def __init__(self, *_, **__):
             self.get_adapter_class = mock.Mock(
                 return_value=None

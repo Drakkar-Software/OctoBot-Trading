@@ -354,3 +354,9 @@ class ExhaustedTrailingProfileError(Exception):
     """
     Raised when a trailing profile has no new price to produce anymore
     """
+
+
+class MissingFeeDetailsError(Exception):
+    """
+    Raised when fee info are not available
+    """

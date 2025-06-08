@@ -75,6 +75,9 @@ class MockedCCXTConnector(CCXTConnector):
     def _should_authenticate(self):
         return False
 
+    def register_simulator_connector_fee_methods(self, *args, **kwargs):
+        pass
+
 
 class MockedRestExchange(DefaultRestExchange):
     DEFAULT_CONNECTOR_CLASS = MockedCCXTConnector

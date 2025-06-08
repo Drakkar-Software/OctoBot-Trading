@@ -54,6 +54,10 @@ class ExchangeSimulator(rest_exchange.RestExchange):
         self.exchange_importers = self.connector.exchange_importers
         if self.connector.should_adapt_market_statuses():
             await self._init_exchange_tentacle()
+        if self.exchange_tentacle_class:
+            self.exchange_tentacle_class.DEFAULT_CONNECTOR_CLASS.register_simulator_connector_fee_methods(
+                self.exchange_manager.exchange_name, self.connector
+            )
 
     async def _init_exchange_tentacle(self):
         origin_ignore_config = self.exchange_manager.ignore_config
