@@ -939,6 +939,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 enums.ExchangeConstantsMarketPropertyColumns.FEE.value: constants.CONFIG_DEFAULT_FEES
             }
 
+    @classmethod
+    def register_simulator_connector_fee_methods(cls, exchange_name: str, simulator_connector):
+        # override if necessary
+        pass
+
     def get_exchange_current_time(self):
         return self.get_uniform_timestamp(self.client.milliseconds())
 
