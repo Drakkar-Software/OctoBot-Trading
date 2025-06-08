@@ -258,6 +258,17 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     #     'is_from_exchange': False, // simulated fees
     # }
     def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
+        fees = self.calculate_fees(symbol, order_type, quantity, price, taker_or_maker)
+        fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = False
+        fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(
+            str(fees.get(enums.FeePropertyColumns.COST.value) or 0)
+        )
+        return fees
+
+    def calculate_fees(
+        self, symbol: str, order_type: enums.TraderOrderType,
+        quantity: decimal.Decimal, price: decimal.Decimal, taker_or_maker: str
+    ):
         if not taker_or_maker:
             taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
@@ -274,13 +285,17 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
             enums.FeePropertyColumns.CURRENCY.value: fee_currency,
             enums.FeePropertyColumns.RATE.value: rate,
             enums.FeePropertyColumns.COST.value: cost,
-            enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
         }
 
     def _get_fees_currency(self, base, quote, order_type: enums.TraderOrderType):
         if util.get_order_side(order_type) is enums.TradeOrderSide.SELL.value:
             return quote
         return base
+
+    @classmethod
+    def register_simulator_connector_fee_methods(cls, exchange_name: str, simulator_connector):
+        # override when using custom fees in backtesting is necessary
+        pass
 
     def get_time_frames(self, importer):
         return time_frame_manager.sort_time_frames(list(set(backtesting_api.get_available_time_frames(importer)) &
