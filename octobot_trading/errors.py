@@ -135,6 +135,18 @@ class FailedRequest(OctoBotExchangeError):
     """
 
 
+class RetriableFailedRequest(OctoBotExchangeError):
+    """
+    Raised upon a failed request on an exchange API which can be instantly retried
+    """
+
+
+class NetworkError(RetriableFailedRequest):
+    """
+    Raised upon a failed request because of a network error (timeout and such) on an exchange API call
+    """
+
+
 class RateLimitExceeded(OctoBotExchangeError):
     """
     Raised upon an exchange API rate limit error

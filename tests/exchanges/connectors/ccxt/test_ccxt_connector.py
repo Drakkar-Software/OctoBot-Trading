@@ -222,7 +222,7 @@ async def test_error_describer(ccxt_connector):
         # transformed ccxt error
         with ccxt_connector.error_describer():
             raise ccxt.InvalidNonce("plop")
-    with pytest.raises(octobot_trading.errors.FailedRequest):
+    with pytest.raises(octobot_trading.errors.NetworkError):
         # transformed ccxt error
         with ccxt_connector.error_describer():
             raise ccxt.RequestTimeout("plop")
