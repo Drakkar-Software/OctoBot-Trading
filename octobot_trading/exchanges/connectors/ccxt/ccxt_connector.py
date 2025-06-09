@@ -1117,8 +1117,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             caller_function_name = inspect.stack()[2].function
             exchanges.log_time_sync_error(self.logger, self.name, err, caller_function_name)
             raise octobot_trading.errors.FailedRequest(html_util.get_html_summary_if_relevant(err)) from err
-        except ccxt.RequestTimeout as err:
-            raise octobot_trading.errors.FailedRequest(
+        except (ccxt.ExchangeNotAvailable, aiohttp_socks.ProxyConnectionError) as err:
+            self.raise_or_prefix_proxy_error_if_relevant(
+                err,
+                octobot_trading.errors.FailedRequest(
+                    f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
+                )
+            )
+        except ccxt.NetworkError as err:
+            raise octobot_trading.errors.NetworkError(
                 f"Request timeout: {html_util.get_html_summary_if_relevant(err)}"
             ) from err
         except ccxt.AuthenticationError as err:
@@ -1130,13 +1137,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             self.raise_or_prefix_proxy_error_if_relevant(
                 err,
                 error_class(html_util.get_html_summary_if_relevant(err))
-            )
-        except (ccxt.ExchangeNotAvailable, aiohttp_socks.ProxyConnectionError) as err:
-            self.raise_or_prefix_proxy_error_if_relevant(
-                err,
-                octobot_trading.errors.FailedRequest(
-                    f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
-                )
             )
         except ccxt.ExchangeError as err:
             error_message = html_util.get_html_summary_if_relevant(err)
