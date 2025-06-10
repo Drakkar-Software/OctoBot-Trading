@@ -49,13 +49,12 @@ def get_minimal_order_cost(symbol_market, default_price=None) -> float:
         min_amount = symbol_market[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value].get(
             Ecmsc.LIMITS_AMOUNT_MIN.value, None
         )
-        min_price = symbol_market[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value].get(
-            Ecmsc.LIMITS_PRICE_MIN.value, None
-        )
-        if min_price is None:
-            min_price = default_price
-        if min_amount and min_price:
-            return min_amount * min_price
+        if default_price is None:
+            default_price = symbol_market[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value].get(
+                Ecmsc.LIMITS_PRICE_MIN.value, None
+            )
+        if min_amount and default_price:
+            return min_amount * default_price
     except KeyError:
         pass
     raise errors.NotSupported("Impossible to get the minimal order size for the this exchange")
