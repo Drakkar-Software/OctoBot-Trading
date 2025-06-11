@@ -27,10 +27,16 @@ from octobot_trading.exchanges.connectors.simulator import (
     ExchangeSimulatorConnector,
 )
 
+from octobot_trading.exchanges.connectors import util
+from octobot_trading.exchanges.connectors.util import (
+    retried_failed_network_request,
+)
+
 __all__ = [
     "CCXTAdapter",
     "CCXTConnector",
     "CCXTWebsocketConnector",
     "ExchangeSimulatorAdapter",
     "ExchangeSimulatorConnector",
+    "retried_failed_network_request",
 ]

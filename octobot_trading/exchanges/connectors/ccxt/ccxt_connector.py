@@ -40,32 +40,9 @@ import octobot_trading.exchanges.connectors.ccxt.ccxt_adapter as ccxt_adapter
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.constants as ccxt_constants
+import octobot_trading.exchanges.connectors.util as connectors_util
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
-
-
-def _retried_failed_network_request(func):
-    async def _retried_failed_network_request_wrapper(*args, raise_errors=False, **kwargs):
-        for i in range(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS):
-            try:
-                resp = await func(*args, **kwargs)
-                if i > 0:
-                    octobot_commons.logging.get_logger(f"_retried_failed_network_request").info(
-                        f"{func.__name__} succeeded after {i+1} attempts."
-                    )
-                return resp
-            except ccxt.RequestTimeout as err:
-                octobot_commons.logging.get_logger(f"_retried_failed_network_request").warning(
-                    f"{func.__name__} raised {html_util.get_html_summary_if_relevant(err)} ({err.__class__.__name__}) "
-                    f"[attempts {i+1}/{constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS}]."
-                )
-                if i < constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS - 1:
-                    # can happen: retry
-                    pass
-                else:
-                    raise
-        # raise any other error
-    return _retried_failed_network_request_wrapper
 
 
 class CCXTConnector(abstract_exchange.AbstractExchange):
@@ -149,7 +126,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         await client.load_markets(reload=reload)
 
     @ccxt_client_util.converted_ccxt_common_errors
-    @_retried_failed_network_request
+    @connectors_util.retried_failed_network_request()
     async def load_symbol_markets(
         self,
         reload=False,
