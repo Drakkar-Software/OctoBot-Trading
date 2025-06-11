@@ -125,6 +125,7 @@ from octobot_trading.exchanges.connectors import (
     CCXTAdapter,
     ExchangeSimulatorConnector,
     ExchangeSimulatorAdapter,
+    retried_failed_network_request,
 )
 from octobot_trading.exchanges import exchange_details
 from octobot_trading.exchanges.exchange_details import (
@@ -197,5 +198,6 @@ __all__ = [
     "CCXTAdapter",
     "ExchangeSimulatorConnector",
     "ExchangeSimulatorAdapter",
+    "retried_failed_network_request",
     "ExchangeDetails",
 ]

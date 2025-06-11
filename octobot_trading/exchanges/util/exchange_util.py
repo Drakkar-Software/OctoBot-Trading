@@ -15,7 +15,6 @@
 #  License along with this library.
 import contextlib
 import typing
-
 import ccxt
 import trading_backend
 

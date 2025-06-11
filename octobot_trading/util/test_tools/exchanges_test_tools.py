@@ -78,6 +78,15 @@ async def stop_test_exchange_manager(exchange_manager_instance: exchanges.Exchan
     # let updaters gracefully shutdown
     await asyncio_tools.wait_asyncio_next_cycle()
 
+
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
+async def _get_symbol_prices(exchange_manager, symbol, parsed_tf, limit):
+    return await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=limit)
+
+
 async def _update_ohlcv(
     exchange_manager, symbol: str, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
     history_size=1, start_time=0, end_time=0, close_price_only=False,
@@ -85,7 +94,7 @@ async def _update_ohlcv(
 ):
     parsed_tf = common_enums.TimeFrames(time_frame)
     if start_time == 0:
-        ohlcvs = await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=history_size)
+        ohlcvs = await _get_symbol_prices(exchange_manager, symbol, parsed_tf, history_size)
     else:
         ohlcvs = []
         async for ohlcv in exchanges.get_historical_ohlcv(
@@ -141,6 +150,10 @@ async def ensure_symbol_markets(
         await exchange_manager.exchange.connector.load_symbol_markets(reload=reload, market_filter=market_filter)
 
 
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
 async def get_portfolio(exchange_manager, as_float=False, clear_empty=True) -> dict:
     balance = await exchange_manager.exchange.get_balance()
     # filter out 0 values
@@ -194,10 +207,16 @@ def _parse_order_into_dict(
     return None
 
 
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
 async def _get_open_orders(exchange_manager, symbol: str, open_orders: list, ignore_unsupported_orders: bool):
     orders = await exchange_manager.exchange.get_open_orders(symbol=symbol)
     for order in orders:
-        if order_dict := _parse_order_into_dict(exchange_manager, order, True,  ignore_unsupported_orders):
+        if order_dict := _parse_order_into_dict(
+            exchange_manager, order, True,  ignore_unsupported_orders
+        ):
             open_orders.append(order_dict)
 
 
@@ -218,6 +237,10 @@ async def get_open_orders(
     return open_orders
 
 
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
 async def get_order(
     exchange_manager,
     exchange_order_id: str,
@@ -226,6 +249,10 @@ async def get_order(
     return await exchange_manager.exchange.get_order(exchange_order_id, symbol=symbol)
 
 
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
 async def _get_cancelled_orders(exchange_manager, symbol: str, cancelled_orders: list, ignore_unsupported_orders: bool):
     orders = await exchange_manager.exchange.get_cancelled_orders(symbol=symbol)
     for order in orders:
@@ -253,6 +280,10 @@ async def get_cancelled_orders(
     return cancelled_orders
 
 
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
 async def _get_trades(exchange_manager, symbol: str, trades: list):
     row_trades = await exchange_manager.exchange.get_my_recent_trades(symbol=symbol)
     trades.extend(
@@ -351,6 +382,10 @@ async def wait_for_other_status(order: personal_data.Order, timeout) -> personal
     raise TimeoutError(f"Order was not found with another status than {origin_status} within {timeout} seconds")
 
 
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
 async def get_positions(
     exchange_manager,
     exchange_data: exchange_data_import.ExchangeData,
