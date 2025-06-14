@@ -163,8 +163,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     # unexpected: notify
                     self.logger.error(f"Unexpected error when loading markets: {err} ({err.__class__.__name__})")
                 raise
-            except ccxt.ExchangeNotAvailable as err:
-                raise octobot_trading.errors.FailedRequest(
+            except ccxt.NetworkError as err:
+                raise octobot_trading.errors.NetworkError(
                     f"Failed to load_symbol_markets: {err.__class__.__name__} "
                     f"on {html_util.get_html_summary_if_relevant(err)}"
                 ) from err
@@ -1097,13 +1097,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except (ccxt.ExchangeNotAvailable, aiohttp_socks.ProxyConnectionError) as err:
             self.raise_or_prefix_proxy_error_if_relevant(
                 err,
-                octobot_trading.errors.FailedRequest(
+                octobot_trading.errors.NetworkError(
                     f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
                 )
             )
         except ccxt.NetworkError as err:
             raise octobot_trading.errors.NetworkError(
-                f"Request timeout: {html_util.get_html_summary_if_relevant(err)}"
+                f"Request network error ({err.__class__.__name__}): {html_util.get_html_summary_if_relevant(err)}"
             ) from err
         except ccxt.AuthenticationError as err:
             error_class = (

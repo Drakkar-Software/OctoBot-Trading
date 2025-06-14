@@ -135,7 +135,7 @@ class FailedRequest(OctoBotExchangeError):
     """
 
 
-class RetriableFailedRequest(OctoBotExchangeError):
+class RetriableFailedRequest(FailedRequest):
     """
     Raised upon a failed request on an exchange API which can be instantly retried
     """

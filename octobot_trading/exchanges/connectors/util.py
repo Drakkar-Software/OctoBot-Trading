@@ -37,7 +37,9 @@ def retried_failed_network_request(
                             f"{func.__name__} succeeded after {attempt+1} attempts."
                         )
                     return resp
-                except (ccxt.RequestTimeout, errors.RetriableFailedRequest) as err:
+                except (
+                    ccxt.RequestTimeout, ccxt.ExchangeNotAvailable, ccxt.InvalidNonce, errors.RetriableFailedRequest
+                ) as err:
                     commons_logging.get_logger(f"retried_failed_network_request").warning(
                         f"{func.__name__} raised {html_util.get_html_summary_if_relevant(err)} "
                         f"({err.__class__.__name__}) [attempts {attempt+1}/{attempts}]. Retrying in {delay} seconds."
