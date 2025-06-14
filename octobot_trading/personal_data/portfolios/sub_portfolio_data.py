@@ -83,7 +83,7 @@ class SubPortfolioData:
         for asset, values in updated_content.items():
             locked_funds = self.locked_funds_by_asset.get(asset, constants.ZERO)
             if locked_funds > values[commons_constants.PORTFOLIO_TOTAL]:
-                commons_logging.get_logger(__name__).error(
+                commons_logging.get_logger(__name__).warning(
                     f"Unexpected: negative {asset} available value after applying {locked_funds} locked funds to {values}"
                 )
             values[commons_constants.PORTFOLIO_AVAILABLE] = values[commons_constants.PORTFOLIO_TOTAL] - locked_funds

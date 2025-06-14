@@ -44,8 +44,8 @@ def test_get_content_after_deltas():
 
 
 def test_get_content_from_total_deltas_and_locked_funds():
-    error_log = mock.Mock()
-    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+    warning_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(warning=warning_log))):
         sub_pf = _sub_pf(
             0,
             _content_with_available({
@@ -56,7 +56,7 @@ def test_get_content_from_total_deltas_and_locked_funds():
         assert sub_pf.get_content_from_total_deltas_and_locked_funds() == _content_with_available({
             "BTC": (0.1, 0.1), "ETH": (0.1, 0.1), "USDT": (10.1, 10.1), "SOL": (1, 1), "USDC": (2, 2)
         })
-        error_log.assert_not_called()
+        warning_log.assert_not_called()
 
         # with delta, no locked funds: only consider total holdings
         sub_pf.funds_deltas = _content_with_available({
@@ -65,7 +65,7 @@ def test_get_content_from_total_deltas_and_locked_funds():
         assert sub_pf.get_content_from_total_deltas_and_locked_funds() == _content_with_available({
             "BTC": (0.2, 0.2), "ETH": (0.05, 0.05), "USDT": (10.1, 10.1), "SOL": (1, 1), "USDC": (4, 4)
         })
-        error_log.assert_not_called()
+        warning_log.assert_not_called()
 
         # with delta, and locked funds: consider total holdings and lock available
         sub_pf.locked_funds_by_asset = _locked_amounts_by_asset({
@@ -74,14 +74,14 @@ def test_get_content_from_total_deltas_and_locked_funds():
         assert sub_pf.get_content_from_total_deltas_and_locked_funds() == _content_with_available({
             "BTC": (0.1, 0.2), "ETH": (0.05, 0.05), "USDT": (0, 10.1), "SOL": (1, 1), "USDC": (4, 4)
         })
-        error_log.assert_not_called()
+        warning_log.assert_not_called()
 
         # no delta but locked funds are set: updated available when lock funds are set
         sub_pf.funds_deltas = {}
         assert sub_pf.get_content_from_total_deltas_and_locked_funds() == _content_with_available({
             "BTC": (0, 0.1), "ETH": (0.1, 0.1), "USDT": (0, 10.1), "SOL": (1, 1), "USDC": (2, 2)
         })
-        error_log.assert_not_called()
+        warning_log.assert_not_called()
 
         # invalid locked funds: log error
         sub_pf.locked_funds_by_asset = _locked_amounts_by_asset({
@@ -91,7 +91,7 @@ def test_get_content_from_total_deltas_and_locked_funds():
         assert sub_pf.get_content_from_total_deltas_and_locked_funds() == _content_with_available({
             "BTC": (-0.9, 0.1), "ETH": (0.1, 0.1), "USDT": (0, 10.1), "SOL": (1, 1), "USDC": (2, 2)
         })
-        error_log.assert_called_once()
+        warning_log.assert_called_once()
 
 
 def _sub_pf(
