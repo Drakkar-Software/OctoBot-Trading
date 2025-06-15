@@ -158,3 +158,10 @@ def get_accepted_missed_deltas(
     return personal_data.get_accepted_missed_deltas(
         updated_portfolio_content, updated_sub_portfolio, missed_deltas
     )
+
+
+def get_master_checked_sub_portfolio_update(
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_sub_portfolio: dict[str, dict[str, decimal.Decimal]],
+) -> dict[str, dict[str, decimal.Decimal]]:
+    return personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio)

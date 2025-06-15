@@ -495,6 +495,49 @@ def get_accepted_missed_deltas(
     return accepted_missed_deltas, remaining_missed_deltas
 
 
+def get_master_checked_sub_portfolio_update(
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_sub_portfolio: dict[str, dict[str, decimal.Decimal]],
+) -> dict[str, dict[str, decimal.Decimal]]:
+    update = {}
+    for currency, amounts in updated_sub_portfolio.items():
+        if currency not in updated_portfolio_content:
+            # currency can't be in sub portfolio if not in master portfolio
+            if amounts[commons_constants.PORTFOLIO_TOTAL] > constants.ZERO:
+                commons_logging.get_logger(__name__).warning(
+                    f"{currency} removed from sub portfolio as missing from master portfolio"
+                )
+            update[currency] = {
+                commons_constants.PORTFOLIO_TOTAL: constants.ZERO,
+                commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO
+            }
+        elif (
+            amounts[commons_constants.PORTFOLIO_TOTAL]
+            > updated_portfolio_content[currency][commons_constants.PORTFOLIO_TOTAL]
+        ):
+            commons_logging.get_logger(__name__).warning(
+                f"{currency} holdings aligned to master portfolio: {amounts} -> {updated_portfolio_content[currency]}"
+            )
+            # sub portfolio amount can't be larger than master portfolio
+            update[currency] = updated_portfolio_content[currency]
+    return update
+
+
+def get_missing_master_portfolio_values_update(
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_sub_portfolio: dict[str, dict[str, decimal.Decimal]],
+):
+    updates = {}
+    for currency, amounts in updated_portfolio_content.items():
+        if currency in updated_sub_portfolio and (
+            updated_sub_portfolio[currency][commons_constants.PORTFOLIO_TOTAL]
+            > updated_portfolio_content[currency][commons_constants.PORTFOLIO_TOTAL]
+        ):
+            # updated sub portfolio asset holding can't be larger than updated total portfolio holding
+            updates[currency] = amounts
+    return updates
+
+
 def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
