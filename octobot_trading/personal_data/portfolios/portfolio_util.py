@@ -469,6 +469,32 @@ def _iterate_filling_assets(
             if reversed_symbol in tickers and tickers[reversed_symbol]:
                 yield allowed_filling_asset, constants.ONE / decimal.Decimal(str(tickers[reversed_symbol]))
 
+
+def get_accepted_missed_deltas(
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_sub_portfolio: dict[str, dict[str, decimal.Decimal]],
+    missed_deltas: dict[str, dict[str, decimal.Decimal]]
+) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
+    # accepted deltas are missed deltas that should still be accepted to avoid ignoring
+    # spent assets in master portfolio
+    accepted_missed_deltas = {}
+    for currency, delta in missed_deltas.items():
+        if currency in updated_sub_portfolio and (
+            updated_sub_portfolio[currency][commons_constants.PORTFOLIO_TOTAL]
+            > updated_portfolio_content[currency][commons_constants.PORTFOLIO_TOTAL]
+        ):
+            # updated sub portfolio asset holding can't be larger than updated total portfolio holding
+            # => add this delta to accepted deltas
+            accepted_missed_deltas[currency] = delta
+    # others are still missed deltas
+    remaining_missed_deltas = {
+        currency: delta
+        for currency, delta in missed_deltas.items()
+        if currency not in accepted_missed_deltas
+    }
+    return accepted_missed_deltas, remaining_missed_deltas
+
+
 def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],

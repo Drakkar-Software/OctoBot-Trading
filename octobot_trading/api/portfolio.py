@@ -148,3 +148,13 @@ def get_assets_delta_from_orders(
     orders: list[personal_data.Order]
 ) -> (dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]):
     return personal_data.get_assets_delta_from_orders(orders)
+
+
+def get_accepted_missed_deltas(
+    updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
+    updated_sub_portfolio: dict[str, dict[str, decimal.Decimal]],
+    missed_deltas: dict[str, dict[str, decimal.Decimal]]
+) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
+    return personal_data.get_accepted_missed_deltas(
+        updated_portfolio_content, updated_sub_portfolio, missed_deltas
+    )

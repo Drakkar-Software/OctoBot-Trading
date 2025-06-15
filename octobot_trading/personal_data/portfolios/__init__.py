@@ -85,6 +85,7 @@ from octobot_trading.personal_data.portfolios.portfolio_util import (
     get_asset_price_from_converter_or_tickers,
     resolve_sub_portfolios,
     get_portfolio_filled_orders_deltas,
+    get_accepted_missed_deltas,
     get_assets_delta_from_orders,
 )
 from octobot_trading.personal_data.portfolios.history import (
@@ -129,6 +130,7 @@ __all__ = [
     "get_asset_price_from_converter_or_tickers",
     "resolve_sub_portfolios",
     "get_portfolio_filled_orders_deltas",
+    "get_accepted_missed_deltas",
     "get_assets_delta_from_orders",
     "create_historical_asset_value_from_dict_like_object",
     "get_draw_down",

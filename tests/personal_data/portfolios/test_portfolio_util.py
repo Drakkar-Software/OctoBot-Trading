@@ -524,6 +524,60 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
         error_log.assert_not_called()
 
 
+def test_get_accepted_missed_deltas():
+    # with no delta
+    post_trade_content = _content({"XRP": 40, "USDT": 129.2474232})
+    updated_sub_portfolio = _content({"XRP": 50, "USDT": 36.878811542})
+    assert personal_data.get_accepted_missed_deltas(
+        post_trade_content, updated_sub_portfolio, {}
+    ) == ({}, {})
+
+    # base case
+    pre_trade_content = _content({"XRP": 40, "USDT": 129.2474232})
+    post_trade_content = _content({"XRP": 50, "USDT": 36.878811542})
+    sub_portfolio_pre_trade_content = _content({"XRP": 40, "USDT": 129.2474232})
+    filled_orders = [
+        _order("XRP/USDT", 10, 115.4889262, "buy"),
+    ]
+    deltas, missed_deltas = personal_data.get_portfolio_filled_orders_deltas(
+        pre_trade_content, post_trade_content, filled_orders
+    )
+    assert deltas == _content({"XRP": 10})
+    assert missed_deltas == _content({"USDT": -92.368611658})
+    sub_portfolio = personal_data.SubPortfolioData(
+        None, None, 0, sub_portfolio_pre_trade_content, None, funds_deltas=deltas
+    )
+    updated_sub_portfolio = sub_portfolio.get_content_from_total_deltas_and_locked_funds()
+    accepted_deltas, remaining_deltas = personal_data.get_accepted_missed_deltas(
+        post_trade_content, updated_sub_portfolio, missed_deltas
+    )
+    assert accepted_deltas == _content({"USDT": -92.368611658})
+    assert remaining_deltas == {}
+
+    # with remaining_deltas
+    pre_trade_content = _content({"XRP": 40, "USDT": 229.2474232})
+    post_trade_content = _content({"XRP": 50, "USDT": 136.878811542})
+    sub_portfolio_pre_trade_content = _content({"XRP": 40, "USDT": 129.2474232})
+    filled_orders = [
+        _order("XRP/USDT", 10, 115.4889262, "buy"),
+    ]
+    deltas, missed_deltas = personal_data.get_portfolio_filled_orders_deltas(
+        pre_trade_content, post_trade_content, filled_orders
+    )
+    assert deltas == _content({"XRP": 10})
+    assert missed_deltas == _content({"USDT": -92.368611658})
+    sub_portfolio = personal_data.SubPortfolioData(
+        None, None, 0, sub_portfolio_pre_trade_content, None, funds_deltas=deltas
+    )
+    updated_sub_portfolio = sub_portfolio.get_content_from_total_deltas_and_locked_funds()
+    accepted_deltas, remaining_deltas = personal_data.get_accepted_missed_deltas(
+        post_trade_content, updated_sub_portfolio, missed_deltas
+    )
+    # sub portfolio resolved value can still be contained in portfolio: this delta remains as missing
+    assert accepted_deltas == {}
+    assert remaining_deltas == _content({"USDT": -92.368611658})
+
+
 def test_get_portfolio_filled_orders_deltas_considering_different_fee_tiers():
     error_log = mock.Mock()
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
