@@ -740,6 +740,32 @@ def test_resolve_sub_portfolios_with_filling_assets_with_locked_funds():
     )
 
 
+def test_get_master_checked_sub_portfolio_update():
+    with mock.patch.object(octobot_commons.logging.BotLogger, "warning") as warning_mock:
+        # nothing to do: sub portfolio makes sense compared to master
+        updated_portfolio_content = _content({"BTC": 0, "ETH": 9.9999999, "USDT": 111, "DOT": 1111})
+        updated_sub_portfolio = _content({"BTC": 0, "ETH": 9.9999999, "USDT": 100})
+        assert personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio) == {}
+        warning_mock.assert_not_called()
+
+        # SOL is not in master portfolio
+        updated_sub_portfolio = _content({"BTC": 0, "ETH": 9.9999999, "USDT": 100, "SOL": 10})
+        assert personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio) == (
+            _content({"SOL": 0})
+        )
+        warning_mock.assert_called_once()
+        assert "SOL removed" in warning_mock.mock_calls[0].args[0]
+        warning_mock.reset_mock()
+
+        # can't have 120 USDT with 111 in master portfolio
+        updated_sub_portfolio = _content({"BTC": 0, "ETH": 9.9999999, "USDT": 120})
+        assert personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio) == (
+            _content({"USDT": 111})
+        )
+        warning_mock.assert_called_once()
+        assert "USDT holdings aligned" in warning_mock.mock_calls[0].args[0]
+        warning_mock.reset_mock()
+
 
 def _sub_pf(
     priority_key: float,
