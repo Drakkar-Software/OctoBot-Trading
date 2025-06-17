@@ -507,10 +507,10 @@ def get_master_checked_sub_portfolio_update(
                 commons_logging.get_logger(__name__).warning(
                     f"{currency} removed from sub portfolio as missing from master portfolio"
                 )
-            update[currency] = {
-                commons_constants.PORTFOLIO_TOTAL: constants.ZERO,
-                commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO
-            }
+                update[currency] = {
+                    commons_constants.PORTFOLIO_TOTAL: constants.ZERO,
+                    commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO
+                }
         elif (
             amounts[commons_constants.PORTFOLIO_TOTAL]
             > updated_portfolio_content[currency][commons_constants.PORTFOLIO_TOTAL]
