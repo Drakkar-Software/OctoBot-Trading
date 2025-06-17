@@ -757,6 +757,12 @@ def test_get_master_checked_sub_portfolio_update():
         assert "SOL removed" in warning_mock.mock_calls[0].args[0]
         warning_mock.reset_mock()
 
+        # SOL is not in master portfolio and is 0 in sub portfolio: this is OK
+        updated_sub_portfolio = _content({"BTC": 0, "ETH": 9.9999999, "USDT": 100, "SOL": 0})
+        assert personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio) == {}
+        warning_mock.assert_not_called()
+        warning_mock.reset_mock()
+
         # can't have 120 USDT with 111 in master portfolio
         updated_sub_portfolio = _content({"BTC": 0, "ETH": 9.9999999, "USDT": 120})
         assert personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio) == (
