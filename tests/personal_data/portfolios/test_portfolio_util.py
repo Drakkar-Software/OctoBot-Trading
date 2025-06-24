@@ -577,6 +577,17 @@ def test_get_accepted_missed_deltas():
     assert accepted_deltas == {}
     assert remaining_deltas == _content({"USDT": -92.368611658})
 
+    # with missing coin in sub portfolio
+    post_trade_content = _content({"XRP": 50})
+    sub_portfolio_pre_trade_content = _content({"XRP": 40, "USDT": 229.2474232})
+    missed_deltas = _content({"USDT": -229.2474232})
+    accepted_deltas, remaining_deltas = personal_data.get_accepted_missed_deltas(
+        post_trade_content, sub_portfolio_pre_trade_content, missed_deltas
+    )
+    # sub portfolio resolved value can still be contained in portfolio: this delta remains as missing
+    assert accepted_deltas == _content({"USDT": -229.2474232})
+    assert remaining_deltas == {}
+
 
 def test_get_portfolio_filled_orders_deltas_considering_different_fee_tiers():
     error_log = mock.Mock()
