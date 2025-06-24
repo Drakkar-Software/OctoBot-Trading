@@ -479,9 +479,12 @@ def get_accepted_missed_deltas(
     # spent assets in master portfolio
     accepted_missed_deltas = {}
     for currency, delta in missed_deltas.items():
+        try:
+            updated_total = updated_portfolio_content[currency][commons_constants.PORTFOLIO_TOTAL]
+        except KeyError:
+            updated_total = constants.ZERO
         if currency in updated_sub_portfolio and (
-            updated_sub_portfolio[currency][commons_constants.PORTFOLIO_TOTAL]
-            > updated_portfolio_content[currency][commons_constants.PORTFOLIO_TOTAL]
+            updated_sub_portfolio[currency][commons_constants.PORTFOLIO_TOTAL] > updated_total
         ):
             # updated sub portfolio asset holding can't be larger than updated total portfolio holding
             # => add this delta to accepted deltas
