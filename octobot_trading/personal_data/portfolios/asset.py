@@ -15,6 +15,7 @@
 #  License along with this library.
 import contextlib
 import copy
+import decimal
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
@@ -25,10 +26,10 @@ import octobot_trading.errors as errors
 
 class Asset:
     def __init__(self, name, available, total):
-        self.name = name
+        self.name: str = name
 
-        self.available = available
-        self.total = total
+        self.available: decimal.Decimal = available
+        self.total: decimal.Decimal = total
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.name} | " \

@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.asset as asset_class
@@ -38,19 +39,19 @@ class FutureAsset(asset_class.Asset):
         """
         super().__init__(name, available, total)
         # Unrealized profit and loss
-        self.unrealized_pnl = unrealized_pnl
+        self.unrealized_pnl: decimal.Decimal = unrealized_pnl
 
         # total initial margin required with current mark price
-        self.initial_margin = initial_margin
+        self.initial_margin: decimal.Decimal = initial_margin
 
         # The Wallet balance. When using Cross Margin, the number minus the unclosed loss is the real wallet balance.
-        self.wallet_balance = wallet_balance if wallet_balance != constants.ZERO else total
+        self.wallet_balance: decimal.Decimal = wallet_balance if wallet_balance != constants.ZERO else total
 
         # margin required for positions with current mark price
-        self.position_margin = position_margin
+        self.position_margin: decimal.Decimal = position_margin
 
         # margin required for open orders with current mark price
-        self.order_margin = order_margin
+        self.order_margin: decimal.Decimal = order_margin
 
     def __str__(self):
         return super().__str__() + " | " \

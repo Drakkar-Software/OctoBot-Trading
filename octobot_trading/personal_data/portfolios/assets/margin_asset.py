@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.asset as asset_class
 
@@ -23,9 +25,9 @@ class MarginAsset(asset_class.Asset):
                  interest=constants.ZERO,
                  locked=constants.ZERO):
         super().__init__(name, available, total)
-        self.borrowed = borrowed
-        self.interest = interest
-        self.locked = locked
+        self.borrowed: decimal.Decimal = borrowed
+        self.interest: decimal.Decimal = interest
+        self.locked: decimal.Decimal = locked
 
     def __str__(self):
         return super().__str__() + " | " \
