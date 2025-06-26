@@ -14,7 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import aiohttp_socks
+try:
+    from aiohttp_socks import ProxyConnectionError
+except ImportError:
+    # local mock in case aiohttp_socks is not available
+    class ProxyConnectionError(Exception):
+        pass
 import os
 import ssl
 import aiohttp
@@ -315,20 +320,28 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
         if (client.socks_proxy_sessions is None):
             client.socks_proxy_sessions = {}
         if (proxy_url not in client.socks_proxy_sessions):
-            previous_aiohttp_socks_connector = client.aiohttp_socks_connector
-            client.aiohttp_socks_connector = aiohttp_socks.ProxyConnector.from_url(
-                proxy_url,
-                # extra args copied from self.open()
-                ssl=client.ssl_context,
-                loop=client.asyncio_loop,
-                use_dns_cache=not proxy_config.disable_dns_cache,
-                enable_cleanup_closed=True
-            )
-            client.socks_proxy_sessions[proxy_url] = aiohttp.ClientSession(
-                loop=client.asyncio_loop, connector=client.aiohttp_socks_connector,
-                trust_env=client.aiohttp_trust_env
-            )
-            asyncio.create_task(_close_previous_session_and_connector(None, previous_aiohttp_socks_connector))
+            try:
+                import aiohttp_socks
+                previous_aiohttp_socks_connector = client.aiohttp_socks_connector
+                client.aiohttp_socks_connector = aiohttp_socks.ProxyConnector.from_url(
+                    proxy_url,
+                    # extra args copied from self.open()
+                    ssl=client.ssl_context,
+                    loop=client.asyncio_loop,
+                    use_dns_cache=not proxy_config.disable_dns_cache,
+                    enable_cleanup_closed=True
+                )
+                client.socks_proxy_sessions[proxy_url] = aiohttp.ClientSession(
+                    loop=client.asyncio_loop, connector=client.aiohttp_socks_connector,
+                    trust_env=client.aiohttp_trust_env
+                )
+                asyncio.create_task(_close_previous_session_and_connector(
+                    None, previous_aiohttp_socks_connector
+                ))
+            except ImportError as err:
+                raise ImportError(
+                    "The aiohttp_socks python library is not installed and is required to use a socks proxy"
+                ) from err
     elif proxy_config.disable_dns_cache:
         # rewrite of async_ccxt.exchange.client.open()
         _init_ccxt_client_session_requirements(client)
@@ -509,8 +522,10 @@ def get_proxy_error_if_any(ccxt_connector, error: Exception) -> typing.Optional[
     cause_error = error
     while cause_error and depth < max_depth:
         if isinstance(cause_error, (
-            aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError, aiohttp_socks.ProxyConnectionError
+            # Proxy errors
+            aiohttp.ClientProxyConnectionError, aiohttp.ClientHttpProxyError, ProxyConnectionError
         )) or (
+            # Connector error with the configured proxy host in description
             isinstance(cause_error, aiohttp.ClientConnectorError)
             and ccxt_connector.exchange_manager.proxy_config.proxy_host in str(cause_error)
         ):
