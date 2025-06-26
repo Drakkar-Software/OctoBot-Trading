@@ -18,7 +18,6 @@ import decimal
 import ccxt
 import aiohttp
 import aiohttp.client_reqrep
-import aiohttp_socks
 
 import mock
 from mock import patch
@@ -27,7 +26,7 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchange_data.contracts as contracts
-import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
+import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import pytest
 
 import tests.exchanges.connectors.ccxt.mock_exchanges_data as mock_exchanges_data
@@ -259,20 +258,32 @@ async def test_error_describer(ccxt_connector):
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
         # proxy connection error
         with ccxt_connector.error_describer():
-            raise ccxt.AuthenticationError from aiohttp.ClientProxyConnectionError(
+            raise ccxt.ExchangeError from aiohttp.ClientProxyConnectionError(
+                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+            )
+    with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # proxy client error
+        with ccxt_connector.error_describer():
+            raise ccxt.ExchangeError from aiohttp.ClientHttpProxyError(
+                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+            )
+    with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # socks proxy error
+        with ccxt_connector.error_describer():
+            raise ccxt.ExchangeError from ccxt_client_util.ProxyConnectionError(
                 aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
             )
     ccxt_connector.exchange_manager.proxy_config.proxy_host = "host"
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
         # proxy connection error
         with ccxt_connector.error_describer():
-            raise ccxt.AuthenticationError from aiohttp_socks.ProxyConnectionError(
+            raise ccxt.AuthenticationError from ccxt_client_util.ProxyConnectionError(
                 aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
             )
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
         # proxy connection error
         with ccxt_connector.error_describer():
-            raise aiohttp_socks.ProxyConnectionError(
+            raise ccxt_client_util.ProxyConnectionError(
                 aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
             )
     with mock.patch.object(

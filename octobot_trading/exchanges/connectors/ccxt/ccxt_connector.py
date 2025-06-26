@@ -16,9 +16,9 @@
 #  License along with this library.
 import contextlib
 import decimal
+import aiohttp
 import ccxt.async_support as ccxt
 import ccxt.static_dependencies.ecdsa.der
-import aiohttp_socks
 import typing
 import inspect
 import binascii
@@ -123,7 +123,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         """
         Override if necessary
         """
-        await client.load_markets(reload=reload)
+        try:
+            await client.load_markets(reload=reload)
+        except Exception as err:
+            # ensure this is not a proxy error, raise dedicated error if it is
+            if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, err):
+                raise octobot_trading.errors.ExchangeProxyError(proxy_error) from err
+            raise
 
     @ccxt_client_util.converted_ccxt_common_errors
     @connectors_util.retried_failed_network_request()
@@ -1094,17 +1100,6 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             caller_function_name = inspect.stack()[2].function
             exchanges.log_time_sync_error(self.logger, self.name, err, caller_function_name)
             raise octobot_trading.errors.FailedRequest(html_util.get_html_summary_if_relevant(err)) from err
-        except (ccxt.ExchangeNotAvailable, aiohttp_socks.ProxyConnectionError) as err:
-            self.raise_or_prefix_proxy_error_if_relevant(
-                err,
-                octobot_trading.errors.NetworkError(
-                    f"Failed to execute request: {err.__class__.__name__}: {html_util.get_html_summary_if_relevant(err)}"
-                )
-            )
-        except ccxt.NetworkError as err:
-            raise octobot_trading.errors.NetworkError(
-                f"Request network error ({err.__class__.__name__}): {html_util.get_html_summary_if_relevant(err)}"
-            ) from err
         except ccxt.AuthenticationError as err:
             error_class = (
                 octobot_trading.errors.InvalidAPIKeyIPWhitelistError
@@ -1115,7 +1110,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 err,
                 error_class(html_util.get_html_summary_if_relevant(err))
             )
-        except ccxt.ExchangeError as err:
+        except (
+            # Generic connection / exchange error
+            ccxt.ExchangeNotAvailable, ccxt.ExchangeError,
+            # Proxy errors
+            aiohttp.ClientHttpProxyError, aiohttp.ClientProxyConnectionError, ccxt_client_util.ProxyConnectionError
+        ) as err:
             error_message = html_util.get_html_summary_if_relevant(err)
             if self.exchange_manager.exchange.is_ip_whitelist_error(err):
                 # ensure this is not an IP whitelist error
@@ -1123,5 +1123,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             if self.exchange_manager.exchange.is_authentication_error(err):
                 # ensure this is not an unhandled authentication error
                 raise octobot_trading.errors.AuthenticationError(error_message) from err
-            # otherwise just forward exception
-            raise
+            # keep ccxt.ExchangeError, convert others into network error
+            raised_error = None if isinstance(err, ccxt.ExchangeError) else octobot_trading.errors.NetworkError(
+                f"Failed to execute request: {err.__class__.__name__}: {error_message}"
+            )
+            self.raise_or_prefix_proxy_error_if_relevant(err, raised_error)
+        except ccxt.NetworkError as err:
+            raise octobot_trading.errors.NetworkError(
+                f"Request network error ({err.__class__.__name__}): {html_util.get_html_summary_if_relevant(err)}"
+            ) from err
