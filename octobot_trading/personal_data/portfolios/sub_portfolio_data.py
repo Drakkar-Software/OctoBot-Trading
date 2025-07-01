@@ -31,11 +31,12 @@ class SubPortfolioData:
     priority_key: float
     content: dict[str, dict[str, decimal.Decimal]]  # current content of the sub-portfolio
     unit: typing.Optional[str]
+    allowed_filling_assets: list[str] = dataclasses.field(default_factory=list) # assets to use to fill missing funds
+    forbidden_filling_assets: list[str] = dataclasses.field(default_factory=list) # assets NOT to use to fill missing funds
     # deltas to be applied on top of the current content of the sub-portfolio from get_content_after_deltas()
     funds_deltas: dict[str, dict[str, decimal.Decimal]] = dataclasses.field(default_factory=dict)
     # funds that are missing from this portfolio. Populated after portfolio has been resolved
     missing_funds: dict[str, decimal.Decimal] = dataclasses.field(default_factory=dict)
-
     # funds that are locked (maybe in orders) from this portfolio
     locked_funds_by_asset: dict[str, decimal.Decimal] = dataclasses.field(default_factory=dict)
 
@@ -83,9 +84,18 @@ class SubPortfolioData:
         for asset, values in updated_content.items():
             locked_funds = self.locked_funds_by_asset.get(asset, constants.ZERO)
             if locked_funds > values[commons_constants.PORTFOLIO_TOTAL]:
-                commons_logging.get_logger(__name__).warning(
-                    f"Unexpected: negative {asset} available value after applying {locked_funds} locked funds to {values}"
+                delta = locked_funds - values[commons_constants.PORTFOLIO_TOTAL]
+                error_details = (
+                    f"{asset} available funds after applying {locked_funds} "
+                    f"locked funds to total holdings of {values[commons_constants.PORTFOLIO_TOTAL]} (delta={delta * decimal.Decimal('-1')}). "
+                    f"Available value will be set to 0."
                 )
+                if delta < values[commons_constants.PORTFOLIO_TOTAL] * decimal.Decimal("0.05"):
+                    # delta < 5% of total: log warning: this is likely due to locked funds for open order fees, just warn
+                    commons_logging.get_logger(__name__).warning(f"Tiny negative {error_details}")
+                else:
+                    # large negative: this should not happen,log error
+                    commons_logging.get_logger(__name__).error(f"Unexpected: large negative {error_details}")
             values[commons_constants.PORTFOLIO_AVAILABLE] = values[commons_constants.PORTFOLIO_TOTAL] - locked_funds
         return updated_content
 
