@@ -31,11 +31,12 @@ class SubPortfolioData:
     priority_key: float
     content: dict[str, dict[str, decimal.Decimal]]  # current content of the sub-portfolio
     unit: typing.Optional[str]
+    allowed_filling_assets: list[str] = dataclasses.field(default_factory=list) # assets to use to fill missing funds
+    forbidden_filling_assets: list[str] = dataclasses.field(default_factory=list) # assets NOT to use to fill missing funds
     # deltas to be applied on top of the current content of the sub-portfolio from get_content_after_deltas()
     funds_deltas: dict[str, dict[str, decimal.Decimal]] = dataclasses.field(default_factory=dict)
     # funds that are missing from this portfolio. Populated after portfolio has been resolved
     missing_funds: dict[str, decimal.Decimal] = dataclasses.field(default_factory=dict)
-
     # funds that are locked (maybe in orders) from this portfolio
     locked_funds_by_asset: dict[str, decimal.Decimal] = dataclasses.field(default_factory=dict)
 

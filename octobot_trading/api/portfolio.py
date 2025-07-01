@@ -125,13 +125,9 @@ def is_usd_like_coin(coin) -> bool:
 def resolve_sub_portfolios(
     master_portfolio: personal_data.SubPortfolioData,
     sub_portfolios: list[personal_data.SubPortfolioData],
-    allowed_filling_assets: list[str],
-    forbidden_filling_assets: list[str],
     market_prices: dict[str, float],
 ) -> (personal_data.SubPortfolioData, list[personal_data.SubPortfolioData]):
-    return personal_data.resolve_sub_portfolios(
-        master_portfolio, sub_portfolios, allowed_filling_assets, forbidden_filling_assets, market_prices
-    )
+    return personal_data.resolve_sub_portfolios(master_portfolio, sub_portfolios, market_prices)
 
 
 def get_portfolio_filled_orders_deltas(
