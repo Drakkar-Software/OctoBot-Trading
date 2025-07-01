@@ -258,16 +258,12 @@ def get_asset_price_from_converter_or_tickers(
 def resolve_sub_portfolios(
     master_portfolio: sub_portfolio_data.SubPortfolioData,
     sub_portfolios: list[sub_portfolio_data.SubPortfolioData],
-    allowed_filling_assets: list[str],
-    forbidden_filling_assets: list[str],
     market_prices: dict[str, float],
 ) -> (sub_portfolio_data.SubPortfolioData, list[sub_portfolio_data.SubPortfolioData]):
     resolved_portfolios = []
     remaining_master_portfolio = copy.deepcopy(master_portfolio)
     for sub_portfolio in sorted(sub_portfolios, key=lambda x: x.priority_key):
-        resolved_portfolio = _resolve_sub_portfolio(
-            remaining_master_portfolio, sub_portfolio, allowed_filling_assets, forbidden_filling_assets, market_prices
-        )
+        resolved_portfolio = _resolve_sub_portfolio(remaining_master_portfolio, sub_portfolio, market_prices)
         resolved_portfolios.append(resolved_portfolio)
     return remaining_master_portfolio, resolved_portfolios
 
@@ -275,8 +271,6 @@ def resolve_sub_portfolios(
 def _resolve_sub_portfolio(
     remaining_master_portfolio: sub_portfolio_data.SubPortfolioData,
     sub_portfolio: sub_portfolio_data.SubPortfolioData,
-    allowed_filling_assets: list[str],
-    forbidden_filling_assets: list[str],
     market_prices: dict[str, float],
 ) -> sub_portfolio_data.SubPortfolioData:
     resolved_content = {}
@@ -287,14 +281,14 @@ def _resolve_sub_portfolio(
     for asset_name, holdings in forecasted_sub_portfolio_content.items():
         missing_amount_in_asset = _resolve_sub_portfolio_asset(
             asset_name, holdings, remaining_master_portfolio, resolved_content,
-            sub_portfolio.locked_funds_by_asset.get(asset_name, constants.ZERO), forbidden_filling_assets
+            sub_portfolio.locked_funds_by_asset.get(asset_name, constants.ZERO), sub_portfolio.forbidden_filling_assets
         )
         if missing_amount_in_asset > constants.ZERO:
             missing_amount_by_asset[asset_name] = missing_amount_in_asset
     # now that assets have been allocated, try to compensate missing assets
     for asset_name, missing_amount_in_asset in missing_amount_by_asset.items():
         _fill_missing_assets_from_allowed_filling_assets(
-            asset_name, allowed_filling_assets, market_prices,
+            asset_name, sub_portfolio.allowed_filling_assets, market_prices,
             remaining_master_portfolio, missing_amount_in_asset,
             resolved_content, funds_deltas, missing_funds
         )
@@ -305,8 +299,8 @@ def _resolve_sub_portfolio(
         sub_portfolio.priority_key,
         resolved_content,
         sub_portfolio.unit,
-        funds_deltas,
-        missing_funds,
+        funds_deltas=funds_deltas,
+        missing_funds=missing_funds,
     )
 
 
