@@ -148,11 +148,15 @@ class OrderState(state_class.State):
 
     @staticmethod
     def ensure_not_cleared(order):
-        if order.is_cleared():
+        if order is None or order.is_cleared():
             raise octobot_trading.errors.InvalidOrderState(f"Order has already been cleared. Order: {order}")
 
     def _is_synchronization_enabled(self):
-        return self.order.is_synchronization_enabled()
+        try:
+            self.ensure_not_cleared(self.order)
+            return self.order.is_synchronization_enabled()
+        except octobot_trading.errors.InvalidOrderState:
+            return super()._is_synchronization_enabled()
 
     def clear(self):
         """
