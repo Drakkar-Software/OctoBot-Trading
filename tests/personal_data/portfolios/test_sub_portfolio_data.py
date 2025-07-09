@@ -102,7 +102,10 @@ def _sub_pf(
     locked_funds_by_asset: dict[str, decimal.Decimal] = None,
 ) -> personal_data.SubPortfolioData:
     return personal_data.SubPortfolioData(
-        "", "", priority_key, content, "", funds_deltas or {}, missing_funds or {}, locked_funds_by_asset or {}
+        "", "", priority_key, content, "",
+        funds_deltas=funds_deltas or {},
+        missing_funds=missing_funds or {},
+        locked_funds_by_asset=locked_funds_by_asset or {}
     )
 
 
