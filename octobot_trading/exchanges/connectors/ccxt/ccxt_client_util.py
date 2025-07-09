@@ -514,6 +514,20 @@ def was_latest_request_proxied(ccxt_connector) -> (bool, str):
     return False, ""
 
 
+def get_proxy_error_class(proxy_error: Exception):
+    if _is_retriable_proxy_error(proxy_error):
+        return errors.RetriableExchangeProxyError
+    return errors.ExchangeProxyError
+
+
+def _is_retriable_proxy_error(proxy_error: Exception) -> bool:
+    str_err = str(proxy_error)
+    for desc in constants.RETRIABLE_EXCHANGE_PROXY_ERRORS_DESC:
+        if desc in str_err:
+            return True
+    return False
+
+
 def get_proxy_error_if_any(ccxt_connector, error: Exception) -> typing.Optional[Exception]:
     if not ccxt_connector.exchange_manager.proxy_config:
         return None

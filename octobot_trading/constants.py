@@ -15,7 +15,6 @@
 #  License along with this library
 import decimal
 import os
-import typing
 
 import octobot_trading.enums as enums
 import octobot_commons.enums as commons_enums
@@ -74,6 +73,7 @@ DEFAULT_CANDLE_HISTORY_SIZE = 200
 NO_DATA_LIMIT = -1
 DEFAULT_FAILED_REQUEST_RETRY_TIME = 1
 FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS = 5
+FAILED_PROXY_NETWORK_REQUEST_RETRY_ATTEMPTS = 2
 TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS = int(os.getenv("TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS", "2"))
 TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY = int(os.getenv("TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY", "5"))
 DEFAULT_REQUEST_TIMEOUT = int(os.getenv("DEFAULT_REQUEST_TIMEOUT", "20000"))    # default ccxt is 10s, use 20
@@ -158,19 +158,8 @@ SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex", "bithumb", "bitstamp", "bitmex"
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
                               "wavesexchange",])
 
-# text content of errors due to exchange compliancy rules
-# Warning: should never be a false positive
-EXCHANGE_COMPLIANCY_ERRORS: typing.List[typing.Iterable[str]] = [
-    # OKX ex: Trading of this pair or contract is restricted due to local compliance requirements
-    ("restricted", "compliance"),
-]
 
-# text content of errors due to exchange local account permissions (ex: accounts from X country can't trade XYZ)
-EXCHANGE_ACCOUNT_TRADED_SYMBOL_PERMISSION_ERRORS: typing.List[typing.Iterable[str]] = [
-    # Binance ex: InvalidOrder binance {"code":-2010,"msg":"This symbol is not permitted for this account."}
-    ("symbol", "not permitted", "for this account"),
-]
-
+# exchanges
 CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
 FEES_SAFETY_MARGIN = decimal.Decimal("1.25")    # allow 25% error margin when simulating fees
@@ -183,6 +172,11 @@ DEFAULT_SYMBOL_CONTRACT_SIZE = ONE
 DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
 DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
 DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = decimal.Decimal("0.01")
+
+# exchange proxy
+RETRIABLE_EXCHANGE_PROXY_ERRORS_DESC: set[str] = set(os.getenv(
+    "RETRIABLE_EXCHANGE_PROXY_ERROR_DESC", "message='Service Unavailable'"
+).split(":"))
 
 # used to force margin type update before positions init (if necessary)
 FORCED_MARGIN_TYPE = enums.MarginType(os.getenv("FORCED_MARGIN_TYPE", enums.MarginType.ISOLATED.value))

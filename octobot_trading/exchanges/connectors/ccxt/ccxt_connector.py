@@ -128,7 +128,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         except Exception as err:
             # ensure this is not a proxy error, raise dedicated error if it is
             if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, err):
-                raise octobot_trading.errors.ExchangeProxyError(proxy_error) from err
+                raise ccxt_client_util.get_proxy_error_class(proxy_error)(proxy_error) from err
             raise
 
     @ccxt_client_util.converted_ccxt_common_errors
@@ -1068,7 +1068,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         Will re-raise a "[Proxied request] " prefix given error message if relevant, otherwise will just raise the error
         """
         if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, cause_error):
-            raise octobot_trading.errors.ExchangeProxyError(proxy_error) from cause_error
+            raise ccxt_client_util.get_proxy_error_class(proxy_error)(proxy_error) from cause_error
         # when api key is wrong or proxy is unavailable
         ccxt_client_util.reraise_with_proxy_prefix_if_relevant(self, cause_error, raised_error)
         # reraise_with_proxy_prefix_if_relevant did not raise, raise the error as is

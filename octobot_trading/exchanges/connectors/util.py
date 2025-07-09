@@ -23,12 +23,14 @@ import octobot_trading.errors as errors
 
 
 def retried_failed_network_request(
-    attempts=constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS,
-    delay=constants.DEFAULT_FAILED_REQUEST_RETRY_TIME,
+    attempts: int = constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS,
+    retriable_proxy_errors_attempts: int = constants.FAILED_PROXY_NETWORK_REQUEST_RETRY_ATTEMPTS,
+    delay: float = constants.DEFAULT_FAILED_REQUEST_RETRY_TIME,
 ):
     # inner level to allow passing params to the decorator
     def inner_retried_failed_network_request(func):
         async def _retried_failed_network_request_wrapper(*args, **kwargs):
+            proxy_error_attempts = 0
             for attempt in range(attempts):
                 try:
                     resp = await func(*args, **kwargs)
@@ -38,8 +40,19 @@ def retried_failed_network_request(
                         )
                     return resp
                 except (
-                    ccxt.RequestTimeout, ccxt.ExchangeNotAvailable, ccxt.InvalidNonce, errors.RetriableFailedRequest
+                    ccxt.RequestTimeout, ccxt.ExchangeNotAvailable, ccxt.InvalidNonce,
+                    errors.RetriableFailedRequest, errors.RetriableExchangeProxyError
                 ) as err:
+                    if isinstance(err, errors.RetriableExchangeProxyError):
+                        if proxy_error_attempts >= retriable_proxy_errors_attempts - 1:
+                            commons_logging.get_logger(f"retried_failed_network_request").warning(
+                                f"{func.__name__} raised {html_util.get_html_summary_if_relevant(err)} "
+                                f"({err.__class__.__name__}) [proxy error attempts "
+                                f"{proxy_error_attempts+1}/{retriable_proxy_errors_attempts}]. "
+                                f"Aborting retry attempts."
+                            )
+                            raise err
+                        proxy_error_attempts += 1
                     commons_logging.get_logger(f"retried_failed_network_request").warning(
                         f"{func.__name__} raised {html_util.get_html_summary_if_relevant(err)} "
                         f"({err.__class__.__name__}) [attempts {attempt+1}/{attempts}]. Retrying in {delay} seconds."

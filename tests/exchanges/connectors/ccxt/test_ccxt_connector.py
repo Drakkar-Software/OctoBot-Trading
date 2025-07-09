@@ -25,6 +25,7 @@ from mock import patch
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
 import octobot_trading.errors
+import octobot_trading.constants
 import octobot_trading.exchange_data.contracts as contracts
 import octobot_trading.exchanges.connectors.ccxt.ccxt_client_util as ccxt_client_util
 import pytest
@@ -262,10 +263,26 @@ async def test_error_describer(ccxt_connector):
                 aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
             )
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # non retriable proxy client error
+        with ccxt_connector.error_describer():
+            raise ccxt.ExchangeError from aiohttp.ClientHttpProxyError(
+                aiohttp.client_reqrep.RequestInfo("www.google.com", "GET", {}, "www.google.com"), OSError("plop")
+            )
+    with pytest.raises(octobot_trading.errors.ExchangeProxyError):
+        # non retriable proxy client error
+        with ccxt_connector.error_describer():
+            raise ccxt.ExchangeError from aiohttp.ClientHttpProxyError(
+                aiohttp.client_reqrep.RequestInfo("www.google.com", "GET", {}, "www.google.com"),
+                OSError("plop"),
+                message="random"
+            )
+    with pytest.raises(octobot_trading.errors.RetriableExchangeProxyError):
         # proxy client error
         with ccxt_connector.error_describer():
             raise ccxt.ExchangeError from aiohttp.ClientHttpProxyError(
-                aiohttp.client_reqrep.ConnectionKey("host", 11, True, True, None, None, None), OSError("plop")
+                aiohttp.client_reqrep.RequestInfo("www.google.com", "GET", {}, "www.google.com"),
+                OSError("plop"),
+                message=f"random{next(iter(octobot_trading.constants.RETRIABLE_EXCHANGE_PROXY_ERRORS_DESC))}"
             )
     with pytest.raises(octobot_trading.errors.ExchangeProxyError):
         # socks proxy error
