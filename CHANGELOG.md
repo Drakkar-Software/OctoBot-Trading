@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.200] - 2025-07-12
+### Fixed
+[Modes] add get_historical_configs
+
 ## [2.4.199] - 2025-07-09
 ### Fixed
 [Proxy] add retriable error
