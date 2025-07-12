@@ -468,6 +468,14 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             self.get_historical_master_config(), self.exchange_manager.exchange.get_exchange_current_time()
         )
 
+    def get_historical_configs(self, from_time: float, to_time: float) -> list[dict]:
+        try:
+            return octobot_commons.configuration.get_historical_tentacle_configs(
+                self.get_historical_master_config(), from_time, to_time
+            )
+        except KeyError:
+            return []
+
     def get_historical_master_config(self):
         if self.historical_master_config is None:
             self.historical_master_config = copy.deepcopy(self.trading_config)
