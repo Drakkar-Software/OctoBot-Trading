@@ -213,7 +213,7 @@ class ExchangeSimulatorConnector(abstract_exchange.AbstractExchange):
     def get_uniform_timestamp(self, timestamp):
         return timestamp / 1000
 
-    def get_fees(self, symbol):
+    def get_fees(self, symbol: str):
         if self._forced_market_statuses and symbol in self._forced_market_statuses:
             # use self._forced_market_statuses when possible
             return ccxt_client_simulation.get_fees(self._forced_market_statuses[symbol])
