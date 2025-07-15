@@ -75,6 +75,12 @@ class MaxOpenOrderReachedForSymbolError(OrderCreationError):
     """
 
 
+class MarketClosedError(OrderCreationError):
+    """
+    Raised when a new order is impossible to create because the market is closed
+    """
+
+
 class OrderEditError(OctoBotExchangeError):
     """
     Raised upon a failed order edition

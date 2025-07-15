@@ -258,6 +258,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             yield
         except ccxt.InsufficientFunds as e:
             self._on_missing_funds_err(e, order_type, symbol, quantity, price, stop_price)
+        except ccxt.MarketClosed as err:
+            raise errors.MarketClosedError(html_util.get_html_summary_if_relevant(err)) from err
         except (ccxt.NotSupported, NotImplementedError) as err:
             raise errors.NotSupported(err) from err
         except (errors.AuthenticationError, ccxt.AuthenticationError) as err:
