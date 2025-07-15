@@ -29,7 +29,6 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_retried_failed_network_request():
-  
   request_mock = mock.AsyncMock(return_value=1)
   @exchanges.connectors.util.retried_failed_network_request()
   async def _fetch_request(*args, **kwargs):
@@ -40,13 +39,46 @@ async def test_retried_failed_network_request():
     assert await _fetch_request("arg1", kw1=1) == 1
     request_mock.assert_awaited_once_with("arg1", kw1=1)
     sleep_mock.assert_not_called()
-    
+
+    # non retriable errors
+    for raised_error in [
+      ccxt.ExchangeError("Exchange error"),
+      KeyError("random key error"),
+      ValueError("random value error"),
+      ZeroDivisionError("random zero division error"),
+    ]:
+      request_mock = mock.AsyncMock(side_effect=raised_error)
+      @exchanges.connectors.util.retried_failed_network_request()
+      async def _fetch_request(*args, **kwargs):
+        return await request_mock(*args, **kwargs)
+      with pytest.raises(raised_error.__class__):
+        await _fetch_request("arg1", kw1=1)
+      assert request_mock.call_count == 1
+      assert sleep_mock.call_count == 0
+      sleep_mock.reset_mock()
+
     # retriable errors
     for raised_error in [
       ccxt.ExchangeNotAvailable("Exchange not available"), 
       ccxt.RequestTimeout("Request timeout"), 
       ccxt.InvalidNonce("Invalid nonce"),
       errors.RetriableFailedRequest("Retriable failed request"),
+    ]:
+      request_mock = mock.AsyncMock(side_effect=raised_error)
+      @exchanges.connectors.util.retried_failed_network_request()
+      async def _fetch_request(*args, **kwargs):
+        return await request_mock(*args, **kwargs)
+      with pytest.raises(raised_error.__class__):
+        await _fetch_request("arg1", kw1=1)
+      assert request_mock.call_count == constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS
+      assert sleep_mock.call_count == constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS - 1
+      assert sleep_mock.mock_calls[0].args == (constants.DEFAULT_FAILED_REQUEST_RETRY_TIME,)
+      sleep_mock.reset_mock()
+
+    # retriable exchange errors
+    for raised_error in [
+      ccxt.ExchangeError("Internal Server Error"),
+      ccxt.ExchangeError('mexc {"code":700022,"msg":"Internal Server Error"}'),
     ]:
       request_mock = mock.AsyncMock(side_effect=raised_error)
       @exchanges.connectors.util.retried_failed_network_request()

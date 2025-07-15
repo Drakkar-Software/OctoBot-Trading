@@ -172,10 +172,13 @@ DEFAULT_SYMBOL_CONTRACT_SIZE = ONE
 DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
 DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
 DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = decimal.Decimal("0.01")
+RETRIABLE_EXCHANGE_ERRORS_DESC: set[str] = set(os.getenv(
+    "RETRIABLE_EXCHANGE_ERRORS_DESC", 'Internal Server Error'
+).split(":"))
 
 # exchange proxy
 RETRIABLE_EXCHANGE_PROXY_ERRORS_DESC: set[str] = set(os.getenv(
-    "RETRIABLE_EXCHANGE_PROXY_ERROR_DESC", "message='Service Unavailable'"
+    "RETRIABLE_EXCHANGE_PROXY_ERRORS_DESC", "message='Service Unavailable'"
 ).split(":"))
 
 # used to force margin type update before positions init (if necessary)

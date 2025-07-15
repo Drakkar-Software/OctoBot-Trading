@@ -32,6 +32,7 @@ def retried_failed_network_request(
         async def _retried_failed_network_request_wrapper(*args, **kwargs):
             proxy_error_attempts = 0
             for attempt in range(attempts):
+                retriable_error = False
                 try:
                     resp = await func(*args, **kwargs)
                     if attempt > 0:
@@ -43,6 +44,7 @@ def retried_failed_network_request(
                     ccxt.RequestTimeout, ccxt.ExchangeNotAvailable, ccxt.InvalidNonce,
                     errors.RetriableFailedRequest, errors.RetriableExchangeProxyError
                 ) as err:
+                    retriable_error = err
                     if isinstance(err, errors.RetriableExchangeProxyError):
                         if proxy_error_attempts >= retriable_proxy_errors_attempts - 1:
                             commons_logging.get_logger(f"retried_failed_network_request").warning(
@@ -51,18 +53,27 @@ def retried_failed_network_request(
                                 f"{proxy_error_attempts+1}/{retriable_proxy_errors_attempts}]. "
                                 f"Aborting retry attempts."
                             )
-                            raise err
+                            raise
                         proxy_error_attempts += 1
-                    commons_logging.get_logger(f"retried_failed_network_request").warning(
-                        f"{func.__name__} raised {html_util.get_html_summary_if_relevant(err)} "
-                        f"({err.__class__.__name__}) [attempts {attempt+1}/{attempts}]. Retrying in {delay} seconds."
-                    )
-                    if attempt < attempts - 1:
-                        # can happen: retry
-                        await asyncio.sleep(delay)
-                    else:
+                    if attempt >= attempts - 1:
+                        # no more attempt remaining
                         raise
-                # raise any other error
+                except ccxt.ExchangeError as err:
+                    retriable_error = err
+                    is_retriable_error = False
+                    for error_message in constants.RETRIABLE_EXCHANGE_ERRORS_DESC:
+                        if error_message in str(err):
+                            is_retriable_error = True
+                    if attempt >= attempts - 1 or not is_retriable_error:
+                        raise
+                # propagate any other error
+
+                # did not propagate error, retry after delay
+                commons_logging.get_logger(f"retried_failed_network_request").warning(
+                    f"{func.__name__} raised {html_util.get_html_summary_if_relevant(retriable_error)} "
+                    f"({retriable_error.__class__.__name__}) [attempts {attempt+1}/{attempts}]. Retrying in {delay} seconds."
+                )
+                await asyncio.sleep(delay)
             return None
         return _retried_failed_network_request_wrapper
     return inner_retried_failed_network_request
