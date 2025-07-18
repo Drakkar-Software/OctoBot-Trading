@@ -569,7 +569,8 @@ def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
         unexplained_orders_deltas=portfolios_asset_deltas,
         inferred_cancelled_orders=unknown_filled_or_cancelled_orders,
     )
-    for orders_to_fill_count in range(len(unknown_filled_or_cancelled_orders) + 1):
+    # start at 1 to avoid considering no filled orders (already considered in best_inferred_resolved_delta)
+    for orders_to_fill_count in range(1, len(unknown_filled_or_cancelled_orders) + 1):
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             filled_orders_combination = list(filled_orders_combination)
             total_filled_orders_candidate = filled_orders + filled_orders_combination
