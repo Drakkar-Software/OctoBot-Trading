@@ -16,12 +16,14 @@
 import copy
 import decimal
 import typing
+import itertools
 
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_trading.personal_data.portfolios.assets
 import octobot_trading.personal_data.orders.order as order_import
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.portfolios.sub_portfolio_data as sub_portfolio_data
+import octobot_trading.personal_data.portfolios.resolved_orders_portfolio_delta as resolved_orders_portfolio_delta
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -538,11 +540,67 @@ def get_missing_master_portfolio_values_update(
 def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
-    filled_orders: list[order_import.Order]
-) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
-    orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(filled_orders)
+    filled_orders: list[order_import.Order],
+    unknown_filled_or_cancelled_orders: list[order_import.Order]
+) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     portfolios_asset_deltas = _get_assets_delta_from_portfolio(previous_portfolio_content, updated_portfolio_content)
-    # return portfolio asset deltas that can approximately be explained by given orders
+    if unknown_filled_or_cancelled_orders:
+        return compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
+            filled_orders, portfolios_asset_deltas, unknown_filled_or_cancelled_orders
+        )
+    else:
+        orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(filled_orders)
+        return compute_assets_deltas_from_orders(
+            orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, portfolios_asset_deltas
+        )
+
+
+def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
+    filled_orders: list[order_import.Order],
+    portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
+    unknown_filled_or_cancelled_orders: list[order_import.Order]
+) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
+    # most probable deltas are deltas that can be best explained by given orders
+    best_inferred_resolved_delta = None
+    for orders_to_fill_count in range(len(unknown_filled_or_cancelled_orders)):
+        for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
+            filled_orders_combination = list(filled_orders_combination)
+            total_filled_orders_candidate = filled_orders + filled_orders_combination
+            orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(total_filled_orders_candidate)
+            inferred_resolved_delta_candidate = compute_assets_deltas_from_orders(
+                orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, portfolios_asset_deltas
+            )
+            inferred_resolved_delta_candidate.inferred_filled_orders = filled_orders_combination
+            inferred_resolved_delta_candidate.inferred_cancelled_orders = [
+                order for order in unknown_filled_or_cancelled_orders if order not in filled_orders_combination
+            ]
+            try:
+                if (
+                    inferred_resolved_delta_candidate.explained_orders_deltas and not inferred_resolved_delta_candidate.unexplained_orders_deltas
+                ):
+                    # no unexplained delta: this is the most probable combination: stop here
+                    return inferred_resolved_delta_candidate
+                elif best_inferred_resolved_delta is None or inferred_resolved_delta_candidate.is_more_probable_than(best_inferred_resolved_delta):
+                    best_inferred_resolved_delta = inferred_resolved_delta_candidate
+            except KeyError as err:
+                # should not happen, catch it to avoid raising it if it does
+                commons_logging.get_logger(__name__).error(
+                    f"Unexpected error when computing most probable assets deltas from orders: {err}"
+                )
+    if best_inferred_resolved_delta is None:
+        raise ValueError("best_inferred_resolved_delta should never be None")
+    return best_inferred_resolved_delta
+
+
+def compute_assets_deltas_from_orders(
+    orders_asset_deltas: dict[str, decimal.Decimal], 
+    expected_fee_related_deltas: dict[str, decimal.Decimal], 
+    possible_fees_asset_deltas: dict[str, decimal.Decimal],
+    portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]]
+) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
+    """
+    returns portfolio asset deltas that can approximately be explained by given orders
+    """
     orders_linked_deltas = {}
     ignored_deltas = {}
     for asset_name, holdings_delta in portfolios_asset_deltas.items():
@@ -646,13 +704,17 @@ def get_portfolio_filled_orders_deltas(
                 commons_constants.PORTFOLIO_TOTAL: order_delta,
                 commons_constants.PORTFOLIO_AVAILABLE: order_delta
             }
-    return orders_linked_deltas, ignored_deltas
+    return resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta(
+        explained_orders_deltas=orders_linked_deltas,
+        unexplained_orders_deltas=ignored_deltas
+    )
+
 
 
 def _get_assets_delta_from_portfolio(
     previous_portfolio_content: dict,
     updated_portfolio_content: dict,
-) ->  dict[str, dict[str, decimal.Decimal]]:
+) -> dict[str, dict[str, decimal.Decimal]]:
     asset_deltas = {}
     for asset_name in set(previous_portfolio_content).union(updated_portfolio_content):
         if previous_portfolio_content.get(asset_name) != updated_portfolio_content.get(asset_name):

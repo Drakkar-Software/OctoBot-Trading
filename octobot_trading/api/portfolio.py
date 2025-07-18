@@ -133,10 +133,11 @@ def resolve_sub_portfolios(
 def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
-    filled_orders: list[personal_data.Order]
-) -> (dict[str, dict[str, decimal.Decimal]], dict[str, dict[str, decimal.Decimal]]):
+    filled_orders: list[personal_data.Order],
+    unknown_filled_or_cancelled_orders: list[personal_data.Order]
+) -> personal_data.ResolvedOrdersPortoflioDelta:
     return personal_data.get_portfolio_filled_orders_deltas(
-        previous_portfolio_content, updated_portfolio_content, filled_orders
+        previous_portfolio_content, updated_portfolio_content, filled_orders, unknown_filled_or_cancelled_orders
     )
 
 
