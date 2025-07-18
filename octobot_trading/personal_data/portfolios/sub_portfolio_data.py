@@ -71,24 +71,53 @@ class SubPortfolioData:
         """
         Only uses PORTFOLIO_TOTAL deltas and computes available values from locked_funds_by_asset
         """
-        updated_content = copy.deepcopy(self.content)
-        for asset, delta_values in self.funds_deltas.items():
-            if asset in updated_content:
-                updated_content[asset][commons_constants.PORTFOLIO_TOTAL] += (
-                    delta_values[commons_constants.PORTFOLIO_TOTAL]
-                )
-            else:
-                updated_content[asset] = {
-                    commons_constants.PORTFOLIO_TOTAL: delta_values[commons_constants.PORTFOLIO_TOTAL]
-                }
-        return self.get_content_considering_locked_funds(updated_content)
+        return get_content_with_available_after_deltas(
+            self.content, self.funds_deltas, self.locked_funds_by_asset
+        )
 
-    def get_content_considering_locked_funds(
-        self, updated_content: typing.Optional[dict[str, dict[str, decimal.Decimal]]] = None
-    ) -> dict[str, dict[str, decimal.Decimal]]:
-        updated_content = updated_content or copy.deepcopy(self.content)
-        for asset, values in updated_content.items():
-            locked_funds = self.locked_funds_by_asset.get(asset, constants.ZERO)
+    def is_similar_to(self, other) -> bool:
+        return (
+            other
+            and personal_data.filter_empty_values(self.content) == personal_data.filter_empty_values(other.content)
+        )
+
+
+def get_content_with_available_after_deltas(
+    content: dict[str, dict[str, decimal.Decimal]], 
+    deltas: dict[str, dict[str, decimal.Decimal]],
+    locked_funds_by_asset: typing.Optional[dict[str, decimal.Decimal]] = None,
+) -> dict[str, dict[str, decimal.Decimal]]:
+    updated_content = get_content_after_deltas(content, deltas)
+    update_available_considering_locked_funds(updated_content, locked_funds_by_asset)
+    return updated_content
+
+
+def get_content_after_deltas(
+    content: dict[str, dict[str, decimal.Decimal]], deltas: dict[str, dict[str, decimal.Decimal]]
+) -> dict[str, dict[str, decimal.Decimal]]:
+    updated_content = copy.deepcopy(content)
+    for asset, delta_values in deltas.items():
+        if asset in updated_content:
+            updated_content[asset][commons_constants.PORTFOLIO_TOTAL] += (
+                delta_values[commons_constants.PORTFOLIO_TOTAL]
+            )
+        else:
+            updated_content[asset] = {
+                commons_constants.PORTFOLIO_TOTAL: delta_values[commons_constants.PORTFOLIO_TOTAL]
+            }
+    return updated_content
+
+
+def update_available_considering_locked_funds(
+    content: typing.Optional[dict[str, dict[str, decimal.Decimal]]],
+    locked_funds_by_asset: typing.Optional[dict[str, decimal.Decimal]] = None,
+) -> None:
+    locked_funds_by_asset = locked_funds_by_asset or {}
+    for asset, values in content.items():
+        locked_funds = locked_funds_by_asset.get(asset, constants.ZERO)
+        if locked_funds == constants.ZERO:
+            values[commons_constants.PORTFOLIO_AVAILABLE] = values[commons_constants.PORTFOLIO_TOTAL]
+        else:
             if locked_funds > values[commons_constants.PORTFOLIO_TOTAL]:
                 delta = locked_funds - values[commons_constants.PORTFOLIO_TOTAL]
                 error_details = (
@@ -103,10 +132,3 @@ class SubPortfolioData:
                     # large negative: this should not happen,log error
                     commons_logging.get_logger(__name__).error(f"Unexpected: large negative {error_details}")
             values[commons_constants.PORTFOLIO_AVAILABLE] = values[commons_constants.PORTFOLIO_TOTAL] - locked_funds
-        return updated_content
-
-    def is_similar_to(self, other) -> bool:
-        return (
-            other
-            and personal_data.filter_empty_values(self.content) == personal_data.filter_empty_values(other.content)
-        )
