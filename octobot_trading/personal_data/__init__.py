@@ -177,6 +177,7 @@ from octobot_trading.personal_data.portfolios import (
     HistoricalAssetValue,
     HistoricalPortfolioValueManager,
     SubPortfolioData,
+    ResolvedOrdersPortoflioDelta,
 )
 from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
@@ -474,4 +475,5 @@ __all__ = [
     "create_fee_transaction",
     "create_transfer_transaction",
     "SubPortfolioData",
+    "ResolvedOrdersPortoflioDelta",
 ]

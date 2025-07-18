@@ -81,6 +81,12 @@ class SubPortfolioData:
                 updated_content[asset] = {
                     commons_constants.PORTFOLIO_TOTAL: delta_values[commons_constants.PORTFOLIO_TOTAL]
                 }
+        return self.get_content_considering_locked_funds(updated_content)
+
+    def get_content_considering_locked_funds(
+        self, updated_content: typing.Optional[dict[str, dict[str, decimal.Decimal]]] = None
+    ) -> dict[str, dict[str, decimal.Decimal]]:
+        updated_content = updated_content or copy.deepcopy(self.content)
         for asset, values in updated_content.items():
             locked_funds = self.locked_funds_by_asset.get(asset, constants.ZERO)
             if locked_funds > values[commons_constants.PORTFOLIO_TOTAL]:

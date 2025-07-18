@@ -1142,7 +1142,7 @@ class Order(util.Initializable):
         return self.trader is not None
 
 
-def parse_order_type(raw_order):
+def parse_order_type(raw_order) -> (enums.TradeOrderSide, enums.TraderOrderType):
     try:
         side: enums.TradeOrderSide = enums.TradeOrderSide(raw_order[enums.ExchangeConstantsOrderColumns.SIDE.value])
         order_type: enums.TradeOrderType = enums.TradeOrderType.UNKNOWN
