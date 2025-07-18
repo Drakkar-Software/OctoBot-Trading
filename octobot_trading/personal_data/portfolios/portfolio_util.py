@@ -551,7 +551,8 @@ def get_portfolio_filled_orders_deltas(
     else:
         orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(filled_orders)
         return compute_assets_deltas_from_orders(
-            orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, portfolios_asset_deltas
+            orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
+            portfolios_asset_deltas, allow_portfolio_delta_shrinking=True
         )
 
 
@@ -562,13 +563,14 @@ def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     # most probable deltas are deltas that can be best explained by given orders
     best_inferred_resolved_delta = None
-    for orders_to_fill_count in range(len(unknown_filled_or_cancelled_orders)):
+    for orders_to_fill_count in range(len(unknown_filled_or_cancelled_orders) + 1):
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             filled_orders_combination = list(filled_orders_combination)
             total_filled_orders_candidate = filled_orders + filled_orders_combination
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(total_filled_orders_candidate)
             inferred_resolved_delta_candidate = compute_assets_deltas_from_orders(
-                orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, portfolios_asset_deltas
+                orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
+                portfolios_asset_deltas, allow_portfolio_delta_shrinking=False
             )
             inferred_resolved_delta_candidate.inferred_filled_orders = filled_orders_combination
             inferred_resolved_delta_candidate.inferred_cancelled_orders = [
@@ -596,7 +598,8 @@ def compute_assets_deltas_from_orders(
     orders_asset_deltas: dict[str, decimal.Decimal], 
     expected_fee_related_deltas: dict[str, decimal.Decimal], 
     possible_fees_asset_deltas: dict[str, decimal.Decimal],
-    portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]]
+    portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
+    allow_portfolio_delta_shrinking: bool = True
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     """
     returns portfolio asset deltas that can approximately be explained by given orders
@@ -674,16 +677,21 @@ def compute_assets_deltas_from_orders(
                 # Add it to ignored_deltas
                 ignored_deltas[asset_name] = holdings_delta
         elif abs(min_allowed_equivalent_total_holding) > abs(order_asset_delta):
-            # too much in portfolio delta: only take what is linked to the orders deltas
-            # => updates both total and available
-            # Should very rarely happen as it might reduce the total portfolio if done when unecessary
-            commons_logging.get_logger(__name__).warning(
-                f"Too large portfolio {asset_name} delta: {holdings_delta}, reducing to order delta: {order_asset_delta}"
-            )
-            orders_linked_deltas[asset_name] = {
-                key: order_asset_delta
-                for key in holdings_delta
-            }
+            if allow_portfolio_delta_shrinking:
+                # too much in portfolio delta: only take what is linked to the orders deltas
+                # => updates both total and available
+                # Should very rarely happen as it might reduce the total portfolio if done when unecessary
+                commons_logging.get_logger(__name__).warning(
+                    f"Too large portfolio {asset_name} delta: {holdings_delta}, reducing to order delta: {order_asset_delta}"
+                )
+                orders_linked_deltas[asset_name] = {
+                    key: order_asset_delta
+                    for key in holdings_delta
+                }
+            else:
+                # can't be from those orders: ignore this delta
+                ignored_deltas[asset_name] = holdings_delta
+
     for asset_name, order_delta in orders_asset_deltas.items():
         can_have_no_delta = (
             (order_delta == constants.ZERO)

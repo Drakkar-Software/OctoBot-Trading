@@ -369,6 +369,38 @@ def test_get_portfolio_filled_orders_deltas():
         error_log.assert_not_called()
 
 
+def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancelled_orders():
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+    error_log = mock.Mock()
+    filled_orders = []
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+
+        # no unknown_filled_or_cancelled_orders
+        unknown_filled_or_cancelled_orders = []
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        )  == _resolved()   # deltas are considered from other orders (as no order is provided)
+        error_log.assert_not_called()
+
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.05, 451, "buy"),   # 1 will be ignored, (allowed error margin)
+            _order("BTC/USDT", 0.01, 50, "sell"),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
+        )
+
+
+def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown_filled_or_cancelled_orders():
+    #todo: add test
+    pass
+
+
 def test_get_portfolio_filled_orders_deltas_considering_fees():
     pre_trade_content = _content({"BTC": 0.1, "USDT": 600.2})
     post_trade_content = _content({"BTC": 0.2, "USDT": 50.2})    # paid 50 USDT in fees
