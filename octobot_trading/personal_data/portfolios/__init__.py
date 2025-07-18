@@ -44,7 +44,7 @@ from octobot_trading.personal_data.portfolios import types
 from octobot_trading.personal_data.portfolios import portfolio_util
 from octobot_trading.personal_data.portfolios import history
 from octobot_trading.personal_data.portfolios import sub_portfolio_data
-
+from octobot_trading.personal_data.portfolios import resolved_orders_portfolio_delta
 
 from octobot_trading.personal_data.portfolios.portfolio_factory import (
     create_portfolio_from_exchange_manager,
@@ -97,7 +97,10 @@ from octobot_trading.personal_data.portfolios.history import (
 from octobot_trading.personal_data.portfolios.sub_portfolio_data import (
     SubPortfolioData,
 )
-
+from octobot_trading.personal_data.portfolios.resolved_orders_portfolio_delta import (
+    ResolvedOrdersPortoflioDelta,
+)
+    
 __all__ = [
     "BalanceUpdaterSimulator",
     "BalanceProfitabilityUpdaterSimulator",
@@ -139,4 +142,5 @@ __all__ = [
     "HistoricalAssetValue",
     "HistoricalPortfolioValueManager",
     "SubPortfolioData",
+    "ResolvedOrdersPortoflioDelta",
 ]
