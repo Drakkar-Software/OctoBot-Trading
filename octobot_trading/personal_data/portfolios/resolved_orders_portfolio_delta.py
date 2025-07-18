@@ -29,29 +29,24 @@ class ResolvedOrdersPortoflioDelta:
 
     def is_more_probable_than(self, other: 'ResolvedOrdersPortoflioDelta') -> bool:
         """
-        More probable means that the number or value of unexplained orders deltas is lower.
+        More probable means that:
+            - the number of explained orders deltas is higher
+            - the number of unexplained orders deltas is lower
         """
+        if (
+            self.unexplained_orders_deltas == other.unexplained_orders_deltas 
+            and self.explained_orders_deltas == other.explained_orders_deltas
+        ):
+            # same deltas: not more probable
+            return False
         if len(self.explained_orders_deltas) > len(other.explained_orders_deltas):
             # self has more explained orders deltas: it is more probable
             return True
         if len(self.explained_orders_deltas) < len(other.explained_orders_deltas):
             # self has less explained orders deltas: it is less probable
             return False
-        for asset_name, asset_deltas in self.unexplained_orders_deltas.items():
-            if asset_name not in other.unexplained_orders_deltas:
-                # self has unexplained orders deltas that other does not: skip it
-                continue
-            for key, delta in asset_deltas.items():
-                if key not in other.unexplained_orders_deltas[asset_name]:
-                    # missing key in other: should not happen
-                    raise KeyError(f"missing key {key} in other.unexplained_orders_deltas[{asset_name}]")
-                if other.unexplained_orders_deltas[asset_name][key] > delta:
-                    # other has unexplained orders deltas that self does not: it is less probable
-                    return False
-                    # todo compare with value if can be found in orders
-        # self and other have the same number of unexplained orders deltas: but self does not have larger unexplained order deltas. 
-        # Self is more probable
-        return True
+        # self is more probable if it has less unexplained orders deltas
+        return len(self.unexplained_orders_deltas) < len(other.unexplained_orders_deltas)
 
 
     def has_inferred_orders(self) -> bool:

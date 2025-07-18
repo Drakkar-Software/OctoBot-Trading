@@ -561,16 +561,30 @@ def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
     unknown_filled_or_cancelled_orders: list[order_import.Order]
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
-    # most probable deltas are deltas that can be best explained by given orders
-    best_inferred_resolved_delta = None
+    """
+    Returns the most probable deltas which are the ones that can be best explained by given orders
+    """
+    # init with all unexplained and all cancelled orders
+    best_inferred_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta(
+        unexplained_orders_deltas=portfolios_asset_deltas,
+        inferred_cancelled_orders=unknown_filled_or_cancelled_orders,
+    )
     for orders_to_fill_count in range(len(unknown_filled_or_cancelled_orders) + 1):
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             filled_orders_combination = list(filled_orders_combination)
             total_filled_orders_candidate = filled_orders + filled_orders_combination
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(total_filled_orders_candidate)
+            if any(
+                asset_name not in portfolios_asset_deltas
+                for asset_name in orders_asset_deltas
+            ):
+                # at least one of the candidate filled orders is not related to portfolio delta: skip this combination
+                continue
             inferred_resolved_delta_candidate = compute_assets_deltas_from_orders(
                 orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
-                portfolios_asset_deltas, allow_portfolio_delta_shrinking=False
+                portfolios_asset_deltas, 
+                allow_portfolio_delta_shrinking=False, ignore_order_unrelated_deltas=False,
+                ignore_order_extra_deltas=True,
             )
             inferred_resolved_delta_candidate.inferred_filled_orders = filled_orders_combination
             inferred_resolved_delta_candidate.inferred_cancelled_orders = [
@@ -582,15 +596,13 @@ def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
                 ):
                     # no unexplained delta: this is the most probable combination: stop here
                     return inferred_resolved_delta_candidate
-                elif best_inferred_resolved_delta is None or inferred_resolved_delta_candidate.is_more_probable_than(best_inferred_resolved_delta):
+                elif inferred_resolved_delta_candidate.is_more_probable_than(best_inferred_resolved_delta):
                     best_inferred_resolved_delta = inferred_resolved_delta_candidate
             except KeyError as err:
                 # should not happen, catch it to avoid raising it if it does
                 commons_logging.get_logger(__name__).error(
                     f"Unexpected error when computing most probable assets deltas from orders: {err}"
                 )
-    if best_inferred_resolved_delta is None:
-        raise ValueError("best_inferred_resolved_delta should never be None")
     return best_inferred_resolved_delta
 
 
@@ -599,7 +611,9 @@ def compute_assets_deltas_from_orders(
     expected_fee_related_deltas: dict[str, decimal.Decimal], 
     possible_fees_asset_deltas: dict[str, decimal.Decimal],
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
-    allow_portfolio_delta_shrinking: bool = True
+    allow_portfolio_delta_shrinking: bool = True,
+    ignore_order_unrelated_deltas: bool = True,
+    ignore_order_extra_deltas: bool = False,
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     """
     returns portfolio asset deltas that can approximately be explained by given orders
@@ -608,7 +622,12 @@ def compute_assets_deltas_from_orders(
     ignored_deltas = {}
     for asset_name, holdings_delta in portfolios_asset_deltas.items():
         if asset_name not in orders_asset_deltas:
-            # this delta is not due to these orders: skip it
+            if ignore_order_unrelated_deltas:
+                # this delta is not due to these orders: skip it
+                continue
+            else:
+                # this delta is not due to these orders: add it to ignored deltas
+                ignored_deltas[asset_name] = holdings_delta
             continue
         order_asset_delta = orders_asset_deltas[asset_name]
         holding_total = holdings_delta[commons_constants.PORTFOLIO_TOTAL]
@@ -692,18 +711,20 @@ def compute_assets_deltas_from_orders(
                 # can't be from those orders: ignore this delta
                 ignored_deltas[asset_name] = holdings_delta
 
-    for asset_name, order_delta in orders_asset_deltas.items():
-        can_have_no_delta = (
-            (order_delta == constants.ZERO)
-            or (order_delta + possible_fees_asset_deltas.get(asset_name, constants.ZERO)) == constants.ZERO
-            or (order_delta - possible_fees_asset_deltas.get(asset_name, constants.ZERO)) == constants.ZERO
-        )
-        if asset_name not in portfolios_asset_deltas and not can_have_no_delta:
-            # asset not in portfolio delta, this is unexpected, register it in ignored deltas
-            ignored_deltas[asset_name] = {
-                commons_constants.PORTFOLIO_TOTAL: order_delta,
-                commons_constants.PORTFOLIO_AVAILABLE: order_delta
-            }
+    if not ignore_order_extra_deltas:
+        # consider order deltas that are seen in portfolio deltas
+        for asset_name, order_delta in orders_asset_deltas.items():
+            can_have_no_delta = (
+                (order_delta == constants.ZERO)
+                or (order_delta + possible_fees_asset_deltas.get(asset_name, constants.ZERO)) == constants.ZERO
+                or (order_delta - possible_fees_asset_deltas.get(asset_name, constants.ZERO)) == constants.ZERO
+            )
+            if asset_name not in portfolios_asset_deltas and not can_have_no_delta:
+                # asset not in portfolio delta, this is unexpected, register it in ignored deltas
+                ignored_deltas[asset_name] = {
+                    commons_constants.PORTFOLIO_TOTAL: order_delta,
+                    commons_constants.PORTFOLIO_AVAILABLE: order_delta
+                }
     return resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta(
         explained_orders_deltas=orders_linked_deltas,
         unexplained_orders_deltas=ignored_deltas
