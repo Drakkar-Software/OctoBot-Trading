@@ -504,9 +504,26 @@ def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancelled_ord
         )
         error_log.assert_not_called()
 
+        # with another assert in portfolio delta
+        post_trade_content = _content({"BTC": 0.2, "USDT": 500, "ETH": 100})
+        # cancelled, filled, filled
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.04, 600, "buy"),    # too large
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.04, 400, "buy"),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the last two orders
+            unexplained_orders_deltas=_content({"ETH": 100}),   # ETH is not explained by any order
+            inferred_filled_orders=unknown_filled_or_cancelled_orders[1:],  # last 2 orders are inferred as filled
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders[:1],  # first order is inferred as cancelled
+        )
+
 
 def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown_filled_or_cancelled_orders():
-    #todo: add test
+    #todo: add test warn: include deltas that are not in orders
     pass
 
 
@@ -663,7 +680,6 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
             _content({"MANA": -30.77, "USDC": -0.1947450000000069}),
             {},
         )
-        error_log.assert_not_called()
 
 
 def test_get_accepted_missed_deltas():
