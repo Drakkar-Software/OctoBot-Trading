@@ -16,12 +16,13 @@
 import dataclasses
 import decimal
 
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order as order_import
 
 
 @dataclasses.dataclass
 class ResolvedOrdersPortoflioDelta:
-    explained_orders_deltas: dict[str, decimal.Decimal] = dataclasses.field(default_factory=dict)
+    explained_orders_deltas: dict[str, dict[str, decimal.Decimal]] = dataclasses.field(default_factory=dict)
     unexplained_orders_deltas: dict[str, dict[str, decimal.Decimal]] = dataclasses.field(default_factory=dict)
     inferred_filled_orders: list[order_import.Order] = dataclasses.field(default_factory=list)
     inferred_cancelled_orders: list[order_import.Order] = dataclasses.field(default_factory=list)
@@ -51,3 +52,44 @@ class ResolvedOrdersPortoflioDelta:
 
     def has_inferred_orders(self) -> bool:
         return bool(self.inferred_filled_orders or self.inferred_cancelled_orders)
+
+    def merge_order_deltas(self, other: 'ResolvedOrdersPortoflioDelta') -> 'ResolvedOrdersPortoflioDelta':
+        return ResolvedOrdersPortoflioDelta(
+            explained_orders_deltas=_merge_deltas(
+                self.explained_orders_deltas, other.explained_orders_deltas
+            ),
+            unexplained_orders_deltas=_merge_deltas(
+                self.unexplained_orders_deltas, other.unexplained_orders_deltas
+            ),
+            inferred_filled_orders=self.inferred_filled_orders,
+            inferred_cancelled_orders=self.inferred_cancelled_orders,
+        )
+
+
+def _merge_deltas(
+    deltas_a: dict[str, dict[str, decimal.Decimal]], deltas_b: dict[str, dict[str, decimal.Decimal]]
+) -> dict[str, dict[str, decimal.Decimal]]:
+    merged = {
+        asset_name: _merge_delta_values(deltas_a, deltas_b, asset_name)
+        for asset_name in set(deltas_a).union(set(deltas_b))
+    }
+    # remove empty deltas
+    merged = {
+        asset_name: deltas
+        for asset_name, deltas in merged.items()
+        if any(value != constants.ZERO for value in deltas.values())
+    }
+    return merged
+
+
+def _merge_delta_values(
+    deltas_a: dict[str, dict[str, decimal.Decimal]], deltas_b: dict[str, dict[str, decimal.Decimal]], asset_name: str
+) -> dict[str, decimal.Decimal]:
+    if asset_name in deltas_a and asset_name in deltas_b:
+        return {
+            key: deltas_a[asset_name][key] + deltas_b[asset_name][key]
+            for key in deltas_a[asset_name]
+        }
+    if asset_name in deltas_a:
+        return deltas_a[asset_name]
+    return deltas_b[asset_name]

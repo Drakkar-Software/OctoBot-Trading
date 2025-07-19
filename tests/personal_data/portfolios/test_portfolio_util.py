@@ -521,10 +521,169 @@ def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancelled_ord
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders[:1],  # first order is inferred as cancelled
         )
 
-
+#todo: add test warn: include deltas that are not in orders
 def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown_filled_or_cancelled_orders():
-    #todo: add test warn: include deltas that are not in orders
-    pass
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 1000, "ETH": 5})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 500, "ETH": 8})
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        
+        # 1. filled_orders explain part of delta, unknown orders explain the rest
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.04, 150, "buy"),
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("ETH/USDT", 3, 250, "buy"),  # explains ETH delta and the remaining USDT delta
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500, "ETH": 3}),   # all deltas explained
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as filled
+        )
+        error_log.assert_not_called()
+
+        # 2. filled_orders explain part, unknown orders are cancelled (wrong symbol)
+        filled_orders = [   
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.04, 400, "buy"),
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("SOL/USDT", 3, 900, "buy"),  # wrong symbol, can't explain ETH delta
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # only BTC explained by filled orders
+            unexplained_orders_deltas=_content({"ETH": 3}),   # ETH not explained
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as cancelled
+        )
+        error_log.assert_not_called()
+
+        # 3. filled_orders explain part, some unknown orders filled, some cancelled
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("ETH/USDT", 2, 600, "buy"),  # explains part of ETH delta
+            _order("SOL/USDT", 1, 300, "buy"),  # wrong symbol, cancelled
+            _order("ETH/USDT", 1, 300, "buy"),  # explains remaining ETH delta
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.06, "USDT": -100, "ETH": 3}),   # all deltas explained
+            inferred_filled_orders=[unknown_filled_or_cancelled_orders[0], unknown_filled_or_cancelled_orders[2]],  # ETH orders inferred as filled
+            inferred_cancelled_orders=[unknown_filled_or_cancelled_orders[1]],  # SOL order inferred as cancelled
+        )
+        error_log.assert_not_called()
+
+        # 4. filled_orders with fees, unknown orders without fees
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 600.2})
+        post_trade_content = _content({"BTC": 0.2, "USDT": 50.2})    # paid 50 USDT in fees
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 25}),
+            _order("BTC/USDT", 0.04, 400, "buy", {"USDT": 25}),
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.01, 50, "sell"),  # no fees in unknown orders
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -550}),   # all deltas explained including fees
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as filled
+        )
+        error_log.assert_not_called()
+
+        # 5. filled_orders insufficient, unknown orders complete the explanation
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+        post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),  # only explains part of BTC delta
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.04, 400, "buy"),  # explains remaining BTC delta
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all deltas explained
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as filled
+        )
+        error_log.assert_not_called()
+
+        # 6. filled_orders explain everything, unknown orders are all cancelled
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+        post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.04, 400, "buy"),
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("SOL/USDT", 1, 100, "buy"),  # wrong symbol
+            _order("DOT/USDT", 2, 200, "sell"),  # wrong symbol
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all deltas explained by filled orders
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all unknown orders inferred as cancelled
+        )
+        error_log.assert_not_called()
+
+        # 7. complex scenario with multiple assets and mixed order types
+        pre_trade_content = _content({"BTC": 0.1, "ETH": 5, "USDT": 1000, "SOL": 10})
+        post_trade_content = _content({"BTC": 0.15, "ETH": 8, "USDT": 400, "SOL": 5})
+        filled_orders = [
+            _order("BTC/USDT", 0.03, 150, "buy"),  # explains part of BTC delta
+            _order("SOL/USDT", 5, 250, "sell"),    # explains SOL delta
+        ]
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.02, 100, "buy"),  # explains remaining BTC delta
+            _order("ETH/USDT", 3, 450, "buy"),     # explains ETH delta
+            _order("DOT/USDT", 1, 50, "buy"),      # wrong symbol, cancelled
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.05, "ETH": 3, "USDT": -700, "SOL": -5}),   # all deltas explained
+            inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 unknown orders inferred as filled
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders[2:],  # last unknown order inferred as cancelled
+        )
+        error_log.assert_not_called()
+
+        # 8. edge case: filled_orders empty, unknown orders explain everything
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+        post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+        filled_orders = []
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.04, 400, "buy"),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all deltas explained
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all unknown orders inferred as filled
+        )
+        error_log.assert_not_called()
+
+        # 9. edge case: unknown orders empty, filled_orders explain everything
+        pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+        post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy"),
+            _order("BTC/USDT", 0.04, 400, "buy"),
+        ]
+        unknown_filled_or_cancelled_orders = []
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all deltas explained
+        )
+        error_log.assert_not_called()
 
 
 def test_get_portfolio_filled_orders_deltas_considering_fees():

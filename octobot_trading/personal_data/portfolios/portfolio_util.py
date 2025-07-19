@@ -564,16 +564,32 @@ def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
     """
     Returns the most probable deltas which are the ones that can be best explained by given orders
     """
+
+    if filled_orders:
+        orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
+            filled_orders
+        )
+        filled_orders_resolved_delta = compute_assets_deltas_from_orders(
+            orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
+            portfolios_asset_deltas, 
+            allow_portfolio_delta_shrinking=False, 
+            allow_partial_delta=True, 
+            ignore_order_unrelated_deltas=False,
+            ignore_order_extra_deltas=False,
+        )
+    else:
+        filled_orders_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta()
     # init with all unexplained and all cancelled orders
     best_inferred_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta(
         unexplained_orders_deltas=portfolios_asset_deltas,
         inferred_cancelled_orders=unknown_filled_or_cancelled_orders,
-    )
+    ).merge_order_deltas(filled_orders_resolved_delta)
     # start at 1 to avoid considering no filled orders (already considered in best_inferred_resolved_delta)
     for orders_to_fill_count in range(1, len(unknown_filled_or_cancelled_orders) + 1):
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             filled_orders_combination = list(filled_orders_combination)
-            total_filled_orders_candidate = filled_orders + filled_orders_combination
+            # total_filled_orders_candidate = filled_orders + filled_orders_combination
+            total_filled_orders_candidate = filled_orders_combination
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(total_filled_orders_candidate)
             if any(
                 asset_name not in portfolios_asset_deltas
@@ -586,7 +602,7 @@ def compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
                 portfolios_asset_deltas, 
                 allow_portfolio_delta_shrinking=False, ignore_order_unrelated_deltas=False,
                 ignore_order_extra_deltas=True,
-            )
+            ).merge_order_deltas(filled_orders_resolved_delta)
             inferred_resolved_delta_candidate.inferred_filled_orders = filled_orders_combination
             inferred_resolved_delta_candidate.inferred_cancelled_orders = [
                 order for order in unknown_filled_or_cancelled_orders if order not in filled_orders_combination
@@ -613,6 +629,7 @@ def compute_assets_deltas_from_orders(
     possible_fees_asset_deltas: dict[str, decimal.Decimal],
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
     allow_portfolio_delta_shrinking: bool = True,
+    allow_partial_delta: bool = False,
     ignore_order_unrelated_deltas: bool = True,
     ignore_order_extra_deltas: bool = False,
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
@@ -697,8 +714,21 @@ def compute_assets_deltas_from_orders(
                 # Add it to ignored_deltas
                 ignored_deltas[asset_name] = holdings_delta
         elif abs(min_allowed_equivalent_total_holding) > abs(order_asset_delta):
-            if allow_portfolio_delta_shrinking:
-                # too much in portfolio delta: only take what is linked to the orders deltas
+            # too much in portfolio delta
+            if allow_partial_delta:
+                # Partial deltas: only take what is linked to the orders deltas
+                # => updates both total and available
+                orders_linked_deltas[asset_name] = {
+                    key: order_asset_delta
+                    for key in holdings_delta
+                }
+                # register extra delta as ignored
+                ignored_deltas[asset_name] = {
+                    key: pf_delta - order_asset_delta if abs(pf_delta - order_asset_delta) > constants.ZERO else constants.ZERO
+                    for key, pf_delta in holdings_delta.items()
+                }
+            elif allow_portfolio_delta_shrinking:
+                # Only take what is linked to the orders deltas and ignore extra delta values (shrink portfolio deltas)
                 # => updates both total and available
                 # Should very rarely happen as it might reduce the total portfolio if done when unecessary
                 commons_logging.get_logger(__name__).warning(
