@@ -373,6 +373,22 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 ) from err
             # otherwise propagate exception: this is not a situation to retry
             raise
+        except ccxt.ExchangeNotAvailable as err:
+            is_retriable_error = False
+            for error_message in constants.RETRIABLE_EXCHANGE_ERRORS_DESC:
+                if error_message in str(err):
+                    is_retriable_error = True
+            if is_retriable_error:
+                self.logger.warning(
+                    f"Failed to create order ({html_util.get_html_summary_if_relevant(err)}) : "
+                    f"order_type: {order_type}, symbol: {symbol}. Retrying order creation."
+                )
+                return await self._create_specific_order(order_type, symbol, quantity, price=price,
+                                                         stop_price=stop_price, side=side,
+                                                         current_price=current_price, reduce_only=reduce_only,
+                                                         params=params)
+            # not retriable, raise
+            raise
         except (ccxt.InvalidOrder, ccxt.BadRequest) as err:
             if self.is_exchange_account_traded_symbol_permission_error(err):
                 # exchange won't let this order create: raise
