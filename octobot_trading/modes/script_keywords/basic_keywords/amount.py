@@ -36,8 +36,8 @@ async def get_amount_from_input_amount(
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
 
-    if amount_type is dsl.QuantityType.UNKNOWN or amount_value <= 0:
-        raise trading_errors.InvalidArgumentError("Amount cant be zero or negative (amount: {amount_value})")
+    if amount_type is dsl.QuantityType.UNKNOWN or amount_value is None or amount_value <= 0:
+        raise trading_errors.InvalidArgumentError("Amount cant be zero, None or negative (amount: {amount_value})")
 
     if amount_type in (dsl.QuantityType.DELTA, dsl.QuantityType.DELTA_BASE):
         # nothing to do

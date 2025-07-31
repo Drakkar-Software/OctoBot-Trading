@@ -25,6 +25,9 @@ async def get_price_with_offset(context, offset_input, use_delta_type_as_flat_va
         raise errors.InvalidArgumentError("price or offset is required")
     offset_type, offset_value = dsl.parse_quantity(offset_input)
 
+    if offset_value is None:
+        raise errors.InvalidArgumentError("offset_value can't be None")
+
     # when use_delta_type_as_flat_value is True, consider a simple price input as a flat target instead of an offset
     is_delta_type_considered_as_flat = offset_type is dsl.QuantityType.DELTA and use_delta_type_as_flat_value
 
