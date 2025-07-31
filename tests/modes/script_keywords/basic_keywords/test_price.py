@@ -46,6 +46,10 @@ async def test_get_price_with_offset(null_context):
 
     with pytest.raises(errors.InvalidArgumentError):
         await script_keywords.get_price_with_offset(null_context, "1sdsqdq")
+    with pytest.raises(errors.InvalidArgumentError):
+        await script_keywords.get_price_with_offset(null_context, "%")
+    with pytest.raises(errors.InvalidArgumentError):
+        await script_keywords.get_price_with_offset(null_context, "-%")
 
     with mock.patch.object(personal_data, "get_up_to_date_price", mock.AsyncMock(return_value=200)) \
             as current_price_mock:

@@ -43,7 +43,8 @@ async def test_get_amount_from_input_amount(null_context):
     )
     with pytest.raises(errors.InvalidArgumentError):
         await script_keywords.get_amount_from_input_amount(null_context, "-1")
-
+    with pytest.raises(errors.InvalidArgumentError):
+        await script_keywords.get_amount_from_input_amount(null_context, None)
     with pytest.raises(errors.InvalidArgumentError):
         await script_keywords.get_amount_from_input_amount(null_context, "1sdsqdq")
 
