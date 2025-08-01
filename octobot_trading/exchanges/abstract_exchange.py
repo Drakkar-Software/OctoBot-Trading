@@ -94,9 +94,10 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         self.allowed_time_lag = octobot_trading.constants.DEFAULT_EXCHANGE_TIME_LAG
         self.current_account = enums.AccountTypes.CASH
 
-        self.is_unreachable = False
+        self.is_unreachable: bool = False
 
         self._creating_exchange_order_descriptions = set()
+        self._enable_create_order_retrier: bool = True
 
         if exchange_config_by_exchange and self.get_name() in exchange_config_by_exchange:
             self.tentacle_config = exchange_config_by_exchange[self.get_name()]
@@ -724,7 +725,8 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     def log_order_creation_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {str(quantity)}, price: {str(price)}," \
                      f" stop_price: {str(stop_price)}"
-        self.logger.error(
+        log_func = self.logger.error if self._enable_create_order_retrier else self.logger.warning
+        log_func(
             f"Failed to create order : {error.__class__.__name__} {html_util.get_html_summary_if_relevant(error)}: "
             f"({order_desc})"
         )
@@ -732,6 +734,15 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
     def handle_token_error(self, error):
         self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
                           f"({error.__class__.__name__}: {html_util.get_html_summary_if_relevant(error)})")
+
+    @contextlib.contextmanager
+    def skipped_create_order_retry(self):
+        previous_enable_create_order_retrier = self._enable_create_order_retrier
+        try:
+            self._enable_create_order_retrier = False
+            yield
+        finally:
+            self._enable_create_order_retrier = previous_enable_create_order_retrier
 
     @contextlib.contextmanager
     def creating_order(

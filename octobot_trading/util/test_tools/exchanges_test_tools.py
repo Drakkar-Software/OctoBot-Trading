@@ -335,7 +335,9 @@ async def _create_order(
     # is private, to use in tests context only
     order = _parse_order_dict(exchange_manager, created_order, True)
     if order is None:
-        logging.get_logger("_create_order").error(f"Unexpected: order hasn't been created.")
+        logging.get_logger("_create_order").warning(
+            f"Unexpected: [{exchange_manager.exchange_name}] order hasn't been created (order: {order_dict})."
+        )
         return order
     if order.status is enums.OrderStatus.PENDING_CREATION and order_creation_timeout > 0:
         try:

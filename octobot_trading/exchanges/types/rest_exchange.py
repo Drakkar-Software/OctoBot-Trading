@@ -374,6 +374,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
             # otherwise propagate exception: this is not a situation to retry
             raise
         except ccxt.ExchangeNotAvailable as err:
+            if not self._enable_create_order_retrier:
+                # should not retry, raise
+                raise
             is_retriable_error = False
             for error_message in constants.RETRIABLE_EXCHANGE_ERRORS_DESC:
                 if error_message in str(err):
@@ -404,13 +407,18 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 ) from err
             if self.is_missing_funds_error(err):
                 self._on_missing_funds_err(err, order_type, symbol, quantity, price, stop_price)
+            if not self._enable_create_order_retrier:
+                # should not retry, raise
+                raise
             # can be raised when exchange precision/limits rules change
             self.logger.warning(
                 f"Failed to create order ({html_util.get_html_summary_if_relevant(err)}) : "
                 f"order_type: {order_type}, symbol: {symbol}. "
                 f"This might be due to an update on {self.name} market rules. Fetching updated rules."
             )
-            await self.connector.load_symbol_markets(reload=True, market_filter=self.exchange_manager.market_filter)
+            await self.connector.load_symbol_markets(
+                reload=True, market_filter=self.exchange_manager.market_filter
+            )
             # retry order creation with updated markets (ccxt will use the updated market values)
             return await self._create_specific_order(order_type, symbol, quantity, price=price,
                                                      stop_price=stop_price, side=side,
