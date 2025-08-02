@@ -891,6 +891,29 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
             {},
         )
 
+        # with real world data and unexplained XRP delta
+        pre_trade_content = _content({'ADA': 348.4678994, 'XRP': 50.099980421, 'HBAR': 415.351319913, 'SOL': 0.324842614, 'BNB': 0.067427378, 'TRX': 158.1497955, 'ETH': 0.014648971, 'STETH': 0.014664933, 'BTC': 0.00045070746, 'DOGE': 253.578803158, 'WBTC': 0.00044911, 'USDT': 0.44722602646769})
+        post_trade_content = _content({'USDT': 463.91885868343945, 'ADA': 276.9613994, 'XRP': 49.688289426, 'HBAR': 415.351319913, 'SOL': 0.012139614, 'WBTC': 0.00000111, 'ETH': 9.71e-7, 'STETH': 9.33e-7, 'BNB': 0.000001378, 'BTC': 7.46e-9, 'TRX': 0.0000015, 'DOGE': 0.000001158})
+        filled_orders = [
+            _order("XRP/USDT", 17.19089, 2.9767529739123453 * 17.19089, "sell", {"USDT": 0.0511730329317}),  # doesn't explain the XRP delta
+            _order("WBTC/USDT", 0.000448, 113449.7375 * 0.000448, "sell", {"USDT": 0.0508254824}),
+            _order("TRX/USDT", 158.149794, 0.32662 * 158.149794, "sell", {"USDT": 0.05165488571628}),
+            _order("STETH/USDT", 0.014664 , 3516.7232978723405 * 0.014664, "sell", {"USDT": 0.05156923044}),
+            _order("SOL/USDT", 0.312703 , 164.42 * 0.312703, "sell", {"USDT": 0.05141462726}),
+            _order("ETH/USDT", 0.014648 , 3522.74 * 0.014648, "sell", {"USDT": 0.05160109552}),
+            _order("DOGE/USDT", 253.578802 , 0.2019417164068784 * 253.578802, "sell", {"USDT": 0.05120813852028}),
+            _order("BTC/USDT", 0.0004507 , 113640.0 * 0.0004507, "sell", {"USDT": 0.051217548}),
+            _order("BNB/USDT", 0.067426 , 767.1 * 0.067426, "sell", {"USDT": 0.0517224846}),
+            _order("ADA/USDT", 71.5065 , 0.7216 * 71.5065, "sell", {"USDT": 0.0515990904}),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, []
+        ) == _resolved(
+            _content({'DOGE': -253.578802, 'ADA': -71.5065, 'SOL': -0.312703, 'TRX': -158.149794, 'BNB': -0.067426, 'BTC': -0.0004507, 'WBTC': -0.000448, 'ETH': -0.014648, 'STETH': -0.014664}),
+            _content({'XRP': -0.411690995, 'USDT': "463.47163265697176"}),  # todo use those to be accepted in deltas
+        )
+        error_log.assert_not_called()
+
 
 def test_get_accepted_missed_deltas():
     # with no delta
