@@ -25,7 +25,6 @@ import binascii
 import copy
 
 import octobot_commons.enums
-import octobot_commons.logging
 import octobot_commons.symbols as commons_symbols
 import octobot_commons.html_util as html_util
 
