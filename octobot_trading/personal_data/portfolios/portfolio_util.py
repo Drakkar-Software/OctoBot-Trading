@@ -420,6 +420,7 @@ def _fill_missing_assets_from_allowed_filling_assets(
                     commons_constants.PORTFOLIO_TOTAL: funds_to_add_in_filling_asset,
                     commons_constants.PORTFOLIO_AVAILABLE: funds_to_add_in_filling_asset,
                 }
+            # register filling assets in funds_deltas
             if filling_asset in funds_deltas:
                 funds_deltas[filling_asset][commons_constants.PORTFOLIO_TOTAL] += funds_to_add_in_filling_asset
                 funds_deltas[filling_asset][commons_constants.PORTFOLIO_AVAILABLE] += funds_to_add_in_filling_asset
