@@ -21,13 +21,9 @@ import octobot_trading.constants as constants
 
 
 def create_trade_instance_from_raw(trader, raw_trade):
-    try:
-        order = create_closed_order_instance_from_raw_trade(trader, raw_trade)
-        exchange_trade_id = raw_trade.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value)
-        return create_trade_from_order(order, exchange_trade_id=exchange_trade_id)
-    except KeyError:
-        # Funding trade candidate
-        return None
+    order = create_closed_order_instance_from_raw_trade(trader, raw_trade)
+    exchange_trade_id = raw_trade.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value)
+    return create_trade_from_order(order, exchange_trade_id=exchange_trade_id)
 
 
 def create_closed_order_instance_from_raw_trade(trader, raw_trade):

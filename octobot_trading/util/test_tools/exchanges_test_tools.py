@@ -286,10 +286,18 @@ async def get_cancelled_orders(
 )
 async def _get_trades(exchange_manager, symbol: str, trades: list):
     row_trades = await exchange_manager.exchange.get_my_recent_trades(symbol=symbol)
-    trades.extend(
-        personal_data.create_trade_instance_from_raw(exchange_manager.trader, raw_trade).to_dict()
-        for raw_trade in row_trades
-    )
+    for raw_trade in row_trades:
+        try:
+            trades.append(
+                personal_data.create_trade_instance_from_raw(exchange_manager.trader, raw_trade).to_dict()
+            )
+        except Exception as err:
+            logging.get_logger("get_trades").exception(
+                err,
+                True,
+                f"Unexpected error when parsing [{exchange_manager.exchange_name}] trade "
+                f"({err} {err.__class__.__name__}), trade: {raw_trade}. Ignored trade."
+            )
 
 
 async def get_trades(
@@ -400,10 +408,19 @@ async def get_positions(
     raw_positions = await exchange_manager.exchange.get_positions(symbols=symbols)
     # initialize relevant contracts first as they might be waited for
     trading_exchange_data.update_contracts_from_positions(exchange_manager, raw_positions)
-    dict_positions = [
-        personal_data.create_position_instance_from_raw(
-            exchange_manager.trader, raw_position
-        ).to_dict()
-        for raw_position in raw_positions
-    ]
+    dict_positions = []
+    for raw_position in raw_positions:
+        try:
+            dict_positions.append(
+                personal_data.create_position_instance_from_raw(
+                    exchange_manager.trader, raw_position
+                ).to_dict()
+            )
+        except Exception as err:
+            logging.get_logger("get_positions").exception(
+                err,
+                True,
+                f"Unexpected error when parsing [{exchange_manager.exchange_name}] position"
+                f"({err}. {err.__class__.__name__}), position: {raw_position}. Ignored position."
+            )
     return dict_positions

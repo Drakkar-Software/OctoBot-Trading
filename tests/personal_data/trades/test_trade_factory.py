@@ -58,6 +58,9 @@ class TestTradeFactory:
     async def test_create_trade_instance_from_raw(self):
         _, exchange_manager, trader = await self.init_default()
 
+        with pytest.raises(KeyError):
+            create_trade_instance_from_raw(trader, {})
+
         raw_trade = json.loads(
             """
             {	

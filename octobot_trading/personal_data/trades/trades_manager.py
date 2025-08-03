@@ -52,12 +52,17 @@ class TradesManager(util.Initializable):
 
     def upsert_trade(self, trade_id: str, raw_trade: dict) -> bool:
         if trade_id not in self.trades:
-            created_trade = personal_data.create_trade_instance_from_raw(self.trader, raw_trade)
-            if created_trade:
+            try:
+                created_trade = personal_data.create_trade_instance_from_raw(self.trader, raw_trade)
                 if trade_id in self.trades:
                     self.logger.debug(f"Replacement of an existing trade: {self.trades[trade_id].to_dict()} "
-                                      f"by {created_trade.to_dict()} on id: {trade_id}")
+                                    f"by {created_trade.to_dict()} on id: {trade_id}")
                 return self._add_trade_if_relevant(trade_id, created_trade)
+            except Exception as err:
+                message = f"Unexpected error when parsing [{self.trader.exchange_manager.exchange_name}] trade"
+                # don't spam with errors, only log warnings
+                self.logger.warning(message)
+                self.logger.exception(err, False, message)
         return False
 
     def upsert_trade_instance(self, trade):
