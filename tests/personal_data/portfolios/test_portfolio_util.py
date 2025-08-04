@@ -478,8 +478,9 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
         pre_trade_content = _content({"BTC": 0.00226262681, "USDT": 4376.532183487584})
         post_trade_content = _content({"BTC": 0.00227318792 - BTC_fees, "USDT": 4375.22614367084})
         filled_orders = [
-            _order("BTC/USDT", 0.00108723, 111.778333746, "sell", {"USDT": 0.111778333746}),
-            _order("BTC/USDT", 0.00109889, 112.972595229, "buy", {"USDT": 0.111778333746}), # expects USDT as fees but was actually BTC
+            # note: include ignored local exchange fees
+            _order("BTC/USDT", 0.00108723, 111.778333746, "sell", {"USDT": 0.111778333746}, local_fees_currencies=["BNB"]),
+            _order("BTC/USDT", 0.00109889, 112.972595229, "buy", {"USDT": 0.111778333746}, local_fees_currencies=["BNB"]), # expects USDT as fees but was actually BTC
         ]
         assert personal_data.get_portfolio_filled_orders_deltas(
             pre_trade_content, post_trade_content, filled_orders
@@ -494,8 +495,9 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
         pre_trade_content = _content({"BTC": 0.00226262681, "USDT": 4376.532183487584})
         post_trade_content = _content({"BTC": 0.00227318792, "USDT": 4375.22614367084})
         filled_orders = [
-            _order("BTC/USDT", 0.00108723, 111.778333746, "sell", {"USDT": 0.111778333746}), # expects USDT as fees but was actually something else (like BNB)
-            _order("BTC/USDT", 0.00109779111, 112.972595229, "buy", {"USDT": 0.111778333746}), # expects USDT as fees but was actually something else (like BNB)
+            # note: include ignored local exchange fees
+            _order("BTC/USDT", 0.00108723, 111.778333746, "sell", {"USDT": 0.111778333746}, local_fees_currencies=["BNB"]), # expects USDT as fees but was actually something else (like BNB)
+            _order("BTC/USDT", 0.00109779111, 112.972595229, "buy", {"USDT": 0.111778333746}, local_fees_currencies=["KCS"]), # expects USDT as fees but was actually something else (like BNB)
         ]
         assert personal_data.get_portfolio_filled_orders_deltas(
             pre_trade_content, post_trade_content, filled_orders
@@ -511,14 +513,101 @@ def test_get_portfolio_filled_orders_deltas_considering_fees():
         pre_trade_content = _content({"MANA": 103.42087452540375, "USDC": actual_fees})
         post_trade_content = _content({"MANA": 72.65087452540375, "USDC": 0.0827944124999931})
         filled_orders = [
-            _order("MANA/USDC", 103.05, 37.005255, "sell", {"USDC": actual_fees * 2}), # expects 1.2% fees
-            _order("MANA/USDC", 72.28, 36.644921175, "buy", {"USDC": actual_fees * 2}),    # expects 1.2% fees
+            # note: include unused local exchange fees
+            _order("MANA/USDC", 103.05, 37.005255, "sell", {"USDC": actual_fees * 2}, local_fees_currencies=["BNB"]), # expects 1.2% fees
+            _order("MANA/USDC", 72.28, 36.644921175, "buy", {"USDC": actual_fees * 2}, local_fees_currencies=["BNB"]),    # expects 1.2% fees
         ]
         assert personal_data.get_portfolio_filled_orders_deltas(
             pre_trade_content, post_trade_content, filled_orders
         ) == (
             # USDC delta from portfolio is accepted and not considered as missing
             _content({"MANA": -30.77, "USDC": -0.1947450000000069}),
+            {},
+        )
+        error_log.assert_not_called()
+
+
+def test_get_portfolio_filled_orders_deltas_considering_local_exchange_fees():
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # with high fees paid in BNB (real world example)
+        # 1. with buy order
+        pre_trade_content = _content({"BTC": 0.000164, "BNB": 0.3549429, "USDT": 745.08144})
+        post_trade_content = _content({
+            "BTC": 0.006404, # 0.000164+0.00016*39
+            "BNB": 0.37513215, # should be 0.3549429+0.025 = 0.3799429 BUT all order fees were actually paid in BNB for a total of 0.00481075 BNB (which is large (20%) compared to the 0.025 BNB that we just bought)
+            "USDT": 10
+        })
+        filled_orders = [
+            # expected fees are in the wrong currency (actual fees were paid in BNB)
+            _order("BNB/USDT", 0.025, 753.92*0.025, "buy", {"BNB": 0.00015}, local_fees_currencies=["BNB"]),
+            _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
+            _content({"BTC": 0.00624, "BNB": 0.02018925, "USDT": -735.08144}),
+            {},
+        )
+        error_log.assert_not_called()
+
+        pre_trade_content = _content({"BTC": 0.000164, "BNB": 0.3549429, "USDT": 745.08144})
+        post_trade_content = _content({
+            "BTC": 0.006404, # 0.000164+0.00016*39
+            "BNB": 0.32513215, # should be 0.3549429-0.025 = 0.3299429 BUT all order fees were actually paid in BNB for a total of 0.00481075 BNB (which is large (20%) compared to the 0.025 BNB that we just bought)
+            "USDT": 47.696  # 745.08144-114781.0*0.00016*39+18.848
+        })
+        filled_orders = [
+            # expected fees are in the wrong currency (actual fees were paid in BNB)
+            _order("USDT/BNB", 18.848, 18.848/753.92, "buy", {"BNB": 0.00015}, local_fees_currencies=["BNB"]),
+            _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
+            _content({"BTC": 0.00624, "BNB": -0.025, "USDT": -697.38544}),
+            {},
+        )
+        error_log.assert_not_called()
+
+        # 2. with sell order
+        pre_trade_content = _content({"BTC": 0.000164, "BNB": 0.3549429, "USDT": 745.08144})
+        post_trade_content = _content({
+            "BTC": 0.006404, # 0.000164+0.00016*39
+            "BNB": 0.32513215, # should be 0.3549429-0.025 = 0.3299429 BUT all order fees were actually paid in BNB for a total of 0.00481075 BNB (which is large (20%) compared to the 0.025 BNB that we just bought)
+            "USDT": 47.696  # 745.08144-114781.0*0.00016*39+18.848
+        })
+        filled_orders = [
+            # expected fees are in the wrong currency (actual fees were paid in BNB)
+            _order("BNB/USDT", 0.025, 753.92*0.025, "sell", {"BNB": 0.00015}, local_fees_currencies=["BNB"]),
+            _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
+            _content({"BTC": 0.00624, "BNB": -0.025, "USDT": -697.38544}),
+            {},
+        )
+        error_log.assert_not_called()
+        pre_trade_content = _content({"BTC": 0.000164, "BNB": 0.3549429, "USDT": 745.08144})
+        post_trade_content = _content({
+            "BTC": 0.006404, # 0.000164+0.00016*39
+            "BNB": 0.37513215, # should be 0.3549429+0.025 = 0.3799429 BUT all order fees were actually paid in BNB for a total of 0.00481075 BNB (which is large (20%) compared to the 0.025 BNB that we just bought)
+            "USDT": 10
+        })
+        filled_orders = [
+            # expected fees are in the wrong currency (actual fees were paid in BNB)
+            _order("USDT/BNB", 18.848, 18.848/753.92, "sell", {"BNB": 0.00015}, local_fees_currencies=["BNB"]),  # reversed symbol
+            _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders
+        ) == (
+            # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
+            _content({"BTC": 0.00624, "BNB": 0.02018925, "USDT": -735.08144}),
             {},
         )
         error_log.assert_not_called()
@@ -819,8 +908,8 @@ def _missing_funds(funds: dict[str, float]) -> dict[str, decimal.Decimal]:
         for key, val in funds.items()
     }
 
-def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = None) -> personal_data.Order:
-    trader = mock.Mock(exchange_manager=mock.Mock())
+def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = None, local_fees_currencies: list[str] = []) -> personal_data.Order:
+    trader = mock.Mock(exchange_manager=mock.Mock(exchange=mock.Mock(LOCAL_FEES_CURRENCIES=local_fees_currencies)))
     order = personal_data.Order(trader)
     order.symbol = symbol
     order.origin_quantity = decimal.Decimal(str(quantity))

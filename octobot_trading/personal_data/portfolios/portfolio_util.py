@@ -609,10 +609,18 @@ def get_portfolio_filled_orders_deltas(
             if (
                 # try while taking possible fees into account
                 asset_name in possible_fees_asset_deltas and (
-                    abs(min_allowed_equivalent_total_holding)
-                    # fees bring back the order delta into the expected portfolio delta window
-                    < abs(order_asset_delta + possible_fees_asset_deltas[asset_name])
-                    < abs(max_allowed_equivalent_total_holding)
+                    any(
+                        abs(min_allowed_equivalent_total_holding)
+                        # fees bring back the order delta into the expected portfolio delta window
+                        < abs(order_asset_delta + possible_fee)
+                        < abs(max_allowed_equivalent_total_holding)
+                        for possible_fee in (
+                            # try with smaller fees in case user is paying less fees (when having large volume)
+                            # test from 10% up to 100% fees
+                            possible_fees_asset_deltas[asset_name] * decimal.Decimal(multiplier / 10)
+                            for multiplier in range(1, 11)
+                        )
+                    )
                 )
             ):
                 orders_linked_deltas[asset_name] = holdings_delta
@@ -674,6 +682,7 @@ def get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
     asset_deltas = {}
     expected_fee_related_deltas = {}
     possible_fee_related_deltas = {}
+    exchange_local_fees_currency_price = _get_exchange_local_fees_currency_price(orders)
     for order in orders:
         base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
         # order "expected" related deltas
@@ -695,9 +704,11 @@ def get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
                 asset_deltas[unit_and_amount[0]] += unit_and_amount[1] * multiplier
         # order "probable" related deltas (account for worse case fees)
         expected_forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=True)
-        possible_forecasted_fees = _get_other_asset_forecasted_fees(order, expected_forecasted_fees)
-        for fee_asset in (base, quote):
-            for fee in (expected_forecasted_fees, possible_forecasted_fees):
+        possible_forecasted_fees = _get_other_asset_forecasted_fees(
+            order, expected_forecasted_fees, exchange_local_fees_currency_price
+        )
+        for fee_asset in (base, quote) + tuple(exchange_local_fees_currency_price):
+            for fee in (expected_forecasted_fees, ) + possible_forecasted_fees:
                 is_expected_fee = fee is expected_forecasted_fees
                 if asset_amount := order_util.get_fees_for_currency(fee, fee_asset):
                     for delta_counter in (expected_fee_related_deltas, possible_fee_related_deltas):
@@ -710,13 +721,70 @@ def get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
                             delta_counter[fee_asset] += -asset_amount
     return asset_deltas, expected_fee_related_deltas, possible_fee_related_deltas
 
-def _get_other_asset_forecasted_fees(order: order_import.Order, forecasted_fees: dict) -> dict:
+def _get_other_asset_forecasted_fees(
+    order: order_import.Order, forecasted_fees: dict, 
+    exchange_local_fees_currency_price: dict[str, dict[str, decimal.Decimal]]
+) -> tuple[dict]:
     base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
     other_fee = copy.deepcopy(forecasted_fees)
+    base_local_fee = None
+    quote_local_fee = None
     if base_fee := order_util.get_fees_for_currency(forecasted_fees, base):
+        fee_cost = base_fee * order.origin_price
         other_fee[enums.FeePropertyColumns.CURRENCY.value] = quote
-        other_fee[enums.FeePropertyColumns.COST.value] = base_fee * order.origin_price
+        other_fee[enums.FeePropertyColumns.COST.value] = fee_cost
+        if base not in exchange_local_fees_currency_price and quote not in exchange_local_fees_currency_price:
+            for fee_currency, fee_price_by_symbol in exchange_local_fees_currency_price.items():
+                for fee_symbol, fee_price in fee_price_by_symbol.items():
+                    parsed_fee_symbol = symbol_util.parse_symbol(fee_symbol)
+                    # shared base or quote ? divive, multiply otherwise
+                    if parsed_fee_symbol.base == base or parsed_fee_symbol.quote == quote:
+                        base_local_fee = {
+                            enums.FeePropertyColumns.CURRENCY.value: fee_currency,
+                            enums.FeePropertyColumns.COST.value: fee_cost / fee_price
+                        }
+                    elif parsed_fee_symbol.base == quote or parsed_fee_symbol.quote == base:
+                        base_local_fee = {
+                            enums.FeePropertyColumns.CURRENCY.value: fee_currency,
+                            enums.FeePropertyColumns.COST.value: fee_cost * fee_price
+                        }
     elif quote_fee := order_util.get_fees_for_currency(forecasted_fees, quote):
+        fee_cost = quote_fee / order.origin_price
         other_fee[enums.FeePropertyColumns.CURRENCY.value] = base
-        other_fee[enums.FeePropertyColumns.COST.value] = quote_fee / order.origin_price
-    return other_fee
+        other_fee[enums.FeePropertyColumns.COST.value] = fee_cost
+        if base not in exchange_local_fees_currency_price and quote not in exchange_local_fees_currency_price:
+            for fee_currency, fee_price_by_symbol in exchange_local_fees_currency_price.items():
+                for fee_symbol, fee_price in fee_price_by_symbol.items():
+                    parsed_fee_symbol = symbol_util.parse_symbol(fee_symbol)
+                    # shared base or quote ? divive, multiply otherwise
+                    if parsed_fee_symbol.base == base or parsed_fee_symbol.quote == quote:
+                        quote_local_fee = {
+                            enums.FeePropertyColumns.CURRENCY.value: fee_currency,
+                            enums.FeePropertyColumns.COST.value: fee_cost / fee_price
+                        }
+                    elif parsed_fee_symbol.base == quote or parsed_fee_symbol.quote == base:
+                        quote_local_fee = {
+                            enums.FeePropertyColumns.CURRENCY.value: fee_currency,
+                            enums.FeePropertyColumns.COST.value: fee_cost * fee_price
+                        }
+    return tuple(
+        fee
+        for fee in (other_fee, base_local_fee, quote_local_fee)
+        if fee is not None
+    )
+
+
+def _get_exchange_local_fees_currency_price(orders: list[order_import.Order]) -> dict[str, dict[str, decimal.Decimal]]:
+    exchange_local_fees_currency_price = {}
+    # use given orders to get the price of the potential local fees currencies
+    # if an order trades this currency, then we can use its price to get the price of the currency
+    for order in orders:
+        for local_fees_currency in order.trader.exchange_manager.exchange.LOCAL_FEES_CURRENCIES:
+            if local_fees_currency not in exchange_local_fees_currency_price:
+                exchange_local_fees_currency_price[local_fees_currency] = {}
+            if (
+                local_fees_currency in symbol_util.parse_symbol(order.symbol).base_and_quote() 
+                and order.symbol not in exchange_local_fees_currency_price[local_fees_currency]
+            ):
+                exchange_local_fees_currency_price[local_fees_currency][order.symbol] = order.origin_price
+    return exchange_local_fees_currency_price

@@ -139,6 +139,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to an order that can't be cancelled on exchange (because filled or already cancelled)
     EXCHANGE_ORDER_UNCANCELLABLE_ERRORS: typing.List[typing.Iterable[str]] = []
+    # set when the exchange can allow users to pay fees in a custom currency (ex: BNB on binance)
+    LOCAL_FEES_CURRENCIES: typing.List[str] = []
 
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
