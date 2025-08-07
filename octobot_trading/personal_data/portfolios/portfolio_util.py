@@ -597,8 +597,10 @@ def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
         inferred_cancelled_orders=unknown_filled_or_cancelled_orders,
     ).merge_order_deltas(known_filled_orders_resolved_delta, portfolios_asset_deltas)
     post_filled_orders_portfolio_asset_deltas = resolved_orders_portfolio_delta.filter_empty_deltas(
-        sub_portfolio_data.get_content_with_available_after_deltas(
-            portfolios_asset_deltas, _reverse_portfolio_deltas(best_inferred_resolved_delta.explained_orders_deltas), locked_funds_by_asset=None
+        sub_portfolio_data.get_content_after_deltas(
+            portfolios_asset_deltas, _reverse_portfolio_deltas(
+                best_inferred_resolved_delta.explained_orders_deltas
+            ), apply_available_deltas=True
         )
     ) 
     # start at 1 to avoid considering no filled orders (already considered in best_inferred_resolved_delta)

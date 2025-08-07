@@ -373,6 +373,32 @@ def test_get_portfolio_filled_orders_deltas():
         error_log.assert_not_called()
 
 
+def test_get_portfolio_filled_orders_deltas_with_unavailable_funds():
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        pre_trade_content = _content_with_available({"SOL": (0, 0.051), "USDT": (12, 12)})
+        post_trade_content = _content_with_available({"SOL": (0, 0), "USDT": (20.93992596600, 20.93992596600)})
+        filled_orders = [
+            _order("SOL/USDT", 0.051, 8.939925966, "sell"),
+        ]
+        # with known filled orders
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, []
+        ) == _resolved(
+            explained_orders_deltas=_content_with_available({"SOL": (0, -0.051), "USDT": (8.939925966, 8.939925966)}),
+        )
+        error_log.assert_not_called()
+
+        # with unknown orders
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], filled_orders
+        ) == _resolved(
+            explained_orders_deltas=_content_with_available({"SOL": (0, -0.051), "USDT": (8.939925966, 8.939925966)}),
+            inferred_filled_orders=filled_orders,   # all orders are inferred as filled to explain deltas
+        )
+        error_log.assert_not_called()
+
+
 def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancelled_orders():
     pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
     post_trade_content = _content({"BTC": 0.2, "USDT": 500})
@@ -1308,7 +1334,8 @@ def _content(content: dict[str, float]) -> dict[str, dict[str, decimal.Decimal]]
         for key, val in content.items()
     }
 
-def _content_with_available(content: dict[str, (float, float)]) -> dict[str, dict[str, decimal.Decimal]]:
+
+def _content_with_available(content: dict[str, tuple[float, float]]) -> dict[str, dict[str, decimal.Decimal]]:
     return {
         key: {
             octobot_commons.constants.PORTFOLIO_TOTAL: decimal.Decimal(str(total)),
