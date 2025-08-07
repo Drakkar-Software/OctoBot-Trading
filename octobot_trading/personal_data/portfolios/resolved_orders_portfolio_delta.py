@@ -176,8 +176,8 @@ def _ensure_maximum_deltas(
                 if abs(value) > abs(reference_deltas[asset_name][key]):
                     # value can't be higher than reference delta: align it to reference delta
                     commons_logging.get_logger("ResolvedOrdersPortoflioDelta").error(
-                        f"Asset {asset_name} {key} order delta is higher than reference delta: "
-                        f"{reference_deltas[asset_name][key]}. Aligning it to reference delta ({values=})."
+                        f"Asset {asset_name} {key} abs(order delta)={abs(value)} is higher than abs(reference delta)="
+                        f"{abs(reference_deltas[asset_name][key])}. Aligning it to reference delta ({values=})."
                     )
                     deltas[asset_name][key] = reference_deltas[asset_name][key]
         else:

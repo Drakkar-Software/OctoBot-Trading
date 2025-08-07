@@ -87,13 +87,13 @@ def get_content_with_available_after_deltas(
     deltas: dict[str, dict[str, decimal.Decimal]],
     locked_funds_by_asset: typing.Optional[dict[str, decimal.Decimal]] = None,
 ) -> dict[str, dict[str, decimal.Decimal]]:
-    updated_content = get_content_after_deltas(content, deltas)
+    updated_content = get_content_after_deltas(content, deltas, apply_available_deltas=False)
     update_available_considering_locked_funds(updated_content, locked_funds_by_asset)
     return updated_content
 
 
 def get_content_after_deltas(
-    content: dict[str, dict[str, decimal.Decimal]], deltas: dict[str, dict[str, decimal.Decimal]]
+    content: dict[str, dict[str, decimal.Decimal]], deltas: dict[str, dict[str, decimal.Decimal]], apply_available_deltas: bool = False
 ) -> dict[str, dict[str, decimal.Decimal]]:
     updated_content = copy.deepcopy(content)
     for asset, delta_values in deltas.items():
@@ -101,10 +101,18 @@ def get_content_after_deltas(
             updated_content[asset][commons_constants.PORTFOLIO_TOTAL] += (
                 delta_values[commons_constants.PORTFOLIO_TOTAL]
             )
+            if apply_available_deltas:
+                updated_content[asset][commons_constants.PORTFOLIO_AVAILABLE] += (
+                    delta_values[commons_constants.PORTFOLIO_AVAILABLE]
+                )
         else:
             updated_content[asset] = {
                 commons_constants.PORTFOLIO_TOTAL: delta_values[commons_constants.PORTFOLIO_TOTAL]
             }
+            if apply_available_deltas:
+                updated_content[asset][commons_constants.PORTFOLIO_AVAILABLE] = (
+                    delta_values[commons_constants.PORTFOLIO_AVAILABLE]
+                )
     return updated_content
 
 
