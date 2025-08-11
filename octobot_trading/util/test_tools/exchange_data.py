@@ -38,7 +38,8 @@ class ExchangeAuthDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot
     sandboxed: bool = False
     broker_enabled: bool = False
     encrypted: str = ""
-    exchange_account_id: typing.Union[str, None] = None
+    exchange_account_id: typing.Union[str, None] = None # deprecated, will be deleted
+    exchange_credential_id: typing.Union[str, None] = None
     incompatible_assets: typing.Union[list[IncompatibleAssetDetails], None] = dataclasses.field(default_factory=list)
 
     # pylint: disable=E1134
