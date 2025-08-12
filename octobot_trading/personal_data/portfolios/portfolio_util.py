@@ -303,6 +303,7 @@ def _resolve_sub_portfolio(
         sub_portfolio.unit,
         funds_deltas=funds_deltas,
         missing_funds=missing_funds,
+        locked_funds_by_asset=sub_portfolio.locked_funds_by_asset,
     )
 
 

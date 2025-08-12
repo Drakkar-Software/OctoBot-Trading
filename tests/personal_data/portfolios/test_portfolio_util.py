@@ -97,7 +97,7 @@ def test_resolve_sub_portfolios_no_filling_assets_with_locked_funds():
     ])
     assert personal_data.resolve_sub_portfolios(master_pf, [sub_pf_btc], {}) == (
         _sub_pf(0, _content_with_available({"BTC": (0, 0), "ETH": (0.019998, 0.1), "USDT": (0.019998, 0.1)})),
-        [_sub_pf(0, _content_with_available({"BTC": (0.019998, 0.1)}))]
+        [_sub_pf(0, _content_with_available({"BTC": (0.019998, 0.1)}), locked_funds_by_asset=_missing_funds({"BTC": 0.080002}))]
     )
 
     master_pf = _sub_pf(
@@ -122,8 +122,8 @@ def test_resolve_sub_portfolios_no_filling_assets_with_locked_funds():
     assert personal_data.resolve_sub_portfolios(master_pf, [sub_pf_1, sub_pf_2], {}) == (
         _sub_pf(0, _content_with_available({"BTC": (0, 0), "ETH": (0, 0), "USDT": (0, 0)})),
         [
-            _sub_pf(0, _content_with_available({"BTC": (0.004998, 0.085), "ETH": (0.1, 0.1)})),
-            _sub_pf(0, _content_with_available({"BTC": (0.015, 0.015), "USDT": (0, 100)}))
+            _sub_pf(0, _content_with_available({"BTC": (0.004998, 0.085), "ETH": (0.1, 0.1)}), locked_funds_by_asset=_missing_funds({"BTC": 0.080002})),
+            _sub_pf(0, _content_with_available({"BTC": (0.015, 0.015), "USDT": (0, 100)}), locked_funds_by_asset=_missing_funds({"USDT": 100}))
         ]
     )
 
@@ -1216,7 +1216,7 @@ def test_resolve_sub_portfolios_with_filling_assets_with_locked_funds():
         _sub_pf(0, _content_with_available({
             "BTC": (0, 0), "ETH": (0.019998, 0.1), "USDT": (10.019998, 10.1), "SOL": (0.5, 1), "USDC": (2, 2)
         })),
-        [_sub_pf(0, _content_with_available({"BTC": (0.019998, 0.1)}))]
+        [_sub_pf(0, _content_with_available({"BTC": (0.019998, 0.1)}), locked_funds_by_asset=_missing_funds({"BTC": 0.080002}))]
     )
 
     master_pf = _sub_pf(
@@ -1239,7 +1239,7 @@ def test_resolve_sub_portfolios_with_filling_assets_with_locked_funds():
             "BTC": (0, 0), "ETH": (0.019998, 0.1), "USDT": (0, 0), "SOL": (0, 0), "USDC": (0, 0)
         })),
         [
-            _sub_pf(0, _content_with_available({"BTC": (0.019998, 0.1)})),
+            _sub_pf(0, _content_with_available({"BTC": (0.019998, 0.1)}), locked_funds_by_asset=_missing_funds({"BTC": 0.080002})),
             _sub_pf(
                 1,
                 _content_with_available({"USDT": (10.019998, 10.1), "SOL": (0.5, 1), "USDC": (2, 2)}),
@@ -1253,7 +1253,8 @@ def test_resolve_sub_portfolios_with_filling_assets_with_locked_funds():
                         - decimal.Decimal(str(market_prices["SOL/USDT"])) / decimal.Decimal("2")
                         - decimal.Decimal(market_prices["USDT/USDC"] * 2)
                     )
-                })
+                }),
+                locked_funds_by_asset=_missing_funds({"USDT": 10, "SOL": 0.5}),
             )
         ]
     )
