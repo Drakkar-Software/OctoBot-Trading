@@ -85,7 +85,7 @@ class OrdersManager(util.Initializable):
             until=until, limit=limit, tag=tag
         )
 
-    def get_order(self, order_id, exchange_order_id=None):
+    def get_order(self, order_id: typing.Optional[str], exchange_order_id: typing.Optional[str]=None) -> order_class.Order:
         if order_id is None:
             for order in self.orders.values():
                 if order.exchange_order_id == exchange_order_id:
@@ -93,7 +93,7 @@ class OrdersManager(util.Initializable):
             raise KeyError(exchange_order_id)
         return self.orders[order_id]
 
-    def get_order_from_group(self, group_name):
+    def get_order_from_group(self, group_name: str) -> list[order_class.Order]:
         return [
             order
             for order in self.orders.values()
@@ -101,7 +101,7 @@ class OrdersManager(util.Initializable):
         ]
 
     def get_or_create_group(
-        self, group_type, group_name,
+        self, group_type: type[order_group_import.OrderGroup], group_name: str,
         active_order_swap_strategy: typing.Optional[active_order_swap_strategy_import.ActiveOrderSwapStrategy] = None
     ):
         """
@@ -123,7 +123,7 @@ class OrdersManager(util.Initializable):
             )
 
     def create_group(
-        self, group_type, group_name=None,
+        self, group_type: type[order_group_import.OrderGroup], group_name: typing.Optional[str]=None,
         active_order_swap_strategy: typing.Optional[active_order_swap_strategy_import.ActiveOrderSwapStrategy] = None
     ):
         """
@@ -139,7 +139,7 @@ class OrdersManager(util.Initializable):
         self.order_groups[group_name] = group
         return group
 
-    async def upsert_order_from_raw(self, exchange_order_id, raw_order, is_from_exchange) -> (bool, order_class.Order):
+    async def upsert_order_from_raw(self, exchange_order_id: str, raw_order: dict, is_from_exchange: bool) -> tuple[bool, order_class.Order]:
         if not self.has_order(None, exchange_order_id=exchange_order_id):
             self.logger.info(f"Including new order fetched from exchange: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
@@ -154,7 +154,7 @@ class OrdersManager(util.Initializable):
         order = self.get_order(None, exchange_order_id=exchange_order_id)
         return await _update_order_from_raw(order, raw_order), order
 
-    def register_pending_creation_order(self, pending_order):
+    def register_pending_creation_order(self, pending_order: order_class.Order):
         if self.trader.simulate:
             self.logger.error(f"Called register_pending_creation_order on an simulated trader, "
                               f"this should not happen. Order: {pending_order}")

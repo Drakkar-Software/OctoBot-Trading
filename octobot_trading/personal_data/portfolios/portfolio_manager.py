@@ -50,7 +50,9 @@ class PortfolioManager(util.Initializable):
         self.reference_market = None
         self._is_initialized_event_set = False
         self._forced_portfolio = None
-        self._enable_portfolio_update_from_order = True
+        self._enable_portfolio_total_update_from_order = True
+        self.enable_portfolio_exchange_sync = True
+        self.enable_portfolio_available_update_from_order = self.trader.simulate
 
     async def initialize_impl(self):
         """
@@ -91,7 +93,10 @@ class PortfolioManager(util.Initializable):
         portfolio changes using order data (as in trading simulator)
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled and self._enable_portfolio_update_from_order:
+        if self.trader.is_enabled:
+            if not self.enable_portfolio_exchange_sync:
+                return self._refresh_simulated_trader_portfolio_from_order(order)
+
             async with self.portfolio_history_update():
                 if (self.trader.simulate or not order.is_active) or not require_exchange_update:
                     return self._refresh_simulated_trader_portfolio_from_order(order)
@@ -244,15 +249,21 @@ class PortfolioManager(util.Initializable):
                                  update_origin_crypto_currencies_values(symbol, mark_price))
 
     @contextlib.contextmanager
-    def disabled_portfolio_update_from_order(self):
+    def disabled_portfolio_update_from_order(self, enable_available_funds_update: bool = True):
         """
-        Can be used to locally disable portfolio refresh when an order is updated
+        Can be used to locally disable portfolio available/total refresh or sync when an order is updated
         """
-        self._enable_portfolio_update_from_order = False
+        previous_enable_portfolio_available_update_from_order = self.enable_portfolio_available_update_from_order
+        previous_enable_portfolio_exchange_sync = self.enable_portfolio_exchange_sync
+        self._enable_portfolio_total_update_from_order = False
+        self.enable_portfolio_available_update_from_order = enable_available_funds_update
+        self.enable_portfolio_exchange_sync = False
         try:
             yield
         finally:
-            self._enable_portfolio_update_from_order = True
+            self._enable_portfolio_total_update_from_order = True
+            self.enable_portfolio_available_update_from_order = previous_enable_portfolio_available_update_from_order
+            self.enable_portfolio_exchange_sync = previous_enable_portfolio_exchange_sync
 
     async def _refresh_real_trader_portfolio(self) -> bool:
         """
@@ -304,16 +315,26 @@ class PortfolioManager(util.Initializable):
         """
         try:
             if order.is_filled():
-                self.portfolio.update_portfolio_from_filled_order(order)
+                if self._enable_portfolio_total_update_from_order:
+                    self.portfolio.update_portfolio_from_filled_order(order)
             else:
                 # order cancelled
-                self.portfolio.update_portfolio_available(order, is_new_order=False)
+                self.refresh_portfolio_available_from_order(order, is_new_order=False)
             return True
         except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
             self.logger.exception(portfolio_negative_value_error, True,
                                   f"Failed to update portfolio : {portfolio_negative_value_error} "
                                   f"for order {order.to_dict()}")
         return False
+
+    def refresh_portfolio_available_from_order(self, order, is_new_order):
+        """
+        Refresh portfolio available from an order
+        :param order: the order to take into account
+        :param is_new_order: True if this is a newly opened order, false if it is a cancelled order
+        """
+        if self.enable_portfolio_available_update_from_order:
+            self.portfolio.update_portfolio_available(order, is_new_order=is_new_order)
 
     def _load_portfolio(self, reset_from_config):
         """

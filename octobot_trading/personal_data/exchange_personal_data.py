@@ -242,6 +242,12 @@ class ExchangePersonalData(util.Initializable):
             await self.handle_order_update_notification(order, update_type)
         return order.state is not None
 
+    def on_completed_orders_fetch(self):
+        # store the fact that all orders have been fetched from exchange
+        self.orders_manager.are_exchange_orders_initialized = True
+        # available funds can now be updated from fetched open orders
+        self.portfolio_manager.enable_portfolio_available_update_from_order = True
+
     def _is_out_of_sync_order(self, exchange_order_id) -> bool:
         return self.trades_manager.has_closing_trade_with_exchange_order_id(exchange_order_id)
 

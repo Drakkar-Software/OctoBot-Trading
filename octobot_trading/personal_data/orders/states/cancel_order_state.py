@@ -25,9 +25,12 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 class CancelOrderState(order_state.OrderState):
     MAX_SYNCHRONIZATION_ATTEMPTS = 5
 
-    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False
+    ):
         super().__init__(
-            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation,
+            is_already_counted_in_available_funds=is_already_counted_in_available_funds
         )
         self.state = enums.OrderStates.CANCELING \
             if ((not self.order.simulated and not self.is_status_cancelled()) or self.is_status_pending()) \

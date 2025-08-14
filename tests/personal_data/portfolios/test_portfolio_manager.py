@@ -82,10 +82,12 @@ async def test_handle_balance_update_from_order(backtesting_trader):
         with portfolio_manager.disabled_portfolio_update_from_order():
             await portfolio_manager.handle_balance_update_from_order(order, False, False)
             _refresh_real_trader_portfolio_until_order_update_applied_mock.assert_not_called()
-            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
+            _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
             await portfolio_manager.handle_balance_update_from_order(order, True, False)
             _refresh_real_trader_portfolio_until_order_update_applied_mock.assert_not_called()
-            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
+            _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
         await portfolio_manager.handle_balance_update_from_order(order, False, False)
         _refresh_real_trader_portfolio_until_order_update_applied_mock.assert_not_called()
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
@@ -99,9 +101,11 @@ async def test_handle_balance_update_from_order(backtesting_trader):
         _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
         with portfolio_manager.disabled_portfolio_update_from_order():
             await portfolio_manager.handle_balance_update_from_order(order, True, False)
-            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
+            _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
             await portfolio_manager.handle_balance_update_from_order(order, False, False)
-            _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+            _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
+            _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
         # ensure no side effect with require_exchange_update param
         await portfolio_manager.handle_balance_update_from_order(order, False, False)
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
@@ -197,8 +201,17 @@ async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader)
     with patch.object(portfolio_manager.portfolio, 'update_portfolio_available',
                       new=Mock()) as update_portfolio_available_mock:
         update_portfolio_available_mock.assert_not_called()
+        portfolio_manager._enable_portfolio_total_update_from_order = False  # force _enable_portfolio_total_update_from_order to False to ensure no side effect
+        assert portfolio_manager.enable_portfolio_available_update_from_order is True
         portfolio_manager._refresh_simulated_trader_portfolio_from_order(order)
         update_portfolio_available_mock.assert_called_once()
+        update_portfolio_available_mock.reset_mock()
+        portfolio_manager.enable_portfolio_available_update_from_order = False
+        portfolio_manager._refresh_simulated_trader_portfolio_from_order(order)
+        update_portfolio_available_mock.assert_not_called()
+        portfolio_manager.enable_portfolio_available_update_from_order = True
+        # restore _enable_portfolio_total_update_from_order
+        portfolio_manager._enable_portfolio_total_update_from_order = True
 
     price = decimal_random_price()
     order.update(
@@ -212,8 +225,17 @@ async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader)
     with patch.object(portfolio_manager.portfolio, 'update_portfolio_from_filled_order',
                       new=Mock()) as update_portfolio_from_filled_order_mock:
         update_portfolio_from_filled_order_mock.assert_not_called()
+        portfolio_manager.enable_portfolio_available_update_from_order = False  # force enable_portfolio_total_update_from_order to False to ensure no side effect
+        assert portfolio_manager._enable_portfolio_total_update_from_order is True
         portfolio_manager._refresh_simulated_trader_portfolio_from_order(order)
         update_portfolio_from_filled_order_mock.assert_called_once()
+        update_portfolio_from_filled_order_mock.reset_mock()
+        portfolio_manager._enable_portfolio_total_update_from_order = False
+        portfolio_manager._refresh_simulated_trader_portfolio_from_order(order)
+        update_portfolio_from_filled_order_mock.assert_not_called()
+        portfolio_manager._enable_portfolio_total_update_from_order = True
+        # restore enable_portfolio_available_update_from_order
+        portfolio_manager.enable_portfolio_available_update_from_order = True
 
 
 async def test_load_simulated_portfolio_from_history(backtesting_trader):

@@ -17,13 +17,28 @@ import mock
 
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import OrderStatus, OrderStates, States
+import octobot_trading.enums as enums
 from octobot_trading.personal_data.orders.states.order_state_factory import create_order_state
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import buy_limit_order
 import pytest
+import tests.personal_data.orders.states as states
 
 pytestmark = pytest.mark.asyncio
+
+
+async def test_initialize_without_kwargs(buy_limit_order):
+    with mock.patch.object(personal_data.OrderState, '_is_synchronization_enabled', mock.Mock(return_value=False)) as is_synchronization_enabled_mock:
+        await states.inner_test_initialize_without_kwargs(buy_limit_order, enums.OrderStatus.PENDING_CREATION, None)
+        assert is_synchronization_enabled_mock.call_count > 0
+
+async def test_initialize_with_kwargs(buy_limit_order):
+    with mock.patch.object(personal_data.OrderState, '_is_synchronization_enabled', mock.Mock(return_value=False)) as is_synchronization_enabled_mock:
+        await states.inner_test_initialize_with_kwargs(
+            buy_limit_order, enums.OrderStatus.PENDING_CREATION, None, expected_is_from_exchange_data=False
+        )
+        assert is_synchronization_enabled_mock.call_count > 0
 
 
 async def test_on_order_refresh_successful(buy_limit_order):

@@ -27,7 +27,9 @@ import octobot_trading.personal_data.state as state_class
 class OrderState(state_class.State):
     MAX_SYNCHRONIZATION_ATTEMPTS = -1   # implement self._force_final_state() when this is enabled
 
-    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False
+    ):
         super().__init__(is_from_exchange_data)
 
         # ensure order has not been cleared
@@ -37,6 +39,7 @@ class OrderState(state_class.State):
         self.order = order
 
         self.enable_associated_orders_creation = enable_associated_orders_creation
+        self.is_already_counted_in_available_funds = is_already_counted_in_available_funds
 
     def is_created(self) -> bool:
         """

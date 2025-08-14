@@ -424,6 +424,9 @@ def get_orders_locked_amounts_by_asset(open_orders: list[order_import.Order]) ->
         return {}
     locked_funds_by_asset = {}
     for order in open_orders:
+        if not order.is_active:
+            # don't count inactive orders in locked funds
+            continue
         base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
         # use get_order_locked_amount just like trader simulator to ensure locked funds integrity
         if order.side == enums.TradeOrderSide.BUY:

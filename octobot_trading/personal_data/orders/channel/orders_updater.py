@@ -106,7 +106,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                                                    retry_till_success=retry_till_success)
         finally:
             if self.channel is not None:
-                self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
+                self.channel.exchange_manager.exchange_personal_data.on_completed_orders_fetch()
         await asyncio.sleep(self.TIME_BETWEEN_ORDERS_REFRESH)
         try:
             # can raise, closed orders are not critical data
