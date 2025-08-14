@@ -22,6 +22,7 @@ import pytest
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import sell_limit_order, buy_limit_order, buy_market_order, sell_market_order
+import tests.personal_data.orders.states as states
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,6 +34,14 @@ async def test_on_order_refresh_successful(sell_limit_order):
     await sell_limit_order.state.on_refresh_successful()
     assert sell_limit_order.is_cancelled()
     sell_limit_order.clear()
+
+
+async def test_initialize_without_kwargs(sell_limit_order):
+    await states.inner_test_initialize_without_kwargs(sell_limit_order, enums.OrderStatus.CANCELED, 'on_close')
+
+
+async def test_initialize_with_kwargs(sell_limit_order):
+    await states.inner_test_initialize_with_kwargs(sell_limit_order, enums.OrderStatus.CANCELED, 'on_close')
 
 
 async def test_constructor_real_order_with_pending_cancel_status(buy_limit_order):

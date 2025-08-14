@@ -205,7 +205,7 @@ class Trader(util.Initializable):
                             )
                 else:
                     # consider order as cancelled to release portfolio amounts
-                    self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
+                    self.exchange_manager.exchange_personal_data.portfolio_manager.refresh_portfolio_available_from_order(
                         order, is_new_order=False
                     )
                     updated_price = edited_stop_price if edited_price is None else edited_price
@@ -218,7 +218,7 @@ class Trader(util.Initializable):
                         current_price=edited_current_price,
                     )
                     # consider order as new order to lock portfolio amounts
-                    self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
+                    self.exchange_manager.exchange_personal_data.portfolio_manager.refresh_portfolio_available_from_order(
                         order, is_new_order=True
                     )
                 # push order edit into orders channel as edit update
@@ -262,9 +262,22 @@ class Trader(util.Initializable):
         self.logger.debug(
             f"Successfully edited order on {self.exchange_manager.exchange_name}, new order values: {edited_order}"
         )
+        if not self.exchange_manager.exchange_personal_data.portfolio_manager.enable_portfolio_exchange_sync:
+            # consider order as cancelled to release portfolio amounts before locking the updated value
+            self.exchange_manager.exchange_personal_data.portfolio_manager.refresh_portfolio_available_from_order(
+                order, is_new_order=False
+            )
         changed = order.update_from_raw(edited_order)
         # update portfolio from exchange
-        await self.exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order(order)
+        if self.exchange_manager.exchange_personal_data.portfolio_manager.enable_portfolio_exchange_sync:
+            await self.exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order(
+                order, require_exchange_update=True
+            )
+        else:
+            # consider order as cancelled to release portfolio amounts before locking the updated value
+            self.exchange_manager.exchange_personal_data.portfolio_manager.refresh_portfolio_available_from_order(
+                order, is_new_order=True
+            )
         return changed
 
     async def _create_new_order(

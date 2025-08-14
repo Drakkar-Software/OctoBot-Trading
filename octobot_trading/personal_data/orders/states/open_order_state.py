@@ -21,9 +21,12 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class OpenOrderState(order_state.OrderState):
-    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False
+    ):
         super().__init__(
-            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation,
+            is_already_counted_in_available_funds=is_already_counted_in_available_funds
         )
         self.state = enums.States.OPEN if \
             is_from_exchange_data \
@@ -45,15 +48,18 @@ class OpenOrderState(order_state.OrderState):
         if forced:
             self.state = enums.States.OPEN
 
-        if self.order.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized:
+        if (
+            self.order.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized
+            or self.order.exchange_manager.exchange_personal_data.portfolio_manager.enable_portfolio_available_update_from_order
+        ):
             # update the availability of the currency in the portfolio if order is not
             # from exchange initialization (otherwise it's already taken into account in portfolio)
-            portfolio = self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
-            before_order_details = str(portfolio)
-            portfolio.update_portfolio_available(self.order, is_new_order=True)
+            portfolio_manager = self.order.exchange_manager.exchange_personal_data.portfolio_manager
+            before_order_details = str(portfolio_manager.portfolio)
+            portfolio_manager.refresh_portfolio_available_from_order(self.order, True)
             self.get_logger().debug(
                 f"Updated portfolio available after new open order. "
-                f"Before order: {before_order_details}. After order: {portfolio}"
+                f"Before order: {before_order_details}. After order: {portfolio_manager.portfolio}"
             )
 
         return await super().initialize_impl()

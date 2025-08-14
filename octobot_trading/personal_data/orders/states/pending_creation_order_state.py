@@ -25,9 +25,12 @@ import octobot_trading.personal_data.orders.order_state as order_state
 
 class PendingCreationOrderState(order_state.OrderState):
 
-    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True):
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False
+    ):
         super().__init__(
-            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation,
+            is_already_counted_in_available_funds=is_already_counted_in_available_funds
         )
         self.state = enums.States.PENDING_CREATION
 

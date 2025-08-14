@@ -22,7 +22,8 @@ import octobot_trading.personal_data.orders.channel.orders_updater as orders_upd
 
 class OrdersUpdaterSimulator(orders_updater.OrdersUpdater):
     async def start(self):
-        self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
+        # on simulator, orders are fetched from the start
+        self.channel.exchange_manager.exchange_personal_data.on_completed_orders_fetch()
         await exchange_channel.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.ignore_recent_trades_update)
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:

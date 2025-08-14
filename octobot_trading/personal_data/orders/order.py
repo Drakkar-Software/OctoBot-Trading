@@ -544,17 +544,23 @@ class Order(util.Initializable):
                 f"when creating active order from inactive order: {self}"
             )
 
-    async def on_pending_creation(self, is_from_exchange_data=False, enable_associated_orders_creation=True):
+    async def on_pending_creation(self, is_from_exchange_data=False, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False
+    ):
         with self.order_state_creation():
             state_class = orders_states.PendingCreationChainedOrderState if self.is_waiting_for_chained_trigger \
                 else orders_states.PendingCreationOrderState
             self.state = state_class(
                 self, is_from_exchange_data=is_from_exchange_data,
-                enable_associated_orders_creation=enable_associated_orders_creation
+                enable_associated_orders_creation=enable_associated_orders_creation,
+                is_already_counted_in_available_funds=is_already_counted_in_available_funds
             )
             await self.state.initialize()
 
-    async def on_open(self, force_open=False, is_from_exchange_data=False, enable_associated_orders_creation=True):
+    async def on_open(
+        self, force_open=False, is_from_exchange_data=False, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False
+    ):
         with self.order_state_creation():
             if isinstance(self.state, orders_states.PendingCreationOrderState):
                 await self.state.trigger_terminate()
@@ -566,11 +572,15 @@ class Order(util.Initializable):
                 return
             self.state = orders_states.OpenOrderState(
                 self, is_from_exchange_data=is_from_exchange_data,
-                enable_associated_orders_creation=enable_associated_orders_creation
+                enable_associated_orders_creation=enable_associated_orders_creation,
+                is_already_counted_in_available_funds=is_already_counted_in_available_funds
             )
             await self.state.initialize(forced=force_open)
 
-    async def on_fill(self, force_fill=False, is_from_exchange_data=False, enable_associated_orders_creation=None):
+    async def on_fill(
+        self, force_fill=False, is_from_exchange_data=False, enable_associated_orders_creation=None,
+        is_already_counted_in_available_funds=False
+    ):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
             else (True if enable_associated_orders_creation is None else enable_associated_orders_creation)
@@ -581,7 +591,8 @@ class Order(util.Initializable):
             with self.order_state_creation():
                 self.state = orders_states.FillOrderState(
                     self, is_from_exchange_data=is_from_exchange_data,
-                    enable_associated_orders_creation=enable_associated_orders_creation
+                    enable_associated_orders_creation=enable_associated_orders_creation,
+                    is_already_counted_in_available_funds=is_already_counted_in_available_funds
                 )
                 await self.state.initialize(forced=force_fill)
         else:
@@ -589,20 +600,23 @@ class Order(util.Initializable):
                                                              f"or canceled order: "
                                                              f"ignored fill call for {self}")
 
-    async def on_close(self, force_close=False, is_from_exchange_data=False, enable_associated_orders_creation=None):
+    async def on_close(self, force_close=False, is_from_exchange_data=False, enable_associated_orders_creation=None,
+        is_already_counted_in_available_funds=False
+    ):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
             else (True if enable_associated_orders_creation is None else enable_associated_orders_creation)
         with self.order_state_creation():
             self.state = orders_states.CloseOrderState(
                 self, is_from_exchange_data=is_from_exchange_data,
-                enable_associated_orders_creation=enable_associated_orders_creation
+                enable_associated_orders_creation=enable_associated_orders_creation,
+                is_already_counted_in_available_funds=is_already_counted_in_available_funds
             )
             await self.state.initialize(forced=force_close)
 
     async def on_cancel(
         self, is_from_exchange_data=False, force_cancel=False, enable_associated_orders_creation=None,
-        ignored_order=None
+        ignored_order=None, is_already_counted_in_available_funds=False
     ):
         enable_associated_orders_creation = self.state.enable_associated_orders_creation \
             if (self.state and enable_associated_orders_creation is None) \
@@ -610,7 +624,8 @@ class Order(util.Initializable):
         with self.order_state_creation():
             self.state = orders_states.CancelOrderState(
                 self, is_from_exchange_data=is_from_exchange_data,
-                enable_associated_orders_creation=enable_associated_orders_creation
+                enable_associated_orders_creation=enable_associated_orders_creation,
+                is_already_counted_in_available_funds=is_already_counted_in_available_funds
             )
             await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
@@ -828,7 +843,9 @@ class Order(util.Initializable):
     def generate_executed_time(self):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
-    def is_counted_in_available_funds(self):
+    def is_counted_in_available_funds(self) -> bool:
+        if self.state and self.state.is_already_counted_in_available_funds:
+            return False
         if self.is_active:
             if self.trader.simulate or (
                 self.reduce_only and self.exchange_manager and self.exchange_manager.is_future

@@ -16,9 +16,7 @@
 import mock
 import pytest
 import decimal
-import asyncio
 
-from more_itertools.more import side_effect
 
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
@@ -904,3 +902,56 @@ async def test_update_from_order_storage(trader_simulator):
     assert order.is_active is False
     assert order.active_trigger.trigger_price == decimal.Decimal(32)
     assert order.active_trigger.trigger_above is False
+
+
+async def test_is_counted_in_available_funds(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    order = personal_data.BuyLimitOrder(trader_inst)
+    order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                 symbol="BTC/USDT",
+                 current_price=decimal.Decimal("70"),
+                 quantity=decimal.Decimal("10"),
+                 price=decimal.Decimal("70"),
+                 exchange_order_id="PLOP",
+                 active_trigger=personal_data.create_order_price_trigger(order, decimal.Decimal("70"), True))
+    assert order.is_counted_in_available_funds() is True
+
+    # is_active
+    order.is_active = False
+    assert order.is_counted_in_available_funds() is False
+    order.is_active = True
+    assert order.is_counted_in_available_funds() is True
+
+    # simulated order
+    trader_inst.simulate = True
+    assert order.is_counted_in_available_funds() is True
+    for order_type in [enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT, enums.TraderOrderType.SELL_MARKET]:
+        order.order_type = order_type
+        assert order.is_counted_in_available_funds() is True
+    for order_type in [
+        enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT, 
+        enums.TraderOrderType.TAKE_PROFIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT, enums.TraderOrderType.TRAILING_STOP
+    ]:
+        order.order_type = order_type
+        assert order.is_counted_in_available_funds() is False
+
+    order.order_type = enums.TraderOrderType.BUY_LIMIT
+
+    # real order
+    trader_inst.simulate = False
+    # is_self_managed
+    with mock.patch.object(order, "is_self_managed", mock.Mock(return_value=True)) as is_self_managed_mock:
+        assert order.is_counted_in_available_funds() is False
+        is_self_managed_mock.assert_called_once()
+        is_self_managed_mock.reset_mock()
+        is_self_managed_mock.return_value = False
+        assert order.is_counted_in_available_funds() is True
+        is_self_managed_mock.assert_called_once()
+
+    trader_inst.simulate = True
+    # state.is_already_counted_in_available_funds
+    order.state = personal_data.OpenOrderState(order, False, is_already_counted_in_available_funds=True)
+    assert order.is_counted_in_available_funds() is False
+    order.state = personal_data.OpenOrderState(order, False, is_already_counted_in_available_funds=False)
+    assert order.is_counted_in_available_funds() is True

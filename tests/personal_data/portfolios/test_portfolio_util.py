@@ -94,6 +94,8 @@ def test_resolve_sub_portfolios_no_filling_assets_with_locked_funds():
     sub_pf_btc.locked_funds_by_asset = trading_api.get_orders_locked_amounts_by_asset([
         _open_order("BTC/USDT", 0.06, 400, "sell", 0.000001, "BTC"),
         _open_order("BTC/USDT", 0.02, 600, "sell", 0.000001, "BTC"),
+        _open_order("BTC/USDT", 1, 600, "sell", 0.1, "BTC", is_active=False),  # ignored: inactive order
+        _open_order("ETH/USDT", 0.02, 600, "sell", 23, "ETH", is_active=False),   # ignored: inactive order
     ])
     assert personal_data.resolve_sub_portfolios(master_pf, [sub_pf_btc], {}) == (
         _sub_pf(0, _content_with_available({"BTC": (0, 0), "ETH": (0.019998, 0.1), "USDT": (0.019998, 0.1)})),
@@ -1366,7 +1368,7 @@ def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = Non
     })
     return order
 
-def _open_order(symbol: str, quantity: float, cost: float, side: str, fee_cost: float, fee_unit: str) -> personal_data.Order:
+def _open_order(symbol: str, quantity: float, cost: float, side: str, fee_cost: float, fee_unit: str, is_active: bool = True) -> personal_data.Order:
     order = _order(symbol, quantity, cost, side)
     order.is_filled = mock.Mock(return_value=False)
     order.get_computed_fee = mock.Mock(
@@ -1375,6 +1377,7 @@ def _open_order(symbol: str, quantity: float, cost: float, side: str, fee_cost: 
             enums.FeePropertyColumns.COST.value: decimal.Decimal(str(fee_cost)),
         }
     )
+    order.is_active = is_active
     return order
 
 def _locked_amounts_by_asset(amount_by_asset: dict[str, float]) -> dict[str, decimal.Decimal]:

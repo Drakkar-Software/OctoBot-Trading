@@ -19,9 +19,12 @@ import octobot_trading.personal_data.orders.order_state as order_state
 
 
 class CloseOrderState(order_state.OrderState):
-    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True, force_close=True):
+    def __init__(self, order, is_from_exchange_data, enable_associated_orders_creation=True,
+        is_already_counted_in_available_funds=False, force_close=True
+    ):
         super().__init__(
-            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation
+            order, is_from_exchange_data, enable_associated_orders_creation=enable_associated_orders_creation,
+            is_already_counted_in_available_funds=is_already_counted_in_available_funds
         )
         self.state = enums.States.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
             else enums.States.CLOSING

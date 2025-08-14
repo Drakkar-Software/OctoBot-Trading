@@ -17,11 +17,21 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import OrderStatus, OrderStates, States
 from octobot_trading.personal_data.orders.states.order_state_factory import create_order_state
 from tests import event_loop
+import octobot_trading.enums as enums
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import buy_limit_order
+import tests.personal_data.orders.states as states
 import pytest
 
 pytestmark = pytest.mark.asyncio
+
+
+async def test_initialize_without_kwargs(buy_limit_order):
+    await states.inner_test_initialize_without_kwargs(buy_limit_order, enums.OrderStatus.OPEN, None)
+
+
+async def test_initialize_with_kwargs(buy_limit_order):
+    await states.inner_test_initialize_with_kwargs(buy_limit_order, enums.OrderStatus.OPEN, None)
 
 
 async def test_on_order_refresh_successful(buy_limit_order):
