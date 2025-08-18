@@ -95,9 +95,6 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
         # try with since and limit (used in data collector)
         for limit in (500, None):
             symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
-            # broken since ccxt==4.4.85
-            assert symbol_prices == []
-            continue
             if limit:
                 assert len(symbol_prices) == limit
             else:
@@ -111,8 +108,7 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
                 assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
-        # broken since ccxt==4.4.85
-        assert await self.get_historical_ohlcv() == []
+        await super().test_get_historical_ohlcv()
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()

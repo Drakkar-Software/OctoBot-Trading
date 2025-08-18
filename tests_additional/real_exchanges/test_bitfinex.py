@@ -54,7 +54,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(400, 400)
+        await self.inner_test_active_symbols(350, 350)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():

@@ -49,7 +49,7 @@ class TestMEXCRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(2500, 3200)
+        await self.inner_test_active_symbols(2500, 3000)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():

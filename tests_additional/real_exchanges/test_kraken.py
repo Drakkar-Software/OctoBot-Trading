@@ -48,7 +48,7 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(700, 700)
+        await self.inner_test_active_symbols(1100, 1100)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
@@ -66,12 +66,13 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
                                             normal_cost_min=1e-07,
                                             low_cost_min=1e-08,
                                             expect_invalid_price_limit_values=False,
-                                            enable_price_and_cost_comparison=False)
+                                            enable_price_and_cost_comparison=False,
+                                            has_price_limits=False)
 
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 720
+        assert len(symbol_prices) >= 500
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle

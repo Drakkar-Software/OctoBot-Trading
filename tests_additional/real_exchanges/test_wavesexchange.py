@@ -33,7 +33,7 @@ class TestWavesExchangeRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "wavesexchange"
     SYMBOL = "WAVES/USDT"
     SYMBOL_2 = "ETH/WAVES"
-    SYMBOL_3 = "WAVES/WETHU"
+    SYMBOL_3 = "WAVES/WBTC"
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = RealExchangeTester.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1    # account for dumped candle
 
     async def test_time_frames(self):

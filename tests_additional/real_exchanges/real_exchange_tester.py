@@ -123,7 +123,7 @@ class RealExchangeTester:
     async def test_get_historical_ohlcv(self):
         # common implementation, should always work if candles history is supported
         historical_ohlcv = await self.get_historical_ohlcv()
-        assert len(historical_ohlcv) > 500  # should be around 650
+        assert len(historical_ohlcv) > 500, f"{len(historical_ohlcv)=} < 500"  # should be around 650
         self.ensure_elements_order(historical_ohlcv, commons_enums.PriceIndexes.IND_PRICE_TIME.value)
         self.ensure_unique_elements(historical_ohlcv, commons_enums.PriceIndexes.IND_PRICE_TIME.value)
         start, end = self.get_historical_ohlcv_start_and_end_times()

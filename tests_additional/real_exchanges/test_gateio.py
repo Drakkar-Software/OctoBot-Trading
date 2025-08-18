@@ -160,10 +160,10 @@ class TestGateIORealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value]
             assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value] is None
+            assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
             assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
-            RealExchangeTester.check_ticker_typing(ticker, check_open=False, check_timestamp=False)
+            RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)
