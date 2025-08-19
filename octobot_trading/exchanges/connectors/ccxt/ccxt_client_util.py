@@ -328,7 +328,6 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
                     # extra args copied from self.open()
                     ssl=client.ssl_context,
                     loop=client.asyncio_loop,
-                    use_dns_cache=not proxy_config.disable_dns_cache,
                     enable_cleanup_closed=True
                 )
                 client.socks_proxy_sessions[proxy_url] = aiohttp.ClientSession(
@@ -342,21 +341,6 @@ def _use_proxy_if_necessary(client, proxy_config: proxy_config_import.ProxyConfi
                 raise ImportError(
                     "The aiohttp_socks python library is not installed and is required to use a socks proxy"
                 ) from err
-    elif proxy_config.disable_dns_cache:
-        # rewrite of async_ccxt.exchange.client.open()
-        _init_ccxt_client_session_requirements(client)
-        if client.session:
-            # should not happen
-            asyncio.create_task(client.session.close())
-        connector = aiohttp.TCPConnector(
-            ssl=client.ssl_context, loop=client.asyncio_loop, enable_cleanup_closed=True,
-            # local overrides
-            use_dns_cache=False
-            # end local overrides
-        )
-        client.session = aiohttp.ClientSession(
-            loop=client.asyncio_loop, connector=connector, trust_env=client.aiohttp_trust_env
-        )
 
 
 def _init_ccxt_client_session_requirements(client):
@@ -468,7 +452,7 @@ def _use_request_counter(
         # connector = aiohttp.TCPConnector(ssl=self.ssl_context, loop=self.asyncio_loop, enable_cleanup_closed=True)
         ccxt_client.tcp_connector = aiohttp.TCPConnector(
             ssl=ccxt_client.ssl_context, loop=ccxt_client.asyncio_loop,
-            enable_cleanup_closed=True, use_dns_cache=not proxy_config.disable_dns_cache
+            enable_cleanup_closed=True
         )
         counter_session = aiohttp_util.CounterClientSession(
             identifier,
@@ -489,6 +473,7 @@ def _use_request_counter(
 
 def ccxt_exchange_class_factory(exchange_name):
     return getattr(async_ccxt, exchange_name)
+
 
 def reraise_with_proxy_prefix_if_relevant(
     ccxt_connector, cause_error: Exception, raised_error: typing.Optional[Exception]
