@@ -72,7 +72,7 @@ class TestHollaexRealExchangeTester(RealExchangeTester):
         # without limit is not supported replaced by a 500 default limit in hollaex tentacle
         symbol_prices = await self.get_symbol_prices(limit=500)
         # warning: large candle gaps, allow it in check
-        assert 30 <= len(symbol_prices) <= 500
+        assert len(symbol_prices) == 500
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
