@@ -134,6 +134,7 @@ def create_order_from_dict(trader, order_dict):
         price=order_dict[enums.ExchangeConstantsOrderColumns.PRICE.value],
         status=enums.OrderStatus(order_dict[enums.ExchangeConstantsOrderColumns.STATUS.value]),
         order_id=order_dict[enums.ExchangeConstantsOrderColumns.ID.value],
+        exchange_order_id=order_dict.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_ID.value),
         quantity_filled=order_dict[enums.ExchangeConstantsOrderColumns.FILLED.value],
         timestamp=order_dict[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
         side=enums.TradeOrderSide(order_dict[enums.ExchangeConstantsOrderColumns.SIDE.value]),
