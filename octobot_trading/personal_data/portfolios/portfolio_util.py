@@ -860,6 +860,18 @@ def get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
                 asset_deltas[unit_and_amount[0]] = unit_and_amount[1] * multiplier
             else:
                 asset_deltas[unit_and_amount[0]] += unit_and_amount[1] * multiplier
+        if actual_fees := order.fee:
+            if (
+                actual_fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] 
+                and actual_fees[enums.FeePropertyColumns.COST.value]
+            ):
+                # order fees are from exchange: add them to asset deltas as they are confirmed
+                fee_asset = actual_fees[enums.FeePropertyColumns.CURRENCY.value]
+                if fee_asset not in asset_deltas:
+                    # always substract fees
+                    asset_deltas[fee_asset] = -decimal.Decimal(str(actual_fees[enums.FeePropertyColumns.COST.value]))
+                else:
+                    asset_deltas[fee_asset] -= decimal.Decimal(str(actual_fees[enums.FeePropertyColumns.COST.value]))
         # order "probable" related deltas (account for worse case fees)
         expected_forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=True)
         possible_forecasted_fees = _get_other_asset_forecasted_fees(
