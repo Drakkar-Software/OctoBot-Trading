@@ -1028,6 +1028,90 @@ def test_get_portfolio_filled_orders_deltas_considering_local_exchange_fees():
         error_log.assert_not_called()
 
 
+def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 600.2})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 50.2})    # paid 50 USDT in fees
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # no filled order
+        assert personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], []) == _resolved(
+            {}, {}
+        )
+        error_log.assert_not_called()
+
+        # with fees: delta is found
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 25}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.05, 450, "buy", {"USDT": 25}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, []
+        ) == _resolved(
+            # all orders found in deltas because fees have been taken into account
+            _content({"BTC": 0.1, "USDT": -550}),
+        )
+        for order in filled_orders:
+            assert order.get_computed_fee.call_count > 0
+        error_log.assert_not_called()
+
+        # now with unknown orders
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], filled_orders
+        ) == _resolved(
+            # all orders found in deltas because fees have been taken into account
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -550}),
+            inferred_filled_orders=filled_orders,
+        )
+        error_log.assert_not_called()
+
+        # same test but fees will be much lower and won't explain all detlas
+        filled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.05, 450, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, []
+        ) == _resolved(
+            # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
+            _content({"BTC": 0.1, "USDT": -500.2}),
+        )
+        error_log.assert_not_called()
+
+        # now with unknown orders
+        unknown_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.05, 450, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_orders
+        ) == _resolved(
+            # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
+            inferred_filled_orders=unknown_orders,
+        )
+        error_log.assert_not_called()
+
+        # with an order that is not explained in deltas at all
+        unknown_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.05, 450, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
+            _order("BTC/USDT", 0.05, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True), # not explained
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_orders
+        ) == _resolved(
+            # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
+            inferred_filled_orders=unknown_orders[:-1],
+            inferred_cancelled_orders=[unknown_orders[-1]],
+        )
+        error_log.assert_not_called()
+
+
 def test_get_accepted_missed_deltas():
     # with no delta
     post_trade_content = _content({"XRP": 40, "USDT": 129.2474232})
@@ -1353,7 +1437,7 @@ def _missing_funds(funds: dict[str, float]) -> dict[str, decimal.Decimal]:
         for key, val in funds.items()
     }
 
-def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = None, local_fees_currencies: list[str] = []) -> personal_data.Order:
+def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = None, local_fees_currencies: list[str] = [], is_exchange_fetched_fee: bool = False) -> personal_data.Order:
     trader = mock.Mock(exchange_manager=mock.Mock(exchange=mock.Mock(LOCAL_FEES_CURRENCIES=local_fees_currencies)))
     order = personal_data.Order(trader)
     order.symbol = symbol
@@ -1361,9 +1445,16 @@ def _order(symbol: str, quantity: float, cost: float, side: str, fee: dict = Non
     order.total_cost = decimal.Decimal(str(cost))
     order.origin_price = order.total_cost / order.origin_quantity
     order.side = enums.TradeOrderSide(side)
+    if is_exchange_fetched_fee:
+        order.fee = {
+            enums.FeePropertyColumns.COST.value: decimal.Decimal(str(next(iter(fee.values())) if fee else 0)),
+            enums.FeePropertyColumns.CURRENCY.value: next(iter(fee.keys())) if fee else None,
+            enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
+        }
+    # get_computed_fee returns empty fees when is_exchange_fetched_fee is True to avoid side effects with predicted fees
     order.get_computed_fee = mock.Mock(return_value={
-        enums.FeePropertyColumns.COST.value: decimal.Decimal(str(next(iter(fee.values())) if fee else 0)),
-        enums.FeePropertyColumns.CURRENCY.value: next(iter(fee.keys())) if fee else None,
+        enums.FeePropertyColumns.COST.value: decimal.Decimal(str(next(iter(fee.values())) if fee and not is_exchange_fetched_fee else 0)),
+        enums.FeePropertyColumns.CURRENCY.value: next(iter(fee.keys())) if fee and not is_exchange_fetched_fee else None,
         enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
     })
     return order
