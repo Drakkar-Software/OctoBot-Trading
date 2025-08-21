@@ -17,6 +17,7 @@ import asyncio
 import typing
 import contextlib
 import decimal
+import copy
 
 import octobot_commons.logging as logging
 
@@ -797,6 +798,9 @@ class Order(util.Initializable):
         # consider worse case taker fees when using use_origin_quantity_and_price as the order is not filled yet
         taker_or_maker = enums.ExchangeConstantsOrderColumns.TAKER.value \
             if use_origin_quantity_and_price else self.taker_or_maker
+        if self.is_cleared():
+            # order is cleared, it might have been filled or cancelled. Use existing fees
+            return copy.copy(self.fee)
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
             computed_fee = self.exchange_manager.exchange.get_trade_fee(
                 self.symbol, self.order_type, quantity, price, taker_or_maker
