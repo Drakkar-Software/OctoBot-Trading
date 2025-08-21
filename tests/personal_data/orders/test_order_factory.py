@@ -134,6 +134,7 @@ class TestOrderFactory:
         # associated_entry_ids are not copied
         assert created_from_dict.associated_entry_ids is None
         assert created_from_dict.trigger_above is limit_order.trigger_above is True
+        assert created_from_dict.exchange_order_id # ensure exchange_order_id is generated
         assert limit_order.associated_entry_ids == ["1"]
 
 
@@ -146,6 +147,7 @@ class TestOrderFactory:
             quantity,
             price=price,
             trigger_above=False,
+            exchange_order_id="123",
         )
         order_dict = limit_order.to_dict()
         created_from_dict = personal_data.create_order_from_dict(trader_inst, order_dict)
@@ -160,6 +162,7 @@ class TestOrderFactory:
         # associated_entry_ids are not copied
         assert created_from_dict.associated_entry_ids is None
         assert created_from_dict.trigger_above is limit_order.trigger_above is False
+        assert created_from_dict.exchange_order_id == "123"
         assert limit_order.associated_entry_ids is None
 
         await self.stop(exchange_manager)
