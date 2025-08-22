@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.210] - 2025-08-22
+### Added
+[TradingModes] add get_trading_modes_of_this_type_on_this_matrix
+### Updated
+[Orders] handle get_computed_fee on cleared orders
+[Keywords] make price and amount parsing errors more detailed
+
 ## [2.4.209] - 2025-08-21
 ### Updated
 [Portfolio] consider order fees in delta when from exchange
