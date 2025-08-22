@@ -247,3 +247,18 @@ async def notify_portfolio_optimization_complete():
         )
     except ImportError as e:
         logging.get_logger(__name__).exception(e, True, f"Impossible to send notification: {e}")
+
+
+def get_trading_modes_of_this_type_on_this_matrix(trading_mode) -> list:
+    import octobot_trading.api  # avoid circular import issues
+    other_trading_modes = []
+    for exchange_id in octobot_trading.api.get_all_exchange_ids_with_same_matrix_id(
+        trading_mode.exchange_manager.exchange_name, trading_mode.exchange_manager.id
+    ):
+        exchange_manager = octobot_trading.api.get_exchange_manager_from_exchange_id(exchange_id)
+        other_trading_modes.extend(
+            other_trading_mode
+            for other_trading_mode in exchange_manager.trading_modes
+            if isinstance(other_trading_mode, type(trading_mode))
+        )
+    return other_trading_modes
