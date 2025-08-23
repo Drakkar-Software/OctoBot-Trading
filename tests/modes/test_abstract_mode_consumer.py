@@ -174,7 +174,8 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
         open_order = await _create_initialized_open_order(exchange_manager, symbol)
         async def _create_new_orders(*_, **__):
             # order is successfully canceled
-            assert await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is True
+            cancelled, _ = await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True)
+            assert cancelled is True
 
         assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == [open_order]
         with mock.patch.object(consumer, "create_new_orders", mock.AsyncMock(side_effect=_create_new_orders)) as _create_new_orders_mock:
@@ -217,7 +218,8 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
             assert _origin_handle_portfolio_and_position_update_from_order_calls == [1, 1]
             assert exchange_manager.exchange_personal_data.orders_manager.get_open_orders() == []   # order no more open
             # order is not canceled: it's not in open orders anymore by the time _create_new_orders is called
-            assert await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is False  # assert error not propagated #raise
+            cancelled, _ = await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True)
+            assert cancelled is False  # assert error not propagated #raise
 
         _origin_handle_portfolio_and_position_update_from_order_calls = []
         origin_handle_portfolio_and_position_update_from_order = exchange_manager.exchange_personal_data.handle_portfolio_and_position_update_from_order
@@ -386,7 +388,8 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
             assert open_order.state.state == octobot_trading.enums.States.REFRESHING  # state in refresh process
             # order cancel will succeed: order is already canceled
             # will deadlock if waits for open_order.state transition
-            await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is True
+            cancelled, _ = await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True)
+            assert cancelled is True
             assert _origin_handle_portfolio_and_position_update_from_order_calls == []
             assert _synchronize_with_exchange_calls == [1]
 
@@ -438,7 +441,8 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
             assert open_order.status == octobot_trading.enums.OrderStatus.OPEN
             assert isinstance(open_order.state, personal_data.OpenOrderState)
             # order cancel will end up in PENDING_CANCEL
-            await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is True
+            cancelled, _ = await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True)
+            cancelled is True
             # order now in pending cancel state
             assert isinstance(open_order.state, personal_data.CancelOrderState)
             assert open_order.is_pending_cancel_state() is True
@@ -507,7 +511,8 @@ async def test_create_order_if_possible_ensure_no_deadlock_when_canceling_orders
             assert open_order.status == octobot_trading.enums.OrderStatus.OPEN
             assert isinstance(open_order.state, personal_data.OpenOrderState)
             # order cancel will end up in PENDING_CANCEL
-            await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True) is True
+            cancelled, _ = await consumer.trading_mode.cancel_order(open_order, wait_for_cancelling=True)
+            assert cancelled is True
             # _synchronize_with_exchange_calls is still waiting
             assert _synchronize_with_exchange_calls == [1]
             assert open_order.is_refreshing() is True

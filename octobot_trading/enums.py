@@ -593,6 +593,11 @@ class TradingSignalOrdersActions(enum.Enum):
     CANCEL = "cancel"
 
 
+class TradingSignalDependencies(enum.Enum):
+    ORDER_ID = "order_id"
+    POSITION_SYMBOL = "position_symbol"
+
+
 class TradingSignalPositionsActions(enum.Enum):
     EDIT = "edit"
 

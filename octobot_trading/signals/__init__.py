@@ -22,6 +22,10 @@ from octobot_trading.signals.trading_signal_bundle_builder import (
 from octobot_trading.signals import util
 from octobot_trading.signals.util import (
     create_order_signal_content,
+    get_position_dependency,
+    get_order_dependency,
+    get_orders_dependencies,
+    are_dependencies_filled,
 )
 from octobot_commons.signals.signal_publisher import (
     SignalPublisher,
@@ -63,4 +67,8 @@ __all__ = [
     "set_leverage",
     "update_order_as_inactive",
     "update_order_as_active",
+    "get_position_dependency",
+    "get_order_dependency",
+    "get_orders_dependencies",
+    "are_dependencies_filled",
 ]

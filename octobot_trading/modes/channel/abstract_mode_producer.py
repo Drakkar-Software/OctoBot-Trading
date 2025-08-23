@@ -27,6 +27,7 @@ import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.configuration as commons_configuration
 import octobot_commons.asyncio_tools as asyncio_tools
+import octobot_commons.signals as commons_signals
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -400,17 +401,21 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         raise NotImplementedError("set_final_eval not implemented")
 
-    async def submit_trading_evaluation(self, cryptocurrency, symbol, time_frame,
-                                        final_note=constants.ZERO,
-                                        state=enums.EvaluatorStates.NEUTRAL,
-                                        data=None) -> None:
+    async def submit_trading_evaluation(
+        self, cryptocurrency, symbol, time_frame,
+        final_note=constants.ZERO,
+        state=enums.EvaluatorStates.NEUTRAL,
+        data=None,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> None:
         await self.send(trading_mode_name=self.trading_mode.get_name(),
                         cryptocurrency=cryptocurrency,
                         symbol=symbol,
                         time_frame=time_frame,
                         final_note=final_note,
                         state=state.value,
-                        data=data if data is not None else {})
+                        data=data if data is not None else {},
+                        dependencies=dependencies)
 
     @classmethod
     def get_should_cancel_loaded_orders(cls) -> bool:
@@ -420,13 +425,17 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
 
-    async def cancel_symbol_open_orders(self, symbol, side=None, tag=None, exchange_order_ids=None) -> bool:
+    async def cancel_symbol_open_orders(
+        self, symbol, side=None, tag=None, exchange_order_ids=None,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, commons_signals.SignalDependencies]:
         """
         Cancel all symbol open orders
         """
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
         cancelled = False
         failed_to_cancel = False
+        cancelled_dependencies = commons_signals.SignalDependencies()
         if self.exchange_manager.trader.is_enabled:
             for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
                 symbol=symbol, tag=tag
@@ -438,15 +447,19 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     and (exchange_order_ids is None or (order.exchange_order_id in exchange_order_ids))
                 ):
                     try:
-                        if await self.trading_mode.cancel_order(order):
+                        is_cancelled, new_dependencies = await self.trading_mode.cancel_order(
+                            order, dependencies=dependencies
+                        )
+                        if is_cancelled:
                             cancelled = True
+                            cancelled_dependencies.extend(new_dependencies)
                         else:
                             failed_to_cancel = True
                     except errors.OctoBotExchangeError as err:
                         # do not propagate exchange error when canceling order
                         self.logger.exception(err, True, f"Error when cancelling order [{order}]: {err}")
                         failed_to_cancel = True
-        return cancelled and not failed_to_cancel
+        return (cancelled and not failed_to_cancel), cancelled_dependencies or None
 
     def all_databases(self):
         provider = databases.RunDatabasesProvider.instance()

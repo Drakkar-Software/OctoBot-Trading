@@ -187,10 +187,10 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                     try:
                         self.logger.debug(f"Cancelling order to keep balance, order: {order} as {closed_order} is closed")
                         async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
-                            await signals.cancel_order(order.trader.exchange_manager,
-                                                       signals.should_emit_trading_signal(order.trader.exchange_manager),
-                                                       order,
-                                                       ignored_order=closed_order)
+                            await signals.cancel_order(
+                                order.trader.exchange_manager, signals.should_emit_trading_signal(order.trader.exchange_manager),
+                                order, ignored_order=closed_order, dependencies=None
+                            )
                     except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
                         self.logger.error(f"Skipping order cancel: {err}")
                     updated_orders = True

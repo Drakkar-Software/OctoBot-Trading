@@ -24,6 +24,7 @@ import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
 import octobot_commons.configuration
+import octobot_commons.signals as commons_signals
 
 import async_channel.constants as channel_constants
 import async_channel.channels as channels
@@ -563,20 +564,27 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
              as signal_builder:
             yield signal_builder
 
-    async def create_order(self, order, loaded: bool = False, params: dict = None,
-                           wait_for_creation=True,
-                           creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
+    async def create_order(
+        self, order, loaded: bool = False, params: dict = None,
+        wait_for_creation=True, creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ):
         return await signals.create_order(
             self.exchange_manager, self.should_emit_trading_signal(), order,
             loaded=loaded, params=params,
-            wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
+            wait_for_creation=wait_for_creation, creation_timeout=creation_timeout,
+            dependencies=dependencies
         )
 
-    async def cancel_order(self, order, ignored_order: object = None, wait_for_cancelling: bool = True) -> bool:
+    async def cancel_order(
+        self, order, ignored_order: object = None, wait_for_cancelling: bool = True,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, commons_signals.SignalDependencies]:
         return await signals.cancel_order(
             self.exchange_manager, self.should_emit_trading_signal(), order,
             ignored_order=ignored_order,
-            wait_for_cancelling=wait_for_cancelling
+            wait_for_cancelling=wait_for_cancelling,
+            dependencies=dependencies
         )
 
     async def cancel_all_orders(
@@ -584,36 +592,41 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         symbol: str,
         allow_single_order_cancel_fallback: bool,
         wait_for_cancelling: bool = True,
-        cancelling_timeout: float = constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        cancelling_timeout: float = constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
     ) -> bool:
         # todo send signals when implementation will be necessary
         return await self.exchange_manager.trader.cancel_all_orders(
             symbol,
             allow_single_order_cancel_fallback,
             wait_for_cancelling=wait_for_cancelling,
-            cancelling_timeout=cancelling_timeout
+            cancelling_timeout=cancelling_timeout,
         )
 
-    async def edit_order(self, order,
-                         edited_quantity: decimal.Decimal = None,
-                         edited_price: decimal.Decimal = None,
-                         edited_stop_price: decimal.Decimal = None,
-                         edited_current_price: decimal.Decimal = None,
-                         params: dict = None) -> bool:
+    async def edit_order(
+        self, order,
+        edited_quantity: decimal.Decimal = None,
+        edited_price: decimal.Decimal = None,
+        edited_stop_price: decimal.Decimal = None,
+        edited_current_price: decimal.Decimal = None,
+        params: dict = None,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> bool:
         return await signals.edit_order(
             self.exchange_manager, self.should_emit_trading_signal(), order,
             edited_quantity=edited_quantity,
             edited_price=edited_price,
             edited_stop_price=edited_stop_price,
             edited_current_price=edited_current_price,
-            params=params
+            params=params,
+            dependencies=dependencies
         )
 
     async def set_leverage(
-        self, symbol: str, side: typing.Optional[enums.PositionSide], leverage: decimal.Decimal
+        self, symbol: str, side: typing.Optional[enums.PositionSide], leverage: decimal.Decimal,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
     ) -> bool:
         return await signals.set_leverage(
-            self.exchange_manager, self.should_emit_trading_signal(), symbol, side, leverage
+            self.exchange_manager, self.should_emit_trading_signal(), symbol, side, leverage, dependencies=dependencies
         )
 
     async def get_additional_metadata(self, is_backtesting):

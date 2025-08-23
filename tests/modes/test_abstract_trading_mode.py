@@ -148,7 +148,7 @@ async def test_cancel_order(trading_mode, buy_limit_order):
         cancel_order_mock.reset_mock()
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=False)) \
             as should_emit_trading_signal_mock:
-        assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") is True
+        assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") == (True, signals.get_order_dependency(buy_limit_order))
         should_emit_trading_signal_mock.assert_called_once()
         cancel_order_mock.assert_called_once_with(
             buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,
@@ -161,7 +161,7 @@ async def test_cancel_order(trading_mode, buy_limit_order):
         with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=True)) \
                 as should_emit_trading_signal_mock:
             async with trading_mode.remote_signal_publisher("BTC/USDT"):
-                assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") is True
+                assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") == (True, signals.get_order_dependency(buy_limit_order))
                 assert should_emit_trading_signal_mock.call_count == 2
                 cancel_order_mock.assert_called_once_with(
                     buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,
@@ -174,7 +174,7 @@ async def test_cancel_order(trading_mode, buy_limit_order):
         with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=False)) \
                 as should_emit_trading_signal_mock:
             async with trading_mode.remote_signal_publisher("BTC/USDT"):
-                assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") is True
+                assert await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored") == (True, signals.get_order_dependency(buy_limit_order))
                 assert should_emit_trading_signal_mock.call_count == 2
                 cancel_order_mock.assert_called_once_with(
                     buy_limit_order, ignored_order="ignored", wait_for_cancelling=True,

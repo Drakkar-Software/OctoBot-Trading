@@ -15,10 +15,13 @@
 #  License along with this library.
 import decimal
 import pytest
+import mock
 
+import octobot_commons.signals as commons_signals
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.signals as signals
+import octobot_trading.signals.util as signals_util
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -266,3 +269,143 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         updated_stop_price=decimal.Decimal("111.1"),
         updated_current_price=decimal.Decimal("111"),
     ) == final_order_desc
+
+
+def test_get_order_dependency(buy_limit_order):
+    assert signals.get_order_dependency(buy_limit_order) == commons_signals.SignalDependencies([
+        {enums.TradingSignalDependencies.ORDER_ID.value: buy_limit_order.order_id}
+    ])
+
+
+def get_orders_dependencies(buy_limit_order, sell_limit_order):
+    assert signals.get_orders_dependencies([buy_limit_order, sell_limit_order]) == commons_signals.SignalDependencies([
+        {enums.TradingSignalDependencies.ORDER_ID.value: buy_limit_order.order_id},
+        {enums.TradingSignalDependencies.ORDER_ID.value: sell_limit_order.order_id}
+    ])
+
+
+def test_get_position_dependency():
+    position = mock.Mock(symbol="BTC/USDT:USDT")
+    assert signals.get_position_dependency(position) == commons_signals.SignalDependencies([
+        {enums.TradingSignalDependencies.POSITION_SYMBOL.value: "BTC/USDT:USDT"}
+    ])
+
+
+def test_are_dependencies_filled():
+    no_dep_signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={}
+    )
+    assert signals_util.are_dependencies_filled(no_dep_signal, []) is True
+    single_dep_signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={},
+        dependencies=signals.get_order_dependency(mock.Mock(order_id="123"))
+    )
+    assert signals_util.are_dependencies_filled(single_dep_signal, []) is False
+    dual_dep_signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={},
+        dependencies=signals.get_orders_dependencies([mock.Mock(order_id="123"), mock.Mock(order_id="456")])
+    )
+    assert signals_util.are_dependencies_filled(dual_dep_signal, []) is False
+    succeeded_signals = [
+        commons_signals.Signal(
+            topic=enums.TradingSignalTopics.ORDERS.value,
+            content={
+                enums.TradingSignalOrdersAttrs.ORDER_ID.value: "123"
+            }
+        )
+    ]
+    assert signals_util.are_dependencies_filled(no_dep_signal, succeeded_signals) is True
+    # dep is filled
+    assert signals_util.are_dependencies_filled(single_dep_signal, succeeded_signals) is True
+    succeeded_signals.append(
+        commons_signals.Signal(
+            topic=enums.TradingSignalTopics.ORDERS.value,
+            content={
+                enums.TradingSignalOrdersAttrs.ORDER_ID.value: "456-wrong"  # not the expected id
+            }
+        )
+    )
+    assert signals_util.are_dependencies_filled(no_dep_signal, succeeded_signals) is True
+    assert signals_util.are_dependencies_filled(single_dep_signal, succeeded_signals) is True
+    assert signals_util.are_dependencies_filled(dual_dep_signal, succeeded_signals) is False
+    succeeded_signals.append(
+        commons_signals.Signal(
+            topic=enums.TradingSignalTopics.ORDERS.value,
+            content={
+                enums.TradingSignalOrdersAttrs.ORDER_ID.value: "456"  # the last expected id
+            }
+        )
+    )
+    assert signals_util.are_dependencies_filled(no_dep_signal, succeeded_signals) is True
+    assert signals_util.are_dependencies_filled(single_dep_signal, succeeded_signals) is True
+    assert signals_util.are_dependencies_filled(dual_dep_signal, succeeded_signals) is True
+
+
+def test_get_signals_filled_dependencies():
+    assert signals_util._get_signals_filled_dependencies([]) == commons_signals.SignalDependencies()
+    signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={}
+    )
+    assert signals_util._get_signals_filled_dependencies([signal]) == commons_signals.SignalDependencies()
+    signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={
+            enums.TradingSignalOrdersAttrs.ORDER_ID.value: "123"
+        }
+    )
+    assert signals_util._get_signals_filled_dependencies([signal]) == commons_signals.SignalDependencies([
+        {enums.TradingSignalDependencies.ORDER_ID.value: "123"}
+    ])
+    signal_2 = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={
+            enums.TradingSignalOrdersAttrs.ORDER_ID.value: "456"
+        }
+    )
+    signal_3 = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.POSITIONS.value,
+        content={
+            enums.TradingSignalPositionsAttrs.SYMBOL.value: "BTC/USDT:USDT"
+        }
+    )
+    assert signals_util._get_signals_filled_dependencies([signal, signal_2, signal_3]) == commons_signals.SignalDependencies([
+        {enums.TradingSignalDependencies.ORDER_ID.value: "123"},
+        {enums.TradingSignalDependencies.ORDER_ID.value: "456"},
+        {enums.TradingSignalDependencies.POSITION_SYMBOL.value: "BTC/USDT:USDT"}
+    ])
+
+def test_get_signal_filled_dependency():
+    signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={}
+    )
+    assert signals_util._get_signal_filled_dependency(signal) == None
+    signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.ORDERS.value,
+        content={
+            enums.TradingSignalOrdersAttrs.ORDER_ID.value: "123"
+        }
+    )
+    assert signals_util._get_signal_filled_dependency(signal) == {
+        enums.TradingSignalDependencies.ORDER_ID.value: "123"
+    }
+    
+    signal = commons_signals.Signal(
+        topic=enums.TradingSignalTopics.POSITIONS.value,
+        content={
+            enums.TradingSignalPositionsAttrs.SYMBOL.value: "BTC/USDT:USDT"
+        }
+    )
+    assert signals_util._get_signal_filled_dependency(signal) == {
+        enums.TradingSignalDependencies.POSITION_SYMBOL.value: "BTC/USDT:USDT"
+    }
+
+    with pytest.raises(NotImplementedError):
+        signals_util._get_signal_filled_dependency(commons_signals.Signal(
+            topic="unknown_topic",
+            content={}
+        ))

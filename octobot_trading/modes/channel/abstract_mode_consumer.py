@@ -15,7 +15,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import typing
 
+import octobot_commons.signals as commons_signals
 import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
 
@@ -30,6 +32,9 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
 class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
+    CREATE_ORDER_DATA_PARAM = "data"
+    CREATE_ORDER_DEPENDENCIES_PARAM = "dependencies"
+    
     def __init__(self, trading_mode):
         super().__init__()
         self.trading_mode = trading_mode
@@ -56,10 +61,15 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         self.exchange_manager = None
         self.previous_call_error_per_symbol = None
 
-    async def internal_callback(self, trading_mode_name, cryptocurrency, symbol, time_frame, final_note, state, data):
+    async def internal_callback(
+        self, trading_mode_name, cryptocurrency, symbol, time_frame, final_note, state, 
+        data, dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ):
         # creates a new order (or multiple split orders), always check self.can_create_order() first.
         try:
-            await self.create_order_if_possible(symbol, final_note, state, data=data)
+            await self.create_order_if_possible(
+                symbol, final_note, state, data=data, dependencies=dependencies
+            )
             self.previous_call_error_per_symbol[symbol] = None
         except errors.MissingMinimalExchangeTradeVolume as err:
             self.previous_call_error_per_symbol[symbol] = err
