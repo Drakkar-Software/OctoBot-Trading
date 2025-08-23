@@ -29,6 +29,7 @@ from octobot_trading.errors import (
 )
 from octobot_trading.personal_data import LinearPosition
 import octobot_commons.constants as commons_constants
+import octobot_commons.signals as commons_signals
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
@@ -46,6 +47,7 @@ from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 from tests.exchanges.traders import get_default_future_inverse_contract, DEFAULT_FUTURE_SYMBOL
 import octobot_trading.constants as constants
+import octobot_trading.signals as signals
 import octobot_commons.symbols as commons_symbols
 
 from tests import event_loop
@@ -416,14 +418,14 @@ class TestTrader:
 
         assert len(trades_manager.trades) == 2
 
-        assert await trader_inst.cancel_all_open_orders_with_currency("XYZ") is True
+        assert await trader_inst.cancel_all_open_orders_with_currency("XYZ") == (True, commons_signals.SignalDependencies())
 
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
 
         assert len(trades_manager.trades) == 2
 
-        assert await trader_inst.cancel_all_open_orders_with_currency("LINK") is True
+        assert await trader_inst.cancel_all_open_orders_with_currency("LINK") == (True, signals.get_order_dependency(limit_sell))
 
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()

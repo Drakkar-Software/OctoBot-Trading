@@ -20,6 +20,7 @@ import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.html_util as html_util
+import octobot_commons.signals as commons_signals
 import octobot_commons.constants
 
 import octobot_trading.personal_data.orders.order_factory as order_factory
@@ -142,7 +143,8 @@ class Trader(util.Initializable):
     async def create_artificial_order(
         self, order_type, symbol, current_price, quantity, price, reduce_only, close_position,
         emit_trading_signals=False, wait_for_creation=True,
-        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
     ):
         """
         Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
@@ -164,7 +166,8 @@ class Trader(util.Initializable):
                 emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                 order,
                 wait_for_creation=wait_for_creation,
-                creation_timeout=creation_timeout
+                creation_timeout=creation_timeout,
+                dependencies=dependencies
             )
 
     async def edit_order(self, order,
@@ -435,7 +438,7 @@ class Trader(util.Initializable):
 
     async def update_order_as_active(
         self, order, params: dict = None, wait_for_creation=True, raise_all_creation_error=False,
-        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
     ):
         if not self.enable_inactive_orders:
             self.logger.error(f"Can't update order as active when {self.enable_inactive_orders=}.")
@@ -512,17 +515,17 @@ class Trader(util.Initializable):
                 return False
             is_order_refreshing = order.is_refreshing()
             if order_status is enums.OrderStatus.CANCELED:
-                order.status = octobot_trading.enums.OrderStatus.CANCELED
+                order.status = enums.OrderStatus.CANCELED
                 self.logger.debug(f"Successfully cancelled order {order}")
             elif order_status is enums.OrderStatus.PENDING_CANCEL:
-                order.status = octobot_trading.enums.OrderStatus.PENDING_CANCEL
+                order.status = enums.OrderStatus.PENDING_CANCEL
                 self.logger.debug(f"Order cancel in progress for {order}")
         else:
-            order.status = octobot_trading.enums.OrderStatus.CANCELED
+            order.status = enums.OrderStatus.CANCELED
 
         if not is_order_refreshing:
             # don't override state if order is already refreshing (most likely from open orders updater)
-            await order.on_cancel(force_cancel=order.status is octobot_trading.enums.OrderStatus.CANCELED,
+            await order.on_cancel(force_cancel=order.status is enums.OrderStatus.CANCELED,
                                   is_from_exchange_data=False,
                                   ignored_order=ignored_order)
         if wait_for_cancelling and (order.is_refreshing() or order.is_pending()):
@@ -618,7 +621,7 @@ class Trader(util.Initializable):
             for order in orders_to_cancel:
                 await order.lock.acquire()
                 if self.simulate or order.is_self_managed():
-                    order.status = octobot_trading.enums.OrderStatus.CANCELED
+                    order.status = enums.OrderStatus.CANCELED
                 else:
                     cancel_on_exchange = True
             if cancel_on_exchange:
@@ -657,16 +660,19 @@ class Trader(util.Initializable):
         await order.state.wait_for_terminate(cancelling_timeout)
         self.logger.debug(f"Completed order cancelling, order: {order}")
 
-    async def cancel_order_with_id(self, exchange_order_id, emit_trading_signals=False,
-                                   wait_for_cancelling=True,
-                                   cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
+    async def cancel_order_with_id(
+        self, exchange_order_id, emit_trading_signals=False,
+        wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, typing.Optional[commons_signals.SignalDependencies]]:
         """
         Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
         :param exchange_order_id: Exchange id of the order to cancel
         :param emit_trading_signals: when true, trading signals will be emitted
         :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
         :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
-        :return: True if cancel is successful, False if order is not found or cancellation failed
+        :return: (True if cancel is successful, False if order is not found or cancellation failed, dependency_id)
         """
         try:
             order = self.exchange_manager.exchange_personal_data.orders_manager.get_order(exchange_order_id)
@@ -677,17 +683,20 @@ class Trader(util.Initializable):
                     order,
                     wait_for_cancelling=wait_for_cancelling,
                     cancelling_timeout=cancelling_timeout,
+                    dependencies=dependencies
                 )
         except KeyError:
-            return False
+            return False, None
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None,
-                                 emit_trading_signals=False,
-                                 wait_for_cancelling=True,
-                                 cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, 
-                                 since: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT, 
-                                 until: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT
-                                 ) -> (bool, list):
+    async def cancel_open_orders(
+        self, symbol, cancel_loaded_orders=True, side=None,
+        emit_trading_signals=False,
+        wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, 
+        since: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT, 
+        until: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, list]:
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
@@ -708,12 +717,14 @@ class Trader(util.Initializable):
                     (cancel_loaded_orders or order.is_from_this_octobot):
                 try:
                     async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
-                        cancelled = await signals.cancel_order(
+                        cancelled, _ = await signals.cancel_order(
                             self.exchange_manager,
                             emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                             order,
                             wait_for_cancelling=wait_for_cancelling,
-                            cancelling_timeout=cancelling_timeout, )
+                            cancelling_timeout=cancelling_timeout,
+                            dependencies=dependencies
+                        )
                     if cancelled:
                         cancelled_orders.append(order)
                     all_cancelled = cancelled and all_cancelled
@@ -725,7 +736,7 @@ class Trader(util.Initializable):
         self, currency, emit_trading_signals=False,
         wait_for_cancelling=True,
         cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
-    ) -> bool:
+    ) -> tuple[bool, commons_signals.SignalDependencies]:
         """
         Should be called only if the goal is to cancel all open orders for each traded symbol containing the
         given currency.
@@ -737,48 +748,59 @@ class Trader(util.Initializable):
         """
         all_cancelled = True
         symbols = util.get_pairs(self.config, currency, enabled_only=True)
+        cancelled_dependencies = commons_signals.SignalDependencies()
         if symbols:
             for symbol in symbols:
-                all_cancelled = (await self.cancel_open_orders(symbol, emit_trading_signals=emit_trading_signals,
-                                                               wait_for_cancelling=wait_for_cancelling,
-                                                               cancelling_timeout=cancelling_timeout))[0] \
-                                and all_cancelled
-        return all_cancelled
+                new_all_cancelled, cancelled_orders = await self.cancel_open_orders(
+                    symbol, emit_trading_signals=emit_trading_signals,
+                    wait_for_cancelling=wait_for_cancelling,
+                    cancelling_timeout=cancelling_timeout
+                )
+                all_cancelled = new_all_cancelled and all_cancelled
+                cancelled_dependencies.extend(signals.get_orders_dependencies(cancelled_orders))
+        return all_cancelled, cancelled_dependencies
 
     async def cancel_all_open_orders(
-            self, emit_trading_signals=False,
-            wait_for_cancelling=True,
-            cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
-    ) -> bool:
+        self, emit_trading_signals=False,
+        wait_for_cancelling=True,
+        cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, commons_signals.SignalDependencies]:
         """
         Cancel all open orders registered on this bot.
         :param emit_trading_signals: when true, trading signals will be emitted
         :param wait_for_cancelling: when True, always make sure the order is completely cancelled before returning.
         :param cancelling_timeout: time before raising a timeout error when waiting for an order cancel
-        :return: True if all orders got cancelled, False if an error occurred
+        :return: (True if all orders got cancelled, False if an error occurred and dependencies)
         """
         all_cancelled = True
+        dependencies = commons_signals.SignalDependencies()
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if not order.is_cancelled():
                 try:
                     async with signals.remote_signal_publisher(
                             self.exchange_manager, order.symbol, emit_trading_signals
                     ):
-                        all_cancelled = await signals.cancel_order(
+                        cancelled, new_dependencies = await signals.cancel_order(
                             self.exchange_manager,
                             emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                             order,
                             wait_for_cancelling=wait_for_cancelling,
-                            cancelling_timeout=cancelling_timeout, ) and all_cancelled
+                            cancelling_timeout=cancelling_timeout,
+                            dependencies=dependencies
+                        )
+                        if cancelled:
+                            dependencies.extend(new_dependencies)
+                        all_cancelled = cancelled and all_cancelled
                 except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
                     self.logger.warning(f"Skipping order cancel: {err} ({err.__class__.__name__})")
                     all_cancelled = False
-        return all_cancelled
+        return all_cancelled, dependencies
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
         created_orders = []
-        order_type = octobot_trading.enums.TraderOrderType.BUY_MARKET \
-            if inverted else octobot_trading.enums.TraderOrderType.SELL_MARKET
+        order_type = enums.TraderOrderType.BUY_MARKET \
+            if inverted else enums.TraderOrderType.SELL_MARKET
         async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
             current_symbol_holding, current_market_quantity, _, price, symbol_market = \
                 await order_util.get_pre_order_data(self.exchange_manager, symbol, timeout=timeout)
@@ -839,9 +861,12 @@ class Trader(util.Initializable):
     Positions
     """
 
-    async def close_position(self, position, limit_price=None, timeout=1, emit_trading_signals=False,
-                             wait_for_creation=True,
-                             creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
+    async def close_position(
+        self, position, limit_price=None, timeout=1, emit_trading_signals=False,
+        wait_for_creation=True,
+        creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ):
         """
         Creates a close position order
         :param position: the position to close
@@ -885,7 +910,8 @@ class Trader(util.Initializable):
                         emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                         current_order,
                         wait_for_creation=wait_for_creation,
-                        creation_timeout=creation_timeout
+                        creation_timeout=creation_timeout,
+                        dependencies=dependencies
                     )
                 created_orders.append(order)
         return created_orders

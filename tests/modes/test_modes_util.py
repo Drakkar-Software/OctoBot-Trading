@@ -17,9 +17,9 @@ import mock
 import pytest
 import decimal
 
-from more_itertools.more import side_effect
-
+import octobot_commons.signals as commons_signals
 import octobot_commons.asyncio_tools as asyncio_tools
+
 import octobot_trading.constants as constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.personal_data as trading_personal_data
@@ -79,10 +79,10 @@ async def test_convert_assets_to_target_asset():
         assert convert_asset_to_target_asset.call_count == 2
         assert convert_asset_to_target_asset.mock_calls[0].args == \
                (trading_mode, "PLOP", target_asset, {"BTC/USDT": {}})
-        assert convert_asset_to_target_asset.mock_calls[0].kwargs == {"asset_amount": None}
+        assert convert_asset_to_target_asset.mock_calls[0].kwargs == {"asset_amount": None, "dependencies": None}
         assert convert_asset_to_target_asset.mock_calls[1].args == \
                (trading_mode, "USDT", target_asset, {"BTC/USDT": {}})
-        assert convert_asset_to_target_asset.mock_calls[1].kwargs == {"asset_amount": None}
+        assert convert_asset_to_target_asset.mock_calls[1].kwargs == {"asset_amount": None, "dependencies": None}
 
         assert orders == ["orders", "orders"]
 
@@ -95,8 +95,20 @@ async def test_convert_assets_to_target_asset():
         modes_util, "convert_asset_to_target_asset", mock.AsyncMock(side_effect=KeyError)
     ) as convert_asset_to_target_asset:
         trading_mode = mock.Mock()
-        assert await modes_util.convert_assets_to_target_asset(trading_mode, sellable_assets, target_asset, tickers) == []
+        assert await modes_util.convert_assets_to_target_asset(
+            trading_mode, sellable_assets, target_asset, tickers,
+            dependencies=signals.get_orders_dependencies([
+                mock.Mock(order_id="123"),
+                mock.Mock(order_id="456")
+            ])
+        ) == []
+        assert sellable_assets
         assert convert_asset_to_target_asset.call_count == len(sellable_assets)
+        for call in convert_asset_to_target_asset.mock_calls:
+            assert call.kwargs == {"asset_amount": None, "dependencies": signals.get_orders_dependencies([
+                mock.Mock(order_id="123"),
+                mock.Mock(order_id="456")
+            ])}
 
 
 async def test_convert_asset_to_target_asset(backtesting_trader):
@@ -134,7 +146,13 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
 
         # register BTC price
         converter.update_last_price("BTC/USDT", decimal.Decimal(30000))
-        orders = await modes_util.convert_asset_to_target_asset(trading_mode, "BTC", "USDT", tickers)
+        orders = await modes_util.convert_asset_to_target_asset(
+            trading_mode, "BTC", "USDT", tickers,
+            dependencies=signals.get_orders_dependencies([
+                mock.Mock(order_id="123"),
+                mock.Mock(order_id="456")
+            ])
+        )
         assert len(orders) == 1
         order = orders[0]
         assert order.order_type == trading_enums.TraderOrderType.SELL_MARKET
@@ -146,6 +164,10 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         assert order.filled_price == order.origin_price
         assert order.filled_quantity > constants.ZERO
         trading_mode.create_order.assert_called_once()
+        assert trading_mode.create_order.mock_calls[0].kwargs["dependencies"] == signals.get_orders_dependencies([
+            mock.Mock(order_id="123"),
+            mock.Mock(order_id="456")
+        ])
         trading_mode.create_order.reset_mock()
         is_market_open_for_order_type_mock.assert_called_once_with(
             "BTC/USDT", trading_enums.TraderOrderType.SELL_MARKET
@@ -351,9 +373,9 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
 
 
 def _get_trading_mode(exchange_manager):
-    async def _create_order(order):
+    async def _create_order(order, dependencies=None):
         return await signals.create_order(
-            exchange_manager, False, order
+            exchange_manager, False, order, dependencies=dependencies
         )
 
     return mock.Mock(

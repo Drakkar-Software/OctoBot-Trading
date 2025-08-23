@@ -14,8 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+
 import async_channel.constants as channel_constants
 import async_channel.enums as channel_enums
+import octobot_commons.signals as commons_signals
 
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
@@ -33,7 +36,8 @@ class ModeChannelProducer(exchanges_channel.ExchangeChannelProducer):
                    cryptocurrency=channel_constants.CHANNEL_WILDCARD,
                    symbol=channel_constants.CHANNEL_WILDCARD,
                    time_frame=None,
-                   data=None):
+                   data=None,
+                   dependencies: typing.Optional[commons_signals.SignalDependencies] = None):
         for consumer in self.channel.get_filtered_consumers(trading_mode_name=trading_mode_name,
                                                             state=state,
                                                             cryptocurrency=cryptocurrency,
@@ -46,7 +50,8 @@ class ModeChannelProducer(exchanges_channel.ExchangeChannelProducer):
                 "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "time_frame": time_frame,
-                "data": data
+                "data": data,
+                "dependencies": dependencies
             })
 
 

@@ -22,6 +22,7 @@ import octobot_trading.personal_data.orders as orders
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.signals.trading_signal_bundle_builder as trading_signal_bundle_builder
+import octobot_trading.signals.util as signals_util
 
 import octobot_commons.logging as logging
 import octobot_commons.signals as signals
@@ -72,10 +73,13 @@ async def _get_order_portfolio_percent(order, exchange_manager):
     return f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
 
 
-async def create_order(exchange_manager, should_emit_signal, order,
-                       loaded: bool = False, params: dict = None,
-                       wait_for_creation=True,
-                       creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT):
+async def create_order(
+    exchange_manager, should_emit_signal, order,
+    loaded: bool = False, params: dict = None,
+    wait_for_creation=True,
+    creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+    dependencies: typing.Optional[signals.SignalDependencies] = None
+):
     order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
     chained_orders_pf_percent = []
     if should_emit_signal:
@@ -91,11 +95,11 @@ async def create_order(exchange_manager, should_emit_signal, order,
     if created_order is not None and should_emit_signal:
         builder = signals.SignalPublisher.instance().get_signal_bundle_builder(created_order.symbol)
         builder.add_created_order(
-            created_order, exchange_manager, target_amount=order_pf_percent
+            created_order, exchange_manager, target_amount=order_pf_percent, dependencies=dependencies
         )
         for chained_order, chained_order_pf_percent in chained_orders_pf_percent:
             builder.add_created_order(
-                chained_order, exchange_manager, target_amount=chained_order_pf_percent
+                chained_order, exchange_manager, target_amount=chained_order_pf_percent, dependencies=dependencies
             )
 
     return created_order
@@ -103,12 +107,12 @@ async def create_order(exchange_manager, should_emit_signal, order,
 
 async def update_order_as_inactive(
     exchange_manager, should_emit_signal, order, ignored_order: object = None, wait_for_cancelling=True,
-    cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, dependencies: typing.Optional[signals.SignalDependencies] = None
 ) -> bool:
     cancelled = await exchange_manager.trader.update_order_as_inactive(
         order, ignored_order=ignored_order,
         wait_for_cancelling=wait_for_cancelling,
-        cancelling_timeout=cancelling_timeout
+        cancelling_timeout=cancelling_timeout,
     )
     if should_emit_signal:
         # implement relevant signals if necessary (different from regular cancel signal)
@@ -118,7 +122,7 @@ async def update_order_as_inactive(
 
 async def update_order_as_active(
     exchange_manager, should_emit_signal, order, params: dict = None, wait_for_creation=True,
-    creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
+    creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, dependencies: typing.Optional[signals.SignalDependencies] = None
 ) -> bool:
     created_order = await exchange_manager.trader.update_order_as_active(
         order, params=params, wait_for_creation=wait_for_creation, creation_timeout=creation_timeout
@@ -129,8 +133,10 @@ async def update_order_as_active(
     return created_order
 
 
-async def cancel_order(exchange_manager, should_emit_signal, order, ignored_order: object = None,
-                       wait_for_cancelling=True, cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
+async def cancel_order(
+    exchange_manager, should_emit_signal, order, ignored_order: object = None,
+    wait_for_cancelling=True, cancelling_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, dependencies: typing.Optional[signals.SignalDependencies] = None
+) -> tuple[bool, signals.SignalDependencies]:
     cancelled = await exchange_manager.trader.cancel_order(
         order, ignored_order=ignored_order,
         wait_for_cancelling=wait_for_cancelling,
@@ -138,9 +144,9 @@ async def cancel_order(exchange_manager, should_emit_signal, order, ignored_orde
     )
     if should_emit_signal and cancelled:
         signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
-            order, exchange_manager
+            order, exchange_manager, dependencies=dependencies
         )
-    return cancelled
+    return cancelled, signals_util.get_order_dependency(order)
 
 
 async def edit_order(
@@ -151,7 +157,8 @@ async def edit_order(
     edited_price: decimal.Decimal = None,
     edited_stop_price: decimal.Decimal = None,
     edited_current_price: decimal.Decimal = None,
-    params: dict = None
+    params: dict = None,
+    dependencies: typing.Optional[signals.SignalDependencies] = None
 ) -> bool:
     changed = await exchange_manager.trader.edit_order(
         order,
@@ -169,17 +176,18 @@ async def edit_order(
             updated_limit_price=edited_price,
             updated_stop_price=edited_stop_price,
             updated_current_price=edited_current_price,
+            dependencies=dependencies
         )
     return changed
 
 
 async def set_leverage(
     exchange_manager, should_emit_signal, symbol: str, side: typing.Optional[enums.PositionSide],
-    leverage: decimal.Decimal
+    leverage: decimal.Decimal, dependencies: typing.Optional[signals.SignalDependencies] = None
 ) -> bool:
     changed = await exchange_manager.trader.set_leverage(symbol, side, leverage)
     if should_emit_signal and changed:
         signals.SignalPublisher.instance().get_signal_bundle_builder(symbol).add_leverage_update(
-            symbol, side, leverage, exchange_manager
+            symbol, side, leverage, exchange_manager, dependencies=dependencies
         )
     return changed

@@ -13,6 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+
+import octobot_commons.signals as signals
 import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as trading_constants
@@ -102,3 +105,66 @@ def create_position_signal_content(
         trading_enums.TradingSignalPositionsAttrs.SIDE.value: side.value if side else side,
         trading_enums.TradingSignalPositionsAttrs.LEVERAGE.value: float(leverage),
     }
+
+
+def get_orders_dependencies(orders: list) -> signals.SignalDependencies:
+    return signals.SignalDependencies(
+        [
+            {
+                trading_enums.TradingSignalDependencies.ORDER_ID.value: order.order_id
+            }
+            for order in orders
+        ]
+    )
+
+
+def get_order_dependency(order) -> signals.SignalDependencies:
+    return get_orders_dependencies([order])
+
+
+def get_position_dependency(position) -> signals.SignalDependencies:
+    return signals.SignalDependencies(
+        [
+            {
+                trading_enums.TradingSignalDependencies.POSITION_SYMBOL.value: position.symbol
+            }
+        ]
+    )
+
+
+def are_dependencies_filled(signal: signals.Signal, succeeded_signals: list[signals.Signal]) -> bool:
+    if not signal.dependencies:
+        return True
+    return signal.dependencies.is_filled_by(
+        _get_signals_filled_dependencies(succeeded_signals)
+    )
+
+
+def _get_signals_filled_dependencies(succeeded_signals: list[signals.Signal]) -> signals.SignalDependencies:
+    return signals.SignalDependencies(
+        [
+            filled_dependency
+            for succeeded_signal in succeeded_signals
+            if (filled_dependency := _get_signal_filled_dependency(succeeded_signal))
+        ]
+    )
+
+
+def _get_signal_filled_dependency(signal: signals.Signal) -> typing.Optional[dict]:
+    if signal.topic == trading_enums.TradingSignalTopics.ORDERS.value:
+        if order_id := signal.content.get(
+            trading_enums.TradingSignalOrdersAttrs.ORDER_ID.value, None
+        ):
+            return {
+                trading_enums.TradingSignalDependencies.ORDER_ID.value: order_id
+            }
+        return None
+    if signal.topic == trading_enums.TradingSignalTopics.POSITIONS.value:
+        if symbol := signal.content.get(
+            trading_enums.TradingSignalPositionsAttrs.SYMBOL.value, None
+        ):
+            return {
+                trading_enums.TradingSignalDependencies.POSITION_SYMBOL.value: symbol
+            }
+        return None
+    raise NotImplementedError(f"Unsupported signal topic: {signal.topic}")

@@ -14,10 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.constants as common_constants
+import octobot_commons.signals as commons_signals
 
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_trading.errors as errors
@@ -73,12 +75,15 @@ def get_assets_requiring_extra_price_data_to_convert(exchange_manager, sellable_
     return missing_price_assets
 
 
-async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, target_asset: str, tickers: dict) -> list:
+async def convert_assets_to_target_asset(
+    trading_mode, sellable_assets: list, target_asset: str, tickers: dict,
+    dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+) -> list:
     created_orders = []
     for asset in sorted(sellable_assets):
         try:
             new_orders = await convert_asset_to_target_asset(
-                trading_mode, asset, target_asset, tickers, asset_amount=None
+                trading_mode, asset, target_asset, tickers, asset_amount=None, dependencies=dependencies
             )
             created_orders += new_orders
         except KeyError as err:
@@ -89,7 +94,8 @@ async def convert_assets_to_target_asset(trading_mode, sellable_assets: list, ta
 
 
 async def convert_asset_to_target_asset(
-    trading_mode, asset: str, target_asset: str, tickers: dict, asset_amount=None
+    trading_mode, asset: str, target_asset: str, tickers: dict, asset_amount=None,
+    dependencies: typing.Optional[commons_signals.SignalDependencies] = None
 ) -> list:
     if asset == target_asset:
         return []
@@ -98,13 +104,16 @@ async def convert_asset_to_target_asset(
     portfolio = trading_mode.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
     if asset in portfolio and portfolio[asset].available:
         created_orders.extend(
-            await convert_with_market_or_limit_order(trading_mode, asset, target_asset, tickers, asset_amount)
+            await convert_with_market_or_limit_order(
+                trading_mode, asset, target_asset, tickers, asset_amount, dependencies=dependencies
+            )
         )
     return created_orders
 
 
 async def convert_with_market_or_limit_order(
-    trading_mode, asset: str, target_asset: str, tickers: dict, asset_amount=None
+    trading_mode, asset: str, target_asset: str, tickers: dict, asset_amount=None,
+    dependencies: typing.Optional[commons_signals.SignalDependencies] = None
 ) -> list:
     # get symbol of the order
     symbol, order_type = _get_associated_symbol_and_order_type(trading_mode, asset, target_asset)
@@ -157,7 +166,7 @@ async def convert_with_market_or_limit_order(
             quantity=order_quantity,
             price=order_price
         )
-        initialized_order = await trading_mode.create_order(order)
+        initialized_order = await trading_mode.create_order(order, dependencies=dependencies)
         if isinstance(initialized_order, trading_personal_data.LimitOrder) and initialized_order.simulated:
             # on simulator, this order should be instantly filled now as its price is meant to be instantly filled
             await initialized_order.on_fill()

@@ -14,8 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import typing
 
 import octobot_commons.logging as logging
+import octobot_commons.signals as signals
 
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums
@@ -32,7 +34,7 @@ async def create_order(exchange_manager,
                        quantity: float,
                        price: float,
                        wait_for_creation=True,
-                       creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> personal_data.Order:
+                       creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> personal_data.Order:
     return await exchange_manager.trader.create_order(
         exchange_manager.trader.create_order_instance(order_type=order_type,
                                                       symbol=symbol,
@@ -56,17 +58,24 @@ def get_pending_creation_orders(exchange_manager) -> list:
     return exchange_manager.exchange_personal_data.orders_manager.pending_creation_orders
 
 
-async def cancel_all_open_orders(exchange_manager, emit_trading_signals=True) -> bool:
+async def cancel_all_open_orders(exchange_manager, emit_trading_signals=True) -> tuple[bool, list]:
     return await exchange_manager.trader.cancel_all_open_orders(emit_trading_signals=emit_trading_signals)
 
 
-async def cancel_all_open_orders_with_currency(exchange_manager, currency, emit_trading_signals=True) -> bool:
-    return await exchange_manager.trader.cancel_all_open_orders_with_currency(currency, emit_trading_signals=emit_trading_signals)
+async def cancel_all_open_orders_with_currency(
+    exchange_manager, currency, emit_trading_signals=True, dependencies=None
+) -> tuple[bool, signals.SignalDependencies]:
+    return await exchange_manager.trader.cancel_all_open_orders_with_currency(
+        currency, emit_trading_signals=emit_trading_signals, dependencies=dependencies
+    )
 
 
-async def cancel_order_with_id(exchange_manager, order_id, emit_trading_signals=True, wait_for_cancelling=True) -> bool:
-    return await exchange_manager.trader.cancel_order_with_id(order_id, emit_trading_signals=emit_trading_signals,
-                                                              wait_for_cancelling=wait_for_cancelling)
+async def cancel_order_with_id(
+    exchange_manager, order_id, emit_trading_signals=True, wait_for_cancelling=True, dependencies=None
+) -> tuple[bool, typing.Optional[signals.SignalDependencies]]:
+    return await exchange_manager.trader.cancel_order_with_id(
+        order_id, emit_trading_signals=emit_trading_signals, wait_for_cancelling=wait_for_cancelling, dependencies=dependencies
+    )
 
 
 def get_order_exchange_name(order) -> str:

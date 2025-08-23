@@ -93,7 +93,8 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
                             order.trader.exchange_manager,
                             signals.should_emit_trading_signal(order.trader.exchange_manager),
                             order,
-                            ignored_order=ignored_order
+                            ignored_order=ignored_order,
+                            dependencies=None
                         )
                 except (errors.OrderCancelError, errors.UnexpectedExchangeSideOrderStateError) as err:
                     self.logger.error(f"Skipping order cancel: {err}")
