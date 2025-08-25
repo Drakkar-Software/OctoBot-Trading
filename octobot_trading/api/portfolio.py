@@ -133,18 +133,24 @@ def resolve_sub_portfolios(
 def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
-    filled_orders: list[personal_data.Order],
-    unknown_filled_or_cancelled_orders: list[personal_data.Order]
+    filled_or_partially_filled_orders: list[personal_data.Order],
+    unknown_filled_or_cancelled_orders: list[personal_data.Order],
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
 ) -> personal_data.ResolvedOrdersPortoflioDelta:
     return personal_data.get_portfolio_filled_orders_deltas(
-        previous_portfolio_content, updated_portfolio_content, filled_orders, unknown_filled_or_cancelled_orders
+        previous_portfolio_content, updated_portfolio_content, 
+        filled_or_partially_filled_orders, unknown_filled_or_cancelled_orders, 
+        ignored_filled_quantity_per_order_exchange_id
     )
 
 
 def get_assets_delta_from_orders(
-    orders: list[personal_data.Order]
+    orders: list[personal_data.Order],
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
 ) -> (dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]):
-    return personal_data.get_assets_delta_from_orders(orders)
+    return personal_data.get_assets_delta_from_orders(
+        orders, ignored_filled_quantity_per_order_exchange_id
+    )
 
 
 def get_accepted_missed_deltas(

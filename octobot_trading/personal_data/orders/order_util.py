@@ -414,9 +414,9 @@ def get_order_locked_amount(order: order_import.Order, force_use_origin_quantity
     base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
     # when buy order
     if order.side == enums.TradeOrderSide.BUY:
-        return order.origin_quantity * order.origin_price + get_fees_for_currency(forecasted_fees, quote)
+        return order.get_remaining_quantity() * order.origin_price + get_fees_for_currency(forecasted_fees, quote)
     # when sell order
-    return order.origin_quantity + get_fees_for_currency(forecasted_fees, base)
+    return order.get_remaining_quantity() + get_fees_for_currency(forecasted_fees, base)
 
 
 def get_orders_locked_amounts_by_asset(open_orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:
