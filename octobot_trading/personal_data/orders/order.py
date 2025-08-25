@@ -877,6 +877,15 @@ class Order(util.Initializable):
     def is_short(self):
         return self.side is enums.TradeOrderSide.SELL
 
+    def is_partially_filled(self) -> bool:
+        return self.filled_quantity < self.origin_quantity
+
+    def get_remaining_quantity(self) -> decimal.Decimal:
+        return self.origin_quantity - self.filled_quantity
+
+    def get_remaining_cost(self) -> decimal.Decimal:
+        return self.get_cost(self.get_remaining_quantity())
+
     def update_from_raw(self, raw_order):
         if self.side is None or self.order_type is None:
             try:
@@ -1016,13 +1025,16 @@ class Order(util.Initializable):
     def _update_total_cost(self):
         # use filled amounts when available
         quantity = self.filled_quantity if self.filled_quantity else self.origin_quantity
+        self.total_cost = self.get_cost(quantity)
+
+    def get_cost(self, quantity: decimal.Decimal) -> decimal.Decimal:
         price = self.filled_price if self.filled_price else self.origin_price
         if self.quantity_currency == self.currency:
             # quantity in BTC for BTC/USDT => cost = BTC * price(BTC in USDT)
-            self.total_cost = quantity * price
+            return quantity * price
         else:
             # quantity in USDT for BTC/USDT => cost = price(BTC in USDT)
-            self.total_cost = quantity
+            return quantity
 
     def update_order_filled_values(self, ideal_price: decimal.Decimal):
         if not self.filled_price:

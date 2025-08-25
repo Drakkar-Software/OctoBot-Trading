@@ -112,6 +112,7 @@ class TestOrderFactory:
             self.DEFAULT_SYMBOL,
             price,
             quantity,
+            quantity_filled=decimal.Decimal("0.66"),
             price=price,
             order_id="123",
             tag="tag",
@@ -123,6 +124,7 @@ class TestOrderFactory:
         created_from_dict = personal_data.create_order_from_dict(trader_inst, order_dict)
         assert created_from_dict.origin_price == limit_order.origin_price == price
         assert created_from_dict.origin_quantity == limit_order.origin_quantity == quantity
+        assert created_from_dict.filled_quantity == limit_order.filled_quantity == decimal.Decimal("0.66")
         assert created_from_dict.__class__ is limit_order.__class__ == personal_data.SellLimitOrder
         assert created_from_dict.symbol == limit_order.symbol == self.DEFAULT_SYMBOL
         assert created_from_dict.order_id == limit_order.order_id == "123"

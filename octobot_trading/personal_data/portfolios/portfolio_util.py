@@ -542,16 +542,20 @@ def get_missing_master_portfolio_values_update(
 def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
-    filled_orders: list[order_import.Order],
-    unknown_filled_or_cancelled_orders: list[order_import.Order]
+    filled_or_partially_filled_orders: list[order_import.Order],
+    unknown_filled_or_cancelled_orders: list[order_import.Order],
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     portfolios_asset_deltas = _get_assets_delta_from_portfolio(previous_portfolio_content, updated_portfolio_content)
     if unknown_filled_or_cancelled_orders:
         return _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
-            filled_orders, portfolios_asset_deltas, unknown_filled_or_cancelled_orders
+            filled_or_partially_filled_orders, portfolios_asset_deltas, 
+            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id
         )
     else:
-        orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(filled_orders)
+        orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
+            filled_or_partially_filled_orders, ignored_filled_quantity_per_order_exchange_id
+        )
         return compute_assets_deltas_from_orders(
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
             portfolios_asset_deltas, allow_portfolio_delta_shrinking=True
@@ -570,17 +574,18 @@ def _reverse_portfolio_deltas(
 
 
 def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
-    filled_orders: list[order_import.Order],
+    filled_or_partially_filled_orders: list[order_import.Order],
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
-    unknown_filled_or_cancelled_orders: list[order_import.Order]
+    unknown_filled_or_cancelled_orders: list[order_import.Order],
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     """
     Returns the most probable deltas which are the ones that can be best explained by given orders
     """
 
-    if filled_orders:
+    if filled_or_partially_filled_orders:
         orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
-            filled_orders
+            filled_or_partially_filled_orders, ignored_filled_quantity_per_order_exchange_id
         )
         known_filled_orders_resolved_delta = compute_assets_deltas_from_orders(
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
@@ -609,7 +614,7 @@ def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             potential_filled_orders_combination = list(filled_orders_combination)
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
-                potential_filled_orders_combination
+                potential_filled_orders_combination, ignored_filled_quantity_per_order_exchange_id
             )
             if any(
                 asset_name not in post_filled_orders_portfolio_asset_deltas   # use post_filled_orders_portfolio_asset_deltas?
@@ -834,7 +839,10 @@ def _get_assets_delta_from_portfolio(
     return asset_deltas
 
 
-def get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
+def get_assets_delta_from_orders(
+    orders: list[order_import.Order], 
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
+) -> (
     dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]
 ):
     asset_deltas = {}
@@ -844,17 +852,33 @@ def get_assets_delta_from_orders(orders: list[order_import.Order]) -> (
     for order in orders:
         base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
         # order "expected" related deltas
-        added_unit_and_amount = (
-            (base, order.origin_quantity)
-            if order.side is enums.TradeOrderSide.BUY else (quote, order.total_cost)
-        )
-        removed_unit_and_amount = (
-            (quote, order.total_cost)
-            if order.side is enums.TradeOrderSide.BUY else (base, order.origin_quantity)
-        )
+        ignored_filled_quantity = ignored_filled_quantity_per_order_exchange_id.get(order.exchange_order_id)
+        delta_quantity = (order.filled_quantity - ignored_filled_quantity) if ignored_filled_quantity else order.filled_quantity
+        if delta_quantity < constants.ZERO:
+            commons_logging.get_logger(__name__).error(
+                f"Invalid delta quantity: {delta_quantity} for order "
+                f"{order.exchange_order_id} on {order.symbol} "
+                f"ignored filled quantity: {ignored_filled_quantity}."
+            )
+            continue
+        if delta_quantity == constants.ZERO:
+            commons_logging.get_logger(__name__).info(
+                f"Skipped zero delta quantity: {delta_quantity} for order "
+                f"{order.exchange_order_id} on {order.symbol} "
+                f"ignored filled quantity: {ignored_filled_quantity}."
+            )
+            continue
+        if order.side is enums.TradeOrderSide.BUY:
+            added_unit_and_amount = (base, delta_quantity)
+            removed_unit_and_amount = (quote, order.get_cost(delta_quantity))
+        elif order.side is enums.TradeOrderSide.SELL:
+            added_unit_and_amount = (quote, order.get_cost(delta_quantity))
+            removed_unit_and_amount = (base, delta_quantity)
+        else:
+            raise ValueError(f"Invalid order side: {order.side}")
         for unit_and_amount, multiplier in zip(
             (added_unit_and_amount, removed_unit_and_amount),
-            (1, -1)
+            (decimal.Decimal(1), decimal.Decimal(-1))
         ):
             if unit_and_amount[0] not in asset_deltas:
                 asset_deltas[unit_and_amount[0]] = unit_and_amount[1] * multiplier
