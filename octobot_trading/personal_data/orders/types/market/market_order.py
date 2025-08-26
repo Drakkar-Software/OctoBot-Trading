@@ -20,6 +20,7 @@ import octobot_trading.personal_data.orders.order as order_class
 
 class MarketOrder(order_class.Order):
     SUPPORTS_GROUPING = False    # False when orders of this type can't be grouped
+    USE_ORIGIN_QUANTITY_AS_FILLED_QUANTITY = True
 
     async def update_order_status(self, force_refresh=False):
         if not self.is_active:

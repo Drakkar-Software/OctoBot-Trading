@@ -65,9 +65,10 @@ class TradesManager(util.Initializable):
                 self.logger.exception(err, False, message)
         return False
 
-    def upsert_trade_instance(self, trade):
+    def upsert_trade_instance(self, trade) -> bool:
         if trade.trade_id not in self.trades:
-            self._add_trade_if_relevant(trade.trade_id, trade)
+            return self._add_trade_if_relevant(trade.trade_id, trade)
+        return False
 
     def _add_trade_if_relevant(self, trade_id: str, trade) -> bool:
         if (

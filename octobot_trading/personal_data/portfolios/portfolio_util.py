@@ -614,10 +614,10 @@ def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             potential_filled_orders_combination = list(filled_orders_combination)
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
-                potential_filled_orders_combination, ignored_filled_quantity_per_order_exchange_id
+                potential_filled_orders_combination, ignored_filled_quantity_per_order_exchange_id, force_fully_filled_orders=True
             )
             if any(
-                asset_name not in post_filled_orders_portfolio_asset_deltas   # use post_filled_orders_portfolio_asset_deltas?
+                asset_name not in post_filled_orders_portfolio_asset_deltas
                 for asset_name in orders_asset_deltas
             ):
                 # at least one of the candidate filled orders is not related to portfolio delta: skip this combination
@@ -841,7 +841,8 @@ def _get_assets_delta_from_portfolio(
 
 def get_assets_delta_from_orders(
     orders: list[order_import.Order], 
-    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    force_fully_filled_orders: bool = False,
 ) -> (
     dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]
 ):
@@ -853,7 +854,10 @@ def get_assets_delta_from_orders(
         base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
         # order "expected" related deltas
         ignored_filled_quantity = ignored_filled_quantity_per_order_exchange_id.get(order.exchange_order_id)
-        delta_quantity = (order.filled_quantity - ignored_filled_quantity) if ignored_filled_quantity else order.filled_quantity
+        # For 0 amout filled orders, use origin quantity as we know they are either fully filled or not filled at all.
+        # For partially filled orders, use filled quantity as we know they are partially filled.
+        considered_quantity = order.filled_quantity if (order.filled_quantity and not force_fully_filled_orders) else order.origin_quantity
+        delta_quantity = (considered_quantity - ignored_filled_quantity) if ignored_filled_quantity else considered_quantity
         if delta_quantity < constants.ZERO:
             commons_logging.get_logger(__name__).error(
                 f"Invalid delta quantity: {delta_quantity} for order "
