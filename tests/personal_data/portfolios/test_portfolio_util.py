@@ -1128,7 +1128,8 @@ def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders():
         assert personal_data.get_portfolio_filled_orders_deltas(
             pre_trade_content, post_trade_content, partially_filled_orders, [], {}
         ) == _resolved(
-            {}, {}
+            # all orders are considered as fully filled since filled quantity is 0: they can't be partially filled
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
         )
         error_log.assert_not_called()
 
@@ -1161,35 +1162,41 @@ def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders():
         )
         error_log.assert_not_called()
 
-        # with unknown orders
-        unknown_orders = [
-            _order("BTC/USDT", 0.12, 200, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.06),
-            _order("BTC/USDT", 0.1, 900, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.05),
+        # with unknown orders. Note: unknown orders can't be partially filled (or they would have been fetched). 
+        # So unknown orders with partially filled amount can't have newly filled amount, or they will be considered as fully filled from their trade (and created with the filled quantity).
+        filled_orders = [
+            _order("BTC/USDT", 0.2, 1000, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.11),
             _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.01),
         ]
+        unknown_orders = [
+            _order("BTC/USDT", 0.2, 1000, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.02, exchange_order_id="order_2"),
+        ]
         assert personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, {}
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
-            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
-            inferred_filled_orders=unknown_orders,
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.1}),
+            inferred_filled_orders=[],
+            inferred_cancelled_orders=unknown_orders,
         )
         error_log.assert_not_called()
 
         # with an order that is not explained in deltas at all
-        unknown_orders = [
+        filled_orders = [
             _order("BTC/USDT", 0.12, 200, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.06),
             _order("BTC/USDT", 0.1, 900, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.05),
             _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.01),
+        ]
+        unknown_orders = [
             _order("BTC/USDT", 0.05, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.03), # not explained
         ]
         assert personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, {}
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
-            inferred_filled_orders=unknown_orders[:-1],
-            inferred_cancelled_orders=[unknown_orders[-1]],
+            inferred_filled_orders=[],
+            inferred_cancelled_orders=unknown_orders,
         )
         error_log.assert_not_called()
 
@@ -1215,7 +1222,8 @@ def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_and_ign
         assert personal_data.get_portfolio_filled_orders_deltas(
             pre_trade_content, post_trade_content, partially_filled_orders, [], ignored_filled_quantity_per_order_exchange_id
         ) == _resolved(
-            {}, {}
+            # only order 2 is found in deltas as it is identified as fully filled (filled quantity is 0, it's not partially filled and is considered as fully filled to partially explain deltas)
+            _content({"BTC": 0.05, "USDT": -450}),
         )
         error_log.assert_not_called()
 
@@ -1248,35 +1256,41 @@ def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_and_ign
         )
         error_log.assert_not_called()
 
-        # with unknown orders
+        # with unknown orders. Note: unknown orders can't be partially filled (or they would have been fetched). 
+        # So unknown orders with partially filled amount can't have newly filled amount, or they will be considered as fully filled from their trade (and created with the filled quantity).
+        filled_orders = [
+            _order("BTC/USDT", 0.2, 1000, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.12, exchange_order_id="order_2"),   # 0.1 newly filled (0.02 was already)
+        ]
         unknown_orders = [
-            _order("BTC/USDT", 0.12, 200, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.07, exchange_order_id="order_1"),   # 0.06 newly filled (0.01 was already)
-            _order("BTC/USDT", 0.1, 900, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.07, exchange_order_id="order_2"),   # 0.05 newly filled (0.02 was already)
-            _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.011, exchange_order_id="order_3"),   # 0.01 newly filled (0.001 was already)
+            _order("BTC/USDT", 0.12, 200, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.01, exchange_order_id="order_1"),   # (0.01 was already)
+            _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.001, exchange_order_id="order_3"),   # (0.001 was already)
         ]
         assert personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_orders, ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, ignored_filled_quantity_per_order_exchange_id
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
-            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
-            inferred_filled_orders=unknown_orders,
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.1}),
+            inferred_filled_orders=[],
+            inferred_cancelled_orders=unknown_orders,
         )
         error_log.assert_not_called()
 
         # with an order that is not explained in deltas at all
-        unknown_orders = [
+        filled_orders = [
             _order("BTC/USDT", 0.12, 200, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.07, exchange_order_id="order_1"),   # 0.06 newly filled (0.01 was already)
             _order("BTC/USDT", 0.1, 900, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.07, exchange_order_id="order_2"),   # 0.05 newly filled (0.02 was already)
             _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.011, exchange_order_id="order_3"),   # 0.01 newly filled (0.001 was already)
+        ]
+        unknown_orders = [
             _order("BTC/USDT", 0.05, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.03), # not explained
         ]
         assert personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_orders, ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, ignored_filled_quantity_per_order_exchange_id
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
-            inferred_filled_orders=unknown_orders[:-1],
-            inferred_cancelled_orders=[unknown_orders[-1]],
+            inferred_filled_orders=[],
+            inferred_cancelled_orders=unknown_orders,
         )
         error_log.assert_not_called()
 
@@ -1630,13 +1644,13 @@ def _order(
     order.side = enums.TradeOrderSide(side)
     if is_exchange_fetched_fee:
         order.fee = {
-            enums.FeePropertyColumns.COST.value: decimal.Decimal(str(round(next(iter(fee.values())), 10) if fee else 0)),
+            enums.FeePropertyColumns.COST.value: decimal.Decimal(str(next(iter(fee.values())) if fee else 0)),
             enums.FeePropertyColumns.CURRENCY.value: next(iter(fee.keys())) if fee else None,
             enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: True,
         }
     # get_computed_fee returns empty fees when is_exchange_fetched_fee is True to avoid side effects with predicted fees
     order.get_computed_fee = mock.Mock(return_value={
-        enums.FeePropertyColumns.COST.value: decimal.Decimal(str(round(next(iter(fee.values())), 10) if fee and not is_exchange_fetched_fee else 0)),
+        enums.FeePropertyColumns.COST.value: decimal.Decimal(str(next(iter(fee.values())) if fee and not is_exchange_fetched_fee else 0)),
         enums.FeePropertyColumns.CURRENCY.value: next(iter(fee.keys())) if fee and not is_exchange_fetched_fee else None,
         enums.FeePropertyColumns.IS_FROM_EXCHANGE.value: False,
     })

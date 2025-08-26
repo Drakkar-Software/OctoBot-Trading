@@ -41,6 +41,7 @@ class Order(util.Initializable):
     """
     CHECK_ORDER_STATUS_AFTER_INIT_DELAY = 2
     SUPPORTS_GROUPING = True    # False when orders of this type can't be grouped
+    USE_ORIGIN_QUANTITY_AS_FILLED_QUANTITY = False
 
     def __init__(self, trader, side=None):
         super().__init__()
@@ -242,7 +243,8 @@ class Order(util.Initializable):
                 should_update_total_cost = True
 
         if self.trader.simulate:
-            if quantity and self.filled_quantity != quantity:
+            if quantity and (self.is_filled() or self.USE_ORIGIN_QUANTITY_AS_FILLED_QUANTITY):
+                # when simulating, only set filled quantity if the order is filled
                 self.filled_quantity = quantity
                 changed = True
                 should_update_total_cost = True
@@ -878,10 +880,15 @@ class Order(util.Initializable):
         return self.side is enums.TradeOrderSide.SELL
 
     def is_partially_filled(self) -> bool:
-        return self.filled_quantity < self.origin_quantity
+        return constants.ZERO < self.filled_quantity < self.origin_quantity
 
     def get_remaining_quantity(self) -> decimal.Decimal:
         return self.origin_quantity - self.filled_quantity
+
+    def get_locked_quantity(self) -> decimal.Decimal:
+        return self.filled_quantity if (
+            self.is_filled() or self.USE_ORIGIN_QUANTITY_AS_FILLED_QUANTITY
+        ) else self.get_remaining_quantity()
 
     def get_remaining_cost(self) -> decimal.Decimal:
         return self.get_cost(self.get_remaining_quantity())

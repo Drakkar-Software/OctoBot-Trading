@@ -125,7 +125,12 @@ async def test_simulated_update(trader_simulator):
                           quantity=100,
                           price=3.22)
     assert order_sim_inst.status == enums.OrderStatus.OPEN
-    assert order_sim_inst.filled_quantity == order_sim_inst.origin_quantity == 100
+    order_sim_inst.origin_quantity == 100
+    assert order_sim_inst.filled_quantity == 0
+
+    order_sim_inst.update(quantity_filled=200)
+    order_sim_inst.origin_quantity == 100
+    assert order_sim_inst.filled_quantity == 200
 
 
 async def test_initialize(trader_simulator):

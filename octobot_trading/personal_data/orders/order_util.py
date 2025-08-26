@@ -412,11 +412,13 @@ def get_order_locked_amount(order: order_import.Order, force_use_origin_quantity
     use_origin_quantity_and_price = force_use_origin_quantity_and_price or not order.is_filled()
     forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=use_origin_quantity_and_price)
     base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
+    # use remaining quantity when order is open or partially filled
+    locked_amount = order.get_locked_quantity()
     # when buy order
     if order.side == enums.TradeOrderSide.BUY:
-        return order.get_remaining_quantity() * order.origin_price + get_fees_for_currency(forecasted_fees, quote)
+        return locked_amount * order.origin_price + get_fees_for_currency(forecasted_fees, quote)
     # when sell order
-    return order.get_remaining_quantity() + get_fees_for_currency(forecasted_fees, base)
+    return locked_amount + get_fees_for_currency(forecasted_fees, base)
 
 
 def get_orders_locked_amounts_by_asset(open_orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:

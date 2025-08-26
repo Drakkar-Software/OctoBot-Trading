@@ -443,6 +443,10 @@ async def test_update_portfolio_with_stop_loss_sell_orders(backtesting_trader):
     # cancel limits
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     await fill_limit_or_stop_order(stop_loss)
 

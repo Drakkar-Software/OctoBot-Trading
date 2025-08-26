@@ -95,7 +95,8 @@ class FuturePortfolio(portfolio_class.Portfolio):
             return  # decreasing position size order are not impacting availability
 
         try:
-            real_order_quantity = (order.origin_quantity / pair_future_contract.current_leverage
+            quantity = order.get_locked_quantity()
+            real_order_quantity = (quantity / pair_future_contract.current_leverage
                                    * (constants.ONE if is_new_order else -constants.ONE))
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance

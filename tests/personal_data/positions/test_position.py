@@ -357,6 +357,7 @@ async def test_update_size_from_order_with_long_one_way_position(btc_usdt_future
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=decimal.Decimal(2),
+                      quantity_filled=decimal.Decimal(2),
                       price=decimal.Decimal(20))
     await position_inst.update_from_order(limit_sell)
     assert position_inst.size == decimal.Decimal(98)
@@ -375,6 +376,7 @@ async def test_update_size_from_reversing_order_with_long_one_way_position(btc_u
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=constants.ONE_HUNDRED + decimal.Decimal(50), # selling 150 => end size is -50
+                      quantity_filled=constants.ONE_HUNDRED + decimal.Decimal(50),
                       price=decimal.Decimal(20),
                       filled_price=decimal.Decimal(20))
     position_inst.entry_price = decimal.Decimal(10)
@@ -403,6 +405,7 @@ async def test_update_size_from_order_with_long_close_position_one_way_position(
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=decimal.Decimal(2),
+                      quantity_filled=decimal.Decimal(2),
                       price=decimal.Decimal(20))
     limit_sell.close_position = True
     await position_inst.update_from_order(limit_sell)
@@ -422,6 +425,7 @@ async def test_update_size_from_order_with_long_reduce_only_one_way_position(
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
+                      quantity_filled=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                       price=decimal.Decimal(20))
     limit_sell.reduce_only = True
     await position_inst.update_from_order(limit_sell)
@@ -435,6 +439,7 @@ async def test_update_size_from_order_with_long_reduce_only_one_way_position(
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
+                      quantity_filled=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                       price=decimal.Decimal(20))
     limit_sell.reduce_only = True
     await position_inst.update_from_order(limit_sell)
@@ -453,6 +458,7 @@ async def test_update_size_from_order_with_long_oversold_one_way_position(
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                      quantity_filled=constants.ONE_HUNDRED ** decimal.Decimal(5),
                       price=decimal.Decimal(20))
     await position_inst.update_from_order(limit_sell)
     assert position_inst.size == decimal.Decimal("-9999999900")
@@ -470,6 +476,7 @@ async def test_update_size_from_order_with_short_one_way_position(btc_usdt_futur
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=decimal.Decimal(2),
+                     quantity_filled=decimal.Decimal(2),
                      price=decimal.Decimal(20))
     await position_inst.update_from_order(buy_limit)
     assert position_inst.size == decimal.Decimal(-98)
@@ -486,6 +493,7 @@ async def test_update_size_from_reversing_order_with_short_one_way_position(btc_
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=constants.ONE_HUNDRED + decimal.Decimal(50), # buying 150 => end size is +50
+                     quantity_filled=constants.ONE_HUNDRED + decimal.Decimal(50),
                      price=decimal.Decimal(10),
                      filled_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(20)
@@ -514,6 +522,7 @@ async def test_update_size_from_order_with_short_close_position_one_way_position
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=decimal.Decimal(2),
+                     quantity_filled=decimal.Decimal(2),
                      price=decimal.Decimal(20))
     buy_limit.close_position = True
     await position_inst.update_from_order(buy_limit)
@@ -533,6 +542,7 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
+                     quantity_filled=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                      price=decimal.Decimal(20))
     buy_limit.reduce_only = True
     await position_inst.update_from_order(buy_limit)
@@ -546,6 +556,7 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
+                     quantity_filled=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                      price=decimal.Decimal(20))
     buy_limit.reduce_only = True
     await position_inst.update_from_order(buy_limit)
@@ -566,6 +577,7 @@ async def test_update_size_from_order_realized_pnl_position(btc_usdt_future_trad
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=mark_price,
                      quantity=constants.ONE,
+                     quantity_filled=constants.ONE,
                      price=decimal.Decimal(25))
 
     if not os.getenv('CYTHON_IGNORE'):
@@ -588,6 +600,7 @@ async def test_update_size_from_order_with_short_overbought_one_way_position(
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                     quantity_filled=constants.ONE_HUNDRED ** decimal.Decimal(5),
                      price=decimal.Decimal(20))
     await position_inst.update_from_order(buy_limit)
     assert position_inst.size == decimal.Decimal("9999999900")
@@ -606,6 +619,7 @@ async def test_update_size_from_order_with_long_oversold_hedge_position(
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(10),
                       quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                      quantity_filled=constants.ONE_HUNDRED ** decimal.Decimal(5),
                       price=decimal.Decimal(20))
     # cannot switch side
     await position_inst.update_from_order(limit_sell)
@@ -625,6 +639,7 @@ async def test_update_size_from_order_with_short_overbought_hedge_position(
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(10),
                      quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                     quantity_filled=constants.ONE_HUNDRED ** decimal.Decimal(5),
                      price=decimal.Decimal(20))
     # cannot switch side
     await position_inst.update_from_order(buy_limit)
