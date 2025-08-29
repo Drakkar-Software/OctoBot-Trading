@@ -173,7 +173,7 @@ DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
 DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
 DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = decimal.Decimal("0.01")
 RETRIABLE_EXCHANGE_ERRORS_DESC: set[str] = set(os.getenv(
-    "RETRIABLE_EXCHANGE_ERRORS_DESC", 'Internal Server Error:Bad gateway:read ECONNRESET'
+    "RETRIABLE_EXCHANGE_ERRORS_DESC", 'Internal Server Error:Bad gateway:read ECONNRESET:read ETIMEDOUT'
 ).split(":"))
 
 # exchange proxy
