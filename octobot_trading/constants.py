@@ -124,6 +124,8 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "kucoin",
     "okcoin",
     "okx",
+    "myokx",
+    "okxus",
     "mexc",
     "coinbase",
     "binanceus",
@@ -156,6 +158,7 @@ TESTED_EXCHANGES = [
 DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
 SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex", "bithumb", "bitstamp", "bitmex",
                               "hitbtc", "kraken", "poloniex", "bitso", "ndax", "upbit",
+                              "myokx", "okxus",
                               "wavesexchange",])
 
 
