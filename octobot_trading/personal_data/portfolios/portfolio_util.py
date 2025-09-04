@@ -45,6 +45,12 @@ def parse_decimal_portfolio(portfolio, as_decimal=True):
                 if isinstance(balance_val, (int, float, decimal.Decimal)):
                     portfolio_to_fill[balance_type] = decimal.Decimal(str(balance_val)) \
                         if as_decimal else float(balance_val)
+                    # convert negative values to zero, as this can happen 
+                    # (ex: bingx: 'SSV': {'free': -7e-07, 'total': -7e-07})
+                    if as_decimal and balance_val < constants.ZERO:
+                        portfolio_to_fill[balance_type] = constants.ZERO
+                    elif not as_decimal and balance_val < 0:
+                        portfolio_to_fill[balance_type] = 0
     return decimal_portfolio
 
 
