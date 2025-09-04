@@ -554,7 +554,7 @@ def get_portfolio_filled_orders_deltas(
         )
     else:
         orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
-            filled_or_partially_filled_orders, ignored_filled_quantity_per_order_exchange_id
+            filled_or_partially_filled_orders, ignored_filled_quantity_per_order_exchange_id, True
         )
         return compute_assets_deltas_from_orders(
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
@@ -573,6 +573,35 @@ def _reverse_portfolio_deltas(
     }
 
 
+def _can_orders_compensate_each_other(unknown_filled_or_cancelled_orders: list[order_import.Order]) -> bool:
+    # check if the orders can compensate each other
+    # compensation means that the orders have the same symbol and opposite sides
+    symbols_with_buy_orders = set(
+        order.symbol for order in unknown_filled_or_cancelled_orders if order.side is enums.TradeOrderSide.BUY
+    )
+    symbols_with_sell_orders = set(
+        order.symbol for order in unknown_filled_or_cancelled_orders if order.side is enums.TradeOrderSide.SELL
+    )
+    return bool(symbols_with_buy_orders.intersection(symbols_with_sell_orders))
+
+
+def _get_optimistic_order_counts_to_fill(unknown_filled_or_cancelled_orders: list[order_import.Order]) -> list[int]:
+    # try to avoid iterating all possitibilies when possible. Worse cases are when 50% of the orders are 
+    # filled (their possible combinations are really numerous), process those cases last.
+    # start at 1 to avoid considering no filled orders (already considered in best_inferred_resolved_delta)
+    all_possibilities = list(range(1, len(unknown_filled_or_cancelled_orders) + 1))
+    sorted_orders_to_fill_counts = []
+    for index in range(len(all_possibilities) // 2):
+        # 1. add most filled orders counts
+        sorted_orders_to_fill_counts.append(all_possibilities[-(index + 1)])
+        # 2. add least filled orders counts
+        sorted_orders_to_fill_counts.append(all_possibilities[index])
+    if len(all_possibilities) % 2 == 1:
+        # last: add middle filled orders count if any
+        sorted_orders_to_fill_counts.append(all_possibilities[len(all_possibilities) // 2])
+    return sorted_orders_to_fill_counts
+
+
 def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
     filled_or_partially_filled_orders: list[order_import.Order],
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
@@ -582,10 +611,9 @@ def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
     """
     Returns the most probable deltas which are the ones that can be best explained by given orders
     """
-
     if filled_or_partially_filled_orders:
         orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
-            filled_or_partially_filled_orders, ignored_filled_quantity_per_order_exchange_id
+            filled_or_partially_filled_orders, ignored_filled_quantity_per_order_exchange_id, True
         )
         known_filled_orders_resolved_delta = compute_assets_deltas_from_orders(
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
@@ -602,19 +630,29 @@ def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
     best_inferred_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta(
         inferred_cancelled_orders=unknown_filled_or_cancelled_orders,
     ).merge_order_deltas(known_filled_orders_resolved_delta, portfolios_asset_deltas)
+    if (
+        not best_inferred_resolved_delta.unexplained_orders_deltas 
+        and not _can_orders_compensate_each_other(unknown_filled_or_cancelled_orders)
+    ):
+        # all orders are cancelled: stop here
+        return _get_cleared_inferred_resolved_delta(
+            best_inferred_resolved_delta, portfolios_asset_deltas
+        )
     post_filled_orders_portfolio_asset_deltas = resolved_orders_portfolio_delta.filter_empty_deltas(
         sub_portfolio_data.get_content_after_deltas(
             portfolios_asset_deltas, _reverse_portfolio_deltas(
                 best_inferred_resolved_delta.explained_orders_deltas
             ), apply_available_deltas=True
         )
-    ) 
-    # start at 1 to avoid considering no filled orders (already considered in best_inferred_resolved_delta)
-    for orders_to_fill_count in range(1, len(unknown_filled_or_cancelled_orders) + 1):
+    )
+    sorted_orders_to_fill_counts = _get_optimistic_order_counts_to_fill(unknown_filled_or_cancelled_orders)
+    compute_forecasted_fees = False # don't compute forecasted fees as it will 10x the time to compute the deltas
+    for orders_to_fill_count in sorted_orders_to_fill_counts:
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
             potential_filled_orders_combination = list(filled_orders_combination)
             orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas = get_assets_delta_from_orders(
-                potential_filled_orders_combination, ignored_filled_quantity_per_order_exchange_id, force_fully_filled_orders=True
+                potential_filled_orders_combination, ignored_filled_quantity_per_order_exchange_id, 
+                compute_forecasted_fees, force_fully_filled_orders=True
             )
             if any(
                 asset_name not in post_filled_orders_portfolio_asset_deltas
@@ -842,14 +880,15 @@ def _get_assets_delta_from_portfolio(
 def get_assets_delta_from_orders(
     orders: list[order_import.Order], 
     ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    compute_forecasted_fees: bool,
     force_fully_filled_orders: bool = False,
-) -> (
+) -> tuple[
     dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]
-):
+]:
     asset_deltas = {}
     expected_fee_related_deltas = {}
     possible_fee_related_deltas = {}
-    exchange_local_fees_currency_price = _get_exchange_local_fees_currency_price(orders)
+    exchange_local_fees_currency_price = _get_exchange_local_fees_currency_price(orders) if compute_forecasted_fees else None
     for order in orders:
         base, quote = symbol_util.parse_symbol(order.symbol).base_and_quote()
         # order "expected" related deltas
@@ -900,23 +939,24 @@ def get_assets_delta_from_orders(
                     asset_deltas[fee_asset] = -decimal.Decimal(str(actual_fees[enums.FeePropertyColumns.COST.value]))
                 else:
                     asset_deltas[fee_asset] -= decimal.Decimal(str(actual_fees[enums.FeePropertyColumns.COST.value]))
-        # order "probable" related deltas (account for worse case fees)
-        expected_forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=True)
-        possible_forecasted_fees = _get_other_asset_forecasted_fees(
-            order, expected_forecasted_fees, exchange_local_fees_currency_price
-        )
-        for fee_asset in (base, quote) + tuple(exchange_local_fees_currency_price):
-            for fee in (expected_forecasted_fees, ) + possible_forecasted_fees:
-                is_expected_fee = fee is expected_forecasted_fees
-                if asset_amount := order_util.get_fees_for_currency(fee, fee_asset):
-                    for delta_counter in (expected_fee_related_deltas, possible_fee_related_deltas):
-                        if delta_counter is expected_fee_related_deltas and not is_expected_fee:
-                            # when updating expected_fee_related_deltas, only account for expected fees
-                            continue
-                        if fee_asset not in delta_counter:
-                            delta_counter[fee_asset] = -asset_amount
-                        else:
-                            delta_counter[fee_asset] += -asset_amount
+        if compute_forecasted_fees:
+            # order "probable" related deltas (account for worse case fees)
+            expected_forecasted_fees = order.get_computed_fee(use_origin_quantity_and_price=True)
+            possible_forecasted_fees = _get_other_asset_forecasted_fees(
+                order, expected_forecasted_fees, exchange_local_fees_currency_price
+            )
+            for fee_asset in (base, quote) + tuple(exchange_local_fees_currency_price):
+                for fee in (expected_forecasted_fees, ) + possible_forecasted_fees:
+                    is_expected_fee = fee is expected_forecasted_fees
+                    if asset_amount := order_util.get_fees_for_currency(fee, fee_asset):
+                        for delta_counter in (expected_fee_related_deltas, possible_fee_related_deltas):
+                            if delta_counter is expected_fee_related_deltas and not is_expected_fee:
+                                # when updating expected_fee_related_deltas, only account for expected fees
+                                continue
+                            if fee_asset not in delta_counter:
+                                delta_counter[fee_asset] = -asset_amount
+                            else:
+                                delta_counter[fee_asset] += -asset_amount
     return asset_deltas, expected_fee_related_deltas, possible_fee_related_deltas
 
 def _get_other_asset_forecasted_fees(
