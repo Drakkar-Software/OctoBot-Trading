@@ -16,6 +16,8 @@
 import decimal
 import copy
 import mock
+import time
+import pytest
 
 import octobot_commons.constants
 import octobot_commons.logging
@@ -23,6 +25,7 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.api as trading_api
 import octobot_trading.constants as constants
+import tests
 
 
 def test_resolve_sub_portfolios_no_filling_assets():
@@ -556,6 +559,92 @@ def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancelled_ord
             unexplained_orders_deltas=_content({"ETH": 100}),   # ETH is not explained by any order
             inferred_filled_orders=unknown_filled_or_cancelled_orders[1:],  # last 2 orders are inferred as filled
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders[:1],  # first order is inferred as cancelled
+        )
+
+
+@pytest.mark.parametrize("orders_count, unknown_orders_count", [
+    (10, 4),
+    (20, 4),    # max unknown_orders_count values before failing max_execution_time=1 on a powerful test computer
+    (50, 3),    # max unknown_orders_count values before failing max_execution_time=1 on a powerful test computer
+    (100, 2),
+    (1000, 1)
+])
+def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or_cancelled_orders(orders_count, unknown_orders_count):
+    # goal of the test: making sure the orders identification algo is not too slow with lots of orders
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+    error_log = mock.Mock()
+    filled_orders = []
+    max_execution_time = 10 if tests.is_on_github_ci() else 1 # use 5 to let slower computers pass the test. Real target is 1
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # A. all orders are filled
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1 / orders_count, 500 / orders_count, "buy")
+            for _ in range(orders_count)
+        ]
+        t0 = time.time()
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+        )
+        # B. all orders are cancelled
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1 / orders_count, 500 / orders_count, "buy")
+            for _ in range(orders_count)
+        ]
+        t0 = time.time()
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, pre_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as cancelled
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+        )
+        unfilled_count = unknown_orders_count
+        # C. most orders are filled
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1 / orders_count, 500 / orders_count, "buy")
+            for _ in range(orders_count)
+        ] + [
+            _order("ETH/USDT", 0.1, 500, "buy")
+            for _ in range(unfilled_count)
+        ]
+        t0 = time.time()
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
+            inferred_filled_orders=unknown_filled_or_cancelled_orders[:-unfilled_count],  # all orders are inferred as filled to explain deltas
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders[orders_count:],  # last orders are inferred as cancelled
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+        )
+        uncancelled_count = unknown_orders_count
+        # D. most orders are cancelled
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1 / uncancelled_count, 500 / uncancelled_count, "buy")
+            for _ in range(uncancelled_count)
+        ] + [
+            _order("ETH/USDT", 0.1, 500, "buy")
+            for _ in range(orders_count)
+        ]
+        t0 = time.time()
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
+            inferred_filled_orders=unknown_filled_or_cancelled_orders[:uncancelled_count],  # all orders are inferred as filled to explain deltas
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders[uncancelled_count:],  # last orders are inferred as cancelled
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
         )
 
 #todo: add test warn: include deltas that are not in orders

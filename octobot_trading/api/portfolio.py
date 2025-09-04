@@ -147,10 +147,12 @@ def get_portfolio_filled_orders_deltas(
 def get_assets_delta_from_orders(
     orders: list[personal_data.Order],
     ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    compute_forecasted_fees: bool = True,
     force_fully_filled_orders: bool = False
 ) -> (dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]):
     return personal_data.get_assets_delta_from_orders(
-        orders, ignored_filled_quantity_per_order_exchange_id, force_fully_filled_orders=force_fully_filled_orders
+        orders, ignored_filled_quantity_per_order_exchange_id, compute_forecasted_fees, 
+        force_fully_filled_orders=force_fully_filled_orders
     )
 
 

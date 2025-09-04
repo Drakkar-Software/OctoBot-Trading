@@ -75,11 +75,11 @@ async def install_tentacles():
 
 @pytest_asyncio.fixture
 async def skipped_on_github_CI():
-    if _is_on_github_ci():
+    if is_on_github_ci():
         pytest.skip(reason="test skipped on github CI")
 
 
-def _is_on_github_ci():
+def is_on_github_ci():
     # Always set to true when GitHub Actions is running the workflow.
     # You can use this variable to differentiate when tests are being run locally or by GitHub Actions.
     # from https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables
