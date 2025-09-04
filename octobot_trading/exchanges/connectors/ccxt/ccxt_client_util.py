@@ -110,7 +110,10 @@ def create_client(
 
 
 async def close_client(client):
-    await client.close()
+    # closing the client will take constants.CCXT_TIMEOUT_ON_EXIT_MS ms, let it run in a task
+    asyncio.create_task(client.close())
+    # let the closing task start and close sessions before clearing the client and continuing
+    await asyncio.sleep(constants.CCXT_MIN_CLOSING_TIME_S)
     client.markets = {}
     client.markets_by_id = {}
     client.ids = []
