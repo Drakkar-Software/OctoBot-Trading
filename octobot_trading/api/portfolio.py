@@ -150,11 +150,11 @@ def get_assets_delta_from_orders(
     compute_forecasted_fees: bool = True,
     force_fully_filled_orders: bool = False
 ) -> (dict[str, decimal.Decimal], dict[str, decimal.Decimal], dict[str, decimal.Decimal]):
-    return personal_data.get_assets_delta_from_orders(
+    asset_deltas, expected_fee_related_deltas, possible_fee_related_deltas, _ = personal_data.get_assets_delta_from_orders(
         orders, ignored_filled_quantity_per_order_exchange_id, compute_forecasted_fees, 
         force_fully_filled_orders=force_fully_filled_orders
     )
-
+    return asset_deltas, expected_fee_related_deltas, possible_fee_related_deltas
 
 def get_accepted_missed_deltas(
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
