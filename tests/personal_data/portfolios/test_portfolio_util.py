@@ -562,6 +562,54 @@ def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancelled_ord
         )
 
 
+@pytest.mark.parametrize("is_exchange_fetched_fee", [
+    False,
+    True,
+])
+def test_get_portfolio_filled_orders_deltas_with_unknown_filled_orders_with_fees(is_exchange_fetched_fee):
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+    error_log = mock.Mock()
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # 1 filled order with fees paid in asset in portfolio
+        post_trade_content = _content({"BTC": 0.2, "USDT": 499})
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1, 500, "buy", fee={"USDT": 1}, is_exchange_fetched_fee=is_exchange_fetched_fee),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -501}),
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,
+        )
+
+        # 1 filled order with fees paid in asset NOT in portfolio
+        post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1, 500, "buy", fee={"BNB": 1}, is_exchange_fetched_fee=is_exchange_fetched_fee),
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,
+        )
+
+        # 2 filled orders, 1 cancelled (sell)
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.06, 100, "buy", fee={"BNB": 1}, is_exchange_fetched_fee=is_exchange_fetched_fee),
+            _order("BTC/USDT", 0.04, 400, "buy", fee={"BNB": 1}, is_exchange_fetched_fee=is_exchange_fetched_fee),
+            _order("BTC/USDT", 0.01, 50, "sell"),    # not found in portfolio delta
+        ]
+        assert personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the first two orders
+            inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 orders are inferred as filled
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders[2:],  # last order is inferred as cancelled
+        )
+        error_log.assert_not_called()
+
+
 @pytest.mark.parametrize("orders_count, unknown_orders_count", [
     (10, 4),
     (20, 4),    # max unknown_orders_count values before failing max_execution_time=1 on a powerful test computer
