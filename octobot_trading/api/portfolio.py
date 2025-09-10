@@ -171,3 +171,7 @@ def get_master_checked_sub_portfolio_update(
     updated_sub_portfolio: dict[str, dict[str, decimal.Decimal]],
 ) -> dict[str, dict[str, decimal.Decimal]]:
     return personal_data.get_master_checked_sub_portfolio_update(updated_portfolio_content, updated_sub_portfolio)
+
+
+def get_fees_only_asset_deltas_from_orders(orders: list[personal_data.Order]) -> dict[str, decimal.Decimal]:
+    return personal_data.get_fees_only_asset_deltas_from_orders(orders)
