@@ -982,6 +982,32 @@ def get_assets_delta_from_orders(
         expected_fee_related_deltas, possible_fee_related_deltas, counted_exchange_fee_deltas
     )
 
+
+def get_fees_only_asset_deltas_from_orders(orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:
+    order_traded_assets = set()
+    for order in orders:
+        symbol = symbol_util.parse_symbol(order.symbol)
+        order_traded_assets.add(symbol.base)
+        order_traded_assets.add(symbol.quote)
+    return {
+        currency: delta
+        for currency, delta in _get_fees_assets_deltas_from_orders(orders).items()
+        if currency not in order_traded_assets
+    }
+
+
+def _get_fees_assets_deltas_from_orders(orders: list[order_import.Order]) -> dict[str, decimal.Decimal]:
+    asset_deltas = {}
+    for order in orders:
+        if (fees := order.fee) and fees[enums.FeePropertyColumns.COST.value]:
+            fee_asset = fees[enums.FeePropertyColumns.CURRENCY.value]
+            if fee_asset not in asset_deltas:
+                asset_deltas[fee_asset] = -decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
+            else:
+                asset_deltas[fee_asset] -= decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value])) 
+    return asset_deltas
+
+
 def _get_other_asset_forecasted_fees(
     order: order_import.Order, forecasted_fees: dict, 
     exchange_local_fees_currency_price: dict[str, dict[str, decimal.Decimal]]

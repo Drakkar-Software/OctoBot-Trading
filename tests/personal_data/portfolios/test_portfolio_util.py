@@ -1699,6 +1699,27 @@ def test_get_master_checked_sub_portfolio_update():
         warning_mock.reset_mock()
 
 
+def test_get_fees_only_asset_deltas_from_orders():
+    assert personal_data.get_fees_only_asset_deltas_from_orders([]) == {}
+    # force is_exchange_fetched_fee to set order.fees
+    orders = [
+        _order("BTC/USDT", 1, 100, "sell", {"USDT": 1}, is_exchange_fetched_fee=True),
+        _order("ETH/USDT", 1, 100, "buy", {"USDT": 1}, is_exchange_fetched_fee=True),
+    ]
+    assert personal_data.get_fees_only_asset_deltas_from_orders(orders) == {}
+    orders = [
+        _order("BTC/USDT", 1, 100, "sell", {"USDT": 1}, is_exchange_fetched_fee=True),
+        _order("ETH/USDT", 1, 100, "buy", {"USDT": 1}, is_exchange_fetched_fee=True),
+        _order("SOL/USDT", 1, 100, "buy", {"DOT": 1}, is_exchange_fetched_fee=True),
+    ]
+    assert personal_data.get_fees_only_asset_deltas_from_orders(orders) == {"DOT": decimal.Decimal(-1)}
+    orders = [
+        _order("BTC/USDT", 1, 100, "sell", {"BTC": 1}, is_exchange_fetched_fee=True),
+        _order("ETH/USDT", 1, 100, "buy", {"BNB": 3.21}, is_exchange_fetched_fee=True),
+    ]
+    assert personal_data.get_fees_only_asset_deltas_from_orders(orders) == {"BNB": decimal.Decimal("-3.21")}
+
+
 def _sub_pf(
     priority_key: float,
     content: dict[str, dict[str, decimal.Decimal]],

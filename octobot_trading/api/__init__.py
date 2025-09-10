@@ -177,6 +177,7 @@ from octobot_trading.api.portfolio import (
     get_master_checked_sub_portfolio_update,
     get_assets_delta_from_orders,
     get_global_portfolio_currencies_values,
+    get_fees_only_asset_deltas_from_orders,
 )
 from octobot_trading.api.profitability import (
     get_profitability_stats,
@@ -421,4 +422,5 @@ __all__ = [
     "clear_transactions_storage_history",
     "clear_portfolio_storage_history",
     "clear_orders_storage_history",
+    "get_fees_only_asset_deltas_from_orders",
 ]
