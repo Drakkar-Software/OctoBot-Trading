@@ -217,6 +217,12 @@ class ExchangeOrderInstantTriggerError(OctoBotExchangeError):
     """
 
 
+class StoppedExchangeManagerError(Exception):
+    """
+    Raised when an exchange manager has been stopped and the current operation should be interrupted
+    """
+
+
 class PortfolioNegativeValueError(Exception):
     """
     Raised when the portfolio is being updated with a negative value
