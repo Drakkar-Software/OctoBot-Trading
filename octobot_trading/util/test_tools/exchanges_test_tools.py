@@ -26,6 +26,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.api as trading_api
 import octobot_trading.exchanges as exchanges
+import octobot_trading.errors as errors
 import octobot_trading.exchange_data as trading_exchange_data
 import octobot_tentacles_manager.api as tentacles_manager_api
 
@@ -197,6 +198,15 @@ def _parse_order_into_dict(
     if parsed_order := _parse_order_dict(exchange_manager, order, force_open_or_pending_creation):
         try:
             return parsed_order.to_dict()
+        except AttributeError as err:
+            if exchange_manager.trader is None:
+                # exchange manager has been stopped, don't continue
+                logging.get_logger("_parse_order_dict").error(
+                    f"[{exchange_manager.exchange_name}] exchange manager has been stopped, skipping order parsing ({err})"
+                )
+                raise errors.StoppedExchangeManagerError() from err
+            # unexpected error, raise
+            raise
         except Exception as err:
             logging.get_logger("_parse_order_dict").exception(
                 err,
