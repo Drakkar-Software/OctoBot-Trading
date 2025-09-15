@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.218] - 2025-09-15
+### Added
+[Portfolio] add subportfolio BG thread
+### Updated
+[Exchanges] improve MarketClosed error
+
 ## [2.4.217] - 2025-09-12
 ### Added
 [Errors] add StoppedExchangeManagerError
