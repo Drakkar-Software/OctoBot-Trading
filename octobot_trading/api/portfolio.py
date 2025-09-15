@@ -130,14 +130,14 @@ def resolve_sub_portfolios(
     return personal_data.resolve_sub_portfolios(master_portfolio, sub_portfolios, market_prices)
 
 
-def get_portfolio_filled_orders_deltas(
+async def get_portfolio_filled_orders_deltas(
     previous_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     filled_or_partially_filled_orders: list[personal_data.Order],
     unknown_filled_or_cancelled_orders: list[personal_data.Order],
     ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
 ) -> personal_data.ResolvedOrdersPortoflioDelta:
-    return personal_data.get_portfolio_filled_orders_deltas(
+    return await personal_data.get_portfolio_filled_orders_deltas(
         previous_portfolio_content, updated_portfolio_content, 
         filled_or_partially_filled_orders, unknown_filled_or_cancelled_orders, 
         ignored_filled_quantity_per_order_exchange_id

@@ -53,6 +53,8 @@ MAX_PORTFOLIO_SYNC_ATTEMPTS = 1
 SYNC_ATTEMPTS_INTERVAL = 20
 SUB_PORTFOLIO_ALLOWED_MISSING_RATIO = decimal.Decimal("0.01")   # Allow 1% missing funds
 SUB_PORTFOLIO_ALLOWED_DELTA_RATIO = decimal.Decimal("0.05")   # Allow 5% delta compared to filled orders
+MAX_ORDER_INFERENCE_QUICK_CHECK_COMBINATIONS_COUNT = 10000
+MAX_ORDER_SECONDARY_INFERENCE_COMBINATIONS_COUNT = 10000000 # no more than 10M combinations to check to avoid overloads
 
 # Tentacles
 TRADING_MODE_REQUIRED_STRATEGIES = "required_strategies"
