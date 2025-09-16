@@ -699,9 +699,14 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
     if not best_inferred_resolved_delta.is_fully_explained() and secondary_check_orders_to_fill_counts:
         # best_inferred_resolved_delta is not found in quick checks, try the (slow) rest in a separate thread
         # to release async loop
-        skipped = (
-            f" Skipping {len(skipped_combinations)} combinations because they contain more than {constants.MAX_ORDER_SECONDARY_INFERENCE_COMBINATIONS_COUNT} possibilities." if skipped_combinations else ""
-        )
+        if skipped_combinations:
+            min_skipped = min(s[0] for s in skipped_combinations)
+            max_skipped = max(s[0] for s in skipped_combinations)
+            skipped = (
+                f" Skipping [{min_skipped}:{max_skipped}] filled orders among {len(unknown_filled_or_cancelled_orders)} (which is {len(skipped_combinations)} combinations out of {len(unknown_filled_or_cancelled_orders)}) as they contain more than {constants.MAX_ORDER_SECONDARY_INFERENCE_COMBINATIONS_COUNT} possibilities."
+            )
+        else:
+            skipped = ""
         commons_logging.get_logger(__name__).error(
             f"Best inferred resolved delta not found in {len(quick_check_orders_to_fill_counts)} "
             f"quick check configurations ({', '.join(str(count) for count in quick_check_orders_to_fill_counts)}), "
