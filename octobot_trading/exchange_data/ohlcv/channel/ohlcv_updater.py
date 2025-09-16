@@ -273,9 +273,12 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     f"{html_util.get_html_summary_if_relevant(err)}"
                 )
                 await asyncio.sleep(sleep_time)
-            except errors.NotSupported:
+            except errors.UnSupportedSymbolError as err:
                 self.logger.warning(
-                    f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
+                    f"{self.channel.exchange_manager.exchange_name} is not supporting {pair} on {time_frame.value}: {err}")
+            except errors.NotSupported as err:
+                self.logger.warning(
+                    f"{self.channel.exchange_manager.exchange_name} is not supporting updates: {err}")
                 await self.pause()
             except Exception as e:
                 self.logger.exception(
