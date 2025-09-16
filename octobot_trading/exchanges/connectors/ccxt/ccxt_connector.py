@@ -317,13 +317,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 return self.adapter.adapt_ohlcv(
                     await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since, params=kwargs)
                 )
-        except ccxt.NotSupported:
-            raise octobot_trading.errors.NotSupported
-        except ccxt.BaseError as e:
+        except ccxt.BadSymbol as err:
+            raise octobot_trading.errors.UnSupportedSymbolError(str(err)) from err
+        except ccxt.NotSupported as err:
+            raise octobot_trading.errors.NotSupported(str(err)) from err
+        except ccxt.BaseError as err:
             raise octobot_trading.errors.FailedRequest(
-                f"Failed to get_symbol_prices of {symbol} on {time_frame.value}: {e.__class__.__name__} "
-                f"{html_util.get_html_summary_if_relevant(e)}"
-            ) from e
+                f"Failed to get_symbol_prices of {symbol} on {time_frame.value}: {err.__class__.__name__} "
+                f"{html_util.get_html_summary_if_relevant(err)}"
+            ) from err
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_kline_price(self,

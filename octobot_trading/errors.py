@@ -141,6 +141,12 @@ class NotSupported(Exception):
     """
 
 
+class UnSupportedSymbolError(NotSupported):
+    """
+    Raised when an exchange doesn't support the given symbol
+    """
+
+
 class FailedRequest(OctoBotExchangeError):
     """
     Raised upon a failed request on an exchange API
