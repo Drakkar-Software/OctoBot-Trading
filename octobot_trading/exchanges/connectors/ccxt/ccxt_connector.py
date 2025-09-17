@@ -61,7 +61,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.client: ccxt.Exchange = None
         self.exchange_type = None
         self.adapter = self.get_adapter_class(adapter_class)(self)
-        self.all_currencies_price_ticker = None
+        self.all_currencies_price_ticker = {}
         self.is_authenticated = False
         self.rest_name = rest_name or self.exchange_manager.exchange_class_string
         self.force_authentication = force_auth
@@ -415,21 +415,58 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             )
 
     @ccxt_client_util.converted_ccxt_common_errors
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
+    async def get_all_currencies_price_ticker(
+        self, can_try_to_fix_missing_tickers: bool = True, **kwargs: dict
+    ) -> typing.Optional[dict[str, dict]]:
         try:
+            symbols = kwargs.pop("symbols", None)
             with self.error_describer():
-                symbols = kwargs.pop("symbols", None)
-                self.all_currencies_price_ticker = {
+                tickers = {
                     symbol: self.adapter.adapt_ticker(ticker)
                     for symbol, ticker in (await self.client.fetch_tickers(symbols, params=kwargs)).items()
                 }
-            return self.all_currencies_price_ticker
+                # self.all_currencies_price_ticker should always contain as many tickers as possible: don't override it
+                # with less symbols when fetching only a few tickers
+                if self.all_currencies_price_ticker and self.exchange_manager.exchange.CAN_MISS_TICKERS_IN_ALL_TICKERS:
+                    # keep track of missed ticker symbols
+                    if added_symbols := list(
+                        symbol for symbol in tickers if symbol not in self.all_currencies_price_ticker
+                    ):
+                        added_symbols_str = "" if len(added_symbols) > 10 else f": ({', '.join(added_symbols)})"
+                        self.logger.info(
+                            f"Adding {len(added_symbols)} symbols to [{self.exchange_manager.exchange_name}] all tickers{added_symbols_str}"
+                        )
+                self.all_currencies_price_ticker.update(tickers)
+                if symbols and self.exchange_manager.exchange.CAN_MISS_TICKERS_IN_ALL_TICKERS:
+                    await self._try_to_fix_all_tickers_if_needed(symbols, can_try_to_fix_missing_tickers)
+            return {
+                symbol: ticker for symbol, ticker in self.all_currencies_price_ticker.items()
+                if symbol in symbols
+            } if symbols else self.all_currencies_price_ticker
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(
                 f"Failed to get_all_currencies_price_ticker {html_util.get_html_summary_if_relevant(e)}"
             )
+
+    async def _try_to_fix_all_tickers_if_needed(self, symbols: list[str], can_try_to_fix_missing_tickers: bool):
+        missing_symbols = [
+            symbol for symbol in symbols
+            if symbol not in self.all_currencies_price_ticker
+        ]
+        if missing_symbols:
+            if can_try_to_fix_missing_tickers:
+                self.logger.warning(
+                    f"{len(missing_symbols)} required symbols are missing from "
+                    f"[{self.exchange_manager.exchange_name}] all tickers: {missing_symbols}. Retrying to fetch them."
+                )
+                await self.get_all_currencies_price_ticker(symbols=missing_symbols, can_try_to_fix_missing_tickers=False)
+            else:
+                self.logger.error(
+                    f"{len(missing_symbols)} symbols are still missing after a second "
+                    f"[{self.exchange_manager.exchange_name}] tickers fetch. Symbols: {missing_symbols}"
+                )
 
     # ORDERS
     @ccxt_client_util.converted_ccxt_common_errors

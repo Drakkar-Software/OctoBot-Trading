@@ -115,6 +115,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Set True when the "limit" param when fetching order books is taken into account
     SUPPORTS_CUSTOM_LIMIT_ORDER_BOOK_FETCH = False
 
+    # set True when fetch_tickers can sometimes miss symbols. In this case, the connector will try to fix it
+    CAN_MISS_TICKERS_IN_ALL_TICKERS = True
+
     # text content of errors due to orders not found errors
     EXCHANGE_ORDER_NOT_FOUND_ERRORS: typing.List[typing.Iterable[str]] = []
     # when ccxt is raising ccxt.ExchangeError instead of ccxt.AuthenticationError on api key permissions issue
