@@ -30,6 +30,7 @@ import ccxt
 import ccxt.pro as ccxt_pro
 import ccxt.async_support as async_ccxt
 
+import octobot_commons
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.aiohttp_util as aiohttp_util
 import octobot_commons.logging as commons_logging
@@ -532,3 +533,55 @@ def get_proxy_error_if_any(ccxt_connector, error: Exception) -> typing.Optional[
         depth += 1
         cause_error = getattr(cause_error, "__cause__", None)
     return None
+
+
+def fix_client_missing_markets_fees(
+    client: async_ccxt.Exchange, reloaded_markets: bool, confirmed_fees: dict
+):
+    fees_by_pair_suffix = {}
+    update_confirmed_fees = reloaded_markets or not confirmed_fees
+    for symbol, market in client.markets.items():
+        pair_suffix = _get_market_symbol_suffix(symbol)
+        maker_fees = market.get(enums.ExchangeConstantsMarketPropertyColumns.MAKER.value)
+        taker_fees = market.get(enums.ExchangeConstantsMarketPropertyColumns.TAKER.value)
+        if taker_fees is not None and maker_fees is not None:
+            if update_confirmed_fees:
+                # only update cached fees if reload is True or if it's the first call 
+                # (avoid storing inferred fees)
+                confirmed_fees[symbol] = (maker_fees, taker_fees)
+            if (
+                # be pessimistic and use the highest fees of each market
+                pair_suffix not in fees_by_pair_suffix or fees_by_pair_suffix[pair_suffix][0] < maker_fees or fees_by_pair_suffix[pair_suffix][1] < taker_fees
+            ):
+                fees_by_pair_suffix[pair_suffix] = (maker_fees, taker_fees)
+    for symbol, market in client.markets.items():
+        # use other similar market fees if missing
+        try:
+            pair_suffix = _get_market_symbol_suffix(symbol)
+            if market[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] is None or market[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] is None:
+                has_cached_fees = symbol in confirmed_fees
+                market[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] = (
+                    market[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] or (
+                        (confirmed_fees[symbol] if has_cached_fees else fees_by_pair_suffix[pair_suffix])[0]
+                    )
+                )
+                market[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] = (
+                    market[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] or (
+                        (confirmed_fees[symbol] if has_cached_fees else fees_by_pair_suffix[pair_suffix])[1]
+                    )
+                )
+                commons_logging.get_logger("fix_missing_markets_fees").info(
+                    f"Fixed missing {symbol} fees using {'cached fees' if has_cached_fees else str(pair_suffix)} fees: {fees_by_pair_suffix[pair_suffix]}" 
+                )
+        except KeyError as err:
+            commons_logging.get_logger("fix_missing_markets_fees").error(
+                f"Failed to fix missing market fees for {symbol}: {err}"
+            )
+        except Exception as err:
+            commons_logging.get_logger("fix_missing_markets_fees").exception(
+                err, True, f"Unexpected error when fixing missing market fees for {symbol}: {err}"
+            )
+
+
+def _get_market_symbol_suffix(symbol):
+    return symbol[symbol.index(octobot_commons.MARKET_SEPARATOR):]
