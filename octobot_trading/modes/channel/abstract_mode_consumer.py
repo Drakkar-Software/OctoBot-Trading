@@ -155,10 +155,10 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
                         except errors.MissingFunds as err:
                             self.previous_call_error_per_symbol[symbol] = err
-                            self.logger.error(f"Failed to create order on second attempt : {err})")
+                            self.logger.error(f"Failed to create {symbol} order on second attempt : {err})")
                     except Exception as err:
                         self.previous_call_error_per_symbol[symbol] = err
-                        self.logger.exception(err, True, f"Error when creating order: {err}")
+                        self.logger.exception(err, True, f"Error when creating {symbol} order: {err}")
             self.logger.info(f"Skipping order creation for {symbol} on {self.exchange_manager.exchange_name}: "
                              f"not enough available funds")
             return []
