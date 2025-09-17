@@ -578,6 +578,12 @@ async def test_ensure_inactive_order_watcher_and_sub_functions(trader_simulator)
     trader_inst.enable_inactive_orders = True
     base_order.is_active = False
 
+    # does nothing, order is a chained order that is not yet triggered
+    base_order.is_waiting_for_chained_trigger = True
+    await base_order._ensure_inactive_order_watcher()
+    assert base_order.active_trigger is None
+    base_order.is_waiting_for_chained_trigger = False
+
     # does nothing, order.active_trigger is None
     await base_order._ensure_inactive_order_watcher()
     assert base_order.active_trigger is None

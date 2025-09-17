@@ -433,6 +433,47 @@ async def test_create_as_chained_order_regular_order(trader_simulator):
 
 
 @pytest.mark.asyncio
+async def test_create_as_chained_order_inactive_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    trader_inst.enable_inactive_orders = True
+
+    base_order = personal_data.BuyLimitOrder(trader_inst)
+    base_order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal("70"),
+                      quantity=decimal.Decimal("10"),
+                      price=decimal.Decimal("70"))
+    trigger = order_util.create_order_price_trigger(base_order, decimal.Decimal("90"), True)
+    with mock.patch.object(trigger, "create_watcher", mock.AsyncMock(wraps=trigger.create_watcher)) as create_watcher_mock:
+        base_order.is_waiting_for_chained_trigger = True
+        await base_order.set_as_inactive(trigger)
+        # not called for untriggered chained order when they are set as inactive
+        create_watcher_mock.assert_not_called()
+        base_order.creation_time = 123
+        origin_time = base_order.creation_time
+        assert base_order.to_dict()[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] \
+            == origin_time
+        # base_order.state is None since no state has been associated to it (not initiliazed)
+        assert base_order.state is None
+        assert base_order.is_initialized is False
+
+        await personal_data.create_as_chained_order(base_order) # will call initialize which will call create_watcher
+        assert base_order.creation_time > origin_time   # creation_time got update using current time
+        assert base_order.is_waiting_for_chained_trigger is False
+        assert base_order.is_created() is True
+        assert base_order.is_initialized is True
+        assert isinstance(base_order.state, personal_data.OpenOrderState)
+        # called for triggered chained order when they are created as triggered chained orders
+        create_watcher_mock.assert_awaited_once_with(
+            exchange_manager_inst, base_order.symbol, base_order.creation_time
+        )
+
+        # use chained order creation time
+        assert base_order.to_dict()[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] \
+            == base_order.creation_time
+
+
+@pytest.mark.asyncio
 async def test_create_as_chained_order_bundled_order_no_open_order(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 

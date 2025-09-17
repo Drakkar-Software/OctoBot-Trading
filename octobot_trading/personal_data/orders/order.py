@@ -492,6 +492,10 @@ class Order(util.Initializable):
         if self.is_active:
             # order is active, nothing to do
             return
+        if self.is_waiting_for_chained_trigger:
+            # watcher should be created only when this chained order is created
+            # will be called again once the chained order gets created
+            return
         if not self.exchange_manager.trader.enable_inactive_orders or self.is_self_managed():
             # can't be inactive
             logging.get_logger(self.get_logger_name()).error(
@@ -502,6 +506,9 @@ class Order(util.Initializable):
             logging.get_logger(self.get_logger_name()).error("self.active_trigger is None")
             return
         if self.is_synchronization_enabled():
+            logging.get_logger(self.get_logger_name()).debug(
+                f"Creating watcher for inactive order: {str(self)} - trigger: {self.active_trigger}"
+            )
             await self.active_trigger.create_watcher(self.exchange_manager, self.symbol, self.creation_time)
 
     @contextlib.contextmanager
