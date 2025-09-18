@@ -78,6 +78,8 @@ async def test_retried_failed_network_request():
     # retriable exchange errors
     for raised_error in [
       ccxt.ExchangeError("Internal Server Error"),
+      ccxt.BadRequest("Error: socket hang up"),
+      ccxt.BadRequest("Error: read ECONNRESET"),
       ccxt.ExchangeError('mexc {"code":700022,"msg":"Internal Server Error"}'),
     ]:
       request_mock = mock.AsyncMock(side_effect=raised_error)
