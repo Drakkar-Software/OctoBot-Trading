@@ -874,11 +874,12 @@ async def test_get_portfolio_filled_orders_deltas_inferrence_thread():
     max_execution_time = 20 if tests.is_on_github_ci() else 2 # use 20 to let slower computers pass the test. Real target is 2
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # most orders are filled
+        # use single symbol to make sure a thread is used
         unknown_filled_or_cancelled_orders = [
             _order("BTC/USDT", 0.1 / orders_count, 500 / orders_count, "buy")
             for _ in range(orders_count)
         ] + [
-            _order("ETH/USDT", 0.1, 500, "buy")
+            _order("BTC/USDT", 1, 500, "buy")
             for _ in range(unfilled_count)
         ]
         t0 = time.time()
@@ -906,7 +907,6 @@ async def test_get_portfolio_filled_orders_deltas_inferrence_thread():
                 _async_get_portfolio_filled_orders_deltas()
             )
             end_time = time.time()
-            print(f"{loops=}")
             assert loops > 3, f"Loops {loops} is less than 3" # loops = 24 on a fast computer
             assert resolved == _resolved(
                 explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
@@ -914,11 +914,80 @@ async def test_get_portfolio_filled_orders_deltas_inferrence_thread():
                 inferred_cancelled_orders=unknown_filled_or_cancelled_orders[orders_count:],  # last orders are inferred as cancelled
             )
             # ensure test is not too slow
-            print(f"Execution time {end_time - t0} for {orders_count} orders")
             assert end_time - t0 < max_execution_time, (
                 f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
             )
             to_thread_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_get_portfolio_filled_orders_deltas_inferrence_thread():
+    # goal of the test: making sure that inference thread is cancelled when task is cancelled
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+    error_log = mock.Mock()
+    warning_log = mock.Mock()
+    filled_orders = []
+    orders_count = 30
+    unfilled_count = 15  # 155.117.520  combinations on worse iterations, requires thread and takes much more than 5 seconds
+    max_execution_time = 5
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log, warning=warning_log))):
+        # use single symbol to make sure a thread is used
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1 / orders_count, 500 / orders_count, "buy")
+            for _ in range(orders_count)
+        ] + [
+            _order("BTC/USDT", 1, 500, "buy")
+            for _ in range(unfilled_count)
+        ]
+        t0 = time.time()
+
+        completed_portfolio_filled_orders_deltas = []
+        loops = []
+        async def _async_looper():
+            while not completed_portfolio_filled_orders_deltas:
+                # makes sure the async loop is running and not blocked during get_portfolio_filled_orders_deltas
+                loops.append(1)
+                await asyncio_tools.wait_asyncio_next_cycle()
+            # portfolio completed
+            return loops
+
+        async def _async_get_portfolio_filled_orders_deltas():
+            try:
+                result = await personal_data.get_portfolio_filled_orders_deltas(
+                    pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+                )
+                return result
+            finally:
+                completed_portfolio_filled_orders_deltas.append(1)
+
+        with mock.patch.object(asyncio, "to_thread", mock.AsyncMock(wraps=asyncio.to_thread)) as to_thread_mock:
+            task = asyncio.create_task(_async_get_portfolio_filled_orders_deltas())
+            async def _async_canceller():
+                await asyncio.sleep(0.5)
+                task.cancel()
+            tasks = [
+                asyncio.create_task(_async_looper()),
+                asyncio.create_task(_async_canceller()),
+                task
+            ]
+            completed, pending = await asyncio.wait(tasks, timeout=10)
+            assert len(completed) == 3
+            assert len(pending) == 0
+            end_time = time.time()
+            assert len(loops) > 3, f"Loops {loops} is less than 3" # loops = 24 on a fast computer
+            # coro was cancelled
+            with pytest.raises(asyncio.CancelledError):
+                task.result()
+            # ensure test is not too slow
+            assert end_time - t0 < max_execution_time, (
+                f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+            )
+            to_thread_mock.assert_awaited_once()
+            error_log.assert_called_once()
+            assert "quick check configurations" in error_log.call_args[0][0]
+            warning_log.assert_called_once()
+            assert "cancelling background thread" in warning_log.call_args[0][0]
 
 
 @pytest.mark.asyncio
