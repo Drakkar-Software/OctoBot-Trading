@@ -19,10 +19,13 @@ import mock
 import time
 import pytest
 import asyncio
+import itertools
+import random
 
 import octobot_commons.constants
 import octobot_commons.logging
 import octobot_commons.asyncio_tools as asyncio_tools
+import octobot_commons.list_util as list_util
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.api as trading_api
@@ -700,6 +703,162 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         )
         assert time.time() - t0 < max_execution_time, (
             f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+        )
+
+
+@pytest.mark.asyncio
+async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or_cancelled_orders_on_different_symbols():
+    # goal of the test: making sure the orders identification algo is not too slow with lots of orders
+    pre_trade_content = _content({"USDT": 500})
+    error_log = mock.Mock()
+
+    eth_orders = [
+        _order("ETH/USDT", 0.0038, 16.251764 , "buy"),
+        _order("ETH/USDT", 0.0038, 16.156764 , "buy"),
+        _order("ETH/USDT", 0.0039, 16.484442 , "buy"),
+        _order("ETH/USDT", 0.0039, 16.386942 , "buy"),
+        _order("ETH/USDT", 0.0039, 16.289442 , "buy"),
+        _order("ETH/USDT", 0.0039, 16.191942 , "buy"),
+        _order("ETH/USDT", 0.0019, 8.101296 , "buy"),
+    ]
+    link_orders = [
+        _order("LINK/USDT", 0.7, 15.148 , "buy"),
+        _order("LINK/USDT", 0.8, 16.832 , "buy"),
+        _order("LINK/USDT", 0.3, 6.59934 , "buy"),
+        _order("LINK/USDT", 0.3, 6.3327 , "buy"),
+    ]
+    sol_orders = [
+        _order("SOL/USDT", 0.036, 8.309268 , "buy"),
+        _order("SOL/USDT", 0.036, 7.973532 , "buy"),
+    ]
+    ada_orders = [
+        _order("ADA/USDT", 9.9, 8.043057 , "buy"),
+    ]
+    btc_orders = [
+        _order("BTC/USDT", 7e-05, 7.9281363 , "buy"),
+        _order("BTC/USDT", 0.00018, 20.540133 , "buy"),
+        _order("BTC/USDT", 0.00018, 20.396133 , "buy"),
+        _order("BTC/USDT", 0.00018, 20.252133 , "buy"),
+    ]
+    xrp_orders = [
+        _order("XRP/USDT", 2.9, 8.337094 , "buy"),
+        _order("XRP/USDT", 2.9, 8.00023 , "buy"),
+    ]
+    unknown_filled_or_cancelled_orders = eth_orders + link_orders + sol_orders + ada_orders + btc_orders + xrp_orders
+    max_execution_time = 10 if tests.is_on_github_ci() else 1 # use 10 to let slower computers pass the test. Real target is 1
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
+        # A. simple cases: all orders are filled
+        all_filled_deltas = _get_orders_deltas(unknown_filled_or_cancelled_orders)
+        post_trade_content = _content({**all_filled_deltas, **{"USDT": all_filled_deltas["USDT"] + decimal.Decimal("500")}})
+        t0 = time.time()
+        assert await personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            explained_orders_deltas=_content(all_filled_deltas),   # all orders found in deltas
+            inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for many symbol orders"
+        )
+        # B. simple cases: all orders are cancelled
+        t0 = time.time()
+        assert await personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, pre_trade_content, [], unknown_filled_or_cancelled_orders, {}
+        ) == _resolved(
+            inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as cancelled to explain deltas
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for many symbol orders"
+        )
+        # C. complex cases: 11 orders are filled, 9 are cancelled: will a long time to find the best combination if not split by symbol
+        filled_orders = eth_orders + link_orders
+        cancelled_orders = sol_orders + ada_orders + btc_orders + xrp_orders
+        assert len(filled_orders) == 11
+        total_orders_count = len(filled_orders) + len(cancelled_orders)
+        filled_deltas = _get_orders_deltas(filled_orders)
+        post_trade_content = _content({**filled_deltas, **{"USDT": filled_deltas["USDT"] + decimal.Decimal("500")}})
+        t0 = time.time()
+        # no matter the order of unknown orders, the result should be the same: all ETH and LINK orders are filled, the rest are cancelled
+        selected_index = random.randint(0, 9)
+        selected_indexes = set(str(i) for i in [selected_index, (selected_index + 1) % 10, (selected_index + 2) % 10])
+        # randomly select approx 216 "random" permutations
+        iterations = 0
+        for index, shuffled_unknown_filled_or_cancelled_orders_elements in enumerate(itertools.permutations(
+            (eth_orders, link_orders, sol_orders, ada_orders, btc_orders, xrp_orders), 6
+        )):
+            if str(index)[-1] not in selected_indexes:
+                continue
+            iterations += 1
+            shuffled_unknown_filled_or_cancelled_orders = []
+            for elements in shuffled_unknown_filled_or_cancelled_orders_elements:
+                shuffled_unknown_filled_or_cancelled_orders.extend(elements)
+            assert len(shuffled_unknown_filled_or_cancelled_orders) == total_orders_count
+            resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
+                pre_trade_content, post_trade_content, [], shuffled_unknown_filled_or_cancelled_orders, {}
+            ) 
+            assert len(shuffled_unknown_filled_or_cancelled_orders) == total_orders_count # ensure shuffled_unknown_filled_or_cancelled_orders is not touched
+            assert resolved_delta.explained_orders_deltas == _content(filled_deltas)   # all orders found in deltas
+            assert resolved_delta.unexplained_orders_deltas == {}   # no unexplained orders
+            assert sorted(resolved_delta.inferred_filled_orders, key=lambda o: o.symbol) == sorted(filled_orders, key=lambda o: o.symbol), (
+                f"Inferred filled orders={resolved_delta.inferred_filled_orders} for permutation {index}: {list_util.deduplicate([o.symbol for o in shuffled_unknown_filled_or_cancelled_orders])}"
+            )
+            assert sorted(resolved_delta.inferred_cancelled_orders, key=lambda o: o.symbol) == sorted(cancelled_orders, key=lambda o: o.symbol), (
+                f"Inferred cancelled orders={resolved_delta.inferred_cancelled_orders} for permutation {index}: {list_util.deduplicate([o.symbol for o in shuffled_unknown_filled_or_cancelled_orders])}"
+            )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for many symbol orders executed {iterations} iterations"
+        )
+
+        # D. complex cases: 12 orders are filled, 8 are cancelled, including a LINK/USDT order: will a long time to find the best combination if not split by symbol
+        filled_orders = eth_orders + link_orders[:-1] + sol_orders
+        cancelled_orders = ada_orders + btc_orders + xrp_orders + link_orders[-1:]
+        assert len(filled_orders) == 12
+        filled_deltas = _get_orders_deltas(filled_orders)
+        post_trade_content = _content({**filled_deltas, **{"USDT": filled_deltas["USDT"] + decimal.Decimal("500")}})
+        t0 = time.time()
+        unknown_filled_or_cancelled_orders = filled_orders + cancelled_orders
+        resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+        )
+        # due to very similar order and the order of exec, link order 3 is considered filled instead of link order 4
+        resolved_fileld_link_orders = link_orders[:-2]+link_orders[-1:]
+        assert resolved_delta == _resolved(
+            explained_orders_deltas=_content(filled_deltas),   # all orders found in deltas
+            inferred_filled_orders=eth_orders+resolved_fileld_link_orders+sol_orders,  # all orders are inferred as filled to explain deltas
+            inferred_cancelled_orders=link_orders[-2:-1] + ada_orders + btc_orders + xrp_orders,  # all orders are inferred as cancelled to explain deltas
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for many symbol orders with mixed cancelled and filled orders"
+        )
+
+        # E. complex cases: 12 orders are filled, some of them are known as filled. 8 are cancelled, including a LINK/USDT order: will a long time to find the best combination if not split by symbol
+        known_filled_orders = eth_orders + link_orders[1:2]
+        unknown_filled_orders = link_orders[2:-1] + sol_orders
+        cancelled_orders = ada_orders + btc_orders + xrp_orders + link_orders[-1:]
+        assert len(unknown_filled_orders) == 3
+        filled_deltas = _get_orders_deltas(known_filled_orders + unknown_filled_orders)
+        post_trade_content = _content({
+            **filled_deltas, **{
+                "USDT": filled_deltas["USDT"] + decimal.Decimal("501"),
+                "PLOP": decimal.Decimal("22")
+            }
+        })
+        t0 = time.time()
+        unknown_filled_or_cancelled_orders = unknown_filled_orders + cancelled_orders
+        resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
+            pre_trade_content, post_trade_content, known_filled_orders, unknown_filled_or_cancelled_orders, {}
+        )
+        # due to very similar order and the order of exec, link order 3 is considered filled instead of link order 4
+        resolved_fileld_link_orders = [link_orders[-1]]
+        filled_deltas["USDT"] += decimal.Decimal("1")  # add 1 for +501 USDT delta
+        assert resolved_delta == _resolved(
+            explained_orders_deltas=_content(filled_deltas),   # all orders found in deltas
+            unexplained_orders_deltas=_content({"PLOP": decimal.Decimal("22")}),   # PLOP delta is not explained
+            inferred_filled_orders=resolved_fileld_link_orders+sol_orders,  # all orders are inferred as filled to explain deltas
+            inferred_cancelled_orders=link_orders[-2:-1] + ada_orders + btc_orders + xrp_orders,  # all orders are inferred as cancelled to explain deltas
+        )
+        assert time.time() - t0 < max_execution_time, (
+            f"Execution time {time.time() - t0} is greater than {max_execution_time} for many symbol orders with mixed cancelled and filled orders"
         )
 
 
@@ -1860,6 +2019,9 @@ def _missing_funds(funds: dict[str, float]) -> dict[str, decimal.Decimal]:
         key: decimal.Decimal(str(val))
         for key, val in funds.items()
     }
+
+def _get_orders_deltas(orders: list[personal_data.Order]) -> dict[str, decimal.Decimal]:
+    return personal_data.get_assets_delta_from_orders(orders, {}, False, True)[0]
 
 def _order(
     symbol: str, quantity: float, cost: float, side: str, fee: dict = None, local_fees_currencies: list[str] = [], is_exchange_fetched_fee: bool = False, filled_quantity: float = None, exchange_order_id: str = None

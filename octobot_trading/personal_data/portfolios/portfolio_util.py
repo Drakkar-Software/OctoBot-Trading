@@ -33,6 +33,7 @@ import octobot_trading.errors as errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.logging as commons_logging
 import octobot_commons.symbols as symbol_util
+import octobot_commons.list_util as list_util
 
 import numpy as numpy
 
@@ -668,7 +669,7 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         known_filled_orders_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta()
     # init with all cancelled orders and explained+unexplained portfolio deltas from known filled orders
     best_inferred_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta(
-        inferred_cancelled_orders=unknown_filled_or_cancelled_orders,
+        inferred_cancelled_orders= list(unknown_filled_or_cancelled_orders), # avoid modifying the original list
     ).merge_order_deltas(known_filled_orders_resolved_delta, portfolios_asset_deltas)
     if (
         not best_inferred_resolved_delta.unexplained_orders_deltas 
@@ -678,13 +679,76 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         return _get_cleared_inferred_resolved_delta(
             best_inferred_resolved_delta, portfolios_asset_deltas
         )
-    post_filled_orders_portfolio_asset_deltas = resolved_orders_portfolio_delta.filter_empty_deltas(
+    remaining_portfolio_asset_deltas = resolved_orders_portfolio_delta.filter_empty_deltas(
         sub_portfolio_data.get_content_after_deltas(
             portfolios_asset_deltas, _reverse_portfolio_deltas(
                 best_inferred_resolved_delta.explained_orders_deltas
             ), apply_available_deltas=True
         )
     )
+    # split orders by symbol and compute deltas together for each linked order
+    orders_per_symbol = {
+        symbol: [order for order in unknown_filled_or_cancelled_orders if order.symbol == symbol]
+        for symbol in list_util.deduplicate([order.symbol for order in unknown_filled_or_cancelled_orders])
+    }
+    if len(orders_per_symbol) == 1 or len(unknown_filled_or_cancelled_orders) <= 10:
+        # few orders or all orders are for the same symbol: compute deltas together 
+        # more accurate that symbol per symbol as it minimizes deltas but more expensive in CPU when many orders
+        return await _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_for_symbol(
+            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id,  remaining_portfolio_asset_deltas, known_filled_orders_resolved_delta, portfolios_asset_deltas, best_inferred_resolved_delta
+        )
+    else:
+        filled_orders = []
+        # orders are for different symbols: compute deltas separately when possible to limit the number of combinations
+        initial_best_inferred_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta()
+        for symbol_orders in orders_per_symbol.values():
+            symbol_best_inferred_resolved_delta = await _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_for_symbol(
+                symbol_orders, ignored_filled_quantity_per_order_exchange_id, remaining_portfolio_asset_deltas, known_filled_orders_resolved_delta, portfolios_asset_deltas, best_inferred_resolved_delta
+            )
+            filled_orders.extend(symbol_best_inferred_resolved_delta.inferred_filled_orders)
+            known_filled_orders_resolved_delta = symbol_best_inferred_resolved_delta
+            known_filled_orders_resolved_delta.inferred_filled_orders.clear()
+            known_filled_orders_resolved_delta.inferred_cancelled_orders.clear()
+            best_inferred_resolved_delta = initial_best_inferred_resolved_delta.merge_order_deltas(
+                known_filled_orders_resolved_delta, portfolios_asset_deltas
+            )
+            remaining_portfolio_asset_deltas = resolved_orders_portfolio_delta.filter_empty_deltas(
+                sub_portfolio_data.get_content_after_deltas(
+                    portfolios_asset_deltas, _reverse_portfolio_deltas(
+                        symbol_best_inferred_resolved_delta.explained_orders_deltas
+                    ), apply_available_deltas=True
+                )
+            )
+            if not remaining_portfolio_asset_deltas:
+                # all filled orders have been identified: stop here
+                break
+        
+
+        orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, _ = get_assets_delta_from_orders(
+            filled_or_partially_filled_orders + filled_orders, ignored_filled_quantity_per_order_exchange_id, True
+        )
+        resolved_delta = compute_assets_deltas_from_orders(
+            orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, 
+            portfolios_asset_deltas, 
+            allow_portfolio_delta_shrinking=False, 
+            register_missed_partial_delta_as_ignored=True, 
+            ignore_order_unrelated_deltas=False,
+            ignore_order_extra_deltas=True,
+        )
+        resolved_delta.inferred_filled_orders = filled_orders
+        resolved_delta.inferred_cancelled_orders = [order for order in unknown_filled_or_cancelled_orders if order not in filled_orders]
+        return _get_cleared_inferred_resolved_delta(resolved_delta, portfolios_asset_deltas)
+
+
+async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_for_symbol(
+    unknown_filled_or_cancelled_orders: list[order_import.Order],
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    post_filled_orders_portfolio_asset_deltas: dict[str, dict[str, decimal.Decimal]],
+    known_filled_orders_resolved_delta: resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta,
+    portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
+    best_inferred_resolved_delta: resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta,
+) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
+    symbols = set(order.symbol for order in unknown_filled_or_cancelled_orders)
     quick_check_orders_to_fill_counts, secondary_check_orders_to_fill_counts, skipped_combinations = _get_quicky_and_secondary_order_combinations_checks(
         unknown_filled_or_cancelled_orders
     )
@@ -703,12 +767,12 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
             min_skipped = min(s[0] for s in skipped_combinations)
             max_skipped = max(s[0] for s in skipped_combinations)
             skipped = (
-                f" Skipping [{min_skipped}:{max_skipped}] filled orders among {len(unknown_filled_or_cancelled_orders)} (which is {len(skipped_combinations)} combinations out of {len(unknown_filled_or_cancelled_orders)}) as they contain more than {constants.MAX_ORDER_SECONDARY_INFERENCE_COMBINATIONS_COUNT} possibilities."
+                f" Skipping {','.join(symbols)} [{min_skipped}:{max_skipped}] filled orders among {len(unknown_filled_or_cancelled_orders)} (which is {len(skipped_combinations)} combinations out of {len(unknown_filled_or_cancelled_orders)}) as they contain more than {constants.MAX_ORDER_SECONDARY_INFERENCE_COMBINATIONS_COUNT} possibilities."
             )
         else:
             skipped = ""
         commons_logging.get_logger(__name__).error(
-            f"Best inferred resolved delta not found in {len(quick_check_orders_to_fill_counts)} "
+            f"Best {','.join(symbols)} inferred resolved delta not found in {len(quick_check_orders_to_fill_counts)} "
             f"quick check configurations ({', '.join(str(count) for count in quick_check_orders_to_fill_counts)}), "
             f"trying the (slow) {len(secondary_check_orders_to_fill_counts)} other configurations in a separate thread.{skipped}"
         )
