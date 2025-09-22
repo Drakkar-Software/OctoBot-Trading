@@ -19,6 +19,8 @@ import typing
 import itertools
 import math
 import asyncio
+import time
+import threading
 
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_trading.personal_data.portfolios.assets
@@ -758,7 +760,7 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         quick_check_orders_to_fill_counts, 
         unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id, 
         compute_forecasted_fees, post_filled_orders_portfolio_asset_deltas, known_filled_orders_resolved_delta, 
-        portfolios_asset_deltas, best_inferred_resolved_delta
+        portfolios_asset_deltas, best_inferred_resolved_delta, None
     )
     if not best_inferred_resolved_delta.is_fully_explained() and secondary_check_orders_to_fill_counts:
         # best_inferred_resolved_delta is not found in quick checks, try the (slow) rest in a separate thread
@@ -780,13 +782,23 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         # concurrently or on different cores, the current CPU will swap between 
         # this thread and the async loop thread, therefore making everything slower but
         # ensuring the async loop is not blocked, which is the goal of this thread
-        best_inferred_resolved_delta = await asyncio.to_thread(    
-            _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_after_filled_orders_deltas,
-            secondary_check_orders_to_fill_counts, 
-            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id, 
-            compute_forecasted_fees, post_filled_orders_portfolio_asset_deltas, known_filled_orders_resolved_delta, 
-            portfolios_asset_deltas, best_inferred_resolved_delta
-        )
+        try:
+            cancelled_event = threading.Event()
+            best_inferred_resolved_delta = await asyncio.to_thread(    
+                _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_after_filled_orders_deltas,
+                secondary_check_orders_to_fill_counts, 
+                unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id, 
+                compute_forecasted_fees, post_filled_orders_portfolio_asset_deltas, known_filled_orders_resolved_delta, 
+                portfolios_asset_deltas, best_inferred_resolved_delta, cancelled_event
+            )
+        except (asyncio.CancelledError, asyncio.TimeoutError) as err:
+            # catch both cancelled and timeout errors to cancel thread when it happens
+            commons_logging.get_logger(__name__).warning(
+                f"{err.__class__.__name__}:{err} while computing most probable assets deltas for {len(secondary_check_orders_to_fill_counts)} orders for symbol {','.join(symbols)} - cancelling background thread"
+            )
+            # cancel thread to avoid having it run for nothing
+            cancelled_event.set()
+            raise
 
     return _get_cleared_inferred_resolved_delta(best_inferred_resolved_delta, portfolios_asset_deltas)
 
@@ -800,9 +812,21 @@ def _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_
     known_filled_orders_resolved_delta: resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta,
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
     best_inferred_resolved_delta: resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta,
+    cancelled_event: typing.Optional[threading.Event],
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
+    last_sleep_time = time.time()
     for orders_to_fill_count in sorted_orders_to_fill_counts:
         for filled_orders_combination in itertools.combinations(unknown_filled_or_cancelled_orders, orders_to_fill_count):
+            if cancelled_event:
+                if time.time() - last_sleep_time > constants.MAX_ORDER_INFERENCE_ITERATIONS_DURATION:
+                    # If cancelled_event is set, this is running in a thread. As this function requires a lot of CPU, force 
+                    # it to sleep at regular intervals to let other threads as well since real multi-threading doesn't exist in python du to the GIL.
+                    # This is somewhat similar to a lower priority thread, even though this doesn't really exist in python
+                    time.sleep(constants.ORDER_INFERENCE_SLEEP_TIME)
+                    last_sleep_time = time.time()
+                if cancelled_event.is_set():
+                    # cancelled, complete function immediately
+                    return best_inferred_resolved_delta
             potential_filled_orders_combination = list(filled_orders_combination)
             (
                 orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, counted_exchange_fee_deltas
