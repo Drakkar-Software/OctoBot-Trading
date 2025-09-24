@@ -202,6 +202,12 @@ class ExchangeCompliancyError(OctoBotExchangeError):
     """
 
 
+class ExchangeMaxOrdersForMarketReachedError(OctoBotExchangeError):
+    """
+    Raised when an exchange failed to execute the given request because the maximum number of orders for this market has been reached
+    """
+
+
 class ExchangeAccountSymbolPermissionError(OctoBotExchangeError):
     """
     Raised when an exchange failed to execute the given request because of allowed traded symbols

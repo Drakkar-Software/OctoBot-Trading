@@ -142,6 +142,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     EXCHANGE_ORDER_IMMEDIATELY_TRIGGER_ERRORS: typing.List[typing.Iterable[str]] = []
     # text content of errors due to an order that can't be cancelled on exchange (because filled or already cancelled)
     EXCHANGE_ORDER_UNCANCELLABLE_ERRORS: typing.List[typing.Iterable[str]] = []
+    # text content of errors due to max open orders being reached
+    EXCHANGE_MAX_ORDERS_FOR_MARKET_REACHED_ERRORS: typing.List[typing.Iterable[str]] = []
     # set when the exchange can allow users to pay fees in a custom currency (ex: BNB on binance)
     LOCAL_FEES_CURRENCIES: typing.List[str] = []
 
@@ -308,6 +310,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
                     f"Error when handling order {html_util.get_html_summary_if_relevant(e)}. "
                     f"Exchange is refusing this order request on this account because "
                     f"of its compliancy requirements."
+                ) from e
+            if self.is_exchange_max_orders_for_market_reached_error(e):
+                raise errors.ExchangeMaxOrdersForMarketReachedError(
+                    f"Error when handling order {html_util.get_html_summary_if_relevant(e)}. "
+                    f"Exchange is refusing this order: the maximum number of orders for this market has been reached."
                 ) from e
             if self.is_exchange_closed_position_error(e):
                 raise errors.ExchangeClosedPositionError(
@@ -1133,6 +1140,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_exchange_order_uncancellable(self, error: BaseException) -> bool:
         if self.EXCHANGE_ORDER_UNCANCELLABLE_ERRORS:
             return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_ORDER_UNCANCELLABLE_ERRORS)
+        return False
+
+    def is_exchange_max_orders_for_market_reached_error(self, error: BaseException) -> bool:
+        if self.EXCHANGE_MAX_ORDERS_FOR_MARKET_REACHED_ERRORS:
+            return exchanges_util.is_error_on_this_type(error, self.EXCHANGE_MAX_ORDERS_FOR_MARKET_REACHED_ERRORS)
         return False
 
     def is_exchange_internal_sync_error(self, error: BaseException) -> bool:
