@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.223] - 2025-09-24
+### Added
+[Exchanges] add EXCHANGE_MAX_ORDERS_FOR_MARKET_REACHED_ERRORS
+
 ## [2.4.222] - 2025-09-22
 ### Added
 [SubPF] optimize filled orders inference on multiple pairs
