@@ -277,10 +277,10 @@ class RealExchangeTester:
             # ensure active symbols are correctly parsed by ccxt
             active_symbols = exchange_manager.exchange.get_all_available_symbols(active_only=True)
             assert expected_active_symbols_count <= len(active_symbols) <= expected_active_symbols_count * 1.5, \
-                f"{len(active_symbols)=}, {expected_active_symbols_count=}"
+                f"Active symbols count: {len(active_symbols)=} not in [{expected_active_symbols_count}:{expected_active_symbols_count * 1.5}]"
             all_symbols = exchange_manager.exchange.get_all_available_symbols(active_only=False)
             assert expected_total_symbols_count <= len(all_symbols) <= expected_total_symbols_count * 1.5, \
-                f"{len(all_symbols)=}, {expected_total_symbols_count=}"
+                f"All symbols count: {len(all_symbols)=} not in [{expected_total_symbols_count}:{expected_total_symbols_count * 1.5}]"
 
     async def get_market_statuses(self):
         # return 2 different market status with different traded pairs to reduce possible
@@ -292,7 +292,10 @@ class RealExchangeTester:
                 exchange_manager.exchange.get_market_status(self.SYMBOL_3)
 
     def _ensure_market_status_cachability(self, exchange_manager):
-        client_using_cached_markets = ccxt_client_util.ccxt_exchange_class_factory(self.EXCHANGE_NAME)()
+        exchange_class = ccxt_client_util.ccxt_exchange_class_factory(self.EXCHANGE_NAME)
+        client_using_cached_markets = exchange_class(
+            ccxt_client_util.get_custom_domain_config(exchange_class) # use custom domain config if set
+        )
         ccxt_client_util.load_markets_from_cache(client_using_cached_markets)
         assert exchange_manager.exchange.connector.client.markets == client_using_cached_markets.markets
 
