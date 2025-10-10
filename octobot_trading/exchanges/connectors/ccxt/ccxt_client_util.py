@@ -159,7 +159,10 @@ def instantiate_exchange(
 
 def set_sandbox_mode(exchange_connector, is_sandboxed):
     try:
-        exchange_connector.client.setSandboxMode(is_sandboxed)
+        if exchange_connector.exchange_manager.exchange.uses_demo_trading_instead_of_sandbox():
+            exchange_connector.client.enable_demo_trading(is_sandboxed)
+        else:
+            exchange_connector.client.set_sandbox_mode(is_sandboxed)
     except ccxt.NotSupported as e:
         default_type = exchange_connector.client.options.get('defaultType', None)
         additional_info = f" in type {default_type}" if default_type else ""

@@ -61,7 +61,7 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(ccxt_connector):
         def set_markets(self, markets):
             self.set_markets_calls.append(markets)
 
-        def setSandboxMode(self, is_sandboxed):
+        def set_sandbox_mode(self, is_sandboxed):
             pass
 
     with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt, \
@@ -89,7 +89,7 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(ccxt_connector)
         def set_markets(self, markets):
             self.set_markets_calls.append(markets)
 
-        def setSandboxMode(self, is_sandboxed):
+        def set_sandbox_mode(self, is_sandboxed):
             pass
 
     with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt, \
@@ -127,7 +127,7 @@ async def test_initialize_impl(ccxt_connector):
         def set_markets(self, markets):
             self.set_markets_calls.append(markets)
 
-        def setSandboxMode(self, is_sandboxed):
+        def set_sandbox_mode(self, is_sandboxed):
             pass
 
     with patch.object(ccxt_connector, 'client', new=MockCCXT()) as mocked_ccxt, \

@@ -604,6 +604,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
             else constants.DEFAULT_MAX_DEFAULT_ORDERS_COUNT
         )
 
+    def uses_demo_trading_instead_of_sandbox(self) -> bool:
+        return False
+
     def _apply_contract_size(self, value, contract_size):
         if value is None:
             return value
