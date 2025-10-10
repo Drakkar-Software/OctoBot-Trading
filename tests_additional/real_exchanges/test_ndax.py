@@ -33,6 +33,7 @@ class TestNdaxRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/CAD"
     SYMBOL_3 = "XRP/CAD"
+    TIME_FRAME = TimeFrames.ONE_DAY # avoid missing candle issues
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
