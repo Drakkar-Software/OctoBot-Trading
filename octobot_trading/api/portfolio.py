@@ -135,12 +135,14 @@ async def get_portfolio_filled_orders_deltas(
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     filled_or_partially_filled_orders: list[personal_data.Order],
     unknown_filled_or_cancelled_orders: list[personal_data.Order],
-    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    randomize_secondary_checks: bool,
+    timeout: typing.Optional[float],
 ) -> personal_data.ResolvedOrdersPortoflioDelta:
     return await personal_data.get_portfolio_filled_orders_deltas(
         previous_portfolio_content, updated_portfolio_content, 
         filled_or_partially_filled_orders, unknown_filled_or_cancelled_orders, 
-        ignored_filled_quantity_per_order_exchange_id
+        ignored_filled_quantity_per_order_exchange_id, randomize_secondary_checks, timeout
     )
 
 
