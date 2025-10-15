@@ -21,6 +21,7 @@ import math
 import asyncio
 import time
 import threading
+import random
 
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_trading.personal_data.portfolios.assets
@@ -555,13 +556,16 @@ async def get_portfolio_filled_orders_deltas(
     updated_portfolio_content: dict[str, dict[str, decimal.Decimal]],
     filled_or_partially_filled_orders: list[order_import.Order],
     unknown_filled_or_cancelled_orders: list[order_import.Order],
-    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    randomize_secondary_checks: bool,
+    timeout: typing.Optional[float],
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     portfolios_asset_deltas = _get_assets_delta_from_portfolio(previous_portfolio_content, updated_portfolio_content)
     if unknown_filled_or_cancelled_orders:
         return await _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders(
             filled_or_partially_filled_orders, portfolios_asset_deltas, 
-            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id
+            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id,
+            randomize_secondary_checks, timeout
         )
     else:
         orders_asset_deltas, expected_fee_related_deltas, possible_fees_asset_deltas, _ = get_assets_delta_from_orders(
@@ -649,7 +653,9 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
     filled_or_partially_filled_orders: list[order_import.Order],
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
     unknown_filled_or_cancelled_orders: list[order_import.Order],
-    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal]
+    ignored_filled_quantity_per_order_exchange_id: dict[str, decimal.Decimal],
+    randomize_secondary_checks: bool,
+    timeout: typing.Optional[float],
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
     """
     Returns the most probable deltas which are the ones that can be best explained by given orders
@@ -697,7 +703,7 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         # few orders or all orders are for the same symbol: compute deltas together 
         # more accurate that symbol per symbol as it minimizes deltas but more expensive in CPU when many orders
         return await _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_for_symbol(
-            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id,  remaining_portfolio_asset_deltas, known_filled_orders_resolved_delta, portfolios_asset_deltas, best_inferred_resolved_delta
+            unknown_filled_or_cancelled_orders, ignored_filled_quantity_per_order_exchange_id,  remaining_portfolio_asset_deltas, known_filled_orders_resolved_delta, portfolios_asset_deltas, best_inferred_resolved_delta, randomize_secondary_checks, timeout
         )
     else:
         filled_orders = []
@@ -705,7 +711,7 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         initial_best_inferred_resolved_delta = resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta()
         for symbol_orders in orders_per_symbol.values():
             symbol_best_inferred_resolved_delta = await _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_for_symbol(
-                symbol_orders, ignored_filled_quantity_per_order_exchange_id, remaining_portfolio_asset_deltas, known_filled_orders_resolved_delta, portfolios_asset_deltas, best_inferred_resolved_delta
+                symbol_orders, ignored_filled_quantity_per_order_exchange_id, remaining_portfolio_asset_deltas, known_filled_orders_resolved_delta, portfolios_asset_deltas, best_inferred_resolved_delta, randomize_secondary_checks, timeout
             )
             filled_orders.extend(symbol_best_inferred_resolved_delta.inferred_filled_orders)
             known_filled_orders_resolved_delta = symbol_best_inferred_resolved_delta
@@ -749,7 +755,10 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
     known_filled_orders_resolved_delta: resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta,
     portfolios_asset_deltas: dict[str, dict[str, decimal.Decimal]],
     best_inferred_resolved_delta: resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta,
+    randomize_secondary_checks: bool,
+    timeout: typing.Optional[float],
 ) -> resolved_orders_portfolio_delta.ResolvedOrdersPortoflioDelta:
+    inference_start_time = time.time()
     symbols = set(order.symbol for order in unknown_filled_or_cancelled_orders)
     quick_check_orders_to_fill_counts, secondary_check_orders_to_fill_counts, skipped_combinations = _get_quicky_and_secondary_order_combinations_checks(
         unknown_filled_or_cancelled_orders
@@ -782,8 +791,30 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
         # concurrently or on different cores, the current CPU will swap between 
         # this thread and the async loop thread, therefore making everything slower but
         # ensuring the async loop is not blocked, which is the goal of this thread
+        auto_canceller_task = None
         try:
+            if randomize_secondary_checks:
+                random.shuffle(secondary_check_orders_to_fill_counts)
             cancelled_event = threading.Event()
+            if timeout is not None:
+                remaining_timeout = timeout - (time.time() - inference_start_time)
+                if remaining_timeout <= 0:
+                    # timeout already reached: cancel thread immediately
+                    commons_logging.get_logger(__name__).error(
+                        f"Timeout of {timeout}s was already reached while computing most probable assets "
+                        f"deltas before using background thread for symbol {','.join(symbols)}"
+                    )
+                    return best_inferred_resolved_delta
+                async def _auto_canceller():
+                    await asyncio.sleep(remaining_timeout)
+                    if not cancelled_event.is_set():
+                        commons_logging.get_logger(__name__).warning(
+                            f"Timeout: {remaining_timeout}s (remaining of intial {timeout}s) while computing most "
+                            f"probable assets deltas for {len(secondary_check_orders_to_fill_counts)} "
+                            f"orders for symbol {','.join(symbols)} - cancelling background thread"
+                        )
+                        cancelled_event.set()
+                auto_canceller_task = asyncio.create_task(_auto_canceller())
             best_inferred_resolved_delta = await asyncio.to_thread(    
                 _compute_most_probable_assets_deltas_from_orders_considering_unknown_orders_after_filled_orders_deltas,
                 secondary_check_orders_to_fill_counts, 
@@ -793,12 +824,18 @@ async def _compute_most_probable_assets_deltas_from_orders_considering_unknown_o
             )
         except (asyncio.CancelledError, asyncio.TimeoutError) as err:
             # catch both cancelled and timeout errors to cancel thread when it happens
+            if isinstance(err, asyncio.CancelledError) and cancelled_event.is_set():
+                # this is an expected cancellation: continue (don't raise)
+                return best_inferred_resolved_delta
             commons_logging.get_logger(__name__).warning(
                 f"{err.__class__.__name__}:{err} while computing most probable assets deltas for {len(secondary_check_orders_to_fill_counts)} orders for symbol {','.join(symbols)} - cancelling background thread"
             )
             # cancel thread to avoid having it run for nothing
             cancelled_event.set()
             raise
+        finally:
+            if auto_canceller_task is not None and not auto_canceller_task.done():
+                auto_canceller_task.cancel()
 
     return _get_cleared_inferred_resolved_delta(best_inferred_resolved_delta, portfolios_asset_deltas)
 

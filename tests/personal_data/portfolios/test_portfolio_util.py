@@ -296,7 +296,7 @@ async def test_get_portfolio_filled_orders_deltas():
     error_log = mock.Mock()
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # no filled order
-        assert await personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], [], {}) == _resolved()
+        assert await personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], [], {}, False, None) == _resolved()
         error_log.assert_not_called()
 
         filled_orders = [
@@ -305,7 +305,7 @@ async def test_get_portfolio_filled_orders_deltas():
             _order("BTC/USDT", 0.01, 50, "sell"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
         )
@@ -317,7 +317,7 @@ async def test_get_portfolio_filled_orders_deltas():
             _order("BTC/USDT", 0.01, 50, "buy"),    # not found in portfolio delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             {},
             _content({"BTC": 0.1, "USDT": -500}),   # all missing: orders can't explain this delta
@@ -330,7 +330,7 @@ async def test_get_portfolio_filled_orders_deltas():
             _order("BTC/USDT", 0.01, 50, "buy"),    # not found in portfolio delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             _content({"BTC": 0.07, "USDT": -350.01}),   # adapted to orders explained orders delta
             _content({"SOL": 1}),   # not found in portfolio delta
@@ -344,7 +344,7 @@ async def test_get_portfolio_filled_orders_deltas():
             _order("BTC/USDT", 0.01, 50, "buy"),    # not found in portfolio delta
         ]
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         )
         assert resolved_delta == _resolved(
             _content({"SOL": 1, "USDT": -350.01}),   # adapted to orders explained orders delta
@@ -362,7 +362,7 @@ async def test_get_portfolio_filled_orders_deltas():
             _order("BTC/USDT", 0.04, 600, "sell"),    # not found in portfolio delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             _content({"BTC": -0.1, "USDT": 1000}),
             {},
@@ -377,7 +377,7 @@ async def test_get_portfolio_filled_orders_deltas():
             _order("BTC/USDT", 0.05, 555, "buy"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             _content({"USDT": -5}),
             {}, # BTC is not a missing delta as there is no delta (delta = 0)
@@ -396,7 +396,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unavailable_funds():
         ]
         # with known filled orders
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content_with_available({"SOL": (0, -0.051), "USDT": (8.939925966, 8.939925966)}),
         )
@@ -404,7 +404,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unavailable_funds():
 
         # with unknown orders
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], filled_orders, {}
+            pre_trade_content, post_trade_content, [], filled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content_with_available({"SOL": (0, -0.051), "USDT": (8.939925966, 8.939925966)}),
             inferred_filled_orders=filled_orders,   # all orders are inferred as filled to explain deltas
@@ -423,7 +423,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
         # 1. no unknown_filled_or_cancelled_orders
         unknown_filled_or_cancelled_orders = []
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         )  == _resolved()   # deltas are considered from other orders (as no order is provided)
         error_log.assert_not_called()
 
@@ -433,7 +433,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.1, 502, "buy"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
             inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
@@ -445,7 +445,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.01, 50, "sell"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
             inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
@@ -458,7 +458,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("SOL/USDT", 0.06, 100, "sell"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             unexplained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # no orders found in deltas
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as cancelled (can't explain delta)
@@ -469,7 +469,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.05, 451, "sell"),  # wrong side
         ]
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         )
         assert resolved_delta == _resolved(
             unexplained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # no orders found in deltas
@@ -483,7 +483,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("PLOP/USDT", 0.01, 50, "buy"),
         ]
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         )
         assert resolved_delta == _resolved(
             unexplained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # no orders found in deltas
@@ -500,7 +500,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.01, 50, "buy"),    # not found in portfolio delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the first two orders
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 orders are inferred as filled
@@ -515,7 +515,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.01, 50, "sell"),    # not found in portfolio delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the first two orders
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 orders are inferred as filled
@@ -530,7 +530,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.04, 400, "buy"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the last two orders
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 orders are inferred as filled
@@ -544,7 +544,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.04, 400, "buy"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the last two orders
             inferred_filled_orders=unknown_filled_or_cancelled_orders[1:],  # last 2 orders are inferred as filled
@@ -561,7 +561,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_or_cancell
             _order("BTC/USDT", 0.04, 400, "buy"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the last two orders
             unexplained_orders_deltas=_content({"ETH": 100}),   # ETH is not explained by any order
@@ -585,7 +585,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_orders_wit
             _order("BTC/USDT", 0.1, 500, "buy", fee={"USDT": 1}, is_exchange_fetched_fee=is_exchange_fetched_fee),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -501}),
             inferred_filled_orders=unknown_filled_or_cancelled_orders,
@@ -597,7 +597,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_orders_wit
             _order("BTC/USDT", 0.1, 500, "buy", fee={"BNB": 1}, is_exchange_fetched_fee=is_exchange_fetched_fee),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),
             inferred_filled_orders=unknown_filled_or_cancelled_orders,
@@ -610,7 +610,7 @@ async def test_get_portfolio_filled_orders_deltas_with_unknown_filled_orders_wit
             _order("BTC/USDT", 0.01, 50, "sell"),    # not found in portfolio delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # explained by the first two orders
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 orders are inferred as filled
@@ -642,7 +642,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         ]
         t0 = time.time()
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
             inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
@@ -657,7 +657,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         ]
         t0 = time.time()
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, pre_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, pre_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as cancelled
         )
@@ -675,7 +675,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         ]
         t0 = time.time()
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:-unfilled_count],  # all orders are inferred as filled to explain deltas
@@ -695,7 +695,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         ]
         t0 = time.time()
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all orders found in deltas
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:uncancelled_count],  # all orders are inferred as filled to explain deltas
@@ -752,7 +752,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         post_trade_content = _content({**all_filled_deltas, **{"USDT": all_filled_deltas["USDT"] + decimal.Decimal("500")}})
         t0 = time.time()
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content(all_filled_deltas),   # all orders found in deltas
             inferred_filled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as filled to explain deltas
@@ -763,7 +763,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         # B. simple cases: all orders are cancelled
         t0 = time.time()
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, pre_trade_content, [], unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, pre_trade_content, [], unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all orders are inferred as cancelled to explain deltas
         )
@@ -794,7 +794,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
                 shuffled_unknown_filled_or_cancelled_orders.extend(elements)
             assert len(shuffled_unknown_filled_or_cancelled_orders) == total_orders_count
             resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-                pre_trade_content, post_trade_content, [], shuffled_unknown_filled_or_cancelled_orders, {}
+                pre_trade_content, post_trade_content, [], shuffled_unknown_filled_or_cancelled_orders, {}, False, None
             ) 
             assert len(shuffled_unknown_filled_or_cancelled_orders) == total_orders_count # ensure shuffled_unknown_filled_or_cancelled_orders is not touched
             assert resolved_delta.explained_orders_deltas == _content(filled_deltas)   # all orders found in deltas
@@ -818,7 +818,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         t0 = time.time()
         unknown_filled_or_cancelled_orders = filled_orders + cancelled_orders
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_filled_or_cancelled_orders, {}, False, None
         )
         # due to very similar order and the order of exec, link order 3 is considered filled instead of link order 4
         resolved_fileld_link_orders = link_orders[:-2]+link_orders[-1:]
@@ -846,7 +846,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         t0 = time.time()
         unknown_filled_or_cancelled_orders = unknown_filled_orders + cancelled_orders
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, known_filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, known_filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         )
         # due to very similar order and the order of exec, link order 3 is considered filled instead of link order 4
         resolved_fileld_link_orders = [link_orders[-1]]
@@ -896,7 +896,7 @@ async def test_get_portfolio_filled_orders_deltas_inferrence_thread():
 
         async def _async_get_portfolio_filled_orders_deltas():
             result = await personal_data.get_portfolio_filled_orders_deltas(
-                pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+                pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
             )
             completed_portfolio_filled_orders_deltas.append(result)
             return result
@@ -955,7 +955,7 @@ async def test_interrupt_get_portfolio_filled_orders_deltas_inferrence_thread():
         async def _async_get_portfolio_filled_orders_deltas():
             try:
                 result = await personal_data.get_portfolio_filled_orders_deltas(
-                    pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+                    pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
                 )
                 return result
             finally:
@@ -991,6 +991,111 @@ async def test_interrupt_get_portfolio_filled_orders_deltas_inferrence_thread():
 
 
 @pytest.mark.asyncio
+async def test_get_portfolio_filled_orders_deltas_with_inferrence_thread_timeout_and_randomize_secondary_checks():
+    # goal of the test: making sure that inference thread is cancelled when task is cancelled
+    pre_trade_content = _content({"BTC": 0.1, "USDT": 1000})
+    post_trade_content = _content({"BTC": 0.2, "USDT": 500})
+    error_log = mock.Mock()
+    warning_log = mock.Mock()
+    filled_orders = []
+    orders_count = 30
+    unfilled_count = 15  # 155.117.520  combinations on worse iterations, requires thread and takes much more than 5 seconds
+    max_execution_time = 5
+    with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log, warning=warning_log))):
+        # use single symbol to make sure a thread is used
+        unknown_filled_or_cancelled_orders = [
+            _order("BTC/USDT", 0.1 / orders_count, 500 / orders_count, "buy")
+            for _ in range(orders_count)
+        ] + [
+            _order("BTC/USDT", 1, 500, "buy")
+            for _ in range(unfilled_count)
+        ]
+        t0 = time.time()
+
+        portfolio_filled_orders_delta_results = []
+
+        async def _async_get_portfolio_filled_orders_deltas(randomize_secondary_checks: bool, timeout: float):
+            result = await personal_data.get_portfolio_filled_orders_deltas(
+                pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, randomize_secondary_checks, timeout
+            )
+            portfolio_filled_orders_delta_results.append(result)
+            return result
+
+        with (
+            mock.patch.object(asyncio, "to_thread", mock.AsyncMock(wraps=asyncio.to_thread)) as to_thread_mock,
+            mock.patch.object(random, "shuffle", mock.AsyncMock(wraps=random.shuffle)) as shuffle_mock
+        ):
+            # 1. NOT randomize secondary checks, timeout is too short: don't start thread
+            task = asyncio.create_task(_async_get_portfolio_filled_orders_deltas(False, 0.0001))
+            async def _async_canceller():
+                await asyncio.sleep(0.5)
+                task.cancel()
+            tasks = [
+                asyncio.create_task(_async_canceller()),
+                task
+            ]
+            await asyncio.wait(tasks, timeout=2)
+            # a result was computed and returned
+            assert len(portfolio_filled_orders_delta_results) == 1
+            assert isinstance(portfolio_filled_orders_delta_results[0], personal_data.ResolvedOrdersPortoflioDelta)
+            # ensure values are set
+            assert {**portfolio_filled_orders_delta_results[0].explained_orders_deltas, **portfolio_filled_orders_delta_results[0].unexplained_orders_deltas}
+            assert portfolio_filled_orders_delta_results[0].inferred_filled_orders + portfolio_filled_orders_delta_results[0].inferred_cancelled_orders
+            # thread not started
+            to_thread_mock.assert_not_called()
+            end_time = time.time()
+            # ensure test is not too slow
+            assert end_time - t0 < max_execution_time, (
+                f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+            )
+            assert error_log.call_count == 2
+            assert "trying the (slow) 4 other configurations in a separate thread." in error_log.mock_calls[0].args[0]
+            assert "was already reached while computing most probable assets" in error_log.mock_calls[1].args[0]
+            warning_log.assert_not_called()
+            shuffle_mock.assert_not_called()
+            to_thread_mock.reset_mock()
+            shuffle_mock.reset_mock()
+            error_log.reset_mock()
+            warning_log.reset_mock()
+            portfolio_filled_orders_delta_results.clear()
+
+            # 2. randomize secondary checks, timeout will be reached: start and interrupt thread
+            timeout = 1.5 if tests.is_on_github_ci() else 0.25 # CI can be very slow computers
+            task = asyncio.create_task(_async_get_portfolio_filled_orders_deltas(True, timeout))
+            async def _async_canceller():
+                await asyncio.sleep(timeout*2)
+                task.cancel()
+            tasks = [
+                asyncio.create_task(_async_canceller()),
+                task
+            ]
+            await asyncio.wait(tasks, timeout=timeout*2+1)
+            # thread was started
+            to_thread_mock.assert_awaited_once()
+            # a result was computed and returned
+            assert len(portfolio_filled_orders_delta_results) == 1
+            assert isinstance(portfolio_filled_orders_delta_results[0], personal_data.ResolvedOrdersPortoflioDelta)
+            # ensure values are set
+            assert {**portfolio_filled_orders_delta_results[0].explained_orders_deltas, **portfolio_filled_orders_delta_results[0].unexplained_orders_deltas}
+            assert portfolio_filled_orders_delta_results[0].inferred_filled_orders + portfolio_filled_orders_delta_results[0].inferred_cancelled_orders
+            end_time = time.time()
+            # ensure test is not too slow
+            assert end_time - t0 < max_execution_time, (
+                f"Execution time {time.time() - t0} is greater than {max_execution_time} for {orders_count} orders"
+            )
+            assert error_log.call_count == 1
+            assert "trying the (slow) 4 other configurations in a separate thread." in error_log.mock_calls[0].args[0]
+            assert warning_log.call_count == 1
+            assert f"(remaining of intial {timeout}s) while computing most" in warning_log.mock_calls[0].args[0]
+            shuffle_mock.assert_called_once()
+            to_thread_mock.reset_mock()
+            shuffle_mock.reset_mock()
+            error_log.reset_mock()
+            warning_log.reset_mock()
+            portfolio_filled_orders_delta_results.clear()
+
+
+@pytest.mark.asyncio
 async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown_filled_or_cancelled_orders():
     pre_trade_content = _content({"BTC": 0.1, "USDT": 1000, "ETH": 5})
     post_trade_content = _content({"BTC": 0.2, "USDT": 500, "ETH": 8})
@@ -1006,7 +1111,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("ETH/USDT", 3, 250, "buy"),  # explains ETH delta and the remaining USDT delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500, "ETH": 3}),   # all deltas explained
             inferred_filled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as filled
@@ -1022,7 +1127,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("SOL/USDT", 3, 900, "buy"),  # wrong symbol, can't explain ETH delta
         ]
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         )
         assert resolved_delta == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # only BTC explained by filled orders
@@ -1042,7 +1147,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("ETH/USDT", 1.01, 253, "buy"),  # explains remaining ETH delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.06, "USDT": -500, "ETH": 3}),   # all deltas explained
             inferred_filled_orders=[unknown_filled_or_cancelled_orders[0], unknown_filled_or_cancelled_orders[2]],  # ETH orders inferred as filled
@@ -1061,7 +1166,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("BTC/USDT", 0.01, 50, "sell"),  # no fees in unknown orders
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -550}),   # all deltas explained including fees
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as cancelled (its deltas can't be found)
@@ -1078,7 +1183,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("BTC/USDT", 0.04, 400, "buy"),  # explains remaining BTC delta
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all deltas explained
             inferred_filled_orders=unknown_filled_or_cancelled_orders,  # unknown order inferred as filled
@@ -1098,7 +1203,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("DOT/USDT", 2, 200, "sell"),  # wrong symbol
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500}),   # all deltas explained by filled orders
             inferred_cancelled_orders=unknown_filled_or_cancelled_orders,  # all unknown orders inferred as cancelled
@@ -1119,7 +1224,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
         ] # => +0.02 BTC -400 USDT +3 ETH +1 DOT
         # total delta: +0.05 BTC -500 USDT -5 SOL +3 ETH +1 DOT
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.05, "ETH": 3, "USDT": -450, "SOL": -5}),   # all deltas explained
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:2],  # first 2 unknown orders inferred as filled
@@ -1141,7 +1246,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("BTC/USDT", 0.01, 100, "buy"),  # +0.1 BTC -100 USDT (cancelled)
         ] # => +0.04999 BTC -598 USDT
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.05, "USDT": -600}),   # all deltas explained
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:3],  # first 3 unknown orders inferred as filled
@@ -1163,7 +1268,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("BTC/USDT", 0.01, 100, "buy", fee={"USDT": 1}),  # +0.1 BTC -100 USDT (cancelled)
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         ) == _resolved(
             explained_orders_deltas=_content({"BTC": 0.05, "USDT": -602.47778}),   # all deltas explained, some fees are taken into account, others are ignored because missing from portfolio delta
             inferred_filled_orders=unknown_filled_or_cancelled_orders[:3],  # first 3 unknown orders inferred as filled
@@ -1185,7 +1290,7 @@ async def test_get_portfolio_filled_orders_deltas_with_filled_orders_and_unknown
             _order("BTC/USDT", 0.01, 100, "buy", fee={"USDT": 1}),  # +0.1 BTC -100 USDT
         ]
         resolved_delta = await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_filled_or_cancelled_orders, {}, False, None
         )
         assert resolved_delta == _resolved(
             explained_orders_deltas=_content({"BTC": 0.05999, "USDT": -700}),   # all deltas explained, others are ignored because missing from portfolio delta. 
@@ -1205,7 +1310,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
     error_log = mock.Mock()
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # no filled order
-        assert await personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], [], {}) == _resolved(
+        assert await personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], [], {}, False, None) == _resolved(
             {}, {}
         )
         error_log.assert_not_called()
@@ -1217,7 +1322,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # all orders found in deltas because fees have been taken into account
             _content({"BTC": 0.1, "USDT": -550}),
@@ -1231,7 +1336,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # fees can't explain the additional -50 only consider -500
             _content({"BTC": 0.1, "USDT": -500}),
@@ -1247,7 +1352,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.09, 100, "buy", {"BTC": 0.001}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             _content({"BTC": -0.011, "USDT": -0.1}),
             {}
@@ -1264,7 +1369,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.09, 99.3, "buy", {"BTC": 0.000000001}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # 0.6 is NOT explained by 0.7 from order delta - 0.000001 fees
             _content({"BTC": -0.01}),   # takes a bit too much of post trade portfolio (fees are not considered),
@@ -1281,7 +1386,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.09, 99.3, "buy", {"BTC": 0.001}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # 0.6 is explained by 0.7 from order delta - 0.1 fees
             _content({"BTC": -0.011, "USDT": 0.6}),
@@ -1297,7 +1402,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.05, 553, "buy", {"USDT": 1}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             _content({"USDT": -5}),
             {}, # BTC is not a missing delta as there is no delta (delta = 0)
@@ -1314,7 +1419,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.00109889, 112.972595229, "buy", {"USDT": 0.111778333746}, local_fees_currencies=["BNB"]), # expects USDT as fees but was actually BTC
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # BTC delta from unexpected fees are taken into account and don't create missing deltas
             _content({"BTC": 0.00000946222, "USDT": -1.306039816744}),
@@ -1331,7 +1436,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("BTC/USDT", 0.00109779111, 112.972595229, "buy", {"USDT": 0.111778333746}, local_fees_currencies=["KCS"]), # expects USDT as fees but was actually something else (like BNB)
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # USDT delta == 4375.22614367084 - 4376.532183487584
             _content({"USDT": -1.306039816744, "BTC": 0.00001056111}),
@@ -1349,7 +1454,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("MANA/USDC", 72.28, 36.644921175, "buy", {"USDC": actual_fees * 2}, local_fees_currencies=["BNB"]),    # expects 1.2% fees
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # USDC delta from portfolio is accepted and not considered as missing
             _content({"MANA": -30.77, "USDC": -0.1947450000000069}),
@@ -1372,7 +1477,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_fees():
             _order("ADA/USDT", 71.5065 , 0.7216 * 71.5065, "sell", {"USDT": 0.0515990904}),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             _content({'DOGE': -253.578802, 'ADA': -71.5065, 'SOL': -0.312703, 'TRX': -158.149794, 'BNB': -0.067426, 'BTC': -0.0004507, 'WBTC': -0.000448, 'ETH': -0.014648, 'STETH': -0.014664}),
             _content({'XRP': -0.411690995, 'USDT': "463.47163265697176"}),  # todo use those to be accepted in deltas
@@ -1398,7 +1503,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_local_exchange_fee
             _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
             explained_orders_deltas=_content({"BTC": 0.00624, "BNB": 0.02018925, "USDT": -735.08144}),
@@ -1417,7 +1522,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_local_exchange_fee
             _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
         ]
         assert _rounded_resolved_deltas(await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         )) == _resolved(
             # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
             explained_orders_deltas=_content({"BTC": 0.00624, "BNB": -0.025, "USDT": -697.38544}),
@@ -1437,7 +1542,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_local_exchange_fee
             _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
             explained_orders_deltas=_content({"BTC": 0.00624, "BNB": -0.025, "USDT": -697.38544}),
@@ -1455,7 +1560,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_local_exchange_fee
             _order("BTC/USDT", 0.00016*39, 114781.0*0.00016*39, "buy", {"BTC": 9.6E-7*39}, local_fees_currencies=["BNB"]),   # *39 to simulate 39 total other orders
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # all deltas are accepted, BNB 20% delta from order is accepted from BNB fees
             explained_orders_deltas=_content({"BTC": 0.00624, "BNB": 0.02018925, "USDT": -735.08144}),
@@ -1470,7 +1575,7 @@ async def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
     error_log = mock.Mock()
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # no filled order
-        assert await personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], [], {}) == _resolved(
+        assert await personal_data.get_portfolio_filled_orders_deltas(pre_trade_content, post_trade_content, [], [], {}, False, None) == _resolved(
             {}, {}
         )
         error_log.assert_not_called()
@@ -1482,7 +1587,7 @@ async def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
             _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # all orders found in deltas because fees have been taken into account
             _content({"BTC": 0.1, "USDT": -550}),
@@ -1493,7 +1598,7 @@ async def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
 
         # now with unknown orders
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], filled_orders, {}
+            pre_trade_content, post_trade_content, [], filled_orders, {}, False, None
         ) == _resolved(
             # all orders found in deltas because fees have been taken into account
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -550}),
@@ -1508,7 +1613,7 @@ async def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
             _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             _content({"BTC": 0.1, "USDT": -500.2}),
@@ -1522,7 +1627,7 @@ async def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
             _order("BTC/USDT", 0.01, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_orders, {}, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
@@ -1538,7 +1643,7 @@ async def test_get_portfolio_filled_orders_deltas_with_exchange_fetched_fees():
             _order("BTC/USDT", 0.05, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True), # not explained
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, [], unknown_orders, {}
+            pre_trade_content, post_trade_content, [], unknown_orders, {}, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
@@ -1562,7 +1667,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders()
             _order("BTC/USDT", 0.01, 50, "sell", filled_quantity=0),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, partially_filled_orders, [], {}
+            pre_trade_content, post_trade_content, partially_filled_orders, [], {}, False, None
         ) == _resolved(
             # all orders are considered as fully filled since filled quantity is 0: they can't be partially filled
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
@@ -1574,7 +1679,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders()
             _order("BTC/USDT", 0.01, 50, "sell"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_or_partially_filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_or_partially_filled_orders, [], {}, False, None
         ) == _resolved(
             # all orders found in deltas, even though buy order is not completely filled
             _content({"BTC": 0.1, "USDT": -500.2}),
@@ -1591,7 +1696,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders()
             _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.01),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(
             # all orders found in deltas because fees have been taken into account
             _content({"BTC": 0.1, "USDT": -550}),
@@ -1608,7 +1713,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders()
             _order("BTC/USDT", 0.2, 1000, "buy", {"USDT": 0.1}, is_exchange_fetched_fee=True, filled_quantity=0.02, exchange_order_id="order_2"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, {}, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.1}),
@@ -1627,7 +1732,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders()
             _order("BTC/USDT", 0.05, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.03), # not explained
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_orders, {}
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, {}, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
@@ -1657,7 +1762,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_a
             _order("BTC/USDT", 0.01, 50, "sell", filled_quantity=0.001, exchange_order_id="order_3"),
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, partially_filled_orders, [], ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, partially_filled_orders, [], ignored_filled_quantity_per_order_exchange_id, False, None
         ) == _resolved(
             # only order 2 is found in deltas as it is identified as fully filled (filled quantity is 0, it's not partially filled and is considered as fully filled to partially explain deltas)
             _content({"BTC": 0.05, "USDT": -450}),
@@ -1669,7 +1774,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_a
             _order("BTC/USDT", 0.02, 100, "sell", filled_quantity=0.011, exchange_order_id="order_3"),   # 0.01 newly filled (0.001 was already)
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_or_partially_filled_orders, [], ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, filled_or_partially_filled_orders, [], ignored_filled_quantity_per_order_exchange_id, False, None
         ) == _resolved(
             # all orders found in deltas, even though buy order is not completely filled
             _content({"BTC": 0.1, "USDT": -500.2}),
@@ -1686,7 +1791,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_a
             _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.011, exchange_order_id="order_3"),   # 0.01 newly filled (0.001 was already)
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, filled_orders, [], ignored_filled_quantity_per_order_exchange_id, False, None
         ) == _resolved(
             # all orders found in deltas because fees have been taken into account
             _content({"BTC": 0.1, "USDT": -550}),
@@ -1703,7 +1808,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_a
             _order("BTC/USDT", 0.1, 500, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.001, exchange_order_id="order_3"),   # (0.001 was already)
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_orders, ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, ignored_filled_quantity_per_order_exchange_id, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.1}),
@@ -1722,7 +1827,7 @@ async def test_get_portfolio_filled_orders_deltas_with_partially_filled_orders_a
             _order("BTC/USDT", 0.05, 50, "sell", {"BTC": 0.0000001}, is_exchange_fetched_fee=True, filled_quantity=0.03), # not explained
         ]
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, unknown_orders, ignored_filled_quantity_per_order_exchange_id
+            pre_trade_content, post_trade_content, filled_orders, unknown_orders, ignored_filled_quantity_per_order_exchange_id, False, None
         ) == _resolved(
             # only the part actually explained by fetched fees are taken into account in deltas (instead of -550 USDT)
             explained_orders_deltas=_content({"BTC": 0.1, "USDT": -500.2}),
@@ -1749,7 +1854,7 @@ async def test_get_accepted_missed_deltas():
         _order("XRP/USDT", 10, 115.4889262, "buy"),
     ]
     resolved_orders_portfolio_delta = await personal_data.get_portfolio_filled_orders_deltas(
-        pre_trade_content, post_trade_content, filled_orders, [], {}
+        pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
     )
     deltas, missed_deltas = resolved_orders_portfolio_delta.explained_orders_deltas, resolved_orders_portfolio_delta.unexplained_orders_deltas
     assert deltas == _content({"XRP": 10})
@@ -1772,7 +1877,7 @@ async def test_get_accepted_missed_deltas():
         _order("XRP/USDT", 10, 115.4889262, "buy"),
     ]
     resolved_orders_portfolio_delta = await personal_data.get_portfolio_filled_orders_deltas(
-        pre_trade_content, post_trade_content, filled_orders, [], {}
+        pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
     )
     deltas, missed_deltas = resolved_orders_portfolio_delta.explained_orders_deltas, resolved_orders_portfolio_delta.unexplained_orders_deltas
     assert deltas == _content({"XRP": 10})
@@ -1830,7 +1935,7 @@ async def test_get_portfolio_filled_orders_deltas_considering_different_fee_tier
             "AVAX": 0.42769768, "ADA": 12.75318927, "ETH": 0.01533487, "USDC": 2.298475467342412, "BTC": 0.01855668
         })
         assert await personal_data.get_portfolio_filled_orders_deltas(
-            pre_trade_content, post_trade_content, filled_orders, [], {}
+            pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
         ) == _resolved(_content(max_fees_deltas), {})
         error_log.assert_not_called()
 
@@ -1879,11 +1984,11 @@ async def test_get_portfolio_filled_orders_deltas_considering_different_fee_tier
             if real_fee_percent == 1.2:
                 # same result as previous (non looping) test
                 assert await personal_data.get_portfolio_filled_orders_deltas(
-                    pre_trade_content, post_trade_content, filled_orders, [], {}
+                    pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
                 ) == _resolved(_content(max_fees_deltas), {})
             else:
                 resolved_orders_portfolio_delta = await personal_data.get_portfolio_filled_orders_deltas(
-                    pre_trade_content, post_trade_content, filled_orders, [], {}
+                    pre_trade_content, post_trade_content, filled_orders, [], {}, False, None
                 )
                 # fix rounding issues
                 deltas, missing_deltas = resolved_orders_portfolio_delta.explained_orders_deltas, resolved_orders_portfolio_delta.unexplained_orders_deltas
