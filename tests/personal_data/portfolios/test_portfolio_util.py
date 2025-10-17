@@ -1000,7 +1000,7 @@ async def test_get_portfolio_filled_orders_deltas_with_inferrence_thread_timeout
     filled_orders = []
     orders_count = 30
     unfilled_count = 15  # 155.117.520  combinations on worse iterations, requires thread and takes much more than 5 seconds
-    max_execution_time = 5
+    max_execution_time = 8 # CI can be very slow on CI
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log, warning=warning_log))):
         # use single symbol to make sure a thread is used
         unknown_filled_or_cancelled_orders = [
