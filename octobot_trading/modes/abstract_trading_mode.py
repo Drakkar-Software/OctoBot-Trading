@@ -411,6 +411,24 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             commands[common_enums.UserCommands.TRIGGER_HEALTH_CHECK.value] = {}
         return commands
 
+    @staticmethod
+    def get_default_historical_time_frame() -> typing.Optional[common_enums.TimeFrames]:
+        return None
+
+    @staticmethod
+    def use_backtesting_accurate_price_update() -> bool:
+        """
+        Return True if the trading mode is more accurate in backtesting when using a short price update time frame
+        """
+        return True
+
+    @staticmethod
+    def get_config_history_propagated_tentacles_config_keys() -> list[str]:
+        """
+        Returns the list of config keys that should be propagated to historical configurations
+        """
+        return []
+
     async def _create_mode_consumer(self, mode_consumer_class):
         """
         Creates a new :mode_consumer_class: instance and subscribe this new consumer to the trading mode channel
