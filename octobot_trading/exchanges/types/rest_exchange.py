@@ -25,9 +25,9 @@ import asyncio
 import ccxt.async_support as ccxt
 import octobot_commons.enums as commons_enums
 import octobot_commons.tree as commons_tree
+import octobot_commons.constants as commons_constants
 import octobot_commons.html_util as html_util
-
-from octobot_commons import number_util
+import octobot_commons.number_util as number_util
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
@@ -1198,6 +1198,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
     @classmethod
     async def get_autofilled_exchange_details(cls, aiohttp_session, tentacle_config, exchange_name):
         raise NotImplementedError("get_autofilled_exchange_details is not implemented")
+
+    @staticmethod
+    def get_default_reference_market(exchange_name: str) -> str:
+        return commons_constants.DEFAULT_REFERENCE_MARKET
 
 
     """
