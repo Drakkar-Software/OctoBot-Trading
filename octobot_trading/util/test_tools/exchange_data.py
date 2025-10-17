@@ -17,6 +17,7 @@ import dataclasses
 import typing
 
 import octobot_commons.dataclasses
+import octobot_commons.enums as common_enums
 import octobot_trading.exchanges
 
 
@@ -72,6 +73,22 @@ class MarketDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_commo
 
     def has_full_candles(self):
         return self.close and self.open and self.high and self.low and self.time
+
+    def get_formatted_candles(self) -> list[list[float]]:
+        return [
+            self.format_candle(index)
+            for index in range(len(self.close))
+        ]
+
+    def format_candle(self, index) -> list[float]:
+        ohlcv = [0.0] * len(common_enums.PriceIndexes)
+        ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] = self.time[index]
+        ohlcv[common_enums.PriceIndexes.IND_PRICE_OPEN.value] = self.open[index]
+        ohlcv[common_enums.PriceIndexes.IND_PRICE_HIGH.value] = self.high[index]
+        ohlcv[common_enums.PriceIndexes.IND_PRICE_LOW.value] = self.low[index]
+        ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] = self.close[index]
+        ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] = self.volume[index]
+        return ohlcv
 
 
 @dataclasses.dataclass
