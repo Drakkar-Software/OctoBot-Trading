@@ -304,13 +304,14 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
 def decimal_add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, current_symbol_holding):
     """
     Adds remaining quantity to the order if the remaining quantity is too small
+    Can be disabled by setting the INCLUDE_DUSTS_IN_SELL_ORDERS_WHEN_POSSIBLE environment variable to False
     :param quantity:
     :param price:
     :param symbol_market:
     :param current_symbol_holding:
     :return:
     """
-    if price == constants.ZERO:
+    if price == constants.ZERO or not constants.INCLUDE_DUSTS_IN_SELL_ORDERS_WHEN_POSSIBLE:
         return quantity
 
     remaining_portfolio_amount = decimal.Decimal("{1:.{0}f}".format(constants.CURRENCY_DEFAULT_MAX_PRICE_DIGITS,
