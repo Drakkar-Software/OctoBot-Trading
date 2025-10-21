@@ -434,3 +434,19 @@ async def get_positions(
                 f"({err}. {err.__class__.__name__}), position: {raw_position}. Ignored position."
             )
     return dict_positions
+
+
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
+async def get_all_currencies_price_ticker(exchange_manager, **kwargs) -> dict[str, dict]:
+    return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
+
+
+@exchanges.retried_failed_network_request(
+    attempts=constants.TOOLS_FAILED_NETWORK_REQUEST_ATTEMPTS,
+    delay=constants.TOOLS_FAILED_NETWORK_REQUEST_RETRY_DELAY
+)
+async def get_price_ticker(exchange_manager, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
+    return await exchange_manager.exchange.get_price_ticker(symbol, **kwargs)
