@@ -985,7 +985,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             try:
                 return self.client.markets_by_id[pair]["symbol"]
             except KeyError:
-                self.logger.error(f"Failed to get market of {pair}")
+                self.logger.error(f"Failed to get market of {pair} [{self.exchange_manager.exchange_name}]")
         return None
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
@@ -996,7 +996,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             try:
                 return self.client.markets_by_id[pair]["base"], self.client.markets_by_id[pair]["quote"]
             except KeyError:
-                self.logger.error(f"Failed to get market of {pair}")
+                self.logger.error(f"Failed to get market of {pair} [{self.exchange_manager.exchange_name}]")
                 return None, None
 
     def get_exchange_pair(self, pair) -> str:
