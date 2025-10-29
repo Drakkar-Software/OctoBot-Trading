@@ -222,6 +222,22 @@ async def test_update_origin_crypto_currencies_values(backtesting_trader):
            is False
 
 
+async def test_sync_portfolio_current_value_using_available_currencies_values(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+
+    assert portfolio_value_holder.portfolio_current_value == constants.ZERO
+    portfolio_value_holder.sync_portfolio_current_value_using_available_currencies_values()
+    assert portfolio_value_holder.portfolio_current_value == decimal.Decimal(str(10))
+
+    portfolio_value_holder.value_converter.missing_currency_data_in_exchange.clear()
+    exchange_manager.client_symbols.append("BTC/USDT")
+    portfolio_manager.handle_mark_price_update("BTC/USDT", decimal.Decimal(str(100)))
+    portfolio_value_holder.sync_portfolio_current_value_using_available_currencies_values()
+    assert portfolio_value_holder.portfolio_current_value == decimal.Decimal(str(20)) # now includes USDT
+
+
 async def test_get_holdings_ratio(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager

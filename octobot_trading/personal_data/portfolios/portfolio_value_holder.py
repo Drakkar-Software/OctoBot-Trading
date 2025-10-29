@@ -104,7 +104,7 @@ class PortfolioValueHolder:
         :return: the current crypto-currencies values
         """
         if not self.current_crypto_currencies_values:
-            self._update_portfolio_and_currencies_current_value()
+            self.sync_portfolio_current_value_using_available_currencies_values()
         return self.current_crypto_currencies_values
 
     def get_current_holdings_values(self):
@@ -171,7 +171,7 @@ class PortfolioValueHolder:
                     assets_in_open_orders += order.total_cost
             currency_holdings += assets_in_open_orders
         # compute ratio
-        current_holdings_value = self.value_converter.evaluate_value(currency, currency_holdings)
+        current_holdings_value = self.value_converter.evaluate_value(currency, currency_holdings, init_price_fetchers=False)
         return current_holdings_value / total_holdings_value
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
@@ -179,7 +179,7 @@ class PortfolioValueHolder:
         Initialize values required by portfolio profitability to perform its profitability calculation
         :param force_recompute_origin_portfolio: when True, force origin portfolio computation
         """
-        self._update_portfolio_and_currencies_current_value()
+        self.sync_portfolio_current_value_using_available_currencies_values()
         self._init_portfolio_values_if_necessary(force_recompute_origin_portfolio)
 
     def get_origin_portfolio_current_value(self, refresh_values=False):
@@ -220,17 +220,22 @@ class PortfolioValueHolder:
         )
         self._recompute_origin_portfolio_initial_value()
 
-    def _update_portfolio_current_value(self, portfolio, currencies_values=None, fill_currencies_values=False):
+    def _update_portfolio_current_value(
+        self, portfolio, currencies_values=None, fill_currencies_values=False, init_price_fetchers=True
+    ):
         """
         Update the portfolio with current prices
         :param portfolio: the portfolio to update
         :param currencies_values: the currencies values
         :param fill_currencies_values: the currencies values to calculate
+        :param init_price_fetchers: When True, can init price using fetchers
         :return: the updated portfolio
         """
         values = currencies_values
         if values is None or fill_currencies_values:
-            value_update = self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio)
+            value_update = self._evaluate_config_crypto_currencies_and_portfolio_values(
+                portfolio, init_price_fetchers=init_price_fetchers
+            )
             self.current_crypto_currencies_values.update(value_update)
             if len(self.current_crypto_currencies_values) > len(self.origin_crypto_currencies_values):
                 # add any missing value to origin_crypto_currencies_values (can happen with indirect valuations)
@@ -238,7 +243,7 @@ class PortfolioValueHolder:
             if fill_currencies_values:
                 self._fill_currencies_values(currencies_values)
             values = self.current_crypto_currencies_values
-        return self._evaluate_portfolio_value(portfolio, values)
+        return self._evaluate_portfolio_value(portfolio, values, init_price_fetchers=init_price_fetchers)
 
     def _fill_currencies_values(self, currencies_values):
         """
@@ -251,12 +256,14 @@ class PortfolioValueHolder:
             if currency not in currencies_values
         })
 
-    def _update_portfolio_and_currencies_current_value(self):
+    def sync_portfolio_current_value_using_available_currencies_values(self, init_price_fetchers=True):
         """
+        :param init_price_fetchers: When True, can init price using fetchers
         Update the portfolio current value with the current portfolio instance
         """
         self.portfolio_current_value = self._update_portfolio_current_value(
-            self.portfolio_manager.portfolio.portfolio)
+            self.portfolio_manager.portfolio.portfolio, init_price_fetchers=init_price_fetchers
+        )
 
     def _recompute_origin_portfolio_initial_value(self):
         """
@@ -278,13 +285,14 @@ class PortfolioValueHolder:
             fill_currencies_values=True
         )
 
-    def _evaluate_config_crypto_currencies_and_portfolio_values(self,
-                                                                portfolio,
-                                                                ignore_missing_currency_data=False):
+    def _evaluate_config_crypto_currencies_and_portfolio_values(
+        self, portfolio, ignore_missing_currency_data=False, init_price_fetchers=True
+    ):
         """
         Evaluate both config and portfolio currencies values
         :param portfolio: the current portfolio
         :param ignore_missing_currency_data: when True, ignore missing currencies values in calculation
+        :param init_price_fetchers: When True, can init price using fetchers
         :return: the result of config and portfolio currencies values calculation
         """
         evaluated_pair_values = {}
@@ -292,8 +300,10 @@ class PortfolioValueHolder:
         missing_tickers = set()
 
         self._evaluate_config_currencies_values(evaluated_pair_values, evaluated_currencies, missing_tickers)
-        self._evaluate_portfolio_currencies_values(portfolio, evaluated_pair_values, evaluated_currencies,
-                                                   missing_tickers, ignore_missing_currency_data)
+        self._evaluate_portfolio_currencies_values(
+            portfolio, evaluated_pair_values, evaluated_currencies,
+            missing_tickers, ignore_missing_currency_data, init_price_fetchers=init_price_fetchers
+        )
         return evaluated_pair_values
 
     def _evaluate_config_currencies_values(self, evaluated_pair_values, evaluated_currencies, missing_tickers):
@@ -318,12 +328,15 @@ class PortfolioValueHolder:
             except errors.MissingPriceDataError:
                 missing_tickers.add(currency_to_evaluate)
 
-    def _evaluate_portfolio_currencies_values(self,
-                                              portfolio,
-                                              evaluated_pair_values,
-                                              evaluated_currencies,
-                                              missing_tickers,
-                                              ignore_missing_currency_data):
+    def _evaluate_portfolio_currencies_values(
+        self,
+        portfolio,
+        evaluated_pair_values,
+        evaluated_currencies,
+        missing_tickers,
+        ignore_missing_currency_data,
+        init_price_fetchers=True
+    ):
         """
         Evaluate current portfolio currencies values
         :param portfolio: the current portfolio
@@ -331,43 +344,51 @@ class PortfolioValueHolder:
         :param evaluated_currencies: the list of evaluated currencies
         :param missing_tickers: the list of missing currencies
         :param ignore_missing_currency_data: when True, ignore missing currencies values in calculation
+        :param init_price_fetchers: When True, can init price using fetchers
         """
         for currency in portfolio:
             try:
                 if currency not in evaluated_currencies and self._should_currency_be_considered(
                         currency, portfolio, ignore_missing_currency_data
                 ):
-                    evaluated_pair_values[currency] = self.value_converter.evaluate_value(currency, constants.ONE)
+                    evaluated_pair_values[currency] = self.value_converter.evaluate_value(
+                        currency, constants.ONE, init_price_fetchers=init_price_fetchers
+                    )
                     evaluated_currencies.add(currency)
             except errors.MissingPriceDataError:
                 missing_tickers.add(currency)
 
-    def _evaluate_portfolio_value(self, portfolio, currencies_values=None):
+    def _evaluate_portfolio_value(self, portfolio, currencies_values=None, init_price_fetchers=True):
         """
         Perform evaluate_value with a portfolio configuration
         :param portfolio: the portfolio to explore
         :param currencies_values: currencies to evaluate
+        :param init_price_fetchers: When True, can init price using fetchers
         :return: the calculated quantity value in reference (attribute) currency
         """
         return sum([
-            self._get_currency_value(portfolio, currency, currencies_values)
+            self._get_currency_value(portfolio, currency, currencies_values, init_price_fetchers=init_price_fetchers)
             for currency in portfolio
             if currency not in self.value_converter.missing_currency_data_in_exchange
         ])
 
-    def _get_currency_value(self, portfolio, currency, currencies_values=None, raise_error=False):
+    def _get_currency_value(self, portfolio, currency, currencies_values=None, raise_error=False, init_price_fetchers=True):
         """
         Return the currency value
         :param portfolio: the specified portfolio
         :param currency: the currency to evaluate
         :param currencies_values: currencies values dict
         :param raise_error: When True, forward exceptions
+        :param init_price_fetchers: When True, can init price using fetchers
         :return: the currency value
         """
         if currency in portfolio and portfolio[currency].total != constants.ZERO:
             if currencies_values and currency in currencies_values:
                 return currencies_values[currency] * portfolio[currency].total
-            return self.value_converter.evaluate_value(currency, portfolio[currency].total, raise_error)
+            return self.value_converter.evaluate_value(
+                currency, portfolio[currency].total, 
+                raise_error=raise_error, init_price_fetchers=init_price_fetchers
+            )
         return constants.ZERO
 
     def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):
