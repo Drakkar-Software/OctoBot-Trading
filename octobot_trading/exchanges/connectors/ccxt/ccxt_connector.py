@@ -137,21 +137,22 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         reload=False,
         market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
     ):
-        load_markets = reload
-        if not load_markets:
+        authenticated_cache = self.exchange_manager.exchange.requires_authentication_for_this_configuration_only()
+        force_load_markets = reload
+        if not force_load_markets:
             try:
-                ccxt_client_util.load_markets_from_cache(self.client, market_filter=market_filter)
+                ccxt_client_util.load_markets_from_cache(self.client, authenticated_cache, market_filter=market_filter)
             except KeyError:
-                load_markets = True
-        if load_markets:
+                force_load_markets = True
+        if force_load_markets:
             self.logger.info(
                 f"Loading {self.exchange_manager.exchange_name} "
                 f"{exchanges.get_exchange_type(self.exchange_manager).value}"
-                f"{' sandbox' if self.exchange_manager.is_sandboxed else ''} exchange markets"
+                f"{' sandbox' if self.exchange_manager.is_sandboxed else ''} exchange markets ({reload=} {authenticated_cache=})"
             )
             try:
                 await self._load_markets(self.client, reload)
-                ccxt_client_util.set_markets_cache(self.client)
+                ccxt_client_util.set_markets_cache(self.client, authenticated_cache)
             except (
                 ccxt.AuthenticationError, ccxt.ArgumentsRequired, ccxt.static_dependencies.ecdsa.der.UnexpectedDER,
                 binascii.Error, AssertionError, IndexError
@@ -185,9 +186,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     try:
                         unauth_client = self._client_factory(True)[0]
                         await self._load_markets(unauth_client, reload)
-                        ccxt_client_util.set_markets_cache(unauth_client)
+                        ccxt_client_util.set_markets_cache(unauth_client, False)
                         # apply markets to target client
-                        ccxt_client_util.load_markets_from_cache(self.client, market_filter=market_filter)
+                        ccxt_client_util.load_markets_from_cache(self.client, False, market_filter=market_filter)
                         self.logger.debug(
                             f"Fetched exchange market status from unauthenticated client."
                         )

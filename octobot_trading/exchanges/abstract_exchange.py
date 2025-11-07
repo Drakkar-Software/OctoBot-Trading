@@ -17,6 +17,7 @@ import asyncio
 import typing
 import decimal
 import time
+import copy
 import contextlib
 
 import octobot_commons.constants
@@ -99,8 +100,11 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         self._creating_exchange_order_descriptions = set()
         self._enable_create_order_retrier: bool = True
 
-        if exchange_config_by_exchange and self.get_name() in exchange_config_by_exchange:
-            self.tentacle_config = exchange_config_by_exchange[self.get_name()]
+        if exchange_config_by_exchange and (
+            tencles_config := self.get_tentacle_config(exchange_config_by_exchange)
+        ):
+            # copy to avoid editing the original tentacle config in load_user_inputs_from_class
+            self.tentacle_config = copy.copy(tencles_config)
         if self.exchange_manager.tentacles_setup_config is not None:
             self.load_user_inputs_from_class(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
 
@@ -787,3 +791,18 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
             f"{side.value if side else None}-{symbol}-"
             f"{float(quantity) if quantity else None}-{float(price) if price else None}"
         )
+
+    @classmethod
+    def get_tentacle_config(
+        cls, exchange_config_by_exchange: dict[str, dict]
+    ) -> typing.Optional[dict]:
+        """
+        Exchange config can be stored using exchange names and class names
+        when taken from exchange_config_by_exchange, this is expected
+        """
+        exchange_name = cls.get_name()
+        if exchange_name in exchange_config_by_exchange:
+            return exchange_config_by_exchange[exchange_name]
+        elif cls.__name__ in exchange_config_by_exchange:
+            return exchange_config_by_exchange[cls.__name__]
+        return None

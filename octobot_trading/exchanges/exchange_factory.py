@@ -63,7 +63,9 @@ async def create_real_exchange(exchange_manager, exchange_config_by_exchange: ty
         await _initialize_exchange_backend(exchange_manager)
     except errors.AuthenticationError as err:
         if (
-            exchange_manager.without_auth or exchange_manager.exchange.REQUIRES_AUTHENTICATION
+            exchange_manager.without_auth or exchange_manager.exchange.requires_authentication(
+                exchange_manager.exchange.tentacle_config, None, None
+            )
             or exchange_manager.disable_unauth_retry
         ):
             # auth is required or already retried, don't loop

@@ -389,6 +389,8 @@ async def cached_markets_exchange_manager(config, exchange_name, exchange_only=F
 
 def register_market_status_mocks(exchange_name):
     ccxt_clients_cache.set_exchange_parsed_markets(
-        ccxt_clients_cache.get_client_key(ccxt_client_util.ccxt_exchange_class_factory(exchange_name)()),
+        ccxt_clients_cache.get_client_key(
+            ccxt_client_util.ccxt_exchange_class_factory(exchange_name)(), False
+        ),
         mock_exchanges_data.MOCKED_EXCHANGE_SYMBOL_DETAILS[exchange_name]
     )

@@ -172,18 +172,18 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
     return None
 
 
-def load_markets_from_cache(client, market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None):
+def load_markets_from_cache(client, authenticated_cache: bool, market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None):
     client.set_markets(
         market
-        for market in ccxt_clients_cache.get_exchange_parsed_markets(ccxt_clients_cache.get_client_key(client))
+        for market in ccxt_clients_cache.get_exchange_parsed_markets(ccxt_clients_cache.get_client_key(client, authenticated_cache))
         if market_filter is None or market_filter(market)
     )
 
 
-def set_markets_cache(client):
+def set_markets_cache(client, authenticated_cache: bool):
     if client.markets:
         ccxt_clients_cache.set_exchange_parsed_markets(
-            ccxt_clients_cache.get_client_key(client), copy.deepcopy(list(client.markets.values()))
+            ccxt_clients_cache.get_client_key(client, authenticated_cache), copy.deepcopy(list(client.markets.values()))
         )
 
 

@@ -26,14 +26,30 @@ import octobot_commons.constants as commons_constants
 _CACHE_TIME = commons_constants.HOURS_TO_SECONDS * 30 + commons_constants.MINUTE_TO_SECONDS * 18
 _MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_CACHE_TIME)
 
+# use short cache time for authenticated markets to avoid caching them for too long
+_AUTH_CACHE_TIME = 15 * commons_constants.MINUTE_TO_SECONDS
+_AUTH_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_AUTH_CACHE_TIME)
 
-def get_client_key(client) -> str:
-    return f"{client.__class__.__name__}:{json.dumps(client.urls.get('api'))}"
+_UNAUTHENTICATED_SUFFIX = "unauthenticated"
+
+def get_client_key(client, authenticated_cache: bool) -> str:
+    suffix = client.apiKey if authenticated_cache else _UNAUTHENTICATED_SUFFIX
+    return f"{client.__class__.__name__}:{json.dumps(client.urls.get('api'))}:{suffix}"
 
 
 def get_exchange_parsed_markets(client_key: str):
-    return _MARKETS_BY_EXCHANGE[client_key]
+    return _get_cached_markets(client_key)[client_key]
 
 
 def set_exchange_parsed_markets(client_key: str, markets):
-    _MARKETS_BY_EXCHANGE[client_key] = markets
+    _get_cached_markets(client_key)[client_key] = markets
+
+
+def _get_cached_markets(client_key: str) -> cachetools.TTLCache:
+    if _is_authenticated_cache(client_key):
+        return _AUTH_MARKETS_BY_EXCHANGE
+    return _MARKETS_BY_EXCHANGE
+
+
+def _is_authenticated_cache(client_key: str) -> bool:
+    return not client_key.endswith(_UNAUTHENTICATED_SUFFIX)

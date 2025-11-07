@@ -72,7 +72,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     SUPPORTS_SET_MARGIN_TYPE_ON_OPEN_POSITIONS = True
     EXPECT_POSSIBLE_ORDER_NOT_FOUND_DURING_ORDER_CREATION = False  # set True when get_order() can return None
     # (order not found) when orders are being created on exchange and are not fully processed on the exchange side.
-    REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
+    ALWAYS_REQUIRES_AUTHENTICATION = False  # set True when even normally public apis require authentication
     # set True when even loading markets can make auth calls when creds are set
     CAN_MAKE_AUTHENTICATED_REQUESTS_WHEN_LOADING_MARKETS = False
     HAS_FETCHED_DETAILS = False  # set True when this exchange details (urls etc) have to be fetched before
@@ -166,7 +166,31 @@ class RestExchange(abstract_exchange.AbstractExchange):
             adapter_class=self.get_adapter_class(),
             additional_config=self.get_additional_connector_config(),
             rest_name=self.get_rest_name(self.exchange_manager),
-            force_auth=self.REQUIRES_AUTHENTICATION,
+            force_auth=self.requires_authentication(self.tentacle_config, None, None),
+        )
+
+    @classmethod
+    def requires_authentication(
+        cls, 
+        tentacle_config: typing.Optional[dict], 
+        tentacles_setup_config, 
+        exchange_config_by_exchange: typing.Optional[dict[str, dict]]
+    ) -> bool:
+        if tentacle_config is None:
+            tentacle_config = {}
+            if exchange_config_by_exchange and (
+                _tencles_config := cls.get_tentacle_config(exchange_config_by_exchange)
+            ):
+                # copy to avoid editing the original tentacle config in load_user_inputs_from_class
+                tentacle_config = copy.copy(_tencles_config)
+            if tentacle_config and tentacles_setup_config is not None:
+                cls.load_user_inputs_from_class(tentacles_setup_config, tentacle_config)
+        return tentacle_config.get(commons_constants.CONFIG_FORCE_AUTHENTICATION, cls.ALWAYS_REQUIRES_AUTHENTICATION)
+
+    def requires_authentication_for_this_configuration_only(self) -> bool:
+        return (
+            self.requires_authentication(self.tentacle_config, None, None) 
+            and not self.ALWAYS_REQUIRES_AUTHENTICATION
         )
 
     async def initialize_impl(self):
