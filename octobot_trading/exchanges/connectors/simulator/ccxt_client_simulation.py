@@ -25,7 +25,7 @@ def parse_markets(exchange_name: str, additional_client_config: dict, market_fil
         **ccxt_client_util.get_custom_domain_config(exchange_class)
     }
     client = exchange_class(config)
-    ccxt_client_util.load_markets_from_cache(client, market_filter)
+    ccxt_client_util.load_markets_from_cache(client, False, market_filter)
     return client.markets
 
 

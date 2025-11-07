@@ -296,7 +296,7 @@ class RealExchangeTester:
         client_using_cached_markets = exchange_class(
             ccxt_client_util.get_custom_domain_config(exchange_class) # use custom domain config if set
         )
-        ccxt_client_util.load_markets_from_cache(client_using_cached_markets)
+        ccxt_client_util.load_markets_from_cache(client_using_cached_markets, False)
         assert exchange_manager.exchange.connector.client.markets == client_using_cached_markets.markets
 
     async def get_symbol_prices(self, limit=None, **kwargs):

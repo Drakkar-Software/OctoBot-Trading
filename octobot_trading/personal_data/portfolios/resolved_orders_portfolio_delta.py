@@ -131,7 +131,7 @@ class ResolvedOrdersPortoflioDelta:
     def get_unexplained_orders_deltas_related_to_filled_orders(
         self, additional_filled_orders: list[order_import.Order]
     ) -> dict[str, dict[str, decimal.Decimal]]:
-        # only account for unexplained deltas that are not related to filled orders
+        # only account for unexplained deltas that are related to filled orders
         filled_orders_traded_assets = self.get_filled_orders_traded_assets(additional_filled_orders)
         return {
             asset_name: delta
