@@ -25,7 +25,6 @@ from tests.exchanges import exchange_manager
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.usefixtures("event_loop", "exchange_manager")
 @pytest_asyncio.fixture(scope="function")
 async def exchange_symbols_data(exchange_manager):
     return ExchangeSymbolsData(exchange_manager)
