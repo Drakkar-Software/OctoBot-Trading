@@ -138,6 +138,7 @@ class TestOrderFactory:
         assert created_from_dict.trigger_above is limit_order.trigger_above is True
         assert created_from_dict.exchange_order_id # ensure exchange_order_id is generated
         assert limit_order.associated_entry_ids == ["1"]
+        assert limit_order.cancel_policy is None
 
 
         _, exchange_manager, trader_inst = await self.init_default()
@@ -150,6 +151,12 @@ class TestOrderFactory:
             price=price,
             trigger_above=False,
             exchange_order_id="123",
+            cancel_policy=personal_data.create_cancel_policy(
+                personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+                {
+                    "expiration_time": 999
+                }
+            )
         )
         order_dict = limit_order.to_dict()
         created_from_dict = personal_data.create_order_from_dict(trader_inst, order_dict)
@@ -166,6 +173,11 @@ class TestOrderFactory:
         assert created_from_dict.trigger_above is limit_order.trigger_above is False
         assert created_from_dict.exchange_order_id == "123"
         assert limit_order.associated_entry_ids is None
+        # cancel policy is not copied
+        assert limit_order.cancel_policy == personal_data.ExpirationTimeOrderCancelPolicy(
+            expiration_time=999
+        )
+        assert created_from_dict.cancel_policy is None
 
         await self.stop(exchange_manager)
 
@@ -200,6 +212,7 @@ class TestOrderFactory:
             assert created_order.__class__ is order.__class__
             # associated_entry_ids are added from order_storage_details but not in original order
             assert created_order.associated_entry_ids == ["11111"]
+            assert created_order.cancel_policy is None
             assert order.associated_entry_ids is None
 
             # updated creation_time (as with chained orders): creation_time is used to restore order
@@ -221,6 +234,7 @@ class TestOrderFactory:
             assert created_order.__class__ is order.__class__
             # associated_entry_ids are added from order_storage_details but not in original order
             assert created_order.associated_entry_ids is None
+            assert created_order.cancel_policy is None
             assert order.associated_entry_ids is None
 
         finally:
@@ -247,6 +261,31 @@ class TestOrderFactory:
             order_storage_details, exchange_manager, pending_groups
         )
         assert created_order.trailing_profile == trailing_profile
+        await self.stop(exchange_manager)
+
+    async def test_create_order_from_order_storage_details_with_cancel_policy(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+
+        order = personal_data.BuyLimitOrder(trader_inst)
+        cancel_policy = personal_data.create_cancel_policy(
+            personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+            {
+                "expiration_time": 999
+            }
+        )
+        order.update(order_type=TraderOrderType.BUY_LIMIT,
+                     symbol="BTC/USDT",
+                     current_price=decimal.Decimal("70"),
+                     quantity=decimal.Decimal("10"),
+                     price=decimal.Decimal("70"),
+                     cancel_policy=cancel_policy)
+        order_storage_details = orders_storage._format_order(order, exchange_manager)
+
+        pending_groups = {}
+        created_order = await personal_data.create_order_from_order_storage_details(
+            order_storage_details, exchange_manager, pending_groups
+        )
+        assert created_order.cancel_policy == cancel_policy
         await self.stop(exchange_manager)
     
     async def test_create_order_from_order_storage_details_with_groups(self):
@@ -280,7 +319,7 @@ class TestOrderFactory:
         assert pending_groups["plop2"].active_order_swap_strategy == personal_data.StopFirstActiveOrderSwapStrategy(123)
         await self.stop(exchange_manager)
 
-    async def test_create_order_from_order_storage_details_with_chained_orders_with_group_and_trailing_profile(self):
+    async def test_create_order_from_order_storage_details_with_chained_orders_with_group_and_trailing_profile_and_cancel_policy(self):
         _, exchange_manager, trader_inst = await self.init_default()
     
         order = personal_data.BuyLimitOrder(trader_inst)
@@ -302,6 +341,9 @@ class TestOrderFactory:
             personal_data.TrailingPriceStep(price, price, False)
             for price in (2222, 13000)
         ])
+        cancel_policy = personal_data.create_cancel_policy(
+            personal_data.ChainedOrderFillingPriceOrderCancelPolicy.__name__,
+        )
         for to_update_order, trailing_profile in zip(
             (order, chained_order_1, chained_order_2, chained_order_3),
             (None, trailing_profile_1, trailing_profile_2, None),
@@ -314,6 +356,7 @@ class TestOrderFactory:
                 price=decimal.Decimal("70"),
                 trailing_profile=trailing_profile,
             )
+        order.update(cancel_policy=cancel_policy)
         chained_order_1.add_to_order_group(group_1)
         assert chained_order_1.trailing_profile is trailing_profile_1
         chained_order_2.add_to_order_group(group_1)
@@ -337,6 +380,7 @@ class TestOrderFactory:
         }
         assert group_1.active_order_swap_strategy.swap_timeout == 123
         assert created_order.trailing_profile is None
+        assert created_order.cancel_policy == cancel_policy
         chained_orders = created_order.chained_orders
         assert len(chained_orders) == 2
         for chained_order in chained_orders:
@@ -351,6 +395,7 @@ class TestOrderFactory:
         assert chained_orders[1].exchange_creation_params == {"plop_1": True, "plop_2": {"hi": 1}}
         assert chained_orders[1].chained_orders == []
         assert chained_orders[1].trailing_profile == trailing_profile_2
+        assert chained_orders[1].cancel_policy is None
         second_level_chained_orders = chained_orders[0].chained_orders
         assert len(second_level_chained_orders) == 1
         assert second_level_chained_orders[0].order_group is group_2
@@ -358,5 +403,6 @@ class TestOrderFactory:
         assert second_level_chained_orders[0].triggered_by is chained_orders[0]
         assert second_level_chained_orders[0].has_been_bundled is False
         assert second_level_chained_orders[0].exchange_creation_params == {}
-        assert second_level_chained_orders[0].trailing_profile is None
+        assert second_level_chained_orders[0].trailing_profile is None  
+        assert second_level_chained_orders[0].cancel_policy is None
         await self.stop(exchange_manager)

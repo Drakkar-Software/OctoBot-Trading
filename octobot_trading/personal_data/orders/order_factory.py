@@ -81,6 +81,7 @@ def create_order_instance(
     is_active=None,
     active_trigger_price=None,
     active_trigger_above=None,
+    cancel_policy=None,
 ):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
@@ -114,6 +115,7 @@ def create_order_instance(
         is_active=is_active,
         active_trigger=personal_data.create_order_price_trigger(order, active_trigger_price, active_trigger_above)
             if active_trigger_price else None,
+        cancel_policy=cancel_policy,
     )
     return order
 

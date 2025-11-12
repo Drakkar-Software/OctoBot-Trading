@@ -89,6 +89,10 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             self.logger.info(f"Failed {symbol} order creation on: {self.exchange_manager.exchange_name} "
                              f"an unexpected error happened when creating order. This is likely due to "
                              f"the order being refused by the exchange.")
+        except errors.InvalidCancelPolicyError as err:
+            self.previous_call_error_per_symbol[symbol] = err
+            self.logger.error(f"Invalid cancel policy error on {self.exchange_manager.exchange_name}: {err}. "
+                              f"Please make sure that the provided cancel policy is valid.")
 
     def get_minimal_funds_error(self, symbol, final_note):
         if symbol is None:
@@ -137,7 +141,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
                     except (
                         errors.MissingMinimalExchangeTradeVolume, errors.OrderCreationError,
-                        errors.InvalidPositionSide, errors.UnsupportedContractConfigurationError
+                        errors.InvalidPositionSide, errors.UnsupportedContractConfigurationError, 
+                        errors.InvalidCancelPolicyError
                     ):
                         raise
                     except errors.MissingFunds:

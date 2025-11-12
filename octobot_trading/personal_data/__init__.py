@@ -135,6 +135,10 @@ from octobot_trading.personal_data.orders import (
     TakeProfitLimitOrder,
     TrailingStopOrder,
     TrailingStopLimitOrder,
+    create_cancel_policy,
+    OrderCancelPolicy,
+    ExpirationTimeOrderCancelPolicy,
+    ChainedOrderFillingPriceOrderCancelPolicy,
 )
 from octobot_trading.personal_data import portfolios
 from octobot_trading.personal_data.portfolios import (
@@ -478,4 +482,8 @@ __all__ = [
     "create_transfer_transaction",
     "SubPortfolioData",
     "ResolvedOrdersPortoflioDelta",
+    "create_cancel_policy",
+    "OrderCancelPolicy",
+    "ExpirationTimeOrderCancelPolicy",
+    "ChainedOrderFillingPriceOrderCancelPolicy",
 ]

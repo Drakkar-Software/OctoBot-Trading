@@ -425,41 +425,77 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
 
-    async def cancel_symbol_open_orders(
-        self, symbol, side=None, tag=None, exchange_order_ids=None,
-        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
-    ) -> tuple[bool, commons_signals.SignalDependencies]:
-        """
-        Cancel all symbol open orders
-        """
+    def _get_to_cancel_orders(
+        self, symbol=None, side=None, tag=None, active=None, exchange_order_ids=None
+    ) -> list:
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
+        return [
+            order
+            for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+                symbol=symbol, tag=tag, active=active
+            )
+            if (
+                not (order.is_cancelled() or order.is_closed())
+                and (cancel_loaded_orders or order.is_from_this_octobot)
+                and (side is None or (side is order.side))
+                and (exchange_order_ids is None or (order.exchange_order_id in exchange_order_ids))
+            )
+        ]
+
+    async def _cancel_orders(
+        self, orders: list, 
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, typing.Optional[commons_signals.SignalDependencies]]:
         cancelled = False
         failed_to_cancel = False
         cancelled_dependencies = commons_signals.SignalDependencies()
-        if self.exchange_manager.trader.is_enabled:
-            for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
-                symbol=symbol, tag=tag
-            ):
-                if (
-                    not (order.is_cancelled() or order.is_closed())
-                    and (cancel_loaded_orders or order.is_from_this_octobot)
-                    and (side is None or (side is order.side))
-                    and (exchange_order_ids is None or (order.exchange_order_id in exchange_order_ids))
-                ):
-                    try:
-                        is_cancelled, new_dependencies = await self.trading_mode.cancel_order(
-                            order, dependencies=dependencies
-                        )
-                        if is_cancelled:
-                            cancelled = True
-                            cancelled_dependencies.extend(new_dependencies)
-                        else:
-                            failed_to_cancel = True
-                    except errors.OctoBotExchangeError as err:
-                        # do not propagate exchange error when canceling order
-                        self.logger.exception(err, True, f"Error when cancelling order [{order}]: {err}")
-                        failed_to_cancel = True
+        for order in orders:
+            try:
+                is_cancelled, new_dependencies = await self.trading_mode.cancel_order(
+                    order, dependencies=dependencies
+                )
+                if is_cancelled:
+                    cancelled = True
+                    cancelled_dependencies.extend(new_dependencies)
+                else:
+                    failed_to_cancel = True
+            except errors.OctoBotExchangeError as err:
+                # do not propagate exchange error when canceling order
+                self.logger.exception(err, True, f"Error when cancelling order [{order}]: {err}")
+                failed_to_cancel = True
         return (cancelled and not failed_to_cancel), cancelled_dependencies or None
+
+    async def cancel_symbol_open_orders(
+        self, symbol, side=None, tag=None, active=None, exchange_order_ids=None,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, typing.Optional[commons_signals.SignalDependencies]]:
+        """
+        Cancel all symbol open orders
+        """
+        if self.exchange_manager.trader.is_enabled:
+            return await self._cancel_orders(
+                self._get_to_cancel_orders(
+                    symbol=symbol, side=side, tag=tag, active=active, exchange_order_ids=exchange_order_ids
+                ), dependencies
+            )
+        return False, None
+
+    async def apply_cancel_policies(
+        self, symbol=None, side=None, tag=None, exchange_order_ids=None, active=None,
+        dependencies: typing.Optional[commons_signals.SignalDependencies] = None
+    ) -> tuple[bool, typing.Optional[commons_signals.SignalDependencies]]:
+        """
+        Cancel all orders that should be according to their cancel policies
+        """
+        if self.exchange_manager.trader.is_enabled:
+            if to_cancel_orders := self.exchange_manager.exchange_personal_data.orders_manager.get_orders_to_cancel_from_policies(
+                self._get_to_cancel_orders(
+                    symbol=symbol, side=side, tag=tag, active=active, exchange_order_ids=exchange_order_ids
+                )
+            ):
+                self.logger.info(f"Cancelling {len(to_cancel_orders)} orders from cancel policies")
+                return await self._cancel_orders(to_cancel_orders, dependencies)
+        return False, None
 
     def all_databases(self):
         provider = databases.RunDatabasesProvider.instance()
