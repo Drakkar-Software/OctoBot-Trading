@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import typing
+import dataclasses
 
 import octobot_commons.signals as signals
 import octobot_trading.enums as trading_enums
@@ -83,6 +84,10 @@ def create_order_signal_content(
             None if order.active_trigger is None else float(order.active_trigger.trigger_price),
         trading_enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value: None
             if order.active_trigger is None else order.active_trigger.trigger_above,
+        trading_enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value:
+            order.cancel_policy.__class__.__name__ if order.cancel_policy else None,
+        trading_enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value:
+            dataclasses.asdict(order.cancel_policy) if order.cancel_policy else None,
         trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value:
             None if order.triggered_by is None else order.triggered_by.order_id
         if order.has_been_bundled else None,

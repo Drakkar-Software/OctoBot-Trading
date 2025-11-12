@@ -84,6 +84,14 @@ class OrdersManager(util.Initializable):
             enums.OrderStatus.CLOSED, symbol, since=since,
             until=until, limit=limit, tag=tag
         )
+    
+    @staticmethod
+    def get_orders_to_cancel_from_policies(orders: list[order_class.Order]) -> list[order_class.Order]:
+        return [
+            order
+            for order in orders
+            if order.cancel_policy and order.cancel_policy.should_cancel(order)
+        ]
 
     def get_order(self, order_id: typing.Optional[str], exchange_order_id: typing.Optional[str]=None) -> order_class.Order:
         if order_id is None:

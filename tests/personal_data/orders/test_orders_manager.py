@@ -17,6 +17,7 @@ import copy
 import typing
 import pytest
 import pytest_asyncio
+import time
 
 import octobot_trading.personal_data as personal_data
 import octobot_trading.exchanges as exchanges
@@ -341,3 +342,42 @@ async def test_get_open_orders(order_and_exchange_managers):
     # )
     # assert len(tagged_order) == 1
     # assert tagged_order[0].order_id == "4"
+
+
+async def test_get_orders_to_cancel_from_policies(order_and_exchange_managers):
+    orders_manager, exchange_manager = order_and_exchange_managers
+    await reset_orders_manager(orders_manager, enums.OrderStatus.OPEN.value)
+
+    two_orders = orders_manager.get_open_orders(
+        symbol=DEFAULT_SYMBOL,
+        since=SECOND_TIME,
+        until=THIRD_TIME,
+        limit=constants.NO_DATA_LIMIT,
+        tag=None,
+    )
+    assert len(two_orders) == 2
+    assert orders_manager.get_orders_to_cancel_from_policies(two_orders) == []
+    t = time.time()
+    two_orders[0].cancel_policy = personal_data.create_cancel_policy(
+        personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+        {
+            "expiration_time": t + 1000
+        }
+    )
+    assert orders_manager.get_orders_to_cancel_from_policies(two_orders) == []
+    two_orders[1].cancel_policy = personal_data.create_cancel_policy(
+        personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+        {
+            "expiration_time": t - 1000
+        }
+    )
+    # only the second order should be cancelled
+    assert orders_manager.get_orders_to_cancel_from_policies(two_orders) == [two_orders[1]]
+    two_orders[0].cancel_policy = personal_data.create_cancel_policy(
+        personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+        {
+            "expiration_time": t - 10000
+        }
+    )
+    # now both orders should be cancelled
+    assert orders_manager.get_orders_to_cancel_from_policies(two_orders) == two_orders

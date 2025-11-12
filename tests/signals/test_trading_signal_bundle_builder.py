@@ -113,6 +113,8 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.BUY_LIMIT.value
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] == "1%"
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] is None
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value] is None
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value] is None
 
     # add the same order: do not add it twice
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
@@ -121,6 +123,12 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     # update the same order
     buy_limit_order.order_type = enums.TraderOrderType.SELL_LIMIT
     buy_limit_order.trigger_above = False
+    buy_limit_order.cancel_policy = personal_data.create_cancel_policy(
+        personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+        {
+            "expiration_time": 999
+        }
+    )
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_position="2%")
     assert len(trading_signal_bundle_builder.signals) == 1
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.TYPE.value] == enums.TraderOrderType.SELL_LIMIT.value
@@ -130,7 +138,10 @@ def test_add_created_order(trading_signal_bundle_builder, buy_limit_order):
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.IS_ACTIVE.value] is True
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_PRICE.value] is None
     assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.ACTIVE_TRIGGER_ABOVE.value] is None
-
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value] is personal_data.ExpirationTimeOrderCancelPolicy.__name__
+    assert trading_signal_bundle_builder.signals[0].content[enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value] == {
+        "expiration_time": 999
+    }
     # add new order (orders are based on order_id)
     previous_order_id = buy_limit_order.order_id
     buy_limit_order.order_id = "other_id"

@@ -334,6 +334,7 @@ class Trader(util.Initializable):
             updated_order.associated_entry_ids = new_order.associated_entry_ids
             updated_order.update_with_triggering_order_fees = new_order.update_with_triggering_order_fees
             updated_order.trailing_profile = new_order.trailing_profile
+            updated_order.cancel_policy = new_order.cancel_policy
             if new_order.active_trigger is not None:
                 updated_order.use_active_trigger(order_util.create_order_price_trigger(
                     updated_order, new_order.active_trigger.trigger_price, new_order.active_trigger.trigger_above

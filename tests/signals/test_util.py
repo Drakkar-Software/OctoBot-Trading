@@ -77,6 +77,8 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: None,
         enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value: None,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value: None,
     }
 
 
@@ -88,6 +90,12 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.origin_stop_price = decimal.Decimal("1.13")
     buy_limit_order.is_active = False
     buy_limit_order.use_active_trigger(personal_data.create_order_price_trigger(buy_limit_order, decimal.Decimal("1.14"), False))
+    buy_limit_order.cancel_policy = personal_data.create_cancel_policy(
+        personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+        {
+            "expiration_time": 999
+        }
+    )
     exchange_manager = buy_limit_order.exchange_manager
     assert signals.create_order_signal_content(buy_limit_order, enums.TradingSignalOrdersActions.CREATE,
                                                "strat", exchange_manager) == {
@@ -129,6 +137,10 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: None,
         enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value: personal_data.ExpirationTimeOrderCancelPolicy.__name__,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value: {
+            "expiration_time": 999
+        },
     }
 
     sell_limit_order.add_chained_order(buy_limit_order)
@@ -137,6 +149,10 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     sell_limit_order.use_active_trigger(personal_data.create_order_price_trigger(sell_limit_order, decimal.Decimal("2.14"), True))
     buy_limit_order.associate_to_entry("1")
     buy_limit_order.use_active_trigger(personal_data.create_order_price_trigger(buy_limit_order, decimal.Decimal("1.14"), True))
+    buy_limit_order.cancel_policy = personal_data.create_cancel_policy(
+        personal_data.ChainedOrderFillingPriceOrderCancelPolicy.__name__,
+        {}
+    )
     await buy_limit_order.set_as_chained_order(sell_limit_order, True, {}, True)
     assert signals.create_order_signal_content(
         buy_limit_order,
@@ -184,6 +200,8 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: ["1"],
         enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: True,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value: personal_data.ChainedOrderFillingPriceOrderCancelPolicy.__name__,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value: {},
     }
 
     order_group = personal_data.OneCancelsTheOtherOrderGroup(
@@ -238,7 +256,9 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.CHAINED_TO.value: sell_limit_order.order_id,
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
         enums.TradingSignalOrdersAttrs.ASSOCIATED_ORDER_IDS.value: ["1", "2", "3"],
-        enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False
+        enums.TradingSignalOrdersAttrs.UPDATE_WITH_TRIGGERING_ORDER_FEES.value: False,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_TYPE.value: personal_data.ChainedOrderFillingPriceOrderCancelPolicy.__name__,
+        enums.TradingSignalOrdersAttrs.CANCEL_POLICY_KWARGS.value: {},
     }
     assert signals.create_order_signal_content(
         buy_limit_order,

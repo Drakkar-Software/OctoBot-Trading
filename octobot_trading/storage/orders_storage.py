@@ -16,6 +16,7 @@
 import copy
 import decimal
 import time
+import dataclasses
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.enums as commons_enums
@@ -210,6 +211,15 @@ def get_order_active_trigger_dict(order):
     }
 
 
+def get_order_cancel_policy_dict(order):
+    if not order.cancel_policy:
+        return {}
+    return {
+        enums.StoredOrdersAttr.CANCEL_POLICY.value: order.cancel_policy.__class__.__name__,
+        enums.StoredOrdersAttr.CANCEL_KWARGS.value: OrdersStorage.sanitize_for_storage(dataclasses.asdict(order.cancel_policy)),
+    }
+
+
 def _get_chained_orders(order, exchange_manager):
     if not order.chained_orders:
         return []
@@ -232,6 +242,7 @@ def _format_order(order, exchange_manager):
             (enums.StoredOrdersAttr.GROUP, _get_group_dict(order)),
             (enums.StoredOrdersAttr.TRAILING_PROFILE, get_order_trailing_profile_dict(order)),
             (enums.StoredOrdersAttr.ACTIVE_TRIGGER, get_order_active_trigger_dict(order)),
+            (enums.StoredOrdersAttr.CANCEL_POLICY, get_order_cancel_policy_dict(order)),
             (enums.StoredOrdersAttr.CHAINED_ORDERS, _get_chained_orders(order, exchange_manager)),
             (enums.StoredOrdersAttr.UPDATE_WITH_TRIGGERING_ORDER_FEES, order.update_with_triggering_order_fees),
         ):

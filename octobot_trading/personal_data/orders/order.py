@@ -30,6 +30,8 @@ import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.trailing_profiles as trailing_profiles
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.personal_data.orders.triggers.base_trigger as base_trigger_import
+import octobot_trading.personal_data.orders.cancel_policies.order_cancel_policy as order_cancel_policy_import
+import octobot_trading.personal_data.orders.cancel_policies.cancel_policy_factory as cancel_policy_factory
 import octobot_trading.util as util
 
 
@@ -130,6 +132,9 @@ class Order(util.Initializable):
         # instance of the order that has been created after self has been filled. Used in stop / TP orders
         self.on_filled_artificial_order = None
 
+        # Cancel policy, if set
+        self.cancel_policy: typing.Optional[order_cancel_policy_import.OrderCancelPolicy] = None
+
         # Params given to the exchange request when this order is created. Include any exchange specific param here.
         # All params and values in those will be ignored in simulated orders
         self.exchange_creation_params = {}
@@ -154,6 +159,7 @@ class Order(util.Initializable):
         group=None, tag=None, quantity_currency=None, exchange_creation_params=None,
         associated_entry_id=None, trigger_above=None, trailing_profile: trailing_profiles.TrailingProfile=None,
         is_active=None, active_trigger: base_trigger_import.BaseTrigger = None,
+        cancel_policy: typing.Optional[order_cancel_policy_import.OrderCancelPolicy] = None,
     ) -> bool:
         changed: bool = False
         should_update_total_cost = False
@@ -308,6 +314,10 @@ class Order(util.Initializable):
         if active_trigger is not None and active_trigger != self.active_trigger:
             changed = True
             self.use_active_trigger(active_trigger)
+
+        if cancel_policy is not None and cancel_policy != self.cancel_policy:
+            changed = True
+            self.cancel_policy = cancel_policy
 
         if should_update_total_cost and not total_cost:
             self._update_total_cost()
@@ -1007,6 +1017,11 @@ class Order(util.Initializable):
                 logging.get_logger(self.__class__.__name__).error(
                     f"Ignored unknown trigger configuration: {active_trigger}"
                 )
+        if cancel_policy := order_details.get(enums.StoredOrdersAttr.CANCEL_POLICY.value):
+            self.cancel_policy = cancel_policy_factory.create_cancel_policy(
+                cancel_policy[enums.StoredOrdersAttr.CANCEL_POLICY.value],
+                cancel_policy[enums.StoredOrdersAttr.CANCEL_KWARGS.value],
+            )
         self.trader_creation_kwargs = order_details.get(enums.StoredOrdersAttr.TRADER_CREATION_KWARGS.value,
                                                         self.trader_creation_kwargs)
         self.exchange_creation_params = order_details.get(enums.StoredOrdersAttr.EXCHANGE_CREATION_PARAMS.value,
@@ -1169,6 +1184,7 @@ class Order(util.Initializable):
             if self.fee else ""
         )
         trailing_profile = f"Trailing profile : {self.trailing_profile} | " if self.trailing_profile else ""
+        cancel_policy = f"Cancel policy : {self.cancel_policy} | " if self.cancel_policy else ""
         return (
             f"{inactive}{self.symbol} | "
             f"{chained_order}"
@@ -1177,6 +1193,7 @@ class Order(util.Initializable):
             f"Quantity : {str(self.origin_quantity)}{' (Reduce only)' if self.reduce_only else ''} | "
             f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
             f"{trailing_profile}"
+            f"{cancel_policy}"
             f"{fees}"
             f"id : {self.order_id}{tag} "
             f"exchange id: {self.exchange_order_id}"

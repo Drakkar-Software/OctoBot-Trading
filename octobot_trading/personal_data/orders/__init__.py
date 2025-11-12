@@ -45,6 +45,13 @@ from octobot_trading.personal_data.orders.active_order_swap_strategies import (
     StopFirstActiveOrderSwapStrategy,
     TakeProfitFirstActiveOrderSwapStrategy,
 )
+from octobot_trading.personal_data.orders import cancel_policies
+from octobot_trading.personal_data.orders.cancel_policies import (
+    create_cancel_policy,
+    OrderCancelPolicy,
+    ExpirationTimeOrderCancelPolicy,
+    ChainedOrderFillingPriceOrderCancelPolicy,
+)
 from octobot_trading.personal_data.orders import triggers
 from octobot_trading.personal_data.orders.triggers import (
     BaseTrigger,
@@ -208,6 +215,7 @@ __all__ = [
     "is_stop_trade_order_type",
     "is_take_profit_order",
     "ensure_orders_limit",
+    "create_cancel_policy",
     "create_as_chained_order",
     "ensure_orders_relevancy",
     "get_order_quantity_currency",
@@ -234,6 +242,9 @@ __all__ = [
     "ActiveOrderSwapStrategy",
     "StopFirstActiveOrderSwapStrategy",
     "TakeProfitFirstActiveOrderSwapStrategy",
+    "OrderCancelPolicy",
+    "ExpirationTimeOrderCancelPolicy",
+    "ChainedOrderFillingPriceOrderCancelPolicy",
     "BaseTrigger",
     "PriceTrigger",
     "OrdersUpdater",

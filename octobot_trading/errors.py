@@ -254,6 +254,12 @@ class InvalidOrderState(Exception):
     """
 
 
+class InvalidCancelPolicyError(Exception):
+    """
+    Raised when a cancel policy is invalid
+    """
+
+
 class InvalidLeverageValue(Exception):
     """
     Raised when a leverage is being updated with an invalid value
