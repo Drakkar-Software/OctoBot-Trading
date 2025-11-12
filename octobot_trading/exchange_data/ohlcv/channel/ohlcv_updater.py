@@ -347,6 +347,13 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 task.cancel()
             await self.run()
 
+    async def stop(self) -> None:
+        await super().stop()
+        if self.tasks:
+            for task in self.tasks:
+                task.cancel()
+            self.tasks = []
+
     # async def config_callback(self, exchange, cryptocurrency, symbols, time_frames):
     #     if symbols:
     #         for pair in symbols:
