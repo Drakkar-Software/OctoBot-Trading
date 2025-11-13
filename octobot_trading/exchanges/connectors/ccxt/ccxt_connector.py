@@ -174,12 +174,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     f"Failed to load_symbol_markets: {err.__class__.__name__} "
                     f"on {html_util.get_html_summary_if_relevant(err)}"
                 ) from err
-            except ccxt.ExchangeError:
+            except ccxt.ExchangeError as err:
+                if self.exchange_manager.exchange.is_ip_whitelist_error(err):
+                    raise octobot_trading.errors.InvalidAPIKeyIPWhitelistError(
+                        f"Invalid IP whitelist error: {html_util.get_html_summary_if_relevant(err)}"
+                    ) from err
                 # includes AuthenticationError but also auth error not identified as such by ccxt
                 if not self.force_authentication and self.is_authenticated:
                     self.logger.debug(
                         f"Credentials check enabled when fetching exchange market status, trying with "
-                        f"unauthenticated client."
+                        f"unauthenticated client: {err}."
                     )
                     # auth invalid but not required: fetch markets from another client
                     unauth_client = None
@@ -244,7 +248,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.exchange_manager.exchange.get_balance()
         except (octobot_trading.errors.AuthenticationError, ccxt.AuthenticationError) as e:
             await self.client.close()
-            self.unauthenticated_exchange_fallback(e)
+            if self.force_authentication:
+                raise e
+            self.client = self.unauthenticated_exchange_fallback(e)
+            self.is_authenticated = False
+            await self.load_symbol_markets(
+                reload=not self.exchange_manager.use_cached_markets,
+                market_filter=self.exchange_manager.market_filter,
+            )
         except Exception as e:
             # Is probably handled in exchange tentacles, important thing here is that authentication worked
             self.logger.debug(f"Error when checking exchange connection: {e}. This should not be an issue.")
