@@ -246,7 +246,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     market_filter=self.exchange_manager.market_filter,
                 )
             await self.exchange_manager.exchange.get_balance()
-        except (octobot_trading.errors.AuthenticationError, ccxt.AuthenticationError) as e:
+        except (
+            octobot_trading.errors.AuthenticationError, 
+            octobot_trading.errors.ExchangeProxyError, 
+            ccxt.AuthenticationError
+        ) as e:
             await self.client.close()
             if self.force_authentication:
                 raise e
