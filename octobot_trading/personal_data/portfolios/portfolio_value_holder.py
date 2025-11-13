@@ -299,19 +299,23 @@ class PortfolioValueHolder:
         evaluated_currencies = set()
         missing_tickers = set()
 
-        self._evaluate_config_currencies_values(evaluated_pair_values, evaluated_currencies, missing_tickers)
+        self._evaluate_config_currencies_values(
+            evaluated_pair_values, evaluated_currencies, missing_tickers,
+            init_price_fetchers=init_price_fetchers
+        )
         self._evaluate_portfolio_currencies_values(
             portfolio, evaluated_pair_values, evaluated_currencies,
             missing_tickers, ignore_missing_currency_data, init_price_fetchers=init_price_fetchers
         )
         return evaluated_pair_values
 
-    def _evaluate_config_currencies_values(self, evaluated_pair_values, evaluated_currencies, missing_tickers):
+    def _evaluate_config_currencies_values(self, evaluated_pair_values, evaluated_currencies, missing_tickers, init_price_fetchers=True):
         """
         Evaluate config currencies values
         :param evaluated_pair_values: the list of evaluated pairs
         :param evaluated_currencies: the list of evaluated currencies
         :param missing_tickers: the list of missing currencies
+        :param init_price_fetchers: When True, can init price using fetchers
         """
         if self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
             currency, market = \
@@ -319,11 +323,15 @@ class PortfolioValueHolder:
             currency_to_evaluate = currency
             try:
                 if currency not in evaluated_currencies:
-                    evaluated_pair_values[currency] = self.value_converter.evaluate_value(currency, constants.ONE)
+                    evaluated_pair_values[currency] = self.value_converter.evaluate_value(
+                        currency, constants.ONE, init_price_fetchers=init_price_fetchers
+                    )
                     evaluated_currencies.add(currency)
                 if market not in evaluated_currencies:
                     currency_to_evaluate = market
-                    evaluated_pair_values[market] = self.value_converter.evaluate_value(market, constants.ONE)
+                    evaluated_pair_values[market] = self.value_converter.evaluate_value(
+                        market, constants.ONE, init_price_fetchers=init_price_fetchers
+                    )
                     evaluated_currencies.add(market)
             except errors.MissingPriceDataError:
                 missing_tickers.add(currency_to_evaluate)
