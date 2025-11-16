@@ -106,7 +106,7 @@ class TradesUpdater(trades_channel.TradesProducer):
             )
             await self.init_trade_history()
 
-        if self.channel.exchange_manager.exchange_config.has_forced_updater(self.CHANNEL_NAME):
+        if self.channel.exchange_manager.exchange_config.get_forced_updater_channel_specs(self.CHANNEL_NAME):
             await self._run_update_loop()
 
     async def _run_update_loop(self):

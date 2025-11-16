@@ -31,10 +31,15 @@ from octobot_trading.exchanges.config import proxy_config
 from octobot_trading.exchanges.config.exchange_credentials_data import (
     ExchangeCredentialsData,
 )
+from octobot_trading.exchanges.config import channel_specs
+from octobot_trading.exchanges.config.channel_specs import (
+    ChannelSpecs,
+)
 
 __all__ = [
     "ExchangeConfig",
     "BacktestingExchangeConfig",
     "ProxyConfig",
     "ExchangeCredentialsData",
+    "ChannelSpecs",
 ]

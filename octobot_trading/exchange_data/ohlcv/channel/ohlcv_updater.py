@@ -75,10 +75,18 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 ]
 
     def _get_traded_pairs(self):
-        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + [
+            channel_spec.symbol 
+            for channel_spec in self.forced_specs
+            if channel_spec.symbol not in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+        ]
 
     def _get_time_frames(self):
-        return self.channel.exchange_manager.exchange_config.available_time_frames
+        return self.channel.exchange_manager.exchange_config.available_time_frames + [
+            channel_spec.time_frame 
+            for channel_spec in self.forced_specs
+            if channel_spec.time_frame not in self.channel.exchange_manager.exchange_config.available_time_frames
+        ]
 
     def _should_maintain_candle(self, time_frame, pair):
         return not (

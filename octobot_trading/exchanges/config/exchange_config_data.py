@@ -29,6 +29,7 @@ import octobot_trading.exchanges.util as exchange_util
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.util as util
+import octobot_trading.exchanges.config.channel_specs as channel_specs_import
 
 
 class ExchangeConfig(util.Initializable):
@@ -66,7 +67,7 @@ class ExchangeConfig(util.Initializable):
         self.required_historical_candles_count = constants.DEFAULT_IGNORED_VALUE
 
         # periodic updaters that should always be started for this configuration
-        self.forced_updater_channels = set()
+        self.forced_updater_channels = set[channel_specs_import.ChannelSpecs]()
 
         # When False, cancelled orders won't be saved in trades history
         self.is_saving_cancelled_orders_as_trade = True
@@ -147,11 +148,15 @@ class ExchangeConfig(util.Initializable):
         # If required timeframes: use those. Use traded timeframes otherwise
         return self.available_required_time_frames or self.traded_time_frames
 
-    def has_forced_updater(self, channel: str) -> bool:
-        return channel in self.forced_updater_channels
+    def get_forced_updater_channel_specs(self, channel: str) -> list[channel_specs_import.ChannelSpecs]:
+        return [
+            channel_spec 
+            for channel_spec in self.forced_updater_channels 
+            if channel_spec.channel == channel
+        ]
 
-    def add_forced_updater_channels(self, channel: set[str]):
-        self.forced_updater_channels.update(channel)
+    def add_forced_updater_channels(self, channel_specs: set[channel_specs_import.ChannelSpecs]):
+        self.forced_updater_channels.update(channel_specs)
 
     def set_is_saving_cancelled_orders_as_trade(self, value: bool):
         self.is_saving_cancelled_orders_as_trade = value

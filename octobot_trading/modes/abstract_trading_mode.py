@@ -329,7 +329,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             return False
 
     @classmethod
-    def get_forced_updater_channels(cls) -> set[str]:
+    async def get_forced_updater_channels(
+        cls, 
+        exchange_manager: "trading_exchanges.ExchangeManager",
+        tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration, 
+        trading_config: typing.Optional[dict]
+    ) -> set[str]:
         return set()
 
     def _health_check_interval_expired(self) -> bool:
