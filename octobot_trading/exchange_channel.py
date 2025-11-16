@@ -49,11 +49,14 @@ class ExchangeChannelProducer(producers.Producer):
     """
     Producer adapted for ExchangeChannel
     """
+    CHANNEL_NAME = None
 
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{channel.exchange_manager.exchange_name}]")
         self.single_update_task = None
+        self.forced_specs: list = []
+        self.update_forced_specs()
 
     async def fetch_and_push(self):
         self.logger.error("self.fetch_and_push() is not implemented")
@@ -70,6 +73,15 @@ class ExchangeChannelProducer(producers.Producer):
             ):
                 return False
         return True
+
+    def update_forced_specs(self):
+        if self.CHANNEL_NAME is None:
+            return
+        self.forced_specs = self.channel.exchange_manager.exchange_config.get_forced_updater_channel_specs(
+            self.CHANNEL_NAME
+        )
+        if self.forced_specs:
+            self.logger.info(f"Using forced specs for channel {self.CHANNEL_NAME}: {self.forced_specs}")
 
 
 class ExchangeChannel(channels.Channel):

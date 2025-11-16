@@ -62,7 +62,7 @@ class ExchangeBuilder:
             if self._is_using_trading_modes:
                 trading_mode_class = modes.get_activated_trading_mode(self.exchange_manager.tentacles_setup_config)
                 # handle exchange related requirements if the activated trading mode has any
-                self._register_trading_modes_requirements(
+                await self._register_trading_modes_requirements(
                     trading_mode_class, self.exchange_manager.tentacles_setup_config
                 )
 
@@ -101,7 +101,7 @@ class ExchangeBuilder:
             self.logger.error(f"An error occurred when creating trader : {e}")
             raise e
 
-    def _register_trading_modes_requirements(self, trading_mode_class, tentacles_setup_config):
+    async def _register_trading_modes_requirements(self, trading_mode_class, tentacles_setup_config):
         self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(
             self.exchange_name, tentacles_setup_config
         )
@@ -116,7 +116,11 @@ class ExchangeBuilder:
         )
         # register forced updaters if any
         self.exchange_manager.exchange_config.add_forced_updater_channels(
-            trading_mode_class.get_forced_updater_channels()
+            await trading_mode_class.get_forced_updater_channels(
+                self.exchange_manager, 
+                tentacles_setup_config,
+                self.trading_config_by_trading_mode.get(trading_mode_class.get_name()) if self.trading_config_by_trading_mode else None
+            )
         )
         self.exchange_manager.exchange_config.set_is_saving_cancelled_orders_as_trade(
             not trading_mode_class.is_ignoring_cancelled_orders_trades()
