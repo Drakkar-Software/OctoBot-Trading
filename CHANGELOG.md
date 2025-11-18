@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.231] - 2025-11-18
+### Added
+[Exchanges] add ChannelSpecs and make force channels more flexible
+### Updated
+[CCXTConnector] forward proxy error on load markets
+
 ## [2.4.230] - 2025-11-13
 ### Fixed
 [Portfolio] fix missing init_price_fetchers forwarded args
