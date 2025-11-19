@@ -19,6 +19,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.errors as errors
 import octobot_trading.util as util
+import octobot_trading.personal_data  # pylint: disable=unused-import
 
 
 class TransactionsManager(util.Initializable):
@@ -26,8 +27,8 @@ class TransactionsManager(util.Initializable):
 
     def __init__(self):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.transactions = collections.OrderedDict()
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.transactions: collections.OrderedDict[str, octobot_trading.personal_data.Transaction] = collections.OrderedDict()
 
     async def initialize_impl(self):
         self._reset_transactions()

@@ -18,6 +18,7 @@ import copy
 import decimal
 import time
 import asyncio
+import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
@@ -31,6 +32,7 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 import octobot_trading.enums as enums
+import octobot_trading.exchanges  # pylint: disable=unused-import
 
 
 class PortfolioManager(util.Initializable):
@@ -40,19 +42,21 @@ class PortfolioManager(util.Initializable):
 
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.config: dict[str, typing.Any] = config
+        self.trader: "octobot_trading.exchanges.Trader" = trader
+        self.exchange_manager: "octobot_trading.exchanges.ExchangeManager" = exchange_manager
 
-        self.portfolio = None
-        self.portfolio_profitability = None
-        self.portfolio_value_holder = None
-        self.historical_portfolio_value_manager = None
-        self.reference_market = None
-        self._is_initialized_event_set = False
-        self._forced_portfolio = None
-        self._enable_portfolio_total_update_from_order = True
-        self.enable_portfolio_exchange_sync = True
-        self.enable_portfolio_available_update_from_order = self.trader.simulate
+        self.portfolio: personal_data.Portfolio = None # type: ignore
+        self.portfolio_profitability: personal_data.PortfolioProfitability = None # type: ignore
+        self.portfolio_value_holder: personal_data.PortfolioValueHolder = None # type: ignore
+        self.historical_portfolio_value_manager: personal_data.HistoricalPortfolioValueManager = None # type: ignore
+        self.reference_market: str = None # type: ignore
+        self._is_initialized_event_set: bool = False
+        self._forced_portfolio: typing.Optional[dict[str, typing.Any]] = None
+        self._enable_portfolio_total_update_from_order: bool = True
+        self.enable_portfolio_exchange_sync: bool = True
+        self.enable_portfolio_available_update_from_order: bool = self.trader.simulate
 
     async def initialize_impl(self):
         """
@@ -397,7 +401,7 @@ class PortfolioManager(util.Initializable):
         """
         Clear portfolio manager objects
         """
-        self.portfolio_profitability = None
+        self.portfolio_profitability = None # type: ignore
         self.portfolio_value_holder.clear()
-        self.portfolio_value_holder = None
-        self.historical_portfolio_value_manager = None
+        self.portfolio_value_holder = None # type: ignore
+        self.historical_portfolio_value_manager = None # type: ignore

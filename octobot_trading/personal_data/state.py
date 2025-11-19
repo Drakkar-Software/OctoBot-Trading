@@ -35,19 +35,19 @@ class State(util.Initializable):
         self._underlying_refreshed_state: enums.States = enums.States.UNKNOWN
 
         # if this state has been created from exchange data or OctoBot internal mechanism
-        self.is_from_exchange_data = is_from_exchange_data
+        self.is_from_exchange_data: bool = is_from_exchange_data
 
         # state lock
-        self.lock = asyncio.Lock()
+        self.lock: asyncio.Lock = asyncio.Lock()
 
         # set after self.terminate has been executed (with or without raised exception)
-        self.terminated = asyncio.Event()
+        self.terminated: asyncio.Event = asyncio.Event()
 
         # set at True after synchronize has been called
-        self.has_already_been_synchronized_once = False
+        self.has_already_been_synchronized_once: bool = False
 
         # how many times this state has been synchronized
-        self.synchronization_attempts = 0
+        self.synchronization_attempts: int = 0
 
     def is_pending(self) -> bool:
         """

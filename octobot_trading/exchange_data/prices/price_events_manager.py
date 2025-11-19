@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import decimal
+import typing
 
 import octobot_commons.logging as logging
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
@@ -35,9 +36,9 @@ class PriceEventsManager:
     MAX_LAST_RECENT_PRICES = 50
 
     def __init__(self):
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.events = []
-        self._last_recent_prices = []
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.events: list[tuple[decimal.Decimal, int, asyncio.Event, bool]] = []
+        self._last_recent_prices: list[dict[str, typing.Union[decimal.Decimal, int]]] = []
 
     def stop(self):
         self.reset()

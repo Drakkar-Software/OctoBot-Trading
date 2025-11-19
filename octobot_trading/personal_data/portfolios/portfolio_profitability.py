@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
 import octobot_commons.tree as commons_tree
@@ -31,22 +33,22 @@ class PortfolioProfitability:
     def __init__(self, portfolio_manager):
         self.portfolio_manager = portfolio_manager
         self.value_manager = portfolio_manager.portfolio_value_holder
-        self.logger = logging.get_logger(f"{self.__class__.__name__}["
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__}["
                                          f"{self.portfolio_manager.exchange_manager.exchange_name}]")
 
         # profitability attributes
-        self.profitability = constants.ZERO
-        self.profitability_percent = constants.ZERO
-        self.profitability_diff = constants.ZERO
-        self.market_profitability_percent = constants.ZERO
-        self.initial_portfolio_current_profitability = constants.ZERO
+        self.profitability: decimal.Decimal = constants.ZERO
+        self.profitability_percent: decimal.Decimal = constants.ZERO
+        self.profitability_diff: decimal.Decimal = constants.ZERO
+        self.market_profitability_percent: decimal.Decimal = constants.ZERO
+        self.initial_portfolio_current_profitability: decimal.Decimal = constants.ZERO
 
         # buffer of currencies excluding market only used currencies ex: conf = btc/usd, eth/btc, ltc/btc, here usd
         # is market only => not used to compute market average profitability
-        self.traded_currencies_without_market_specific = set()
+        self.traded_currencies_without_market_specific: set[str] = set()
 
         # set of currencies that should be valuated because either present in config or as a reference market
-        self.valuated_currencies = util.get_all_currencies(self.portfolio_manager.config, enabled_only=False)
+        self.valuated_currencies: set[str] = util.get_all_currencies(self.portfolio_manager.config, enabled_only=False)
         self.valuated_currencies.add(self.portfolio_manager.reference_market)
 
     def reset_profitability(self):

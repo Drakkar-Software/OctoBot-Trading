@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.logging as logging
 import octobot_trading.constants as constants
 import octobot_trading.util as util
@@ -21,11 +23,11 @@ import octobot_trading.util as util
 class FundingManager(util.Initializable):
     def __init__(self):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.funding_rate = constants.NaN
-        self.predicted_funding_rate = constants.NaN
-        self.next_update = 0
-        self.last_updated = 0
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.funding_rate: decimal.Decimal = constants.NaN
+        self.predicted_funding_rate: decimal.Decimal = constants.NaN
+        self.next_update: float = 0
+        self.last_updated: float = 0
         self.reset_funding()
 
     async def initialize_impl(self):

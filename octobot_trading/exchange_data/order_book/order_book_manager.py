@@ -29,12 +29,15 @@ INVALID_PARSED_VALUE = -1
 class OrderBookManager(util.Initializable):
     def __init__(self):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.order_book_initialized = False
-        self.asks = sortedcontainers.SortedDict()
-        self.bids = sortedcontainers.SortedDict()
-        self.timestamp = 0
-        self.ask_quantity, self.ask_price, self.bid_quantity, self.bid_price = 0, 0, 0, 0
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.order_book_initialized: bool = False
+        self.asks: sortedcontainers.SortedDict = sortedcontainers.SortedDict()
+        self.bids: sortedcontainers.SortedDict = sortedcontainers.SortedDict()
+        self.timestamp: float = 0
+        self.ask_quantity: float = 0
+        self.ask_price: float = 0
+        self.bid_quantity: float = 0
+        self.bid_price: float = 0
 
     async def initialize_impl(self):
         self.reset_order_book()

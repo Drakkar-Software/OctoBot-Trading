@@ -15,6 +15,7 @@
 #  License along with this library.
 import copy
 import typing
+import decimal
 
 import octobot_commons.logging as logging
 import octobot_commons.symbols as symbol_util
@@ -23,6 +24,7 @@ import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.value_converter as value_converter
+import octobot_trading.personal_data.portfolios
 
 
 class PortfolioValueHolder:
@@ -31,20 +33,20 @@ class PortfolioValueHolder:
     """
 
     def __init__(self, portfolio_manager):
-        self.portfolio_manager = portfolio_manager
-        self.logger = logging.get_logger(f"{self.__class__.__name__}"
+        self.portfolio_manager: octobot_trading.personal_data.portfolios.PortfolioManager = portfolio_manager
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__}"
                                          f"[{self.portfolio_manager.exchange_manager.exchange_name}]")
-        self.value_converter = value_converter.ValueConverter(self.portfolio_manager)
+        self.value_converter: value_converter.ValueConverter = value_converter.ValueConverter(self.portfolio_manager)
 
-        self.portfolio_origin_value = constants.ZERO
-        self.portfolio_current_value = constants.ZERO
-
-        # values in decimal.Decimal
-        self.origin_portfolio = None
+        self.portfolio_origin_value: decimal.Decimal = constants.ZERO
+        self.portfolio_current_value: decimal.Decimal = constants.ZERO
 
         # values in decimal.Decimal
-        self.origin_crypto_currencies_values = {}
-        self.current_crypto_currencies_values = {}
+        self.origin_portfolio: typing.Optional[octobot_trading.personal_data.portfolios.Portfolio] = None
+
+        # values in decimal.Decimal
+        self.origin_crypto_currencies_values: dict[str, decimal.Decimal] = {}
+        self.current_crypto_currencies_values: dict[str, decimal.Decimal] = {}
 
     def reset_portfolio_values(self):
         self.portfolio_origin_value = constants.ZERO
@@ -417,5 +419,5 @@ class PortfolioValueHolder:
 
     def clear(self):
         self.value_converter.clear()
-        self.value_converter = None
-        self.portfolio_manager = None
+        self.value_converter = None # type: ignore
+        self.portfolio_manager = None # type: ignore

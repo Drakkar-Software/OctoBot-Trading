@@ -20,7 +20,7 @@ import abc
 class Initializable:
 
     def __init__(self):
-        self.is_initialized = False
+        self.is_initialized: bool = False
 
     # calls initialize_impl if not initialized
     async def initialize(self, force=False, **kwargs):

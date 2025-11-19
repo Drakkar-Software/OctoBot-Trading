@@ -22,6 +22,7 @@ import octobot_trading.enums as enums
 import octobot_trading.errors
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.personal_data.state as state_class
+import octobot_trading.personal_data
 
 
 class OrderState(state_class.State):
@@ -36,10 +37,10 @@ class OrderState(state_class.State):
         self.ensure_not_cleared(order)
 
         # related order
-        self.order = order
+        self.order: octobot_trading.personal_data.orders.order.Order = order
 
-        self.enable_associated_orders_creation = enable_associated_orders_creation
-        self.is_already_counted_in_available_funds = is_already_counted_in_available_funds
+        self.enable_associated_orders_creation: bool = enable_associated_orders_creation
+        self.is_already_counted_in_available_funds: bool = is_already_counted_in_available_funds
 
     def is_created(self) -> bool:
         """

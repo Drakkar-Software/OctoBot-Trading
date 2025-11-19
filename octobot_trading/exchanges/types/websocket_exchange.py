@@ -14,10 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import typing
 import sys
 import concurrent.futures as futures
 
 import octobot_commons.html_util as html_util
+import octobot_commons.enums as commons_enums
 
 import octobot_commons.thread_util as thread_util
 import octobot_trading.constants
@@ -29,25 +31,25 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager
-        self.exchange_name = exchange_manager.exchange_name
+        self.exchange_name: str = exchange_manager.exchange_name
 
-        self.websocket_connectors = []
-        self.websocket_connectors_tasks = []
+        self.websocket_connectors: list = []
+        self.websocket_connectors_tasks: list[asyncio.Task] = []
 
-        self.websocket_connectors_executors = None
-        self.websocket_connector = None
+        self.websocket_connectors_executors: typing.Optional[futures.ThreadPoolExecutor] = None
+        self.websocket_connector = None # type: ignore
 
-        self.pairs = []
-        self.time_frames = []
+        self.pairs: list[str] = []
+        self.time_frames: list[commons_enums.TimeFrames] = []
 
-        self.channels = []
-        self.handled_feeds = {}
+        self.channels: list[octobot_trading.enums.WebsocketFeeds] = []
+        self.handled_feeds: dict[octobot_trading.enums.WebsocketFeeds, bool] = {}
 
-        self.is_websocket_running = False
-        self.is_websocket_authenticated = False
-        self.is_beyond_feed_exchange_limit = False
+        self.is_websocket_running: bool = False
+        self.is_websocket_authenticated: bool = False
+        self.is_beyond_feed_exchange_limit: bool = False
 
-        self.restart_task = None
+        self.restart_task: typing.Optional[asyncio.Task] = None
 
     @classmethod
     def get_exchange_connector_class(cls, exchange_manager):

@@ -28,28 +28,27 @@ class CandlesManager(util.Initializable):
 
     def __init__(self, max_candles_count=None):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
 
-        self.candles_initialized = False
-        self.max_candles_count = max_candles_count \
+        self.candles_initialized: bool = False
+        self.max_candles_count: int = max_candles_count \
             if max_candles_count and max_candles_count > self.__class__.MAX_CANDLES_COUNT \
             else self.__class__.MAX_CANDLES_COUNT
 
-        self.close_candles_index = 0
-        self.open_candles_index = 0
-        self.high_candles_index = 0
-        self.low_candles_index = 0
-        self.time_candles_index = 0
-        self.volume_candles_index = 0
+        self.close_candles_index: int = 0
+        self.open_candles_index: int = 0
+        self.high_candles_index: int = 0
+        self.low_candles_index: int = 0
+        self.time_candles_index: int = 0
+        self.volume_candles_index: int = 0
+        self.close_candles: np.ndarray = None # type: ignore
+        self.open_candles: np.ndarray = None # type: ignore
+        self.high_candles: np.ndarray = None # type: ignore
+        self.low_candles: np.ndarray = None # type: ignore
+        self.time_candles: np.ndarray = None # type: ignore
+        self.volume_candles: np.ndarray = None # type: ignore
 
-        self.close_candles = None
-        self.open_candles = None
-        self.high_candles = None
-        self.low_candles = None
-        self.time_candles = None
-        self.volume_candles = None
-
-        self.reached_max = False
+        self.reached_max: bool = False
         self._reset_candles()
 
     async def initialize_impl(self):

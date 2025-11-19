@@ -36,13 +36,13 @@ class Portfolio:
 
     def __init__(self, exchange_name, is_simulated=False):
         super().__init__()
-        self._exchange_name = exchange_name
-        self._is_simulated = is_simulated
+        self._exchange_name: str = exchange_name
+        self._is_simulated: bool = is_simulated
 
-        self.logger = logging.get_logger(
+        self.logger: logging.BotLogger = logging.get_logger(
             f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
-        self.lock = asyncio_tools.RLock()
-        self.portfolio = None
+        self.lock: asyncio_tools.RLock = asyncio_tools.RLock()
+        self.portfolio: dict[str, personal_data.Asset] = {}
         self.reset()
 
     def __copy__(self):

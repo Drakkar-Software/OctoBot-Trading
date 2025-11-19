@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import math
+import typing
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
@@ -23,9 +24,9 @@ import octobot_trading.util as util
 class TickerManager(util.Initializable):
     def __init__(self):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.ticker = {}
-        self.mini_ticker = {}
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.ticker: dict[str, typing.Any] = {}
+        self.mini_ticker: dict[str, typing.Any] = {}
         self.reset_ticker()
         self.reset_mini_ticker()
 

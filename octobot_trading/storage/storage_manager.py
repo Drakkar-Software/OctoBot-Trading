@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
+import typing
+
 import octobot_commons.display as commons_display
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
@@ -30,13 +32,13 @@ import octobot_trading.storage.portfolio_storage as portfolio_storage
 class StorageManager(util.Initializable):
     def __init__(self, exchange_manager):
         super().__init__()
-        self.logger = commons_logging.get_logger(self.__class__.__name__)
+        self.logger: commons_logging.BotLogger = commons_logging.get_logger(self.__class__.__name__)
         self.exchange_manager = exchange_manager
-        self.trades_storage = None
-        self.orders_storage = None
-        self.transactions_storage = None
-        self.portfolio_storage = None
-        self.candles_storage = None
+        self.trades_storage: typing.Optional[trades_storage.TradesStorage] = None
+        self.orders_storage: typing.Optional[orders_storage.OrdersStorage] = None
+        self.transactions_storage: typing.Optional[transactions_storage.TransactionsStorage] = None
+        self.portfolio_storage: typing.Optional[portfolio_storage.PortfolioStorage] = None
+        self.candles_storage: typing.Optional[candles_storage.CandlesStorage] = None
 
     async def initialize_impl(self):
         await commons_databases.RunDatabasesProvider.instance().get_run_databases_identifier(

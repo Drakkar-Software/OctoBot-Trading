@@ -33,9 +33,9 @@ class TradesManager(util.Initializable):
 
     def __init__(self, trader):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
-        self.trades_initialized = False
+        self.trades_initialized: bool = False
         self.trades: collections.OrderedDict[str, personal_data.Trade] = collections.OrderedDict()
 
     async def initialize_impl(self):

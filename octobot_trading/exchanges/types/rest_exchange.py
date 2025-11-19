@@ -200,7 +200,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def stop(self) -> None:
         await self.connector.stop()
-        self.exchange_manager = None
+        self.exchange_manager = None # type: ignore
 
     @classmethod
     def get_name(cls):
