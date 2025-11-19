@@ -23,6 +23,7 @@ import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.constants as constants
 import octobot_trading.exchange_channel as exchange_channel
+import octobot_trading.exchanges
 
 
 class PricesManager(util.Initializable):
@@ -30,16 +31,16 @@ class PricesManager(util.Initializable):
 
     def __init__(self, exchange_manager, symbol: str):
         super().__init__()
-        self.mark_price = constants.ZERO
-        self.mark_price_set_time = 0
-        self.mark_price_from_sources = {}
-        self.exchange_manager = exchange_manager
-        self.symbol = symbol
-        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
-        self.price_validity = self._compute_mark_price_validity_timeout()
+        self.mark_price: decimal.Decimal = constants.ZERO
+        self.mark_price_set_time: float = 0
+        self.mark_price_from_sources: dict[str, tuple[decimal.Decimal, float]] = {}
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = exchange_manager
+        self.symbol: str = symbol
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
+        self.price_validity: float = self._compute_mark_price_validity_timeout()
 
         # warning: should only be created in the async loop thread
-        self.valid_price_received_event = asyncio.Event()
+        self.valid_price_received_event: asyncio.Event = asyncio.Event()
 
     async def initialize_impl(self):
         """
@@ -52,7 +53,7 @@ class PricesManager(util.Initializable):
 
     def stop(self):
         self._reset_prices()
-        self.exchange_manager = None
+        self.exchange_manager = None # type: ignore
 
     def set_mark_price(self, mark_price, mark_price_source) -> bool:
         """
@@ -176,7 +177,7 @@ class PricesManager(util.Initializable):
         if not self._is_mark_price_valid(self.mark_price_set_time):
             self.valid_price_received_event.clear()
 
-    def _compute_mark_price_validity_timeout(self):
+    def _compute_mark_price_validity_timeout(self) -> float:
         refresh_threshold = self.exchange_manager.get_rest_pairs_refresh_threshold()
         if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.FAST:
             return 3 * commons_constants.MINUTE_TO_SECONDS

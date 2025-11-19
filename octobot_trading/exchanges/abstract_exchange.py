@@ -85,7 +85,7 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
 
         # Initialized when initializing exchange connector
         self.symbols: set[str] = set()
-        self.time_frames: set[common_enums.TimeFrames] = set()
+        self.time_frames: set[str] = set()
 
         # exchange name related attributes
         self.name: str = self.exchange_manager.exchange_class_string

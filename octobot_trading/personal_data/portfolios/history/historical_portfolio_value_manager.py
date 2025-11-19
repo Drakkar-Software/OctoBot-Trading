@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import time
+import typing
 
 import sortedcontainers
 import copy
@@ -29,6 +30,7 @@ import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.portfolio_util as portfolio_util
 import octobot_trading.personal_data.portfolios.history.historical_asset_value as historical_asset_value
 import octobot_trading.personal_data.portfolios.history.historical_asset_value_factory as historical_asset_value_factory
+import octobot_trading.personal_data.portfolios
 
 
 class HistoricalPortfolioValueManager(util.Initializable):
@@ -52,17 +54,17 @@ class HistoricalPortfolioValueManager(util.Initializable):
 
     def __init__(self, portfolio_manager, data_source=None, version=None):
         super().__init__()
-        self.portfolio_manager = portfolio_manager
-        self.logger = logging.get_logger(f"{self.__class__.__name__}"
+        self.portfolio_manager: octobot_trading.personal_data.portfolios.PortfolioManager = portfolio_manager
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__}"
                                          f"[{self.portfolio_manager.exchange_manager.exchange_name}]")
-        self.saved_time_frames = self.portfolio_manager.exchange_manager.config.get(
+        self.saved_time_frames: list[str] = self.portfolio_manager.exchange_manager.config.get(
             commons_constants.CONFIG_SAVED_HISTORICAL_TIMEFRAMES,
             constants.DEFAULT_SAVED_HISTORICAL_TIMEFRAMES
         )
-        self.data_source = data_source or self.__class__.DEFAULT_DATA_SOURCE
-        self.version = version or self.__class__.DEFAULT_DATA_VERSION
+        self.data_source: str = data_source or self.__class__.DEFAULT_DATA_SOURCE
+        self.version: str = version or self.__class__.DEFAULT_DATA_VERSION
         try:
-            self.starting_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
+            self.starting_time: float = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
         except AttributeError:
             if self.portfolio_manager.exchange_manager.is_backtesting and \
                not self.portfolio_manager.exchange_manager.exchange.connector.exchange_importers:
@@ -70,14 +72,14 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 self.starting_time = 0
             else:
                 raise
-        self.last_update_time = self.starting_time
-        self.starting_portfolio = None
-        self.historical_ending_portfolio = None
-        self.historical_starting_portfolio_values = {}
-        self.ending_portfolio = None
+        self.last_update_time: float = self.starting_time
+        self.starting_portfolio: typing.Optional[dict[str, float]] = None
+        self.historical_ending_portfolio: typing.Optional[dict[str, float]] = None
+        self.historical_starting_portfolio_values: dict[str, float] = {}
+        self.ending_portfolio: typing.Optional[dict[str, float]] = None
 
-        self.max_history_size = self.__class__.MAX_HISTORY_SIZE
-        self.historical_portfolio_value = sortedcontainers.SortedDict()
+        self.max_history_size: int = self.__class__.MAX_HISTORY_SIZE
+        self.historical_portfolio_value: dict[float, historical_asset_value.HistoricalAssetValue] = sortedcontainers.SortedDict()
 
     async def initialize_impl(self):
         """

@@ -13,32 +13,35 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+
 import octobot_commons.logging as logging
 
-from octobot_trading.exchange_data.exchange_symbol_data import ExchangeSymbolData
+import octobot_trading.exchange_data.exchange_symbol_data as exchange_symbol_data_import
+import octobot_trading.exchanges
 
 
 class ExchangeSymbolsData:
     def __init__(self, exchange_manager):
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.exchange_manager = exchange_manager
-        self.exchange = exchange_manager.exchange
-        self.config = exchange_manager.config
-        self.exchange_symbol_data = {}
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = exchange_manager
+        self.exchange: octobot_trading.exchanges.RestExchange = exchange_manager.exchange
+        self.config: dict[str, typing.Any] = exchange_manager.config
+        self.exchange_symbol_data: dict[str, exchange_symbol_data_import.ExchangeSymbolData] = {}
 
     async def stop(self):
-        self.exchange_manager = None
-        self.exchange = None
+        self.exchange_manager = None # type: ignore
+        self.exchange = None # type: ignore
         for exchange_symbol_data in self.exchange_symbol_data.values():
             exchange_symbol_data.stop()
         self.exchange_symbol_data = {}
 
-    def get_exchange_symbol_data(self, symbol, allow_creation=True) -> ExchangeSymbolData:
+    def get_exchange_symbol_data(self, symbol, allow_creation=True) -> exchange_symbol_data_import.ExchangeSymbolData:
         try:
             return self.exchange_symbol_data[symbol]
         except KeyError as e:
             if allow_creation:
                 # warning: should only be called in the async loop thread
-                self.exchange_symbol_data[symbol] = ExchangeSymbolData(self.exchange_manager, symbol)
+                self.exchange_symbol_data[symbol] = exchange_symbol_data_import.ExchangeSymbolData(self.exchange_manager, symbol)
                 return self.exchange_symbol_data[symbol]
             raise e

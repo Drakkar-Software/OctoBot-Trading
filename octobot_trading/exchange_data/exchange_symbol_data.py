@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.tree as commons_tree
@@ -27,6 +28,7 @@ import octobot_trading.exchange_data.prices.prices_manager as prices_manager
 import octobot_trading.exchange_data.prices.price_events_manager as price_events_manager
 import octobot_trading.exchange_data.recent_trades.recent_trades_manager as recent_trades_manager
 import octobot_trading.exchange_data.funding.funding_manager as funding_manager
+import octobot_trading.exchanges
 
 
 class ExchangeSymbolData:
@@ -34,26 +36,26 @@ class ExchangeSymbolData:
     MAX_RECENT_TRADES_COUNT = 100
 
     def __init__(self, exchange_manager, symbol):
-        self.symbol = symbol
-        self.exchange_manager = exchange_manager
+        self.symbol: str = symbol
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = exchange_manager
 
-        self.price_events_manager = price_events_manager.PriceEventsManager()
-        self.order_book_manager = order_book_manager.OrderBookManager()
-        self.prices_manager = prices_manager.PricesManager(self.exchange_manager, self.symbol)
-        self.recent_trades_manager = recent_trades_manager.RecentTradesManager()
-        self.ticker_manager = ticker_manager.TickerManager()
-        self.funding_manager = funding_manager.FundingManager() \
+        self.price_events_manager: price_events_manager.PriceEventsManager = price_events_manager.PriceEventsManager()
+        self.order_book_manager: order_book_manager.OrderBookManager = order_book_manager.OrderBookManager()
+        self.prices_manager: prices_manager.PricesManager = prices_manager.PricesManager(self.exchange_manager, self.symbol)
+        self.recent_trades_manager: recent_trades_manager.RecentTradesManager = recent_trades_manager.RecentTradesManager()
+        self.ticker_manager: ticker_manager.TickerManager = ticker_manager.TickerManager()
+        self.funding_manager: typing.Optional[funding_manager.FundingManager] = funding_manager.FundingManager() \
             if self.exchange_manager.is_margin or self.exchange_manager.is_future else None
 
-        self.symbol_candles = {}
-        self.symbol_klines = {}
+        self.symbol_candles: dict[str, candles_manager.CandlesManager] = {}
+        self.symbol_klines: dict[str, kline_manager.KlineManager] = {}
 
-        self.logger = logging.get_logger(f"{self.__class__.__name__} - {self.symbol}")
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
     def stop(self):
         self.price_events_manager.stop()
         self.prices_manager.stop()
-        self.exchange_manager = None
+        self.exchange_manager = None # type: ignore
 
     # candle functions
     async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False, partial=False,
@@ -81,7 +83,7 @@ class ExchangeSymbolData:
         if self.exchange_manager.is_backtesting:
             # try getting a preloaded candles manager
             symbol_candles = await backtesting_api.get_preloaded_candles_manager(
-                self.exchange_manager.exchange.backtesting,
+                self.exchange_manager.exchange.backtesting, # type: ignore
                 self.exchange_manager.exchange_name, self.symbol, time_frame
             )
             if symbol_candles is not None:

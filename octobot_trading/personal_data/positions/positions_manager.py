@@ -35,16 +35,16 @@ class PositionsManager(util.Initializable):
 
     def __init__(self, trader):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
-        self.positions = collections.OrderedDict()
-        self.logged_unsupported_positions = set()
+        self.positions: collections.OrderedDict[str, position_import.Position] = collections.OrderedDict()
+        self.logged_unsupported_positions: set[str] = set()
 
         # When True, liquidation prices, PNL and other metrics are only read from exchange.
         # They are never computed by OctoBot
-        self.is_exclusively_using_exchange_position_details = False
+        self.is_exclusively_using_exchange_position_details: bool = False
 
-        self._enable_position_update_from_order = True
+        self._enable_position_update_from_order: bool = True
 
     async def initialize_impl(self):
         self._reset_positions()

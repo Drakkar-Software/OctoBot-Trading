@@ -27,6 +27,7 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
+import octobot_trading.exchanges
 import octobot_trading.personal_data.orders.active_order_swap_strategies.active_order_swap_strategy as \
     active_order_swap_strategy_import
 import octobot_trading.personal_data.orders.order_group as order_group_import
@@ -37,16 +38,16 @@ class OrdersManager(util.Initializable):
 
     def __init__(self, trader):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.trader = trader
-        self.orders_initialized = False
-        self.enable_order_auto_synchronization = True
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.trader: octobot_trading.exchanges.Trader = trader
+        self.orders_initialized: bool = False
+        self.enable_order_auto_synchronization: bool = True
         self.orders: collections.OrderedDict[str, order_class.Order] = collections.OrderedDict()
         self.order_groups: dict[str, order_group_import.OrderGroup] = {}
         # orders that are expected from exchange but have not yet been fetched: will be removed when fetched
         self.pending_creation_orders: list[order_class.Order] = []
         # if this the orders manager completed the initial exchange orders sync phase (only on real trader)
-        self.are_exchange_orders_initialized = self.trader.simulate
+        self.are_exchange_orders_initialized: bool = self.trader.simulate
 
     async def initialize_impl(self):
         self._reset_orders()

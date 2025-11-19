@@ -25,9 +25,11 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
-import octobot_trading.exchanges.traders.trader
+import octobot_trading.exchanges
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.trailing_profiles as trailing_profiles
+import octobot_trading.personal_data.orders.order_group as order_group_import
+import octobot_trading.personal_data.orders.order_state as order_state_import
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.personal_data.orders.triggers.base_trigger as base_trigger_import
 import octobot_trading.personal_data.orders.cancel_policies.order_cancel_policy as order_cancel_policy_import
@@ -47,99 +49,99 @@ class Order(util.Initializable):
 
     def __init__(self, trader, side=None):
         super().__init__()
-        self.trader: octobot_trading.exchanges.traders.trader.Trader = trader
-        self.exchange_manager = trader.exchange_manager
-        self.lock = asyncio.Lock()
-        self.is_synchronized_with_exchange = False
-        self.is_from_this_octobot = True
-        self.simulated = trader.simulate
+        self.trader: octobot_trading.exchanges.Trader = trader
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = trader.exchange_manager
+        self.lock: asyncio.Lock = asyncio.Lock()
+        self.is_synchronized_with_exchange: bool = False
+        self.is_from_this_octobot: bool = True
+        self.simulated: bool = trader.simulate
 
-        self.logger_name = None
-        self.order_id = order_util.generate_order_id()        # used id; kept through instances and trading signals
-        self.exchange_order_id = trader.parse_order_id(None)  # given by the exchange, local to the user account
+        self.logger_name: typing.Optional[str] = None
+        self.order_id: str = order_util.generate_order_id()        # used id; kept through instances and trading signals
+        self.exchange_order_id: str = trader.parse_order_id(None)  # given by the exchange, local to the user account
         self.status: enums.OrderStatus = enums.OrderStatus.OPEN
-        self.symbol = None
-        self.currency = None
-        self.market = None
-        self.quantity_currency = None
-        self.taker_or_maker = None
-        self.timestamp = 0
-        self.side = side
-        self.trigger_above = None
-        self.tag = None
-        self.associated_entry_ids = None
-        self.broker_applied = False
+        self.symbol: str = None # type: ignore
+        self.currency: typing.Optional[str] = None
+        self.market: typing.Optional[str] = None
+        self.quantity_currency: typing.Optional[str] = None
+        self.taker_or_maker: typing.Optional[str] = None
+        self.timestamp: float = 0
+        self.side: enums.TradeOrderSide = side # type: ignore
+        self.trigger_above: bool = None # type: ignore
+        self.tag: str = None # type: ignore
+        self.associated_entry_ids: typing.Optional[list[str]] = None
+        self.broker_applied: bool = False
 
         # original order attributes
-        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
-        self.origin_price = constants.ZERO
-        self.created_last_price = constants.ZERO
-        self.origin_quantity = constants.ZERO
-        self.origin_stop_price = constants.ZERO
+        self.creation_time: float = self.exchange_manager.exchange.get_exchange_current_time()
+        self.origin_price: decimal.Decimal = constants.ZERO
+        self.created_last_price: decimal.Decimal = constants.ZERO
+        self.origin_quantity: decimal.Decimal = constants.ZERO
+        self.origin_stop_price: decimal.Decimal = constants.ZERO
 
         # order type attributes
-        self.order_type: enums.TraderOrderType = None
+        self.order_type: enums.TraderOrderType = None # type: ignore
         # raw exchange order type, used to create order dict
-        self.exchange_order_type: enums.TradeOrderType = None
+        self.exchange_order_type: typing.Optional[enums.TradeOrderType] = None
 
         # filled order attributes
-        self.filled_quantity = constants.ZERO
-        self.filled_price = constants.ZERO
-        self.fee = None
-        self.fees_currency_side = enums.FeesCurrencySide.UNDEFINED
-        self.total_cost = constants.ZERO
-        self.order_profitability = constants.ZERO
-        self.executed_time = 0
+        self.filled_quantity: decimal.Decimal = constants.ZERO
+        self.filled_price: decimal.Decimal = constants.ZERO
+        self.fee: typing.Optional[dict[str, typing.Any]] = None
+        self.fees_currency_side: enums.FeesCurrencySide = enums.FeesCurrencySide.UNDEFINED
+        self.total_cost: decimal.Decimal = constants.ZERO
+        self.order_profitability: decimal.Decimal = constants.ZERO
+        self.executed_time: float = 0
 
         # canceled order attributes
-        self.canceled_time = 0
+        self.canceled_time: float = 0
 
-        self.order_group = None
-        self.trailing_profile: trailing_profiles.TrailingProfile = None
+        self.order_group: typing.Optional[order_group_import.OrderGroup] = None
+        self.trailing_profile: typing.Optional[trailing_profiles.TrailingProfile] = None
 
         # order state is initialized in initialize_impl()
-        self.state = None
+        self.state: typing.Optional[order_state_import.OrderState] = None
 
         # order activity
-        self.is_active = True   # When is_active=False order is not pushed to exchanges
+        self.is_active: bool = True   # When is_active=False order is not pushed to exchanges
         # True when a transition between active and inactive is being made
-        self.is_in_active_inactive_transition = False
+        self.is_in_active_inactive_transition: bool = False
         # active_trigger is used for active/inactive switch trigger mechanism, it stores relevant data.
         self.active_trigger: typing.Optional[base_trigger_import.BaseTrigger] = None
 
         # future trading attributes
         # when True: reduce position quantity only without opening a new position if order.quantity > position.quantity
-        self.reduce_only = False
+        self.reduce_only: bool = False
 
         # when True: close the current associated position
-        self.close_position = False
+        self.close_position: bool = False
 
         # the associated position side (should be BOTH for One-way Mode ; LONG or SHORT for Hedge Mode)
-        self.position_side = None
+        self.position_side: typing.Optional[enums.PositionSide] = None
 
         # Chained orders attributes
         # other orders (as any Order) that should be created when this order is filled
-        self.chained_orders = []
+        self.chained_orders: list[Order] = []
         # order that triggered this order creation (when created as a chained order)
-        self.triggered_by = None
+        self.triggered_by: typing.Optional[Order] = None
         # if True this orders quantity will be reduced according to the triggering order's paid fees
-        self.update_with_triggering_order_fees = False
+        self.update_with_triggering_order_fees: bool = False
         # True when this order has been created directly by the exchange (usually as stop loss / take profit
         # when passed as parameter alongside another order)
-        self.has_been_bundled = False
+        self.has_been_bundled: bool = False
         # True when this order is to be opened as a chained order and has not been open yet
-        self.is_waiting_for_chained_trigger = False
+        self.is_waiting_for_chained_trigger: bool = False
         # instance of the order that has been created after self has been filled. Used in stop / TP orders
-        self.on_filled_artificial_order = None
+        self.on_filled_artificial_order: typing.Optional[Order] = None
 
         # Cancel policy, if set
         self.cancel_policy: typing.Optional[order_cancel_policy_import.OrderCancelPolicy] = None
 
         # Params given to the exchange request when this order is created. Include any exchange specific param here.
         # All params and values in those will be ignored in simulated orders
-        self.exchange_creation_params = {}
+        self.exchange_creation_params: dict[str, typing.Any] = {}
         # kwargs given to trader.create_order() when this order should be created later on
-        self.trader_creation_kwargs = {}
+        self.trader_creation_kwargs: dict[str, typing.Any] = {}
 
     @classmethod
     def get_name(cls):
@@ -731,7 +733,7 @@ class Order(util.Initializable):
                 logger.error(f"Unexpected: Non reduce only {message}")
             # order can't be created: consider it cancelled
             # note: grouped orders will also be skipped as this one is cancelled (should_be_created will be false)
-            order.status = octobot_trading.enums.OrderStatus.CLOSED
+            order.status = enums.OrderStatus.CLOSED
             # clear state to avoid using outdated pending creation state
             order.state = None
             order.clear()
@@ -749,7 +751,7 @@ class Order(util.Initializable):
                     f"Initial order: {order}, artificial order: {equivalent_order}."
                 )
             # note: grouped orders will also be skipped as this one is filled (should_be_created will be false)
-            order.status = octobot_trading.enums.OrderStatus.CLOSED
+            order.status = enums.OrderStatus.CLOSED
             # clear state to avoid using outdated pending creation state
             order.state = None
             order.clear()
@@ -1167,8 +1169,8 @@ class Order(util.Initializable):
         if self.active_trigger:
             self.active_trigger.clear()
         self.clear_active_order_elements()
-        self.trader = None
-        self.exchange_manager = None
+        self.trader = None # type: ignore
+        self.exchange_manager = None # type: ignore
         self.trader_creation_kwargs = {}
 
     def is_cleared(self):
@@ -1210,7 +1212,7 @@ def parse_order_type(raw_order) -> (enums.TradeOrderSide, enums.TraderOrderType)
     try:
         side: enums.TradeOrderSide = enums.TradeOrderSide(raw_order[enums.ExchangeConstantsOrderColumns.SIDE.value])
         order_type: enums.TradeOrderType = enums.TradeOrderType.UNKNOWN
-        parsed_order_type: enums.TraderOrderType = enums.TraderOrderType.UNKNOWN
+        parsed_order_type: typing.Optional[enums.TraderOrderType] = enums.TraderOrderType.UNKNOWN
         try:
             order_type = enums.TradeOrderType(raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value])
         except ValueError as e:

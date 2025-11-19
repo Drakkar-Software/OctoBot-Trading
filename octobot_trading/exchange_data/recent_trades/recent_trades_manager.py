@@ -26,9 +26,9 @@ class RecentTradesManager(util.Initializable):
 
     def __init__(self):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.recent_trades = collections.deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
-        self.liquidations = collections.deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.recent_trades: collections.deque[dict] = collections.deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
+        self.liquidations: collections.deque[dict] = collections.deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)
         self._reset_recent_trades()
 
     async def initialize_impl(self):

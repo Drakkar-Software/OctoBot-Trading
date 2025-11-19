@@ -27,13 +27,13 @@ class OrderGroup:
         self, name, orders_manager,
         active_order_swap_strategy: typing.Optional[active_order_swap_strategies.ActiveOrderSwapStrategy] = None
     ):
-        self.name = name
+        self.name: str = name
         self.orders_manager = orders_manager
-        self.active_order_swap_strategy = active_order_swap_strategy or self._default_active_order_swap_strategy(
+        self.active_order_swap_strategy: active_order_swap_strategies.ActiveOrderSwapStrategy = active_order_swap_strategy or self._default_active_order_swap_strategy(
             constants.ACTIVE_ORDER_STRATEGY_SWAP_TIMEOUT
         )
-        self.logger = logging.get_logger(str(self))
-        self.enabled = True
+        self.logger: logging.BotLogger = logging.get_logger(str(self))
+        self.enabled: bool = True
 
         self._lock: typing.Optional[asyncio_tools.RLock] = None
 

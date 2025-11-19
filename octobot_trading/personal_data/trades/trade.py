@@ -15,10 +15,12 @@
 #  License along with this library.
 import decimal
 import copy
+import typing
 
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order as order_import
+import octobot_trading.exchanges
 import octobot_commons.symbols as commons_symbols
 
 
@@ -26,45 +28,45 @@ class Trade:
     CLOSING_TRADE_ORDER_STATUS = {enums.OrderStatus.CANCELED, enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED}
 
     def __init__(self, trader):
-        self.trader = trader
-        self.exchange_manager = trader.exchange_manager
+        self.trader: octobot_trading.exchanges.Trader = trader
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = trader.exchange_manager
 
-        self.status = enums.OrderStatus.OPEN
-        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
+        self.status: enums.OrderStatus = enums.OrderStatus.OPEN
+        self.creation_time: float = self.exchange_manager.exchange.get_exchange_current_time()
 
-        self.trade_id = trader.parse_order_id(None)
-        self.origin_order_id = None
-        self.exchange_order_id = None
+        self.trade_id: str = trader.parse_order_id(None)
+        self.origin_order_id: str = None # type: ignore
+        self.exchange_order_id: str = None # type: ignore
         # One order might create multiple trades when matched to multiple open orders.
         # in this case those trades would share the same exchange_order_id
-        self.exchange_trade_id = None
-        self.simulated = True
-        self.is_closing_order = False
-        self.is_from_this_octobot = True
+        self.exchange_trade_id: str = None # type: ignore
+        self.simulated: bool = True
+        self.is_closing_order: bool = False
+        self.is_from_this_octobot: bool = True
 
-        self.symbol = None
-        self.currency = None
-        self.market = None
-        self.taker_or_maker = None
-        self.origin_price = constants.ZERO
-        self.origin_quantity = constants.ZERO
-        self.trade_type = None
-        self.side = None
-        self.executed_quantity = constants.ZERO
-        self.canceled_time = 0
-        self.executed_time = 0
-        self.fee = None
-        self.executed_price = constants.ZERO
-        self.trade_profitability = constants.ZERO
-        self.total_cost = constants.ZERO
-        self.reduce_only = False
-        self.tag = None
-        self.quantity_currency = None
-        self.associated_entry_ids = None
-        self.broker_applied = False
+        self.symbol: str = None # type: ignore
+        self.currency: typing.Optional[str] = None
+        self.market: typing.Optional[str] = None
+        self.taker_or_maker: str = None # type: ignore
+        self.origin_price: decimal.Decimal = constants.ZERO
+        self.origin_quantity: decimal.Decimal = constants.ZERO
+        self.trade_type: typing.Optional[enums.TradeOrderType] = None
+        self.side: enums.TradeOrderSide = None # type: ignore
+        self.executed_quantity: decimal.Decimal = constants.ZERO
+        self.canceled_time: float = 0
+        self.executed_time: float = 0
+        self.fee: typing.Optional[dict[str, typing.Any]] = None
+        self.executed_price: decimal.Decimal = constants.ZERO
+        self.trade_profitability: decimal.Decimal = constants.ZERO
+        self.total_cost: decimal.Decimal = constants.ZERO
+        self.reduce_only: bool = False
+        self.tag: str = None # type: ignore
+        self.quantity_currency: str = None # type: ignore
+        self.associated_entry_ids: typing.Optional[list[str]] = None
+        self.broker_applied: bool = False
 
         # raw exchange trade type, used to create trade dict
-        self.exchange_trade_type = None
+        self.exchange_trade_type: typing.Optional[enums.TradeOrderType] = None
 
     def update_from_order(self, order, creation_time=0, canceled_time=0, executed_time=0, exchange_trade_id=None):
         self.currency = order.currency
@@ -175,5 +177,5 @@ class Trade:
         return trade
 
     def clear(self):
-        self.trader = None
-        self.exchange_manager = None
+        self.trader = None # type: ignore
+        self.exchange_manager = None # type: ignore

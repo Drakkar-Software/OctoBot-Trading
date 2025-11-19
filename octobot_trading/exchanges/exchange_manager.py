@@ -37,13 +37,13 @@ import trading_backend.exchanges
 class ExchangeManager(util.Initializable):
     def __init__(self, config, exchange_class_string):
         super().__init__()
-        self.id : str= str(uuid.uuid4())
-        self.bot_id: str = None
+        self.id: str = str(uuid.uuid4())
+        self.bot_id: str = None  # type: ignore
         self.config: dict = config
         self.tentacles_setup_config = None
         self.exchange_class_string: str = exchange_class_string
         self.exchange_name: str = exchange_class_string
-        self.logger = logging.get_logger(self.__class__.__name__)
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
 
         self.is_ready: bool = False
         self.is_simulated: bool = False
@@ -77,7 +77,7 @@ class ExchangeManager(util.Initializable):
         self.is_broker_enabled: bool = False
         self.trading_modes: list = []
 
-        self.exchange_web_socket = None
+        self.exchange_web_socket: typing.Optional[exchanges.WebSocketExchange] = None
 
         self.client_symbols: list[str] = []
         self.client_time_frames: list[str] = []
@@ -150,8 +150,8 @@ class ExchangeManager(util.Initializable):
                 exchanges.Exchanges.instance().del_exchange(
                     self.exchange.name, self.id, should_warn=warning_on_missing_elements
                 )
-                self.exchange.exchange_manager = None
-            self.exchange = None
+                self.exchange.exchange_manager = None # type: ignore
+            self.exchange = None # type: ignore
         if self.exchange_personal_data is not None:
             try:
                 await self.exchange_personal_data.stop()
@@ -178,9 +178,9 @@ class ExchangeManager(util.Initializable):
             except Exception as err:
                 self.logger.exception(err, True, f"Error when stopping proxy: {err}")
 
-        self.exchange_config = None
-        self.exchange_personal_data = None
-        self.exchange_symbols_data = None
+        self.exchange_config = None # type: ignore
+        self.exchange_personal_data = None # type: ignore
+        self.exchange_symbols_data = None # type: ignore
         if self.exchange_backend is not None:
             try:
                 self.exchange_backend.stop()
@@ -190,11 +190,11 @@ class ExchangeManager(util.Initializable):
             self.logger.debug("Stopping trader ...")
         if self.trader is not None:
             self.trader.clear()
-            self.trader = None
+            self.trader = None # type: ignore
         if enable_logs:
             self.logger.debug("Stopped trader")
         self.trading_modes = []
-        self.backtesting = None
+        self.backtesting = None # type: ignore
         if enable_logs:
             self.logger.debug("Stopped")
 

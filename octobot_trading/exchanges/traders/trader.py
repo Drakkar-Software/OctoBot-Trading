@@ -41,9 +41,9 @@ class Trader(util.Initializable):
     def __init__(self, config, exchange_manager):
         super().__init__()
         self.exchange_manager = exchange_manager
-        self.config = config
+        self.config: dict[str, typing.Any] = config
 
-        self.risk = octobot_trading.constants.ZERO
+        self.risk: decimal.Decimal = octobot_trading.constants.ZERO
         try:
             self.set_risk(decimal.Decimal(str(self.config[octobot_commons.constants.CONFIG_TRADING]
                                               [octobot_commons.constants.CONFIG_TRADER_RISK])))
@@ -53,13 +53,13 @@ class Trader(util.Initializable):
                                                        True)
 
         # logging
-        self.trader_type_str = octobot_trading.constants.REAL_TRADER_STR
-        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
+        self.trader_type_str: str = octobot_trading.constants.REAL_TRADER_STR
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
 
         if not hasattr(self, 'simulate'):
-            self.simulate = False
-        self.is_enabled = self.__class__.enabled(self.config)
-        self.enable_inactive_orders = not self.simulate
+            self.simulate: bool = False
+        self.is_enabled: bool = self.__class__.enabled(self.config)
+        self.enable_inactive_orders: bool = not self.simulate
 
     async def initialize_impl(self):
         self.is_enabled = self.is_enabled and self.exchange_manager.is_trading

@@ -23,8 +23,8 @@ import octobot_trading.util as util
 class KlineManager(util.Initializable):
     def __init__(self):  # Required for python development
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.kline = []
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.kline: list[float] = []
 
     async def initialize_impl(self):
         self._reset_kline()

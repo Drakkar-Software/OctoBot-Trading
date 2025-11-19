@@ -27,31 +27,32 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
-import octobot_trading.personal_data.orders.order as order_import
+import octobot_trading.personal_data.orders.order as order_import  # pylint: disable=unused-import
 import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 import octobot_trading.personal_data.trades.trades_manager as trades_manager
-import octobot_trading.personal_data.trades.trade as trade_import
+import octobot_trading.personal_data.trades.trade as trade_import  # pylint: disable=unused-import
 import octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
+import octobot_trading.exchanges  # pylint: disable=unused-import
 
 
 class ExchangePersonalData(util.Initializable):
     # note: symbol keys are without /
     def __init__(self, exchange_manager):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.exchange_manager = exchange_manager
-        self.config = exchange_manager.config
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
+        self.exchange_manager: "octobot_trading.exchanges.ExchangeManager" = exchange_manager
+        self.config: dict[str, typing.Any] = exchange_manager.config
 
-        self.trader = None
-        self.exchange = None
+        self.trader: "octobot_trading.exchanges.Trader" = None # type: ignore
+        self.exchange: "octobot_trading.exchanges.RestExchange" = None # type: ignore
 
-        self.portfolio_manager: portfolio_manager.PortfolioManager = None
-        self.trades_manager: trades_manager.TradesManager = None
-        self.orders_manager: orders_manager.OrdersManager = None
-        self.positions_manager: positions_manager.PositionsManager = None
-        self.transactions_manager: transactions_manager.TransactionsManager = None
+        self.portfolio_manager: portfolio_manager.PortfolioManager = None # type: ignore
+        self.trades_manager: trades_manager.TradesManager = None # type: ignore
+        self.orders_manager: orders_manager.OrdersManager = None # type: ignore
+        self.positions_manager: positions_manager.PositionsManager = None # type: ignore
+        self.transactions_manager: transactions_manager.TransactionsManager = None # type: ignore
 
     async def initialize_impl(self):
         self.trader = self.exchange_manager.trader
