@@ -71,9 +71,9 @@ class ExchangeManager(util.Initializable):
         self.is_trader_simulated: bool = util.is_trader_simulator_enabled(self.config)
         self.has_websocket: bool = False
 
-        self.trader: exchanges.Trader = None
-        self.exchange: exchanges.RestExchange = None
-        self.exchange_backend: trading_backend.exchanges.Exchange = None
+        self.trader: exchanges.Trader = None # type: ignore
+        self.exchange: exchanges.RestExchange = None # type: ignore
+        self.exchange_backend: trading_backend.exchanges.Exchange = None # type: ignore
         self.is_broker_enabled: bool = False
         self.trading_modes: list = []
 
@@ -87,7 +87,7 @@ class ExchangeManager(util.Initializable):
         self.exchange_personal_data: personal_data.ExchangePersonalData = personal_data.ExchangePersonalData(self)
         self.exchange_symbols_data: exchange_data.ExchangeSymbolsData = exchange_data.ExchangeSymbolsData(self)
 
-        self.debug_info = {}
+        self.debug_info: dict[str, typing.Any] = {}
 
     async def initialize_impl(self, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
         await exchanges.create_exchanges(self, exchange_config_by_exchange)

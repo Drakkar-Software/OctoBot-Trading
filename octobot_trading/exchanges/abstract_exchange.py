@@ -30,7 +30,7 @@ import octobot_commons.html_util as html_util
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-
+import octobot_trading.exchanges
 
 class AbstractExchange(tentacles_management.AbstractTentacle):
     USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.EXCHANGE
@@ -76,28 +76,28 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
 
     def __init__(self, config, exchange_manager, exchange_config_by_exchange: typing.Optional[dict[str, dict]]):
         super().__init__()
-        self.config = config
-        self.exchange_manager = exchange_manager
-        self.connector = None
-        self.is_initialized = False
+        self.config: dict[str, typing.Any] = config
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = exchange_manager
+        self.connector: "octobot_trading.exchanges.connectors.AbstractConnector" = None # type: ignore
+        self.is_initialized: bool = False
 
-        self.tentacle_config = {}
+        self.tentacle_config: dict[str, typing.Any] = {}
 
         # Initialized when initializing exchange connector
-        self.symbols = set()
-        self.time_frames = set()
+        self.symbols: set[str] = set()
+        self.time_frames: set[common_enums.TimeFrames] = set()
 
         # exchange name related attributes
-        self.name = self.exchange_manager.exchange_class_string
-        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.name}]")
+        self.name: str = self.exchange_manager.exchange_class_string
+        self.logger: logging.BotLogger = logging.get_logger(f"{self.__class__.__name__}[{self.name}]")
 
         # exchange related constants
-        self.allowed_time_lag = octobot_trading.constants.DEFAULT_EXCHANGE_TIME_LAG
-        self.current_account = enums.AccountTypes.CASH
+        self.allowed_time_lag: float = octobot_trading.constants.DEFAULT_EXCHANGE_TIME_LAG
+        self.current_account: enums.AccountTypes = enums.AccountTypes.CASH
 
         self.is_unreachable: bool = False
 
-        self._creating_exchange_order_descriptions = set()
+        self._creating_exchange_order_descriptions: set[str] = set()
         self._enable_create_order_retrier: bool = True
 
         if exchange_config_by_exchange and (

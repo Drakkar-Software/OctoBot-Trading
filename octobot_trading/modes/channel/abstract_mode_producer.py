@@ -17,8 +17,10 @@ import contextlib
 import asyncio
 import concurrent.futures
 import typing
+import decimal
 
 import async_channel.enums as channel_enums
+import async_channel.consumer
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
@@ -33,11 +35,13 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.util as util
+import octobot_trading.exchanges
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.modes.mode_activity as mode_activity
+import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
 import octobot_trading.storage.util as storage_util
 
 
@@ -56,45 +60,45 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
         # the trading mode instance logger
-        self.logger = logging.get_logger(self.__class__.__name__)
+        self.logger: logging.BotLogger = logging.get_logger(self.__class__.__name__)
 
         # the trading mode instance
-        self.trading_mode = trading_mode
+        self.trading_mode: abstract_trading_mode.AbstractTradingMode = trading_mode
 
         # the global bot config
-        self.config = config
+        self.config: dict[str, typing.Any] = config
 
         # the trading mode exchange manager
-        self.exchange_manager = exchange_manager
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = exchange_manager
 
         # shortcut
-        self.exchange_name = self.exchange_manager.exchange_name
+        self.exchange_name: str = self.exchange_manager.exchange_name
 
         # matrix_id shortcut
-        self.matrix_id = None
+        self.matrix_id: typing.Optional[str] = None
 
         # the final eval used by TradingModeConsumers, default value is 0
-        self.final_eval = constants.ZERO
+        self.final_eval: decimal.Decimal = constants.ZERO
 
         # the producer state used by TradingModeConsumers
-        self.state = None
+        self.state: typing.Optional[enums.EvaluatorStates] = None
 
         # the consumer instances
-        self.evaluator_consumers = []
-        self.trading_consumers = []
+        self.evaluator_consumers: list[async_channel.consumer.Consumer] = []
+        self.trading_consumers: list[exchanges_channel.ExchangeChannelConsumer] = []
 
-        self.time_frame_filter = None
+        self.time_frame_filter: typing.Optional[list[common_enums.TimeFrames]] = None
 
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
-        self.symbol = None
+        self.symbol: typing.Optional[str] = None
 
-        self._is_ready_to_trade = None
+        self._is_ready_to_trade: typing.Optional[asyncio.Event] = None
         self.on_reload_config()
 
         # cleared (awaitable) when inside self.trading_mode_trigger
-        self._is_trigger_completed = asyncio.Event()
+        self._is_trigger_completed: asyncio.Event = asyncio.Event()
         self._is_trigger_completed.set()
 
         # used to avoid spamming critical issues
@@ -288,8 +292,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Flush all instance objects reference
         """
-        self.trading_mode = None
-        self.exchange_manager = None
+        self.trading_mode = None # type: ignore
+        self.exchange_manager = None # type: ignore
         self.evaluator_consumers = []
         self.trading_consumers = []
 
