@@ -17,19 +17,20 @@ import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.singleton as singleton
+import octobot_commons.enums as commons_enums
 
 
 class ExchangeConfiguration:
     def __init__(self, exchange_manager, matrix_id):
         self.exchange_manager = exchange_manager
-        self.exchange_name = exchange_manager.exchange_name
-        self.id = exchange_manager.id
-        self.matrix_id = matrix_id
+        self.exchange_name: str = exchange_manager.exchange_name
+        self.id: str = exchange_manager.id
+        self.matrix_id: str = matrix_id
         # use only enabled currencies
-        self.symbols = exchange_manager.exchange_config.traded_symbol_pairs
-        self.symbols_by_crypto_currencies = exchange_manager.exchange_config.traded_cryptocurrencies
-        self.real_time_time_frames = exchange_manager.exchange_config.real_time_time_frames
-        self.available_required_time_frames = exchange_manager.exchange_config.available_required_time_frames
+        self.symbols: list[str] = exchange_manager.exchange_config.traded_symbol_pairs
+        self.symbols_by_crypto_currencies: dict[str, list[str]] = exchange_manager.exchange_config.traded_cryptocurrencies
+        self.real_time_time_frames: list[commons_enums.TimeFrames] = exchange_manager.exchange_config.real_time_time_frames
+        self.available_required_time_frames: list[commons_enums.TimeFrames] = exchange_manager.exchange_config.available_required_time_frames
 
 
 class Exchanges(singleton.Singleton):

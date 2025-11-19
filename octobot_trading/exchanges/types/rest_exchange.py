@@ -157,7 +157,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         if self.HAS_FETCHED_DETAILS:
             self._apply_fetched_details(config, exchange_manager)
         self.connector = self._create_connector(config, exchange_manager, connector_class)
-        self.pair_contracts = {}
+        self.pair_contracts: dict[str, contracts.MarginContract] = {}
 
     def _create_connector(self, config, exchange_manager, connector_class):
         return (connector_class or self.DEFAULT_CONNECTOR_CLASS)(

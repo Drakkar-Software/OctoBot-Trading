@@ -58,20 +58,20 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self, config, exchange_manager, adapter_class=None, additional_config=None, rest_name=None, force_auth=False
     ):
         super().__init__(config, exchange_manager, None)
-        self.client: ccxt.Exchange = None
-        self.exchange_type = None
-        self.adapter = self.get_adapter_class(adapter_class)(self)
-        self.all_currencies_price_ticker = {}
-        self.is_authenticated = False
-        self.rest_name = rest_name or self.exchange_manager.exchange_class_string
-        self.force_authentication = force_auth
+        self.client: ccxt.Exchange = None # type: ignore
+        self.exchange_type: typing.Type[ccxt.Exchange] = None # type: ignore
+        self.adapter: ccxt_adapter.CCXTAdapter = self.get_adapter_class(adapter_class)(self)
+        self.all_currencies_price_ticker: dict[str, dict] = {}
+        self.is_authenticated: bool = False
+        self.rest_name: str = rest_name or self.exchange_manager.exchange_class_string
+        self.force_authentication: bool = force_auth
 
         # used to save exchange local elements in subclasses
-        self.saved_data = {}
+        self.saved_data: dict[str, typing.Any] = {}
 
-        self.additional_config = additional_config
-        self.headers = {}
-        self.options = {}
+        self.additional_config: dict[str, typing.Any] = additional_config
+        self.headers: dict[str, str] = {}
+        self.options: dict[str, typing.Any] = {}
         # add default options
         self.add_options(
             ccxt_client_util.get_ccxt_client_login_options(self.exchange_manager)

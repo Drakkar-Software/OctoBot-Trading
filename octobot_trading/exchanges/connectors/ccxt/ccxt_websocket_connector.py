@@ -18,6 +18,7 @@ import asyncio
 import copy
 import decimal
 import time
+import typing
 
 import ccxt
 import ccxt.pro as ccxtpro
@@ -101,23 +102,23 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
 
     def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, websocket_name=None):
         super().__init__(config, exchange_manager)
-        self.filtered_pairs = []
-        self.watched_pairs = []
-        self.min_timeframe = None
-        self._previous_open_candles = {}
-        self._subsequent_unordered_candles_count = {}   # dict values: tuple(candle_count, candle_time)
-        self._errors_count = {}
-        self._start_time_millis = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
-        self.websocket_name = websocket_name or self.get_name()
+        self.filtered_pairs: list[str] = []
+        self.watched_pairs: list[str] = []
+        self.min_timeframe: typing.Optional[commons_enums.TimeFrames] = None
+        self._previous_open_candles: dict[str, dict[str, dict]] = {}
+        self._subsequent_unordered_candles_count: dict[str, dict[str, tuple[int, float]]] = {}   # dict values: tuple(candle_count, candle_time)
+        self._errors_count: dict[str, dict[str, int]] = {}
+        self._start_time_millis: typing.Optional[int] = None  # used for the "since" param in CURRENT/CANDLE_TIME_FILTERED_CHANNELS
+        self.websocket_name: str = websocket_name or self.get_name()
 
-        self.local_loop = None
+        self.local_loop: typing.Optional[asyncio.AbstractEventLoop] = None
 
-        self.should_stop = False
-        self.is_authenticated = False
-        self.adapter = self.get_adapter_class(adapter_class)(self)
-        self.additional_config = additional_config
-        self.headers = {}
-        self.options = {
+        self.should_stop: bool = False
+        self.is_authenticated: bool = False
+        self.adapter: ccxt_adapter.CCXTAdapter = self.get_adapter_class(adapter_class)(self)
+        self.additional_config: typing.Optional[dict[str, typing.Any]] = additional_config
+        self.headers: dict[str, str] = {}
+        self.options: dict[str, typing.Any] = {
             "newUpdates": True,  # only get new updates from trades and ohlcv (don't return the full cached history)
             "OHLCVLimit": trading_constants.CCXT_OHLCV_CACHE_LIMIT,
             "tradesLimit": trading_constants.CCXT_TRADES_CACHE_LIMIT,
@@ -128,11 +129,11 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.add_options(
             ccxt_client_util.get_ccxt_client_login_options(self.exchange_manager)
         )
-        self.client = None  # ccxt.pro exchange: a ccxt.async_support exchange with websocket capabilities
-        self.feed_tasks = {}
-        self._last_close_time = 0
-        self._last_message_time = 0
-        self.throttled_ws_updates = trading_constants.THROTTLED_WS_UPDATES
+        self.client: ccxt.Exchange = None # type: ignore # ccxt.pro exchange: a ccxt.async_support exchange with websocket capabilities
+        self.feed_tasks: dict[str, asyncio.Task] = {}
+        self._last_close_time: float = 0
+        self._last_message_time: float = 0
+        self.throttled_ws_updates: float = trading_constants.THROTTLED_WS_UPDATES
 
         self._create_client()
 

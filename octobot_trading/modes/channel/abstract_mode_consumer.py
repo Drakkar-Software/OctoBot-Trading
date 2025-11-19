@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import enum
 import typing
 
 import octobot_commons.signals as commons_signals
@@ -22,12 +23,14 @@ import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
 
 import octobot_trading.exchange_channel as exchange_channel
+import octobot_trading.exchanges
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.mode_activity as mode_activity
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
+import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -37,9 +40,9 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
     
     def __init__(self, trading_mode):
         super().__init__()
-        self.trading_mode = trading_mode
-        self.exchange_manager = trading_mode.exchange_manager
-        self.previous_call_error_per_symbol = {}    # stores the last order creation issue for symbol
+        self.trading_mode: abstract_trading_mode.AbstractTradingMode = trading_mode
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = trading_mode.exchange_manager
+        self.previous_call_error_per_symbol: dict[str, typing.Optional[Exception]] = {}    # stores the last order creation issue for symbol
         self.on_reload_config()
 
     def on_reload_config(self):
@@ -57,9 +60,9 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         return False
 
     def flush(self):
-        self.trading_mode = None
-        self.exchange_manager = None
-        self.previous_call_error_per_symbol = None
+        self.trading_mode = None # type: ignore
+        self.exchange_manager = None # type: ignore
+        self.previous_call_error_per_symbol = None # type: ignore
 
     async def internal_callback(
         self, trading_mode_name, cryptocurrency, symbol, time_frame, final_note, state, 
@@ -239,7 +242,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder
                    .origin_crypto_currencies_values)
 
-    def _update_producer_last_activity(self, activity_type: enums, reason):
+    def _update_producer_last_activity(self, activity_type: enum.Enum, reason):
         for producer in self.trading_mode.producers:
             if isinstance(producer, modes_channel.AbstractTradingModeProducer):
                 if producer.last_activity is None:

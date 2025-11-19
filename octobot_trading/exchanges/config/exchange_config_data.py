@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import copy
+import typing
 
 import octobot_commons.symbols
 import octobot_commons.time_frame_manager as time_frame_manager
@@ -38,39 +39,39 @@ class ExchangeConfig(util.Initializable):
         self._logger = logging.get_logger(self.__class__.__name__)
 
         self.exchange_manager = exchange_manager
-        self.config = exchange_manager.config
+        self.config: dict[str, typing.Any] = exchange_manager.config
 
         # dict of exchange supported pairs by enabled currencies from self.config
-        self.traded_cryptocurrencies = {}
+        self.traded_cryptocurrencies: dict[str, list[str]] = {}
 
         # list of exchange supported enabled pairs from self.config
-        self.traded_symbol_pairs = []
+        self.traded_symbol_pairs: list[str] = []
         # Same as traded_symbol_pairs but with parsed symbols
-        self.traded_symbols = []
+        self.traded_symbols: list[octobot_commons.symbols.Symbol] = []
 
         # list of exchange supported pairs on which we want to collect data through updaters or websocket
-        self.watched_pairs = []
+        self.watched_pairs: list[str] = []
 
         # list of required time frames from configuration that are available
-        self.available_required_time_frames = []
+        self.available_required_time_frames: list[commons_enums.TimeFrames] = []
 
         # list of exchange supported time frames that are also required (config + real time)
-        self.traded_time_frames = []
+        self.traded_time_frames: list[commons_enums.TimeFrames] = []
 
         # list of time frames to be used for real-time purposes (short time frames)
-        self.real_time_time_frames = []
+        self.real_time_time_frames: list[commons_enums.TimeFrames] = []
 
         # list of exchange supported time frames that are traded (config + real time) and that are used for display only
-        self.available_time_frames = []
+        self.available_time_frames: list[commons_enums.TimeFrames] = []
 
         # number of required historical candles
-        self.required_historical_candles_count = constants.DEFAULT_IGNORED_VALUE
+        self.required_historical_candles_count: int = constants.DEFAULT_IGNORED_VALUE
 
         # periodic updaters that should always be started for this configuration
-        self.forced_updater_channels = set[channel_specs_import.ChannelSpecs]()
+        self.forced_updater_channels: set[channel_specs_import.ChannelSpecs] = set()
 
         # When False, cancelled orders won't be saved in trades history
-        self.is_saving_cancelled_orders_as_trade = True
+        self.is_saving_cancelled_orders_as_trade: bool = True
 
         self.backtesting_exchange_config = None
 

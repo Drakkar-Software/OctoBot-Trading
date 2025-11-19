@@ -35,6 +35,7 @@ import octobot_tentacles_manager.configuration as tm_configuration
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+import octobot_trading.exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.modes_factory as modes_factory
 import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
@@ -65,53 +66,53 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     def __init__(self, config, exchange_manager):
         super().__init__()
-        self.logger = logging.get_logger(self.get_name())
+        self.logger: logging.BotLogger = logging.get_logger(self.get_name())
 
         # Global OctoBot configuration
-        self.config: dict = config
+        self.config: dict[str, typing.Any] = config
 
         # Mode related exchange manager instance
-        self.exchange_manager = exchange_manager
+        self.exchange_manager: octobot_trading.exchanges.ExchangeManager = exchange_manager
 
         # The id of the OctoBot using this trading mode
-        self.bot_id: str = None
+        self.bot_id: typing.Optional[str] = None
 
         # Trading Mode specific config (Is loaded from tentacle specific file)
-        self.trading_config: dict = None
+        self.trading_config: typing.Optional[dict[str, typing.Any]] = None
 
         # Trading Mode specific config snapshot before a config update
-        self.previous_trading_config: dict = None
+        self.previous_trading_config: typing.Optional[dict[str, typing.Any]] = None
 
         # Used when historical config is enabled
-        self.historical_master_config: dict = None
+        self.historical_master_config: typing.Optional[dict[str, typing.Any]] = None
 
         # If this mode is enabled
         self.enabled: bool = True
 
         # Specified Cryptocurrency for this instance (Should be None if wildcard)
-        self.cryptocurrency: str = None
+        self.cryptocurrency: typing.Optional[str] = None
 
         # Symbol is the cryptocurrency pair (Should be None if wildcard)
-        self.symbol: str = None
+        self.symbol: typing.Optional[str] = None
 
         # Time_frame is the chart time frame (Should be None if wildcard)
-        self.time_frame = None
+        self.time_frame: typing.Optional[common_enums.TimeFrames] = None
 
         # producers is the list of producers created by this trading mode
-        self.producers = []
+        self.producers: list[abstract_mode_producer.AbstractTradingModeProducer] = []
 
         # producers is the list of consumers created by this trading mode
-        self.consumers = []
+        self.consumers: list[abstract_mode_consumer.AbstractTradingModeConsumer] = []
 
         # True when this trading mode is waken up only after full candles close
-        self.is_triggered_after_candle_close = False
+        self.is_triggered_after_candle_close: bool = False
 
         # True when initialization orders are waiting to be created
-        self.are_initialization_orders_pending = False
+        self.are_initialization_orders_pending: bool = False
 
         # When True, health check will be performed when calling trading_mode_trigger
-        self.is_health_check_enabled = False
-        self._last_health_check_time = 0
+        self.is_health_check_enabled: bool = False
+        self._last_health_check_time: float = 0
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -169,7 +170,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         try:
             return self.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY] or self.get_name()
-        except KeyError:
+        except (KeyError, TypeError):
             return self.get_name()
 
     def is_following_trading_signals(self) -> bool:
@@ -233,7 +234,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await producer.stop()
         for consumer in self.consumers:
             await consumer.stop()
-        self.exchange_manager = None
+        self.exchange_manager = None # type: ignore
 
     async def create_producers(self, auto_start) -> list:
         """
@@ -331,7 +332,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     @classmethod
     async def get_forced_updater_channels(
         cls, 
-        exchange_manager: "trading_exchanges.ExchangeManager",
+        exchange_manager: "octobot_trading.exchanges.ExchangeManager",
         tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration, 
         trading_config: typing.Optional[dict]
     ) -> set[str]:
