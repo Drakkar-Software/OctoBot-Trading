@@ -249,6 +249,10 @@ class ExchangeBuilder:
         self.exchange_manager.market_filter = market_filter
         return self
 
+    def set_rest_exchange(self, rest_exchange: typing.Optional["exchanges.RestExchange"]):
+        self.exchange_manager.preconfigured_exchange = rest_exchange
+        return self
+
     def is_ignoring_config(self, ignore_config=True):
         self.exchange_manager.ignore_config = ignore_config
         return self

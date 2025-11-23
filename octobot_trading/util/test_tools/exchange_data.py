@@ -102,7 +102,7 @@ class PortfolioDetails(octobot_commons.dataclasses.FlexibleDataclass, octobot_co
     initial_value: float = 0    # value of the portfolio content (not the full_content)
     content: dict = dataclasses.field(default_factory=dict) # might be a subset of global_content
     full_content: dict = dataclasses.field(default_factory=dict)  # full exchange portfolio
-    asset_values: dict = dataclasses.field(default_factory=dict)    # unitary value of each asset in reference market
+    asset_values: dict[str, float] = dataclasses.field(default_factory=dict)    # unitary value of each asset in reference market
 
 
 @dataclasses.dataclass
