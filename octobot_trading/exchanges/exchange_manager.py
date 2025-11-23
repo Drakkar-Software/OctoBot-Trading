@@ -73,6 +73,7 @@ class ExchangeManager(util.Initializable):
 
         self.trader: exchanges.Trader = None # type: ignore
         self.exchange: exchanges.RestExchange = None # type: ignore
+        self.preconfigured_exchange: exchanges.RestExchange = None # type: ignore
         self.exchange_backend: trading_backend.exchanges.Exchange = None # type: ignore
         self.is_broker_enabled: bool = False
         self.trading_modes: list = []
