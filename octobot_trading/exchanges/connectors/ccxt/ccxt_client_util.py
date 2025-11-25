@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import contextlib
 try:
     from aiohttp_socks import ProxyConnectionError
 except ImportError:
@@ -170,6 +171,28 @@ def set_sandbox_mode(exchange_connector, is_sandboxed):
         # raise exception to stop this exchange and prevent dealing with a real funds exchange
         raise e
     return None
+
+
+@contextlib.contextmanager
+def filtered_fetched_markets(client, market_filter: typing.Callable[[dict], bool]):
+    origin_fetch_markets = client.fetch_markets
+
+    async def _filted_fetched_markets(*args, **kwargs):
+        all_markets = await origin_fetch_markets(*args, **kwargs)
+        filtered_markets = [
+            market 
+            for market in all_markets
+            if market_filter(market)
+        ]
+        commons_logging.get_logger(__name__).info(
+            f"Keeping {len(filtered_markets)} out of {len(all_markets)} fetched markets"
+        )
+        return filtered_markets
+    try:
+        client.fetch_markets = _filted_fetched_markets
+        yield
+    finally:
+        client.fetch_markets = origin_fetch_markets
 
 
 def load_markets_from_cache(client, authenticated_cache: bool, market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None):

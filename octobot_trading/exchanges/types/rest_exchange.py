@@ -147,6 +147,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # set when the exchange can allow users to pay fees in a custom currency (ex: BNB on binance)
     LOCAL_FEES_CURRENCIES: typing.List[str] = []
 
+    # Set False in case this exchange's markets should never be filtered as soon as they are fetched
+    # Therefore overriding the env var value for this exchange
+    FETCH_MIN_EXCHANGE_MARKETS = constants.FETCH_MIN_EXCHANGE_MARKETS
+
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
     def __init__(

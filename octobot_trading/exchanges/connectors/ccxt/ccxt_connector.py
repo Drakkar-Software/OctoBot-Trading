@@ -118,12 +118,21 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
-    async def _load_markets(self, client, reload: bool):
+    async def _load_markets(
+        self, 
+        client, 
+        reload: bool, 
+        market_filter: typing.Optional[typing.Callable[[dict], bool]] = None
+    ):
         """
         Override if necessary
         """
         try:
-            await client.load_markets(reload=reload)
+            if self.exchange_manager.exchange.FETCH_MIN_EXCHANGE_MARKETS and market_filter:
+                with ccxt_client_util.filtered_fetched_markets(client, market_filter):
+                    await client.load_markets(reload=reload)
+            else:
+                await client.load_markets(reload=reload)
         except Exception as err:
             # ensure this is not a proxy error, raise dedicated error if it is
             if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, err):
@@ -135,7 +144,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def load_symbol_markets(
         self,
         reload=False,
-        market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None
+        market_filter: typing.Optional[typing.Callable[[dict], bool]] = None
     ):
         authenticated_cache = self.exchange_manager.exchange.requires_authentication_for_this_configuration_only()
         force_load_markets = reload
@@ -151,7 +160,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 f"{' sandbox' if self.exchange_manager.is_sandboxed else ''} exchange markets ({reload=} {authenticated_cache=})"
             )
             try:
-                await self._load_markets(self.client, reload)
+                await self._load_markets(self.client, reload, market_filter=market_filter)
                 ccxt_client_util.set_markets_cache(self.client, authenticated_cache)
             except (
                 ccxt.AuthenticationError, ccxt.ArgumentsRequired, ccxt.static_dependencies.ecdsa.der.UnexpectedDER,
@@ -189,7 +198,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     unauth_client = None
                     try:
                         unauth_client = self._client_factory(True)[0]
-                        await self._load_markets(unauth_client, reload)
+                        await self._load_markets(unauth_client, reload, market_filter=market_filter)
                         ccxt_client_util.set_markets_cache(unauth_client, False)
                         # apply markets to target client
                         ccxt_client_util.load_markets_from_cache(self.client, False, market_filter=market_filter)
