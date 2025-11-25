@@ -17,3 +17,4 @@
 CCXT_INFO = "info"
 CCXT_OPTIONS = "options"
 CCXT_FEES = "fees"
+CCXT_FETCH_MARKETS = "fetchMarkets"
