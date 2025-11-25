@@ -16,7 +16,7 @@ RUN apt-get update \
 
 # configuration and installation
 RUN pip3 install cython \
-    && pip3 install -r requirements.txt -r dev_requirements.txt
+    && pip3 install -r requirements.txt -r dev_requirements.txt -r full_requirements.txt
 
 # tests
 #RUN pytest tests

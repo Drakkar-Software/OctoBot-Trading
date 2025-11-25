@@ -15,8 +15,5 @@ cryptography # Never specify a version (managed by https://github.com/Drakkar-So
 # OrderBook requirement
 sortedcontainers==2.4.0
 
-# Scripting requirements
-tinydb==4.5.2
-
 # Caching
 cachetools>=5.5.0, <6

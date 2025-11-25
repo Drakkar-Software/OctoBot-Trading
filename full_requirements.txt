@@ -1,0 +1,7 @@
+# Drakkar-Software requirements
+OctoBot-Backtesting[full]>=1.9, <1.10
+OctoBot-Commons[full]>=1.9.82, <1.10
+OctoBot-Tentacles-Manager[full]>=2.9, <2.10
+
+# Scripting requirements
+tinydb==4.5.2
