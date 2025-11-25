@@ -73,7 +73,8 @@ class ExchangeManager(util.Initializable):
 
         self.trader: exchanges.Trader = None # type: ignore
         self.exchange: exchanges.RestExchange = None # type: ignore
-        self.preconfigured_exchange: exchanges.RestExchange = None # type: ignore
+        self.preconfigured_exchange: typing.Optional[exchanges.RestExchange] = None
+        self.leave_rest_exchange_open: bool = False
         self.exchange_backend: trading_backend.exchanges.Exchange = None # type: ignore
         self.is_broker_enabled: bool = False
         self.trading_modes: list = []
@@ -132,7 +133,7 @@ class ExchangeManager(util.Initializable):
         # stop exchange channels
         if enable_logs:
             self.logger.debug(f"Stopping exchange channels for exchange_id: {self.id} ...")
-        if self.exchange is not None:
+        if self.exchange is not None and not self.leave_rest_exchange_open:
             try:
                 exchange_channel.get_exchange_channels(self.id)
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
