@@ -88,11 +88,11 @@ async def _get_symbol_prices(exchange_manager, symbol, parsed_tf, limit):
     return await exchange_manager.exchange.get_symbol_prices(symbol, parsed_tf, limit=limit)
 
 
-async def _update_ohlcv(
-    exchange_manager, symbol: str, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
+async def fetch_ohlcv(
+    exchange_manager, symbol: str, time_frame: str,
     history_size=1, start_time=0, end_time=0, close_price_only=False,
     include_latest_candle=True
-):
+) -> exchange_data_import.MarketDetails:
     parsed_tf = common_enums.TimeFrames(time_frame)
     if start_time == 0:
         ohlcvs = await _get_symbol_prices(exchange_manager, symbol, parsed_tf, history_size)
@@ -105,7 +105,7 @@ async def _update_ohlcv(
             ohlcvs.extend(ohlcv)
     if not include_latest_candle:
         ohlcvs = ohlcvs[:-1]
-    details = exchange_data_import.MarketDetails(
+    return exchange_data_import.MarketDetails(
         symbol=symbol,
         time_frame=time_frame,
         close=[ohlcv[common_enums.PriceIndexes.IND_PRICE_CLOSE.value] for ohlcv in ohlcvs],
@@ -115,7 +115,18 @@ async def _update_ohlcv(
         volume=[ohlcv[common_enums.PriceIndexes.IND_PRICE_VOL.value] for ohlcv in ohlcvs] if not close_price_only else [],
         time=[ohlcv[common_enums.PriceIndexes.IND_PRICE_TIME.value] for ohlcv in ohlcvs],
     )
-    exchange_data.markets.append(details)
+
+
+async def _update_ohlcv(
+    exchange_manager, symbol: str, time_frame: str, exchange_data: exchange_data_import.ExchangeData,
+    history_size=1, start_time=0, end_time=0, close_price_only=False,
+    include_latest_candle=True
+):
+    market = await fetch_ohlcv(
+        exchange_manager, symbol, time_frame, history_size, 
+        start_time, end_time, close_price_only, include_latest_candle
+    )
+    exchange_data.markets.append(market)
 
 
 async def add_symbols_details(
@@ -232,7 +243,7 @@ async def _get_open_orders(exchange_manager, symbol: str, open_orders: list, ign
 
 async def get_open_orders(
     exchange_manager,
-    exchange_data: exchange_data_import.ExchangeData,
+    exchange_data: typing.Optional[exchange_data_import.ExchangeData],
     symbols: list = None,
     ignore_unsupported_orders: bool = True,
 ) -> list:
@@ -312,7 +323,7 @@ async def _get_trades(exchange_manager, symbol: str, trades: list):
 
 async def get_trades(
     exchange_manager,
-    exchange_data: exchange_data_import.ExchangeData,
+    exchange_data: typing.Optional[exchange_data_import.ExchangeData],
     symbols: list = None
 ) -> list:
     trades = []
@@ -408,7 +419,7 @@ async def wait_for_other_status(order: personal_data.Order, timeout) -> personal
 )
 async def get_positions(
     exchange_manager,
-    exchange_data: exchange_data_import.ExchangeData,
+    exchange_data: typing.Optional[exchange_data_import.ExchangeData],
     symbols: list = None
 ) -> list[dict]:
     symbols = symbols or [market.symbol for market in exchange_data.markets]

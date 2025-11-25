@@ -114,6 +114,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         self.is_health_check_enabled: bool = False
         self._last_health_check_time: float = 0
 
+        # Pending bot logs to be inserted after execution
+        self.pending_bot_logs: list["octobot.community.BotLogData"] = []
+
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
     def get_current_state(self) -> tuple:

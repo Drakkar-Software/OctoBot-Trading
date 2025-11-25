@@ -253,6 +253,10 @@ class ExchangeBuilder:
         self.exchange_manager.preconfigured_exchange = rest_exchange
         return self
 
+    def leave_rest_exchange_open(self, leave_rest_exchange_open: bool):
+        self.exchange_manager.leave_rest_exchange_open = leave_rest_exchange_open
+        return self
+    
     def is_ignoring_config(self, ignore_config=True):
         self.exchange_manager.ignore_config = ignore_config
         return self
