@@ -871,7 +871,7 @@ async def test_get_portfolio_filled_orders_deltas_inferrence_thread():
     filled_orders = []
     orders_count = 19
     unfilled_count = 5
-    max_execution_time = 20 if tests.is_on_github_ci() else 2 # use 20 to let slower computers pass the test. Real target is 2
+    max_execution_time = 25 if tests.is_on_github_ci() else 2 # use 20 to let slower computers pass the test. Real target is 2
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # most orders are filled
         # use single symbol to make sure a thread is used
