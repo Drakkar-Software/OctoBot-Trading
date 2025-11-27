@@ -91,17 +91,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 ccxt_client_util.set_sandbox_mode(
                     self, self.exchange_manager.is_sandboxed
                 )
-                
-            if self.force_authentication or (
-                self._should_authenticate() and not self.exchange_manager.exchange_only
-            ):
-                await self._ensure_auth()
-            else:
-                with self.error_describer():
-                    await self.load_symbol_markets(
-                        reload=not self.exchange_manager.use_cached_markets,
-                        market_filter=self.exchange_manager.market_filter,
-                    )
+            await self._ensure_exchange_init()
 
             # initialize symbols and timeframes
             self.symbols = self.exchange_manager.exchange.get_all_available_symbols(active_only=True)
@@ -109,6 +99,22 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             raise octobot_trading.errors.UnreachableExchange(e) from e
+
+    async def _ensure_exchange_init(self):
+        if self.force_authentication or (
+            self._should_authenticate() and not self.exchange_manager.exchange_only
+        ):
+            await self._ensure_auth()
+        else:
+            await self._unauth_ensure_exchange_init()
+
+    async def _unauth_ensure_exchange_init(self):
+        with self.error_describer():
+            # already called in _ensure_auth
+            await self.load_symbol_markets(
+                reload=not self.exchange_manager.use_cached_markets,
+                market_filter=self.exchange_manager.market_filter,
+            )
 
     def get_adapter_class(self, adapter_class):
         return adapter_class or ccxt_adapter.CCXTAdapter
@@ -118,15 +124,12 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
-    async def _load_markets(
-        self, 
-        client, 
-        reload: bool, 
-        market_filter: typing.Optional[typing.Callable[[dict], bool]] = None
+    async def _filtered_if_necessary_load_markets(
+        self,
+        client,
+        reload: bool,
+        market_filter: typing.Optional[typing.Callable[[dict], bool]]
     ):
-        """
-        Override if necessary
-        """
         try:
             if self.exchange_manager.exchange.FETCH_MIN_EXCHANGE_MARKETS and market_filter:
                 with ccxt_client_util.filtered_fetched_markets(client, market_filter):
@@ -138,6 +141,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, err):
                 raise ccxt_client_util.get_proxy_error_class(proxy_error)(proxy_error) from err
             raise
+
+    async def _load_markets(
+        self, 
+        client, 
+        reload: bool, 
+        market_filter: typing.Optional[typing.Callable[[dict], bool]] = None
+    ):
+        """
+        Override if necessary
+        """
+        await self._filtered_if_necessary_load_markets(client, reload, market_filter)
 
     @ccxt_client_util.converted_ccxt_common_errors
     @connectors_util.retried_failed_network_request()
@@ -249,11 +263,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     async def _ensure_auth(self):
         try:
             # load markets before calling _ensure_auth() to avoid fetching markets status while they are cached
-            with self.error_describer():
-                await self.load_symbol_markets(
-                    reload=not self.exchange_manager.use_cached_markets,
-                    market_filter=self.exchange_manager.market_filter,
-                )
+            await self._unauth_ensure_exchange_init()
             await self.exchange_manager.exchange.get_balance()
         except (
             octobot_trading.errors.AuthenticationError, 
