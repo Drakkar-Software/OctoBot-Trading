@@ -269,9 +269,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 reload=not self.exchange_manager.use_cached_markets,
                 market_filter=self.exchange_manager.market_filter,
             )
-        except Exception as e:
+        except Exception as err:
+            if self.force_authentication:
+                raise
             # Is probably handled in exchange tentacles, important thing here is that authentication worked
-            self.logger.debug(f"Error when checking exchange connection: {e}. This should not be an issue.")
+            self.logger.info(f"Error when checking exchange connection: {err}. This should not be an issue.")
 
     def _create_client(self, force_unauth=False):
         self.client, self.is_authenticated = self._client_factory(force_unauth)
