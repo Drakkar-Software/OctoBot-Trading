@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.233] - 2024-11-27
+### Updated
+[CCXTConnector] refactor to simplify factorization in subclasses
+[CCXTExchange] improve exchange load error
+
 ## [2.4.232] - 2024-11-26
 ### Added 
 [Requirements] [full] requirements installation
