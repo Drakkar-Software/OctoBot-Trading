@@ -137,7 +137,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             else:
                 await client.load_markets(reload=reload)
             self.logger.info(
-                f"Loaded {len(client.markets)} [{self.exchange_manager.exchange_name}] markets"
+                f"Loaded {len(client.markets) if client.markets else 0} [{self.exchange_manager.exchange_name}] markets"
             )
         except Exception as err:
             # ensure this is not a proxy error, raise dedicated error if it is
