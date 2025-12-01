@@ -40,8 +40,8 @@ MAX_FETCHTABLE_TIME = round(
 
 class TestHyperliquidRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "hyperliquid"
-    SYMBOL = "UBTC/USDC"
-    SYMBOL_2 = "UETH/USDC"
+    SYMBOL = "BTC/USDC"
+    SYMBOL_2 = "ETH/USDC"
     SYMBOL_3 = "HYPE/USDC"
     CANDLE_SINCE = MAX_FETCHTABLE_TIME
     CANDLE_SINCE_SEC = CANDLE_SINCE / 1000
@@ -68,7 +68,7 @@ class TestHyperliquidRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(300, 300)
+        await self.inner_test_active_symbols(450, 450)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():

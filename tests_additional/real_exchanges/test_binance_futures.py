@@ -58,7 +58,7 @@ class TestBinanceFuturesRealExchangeTester(RealFuturesExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(1500, 3000)
+        await self.inner_test_active_symbols(2000, 4000)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
