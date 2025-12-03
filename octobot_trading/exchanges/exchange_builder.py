@@ -79,7 +79,9 @@ class ExchangeBuilder:
                     await self._build_trader()
 
                 # create trading modes
-                await self._build_trading_modes_if_required(trading_mode_class)
+                await self._build_trading_modes_if_required(
+                    trading_mode_class, self.exchange_manager.tentacles_setup_config
+                )
 
             # add to global exchanges
             self.exchange_manager.update_debug_info()
@@ -126,17 +128,22 @@ class ExchangeBuilder:
             not trading_mode_class.is_ignoring_cancelled_orders_trades()
         )
 
-    async def _build_trading_modes_if_required(self, trading_mode_class):
+    async def _build_trading_modes_if_required(self, trading_mode_class, tentacles_setup_config):
         if self._is_using_trading_modes:
             # self.exchange_manager.trader can be None if neither simulator or real trader has be set
-            if self.exchange_manager.is_trading:
+            if self.exchange_manager.is_trading and (
+                trading_mode_class.get_is_using_trading_mode_on_exchange(
+                    self.exchange_name, tentacles_setup_config
+                )
+            ):
                 if self.exchange_manager.trader is None:
                     self.logger.warning(f"There wont be any order created on {self.exchange_name}: neither "
                                         f"simulated nor real trader has been activated.")
                 else:
                     self.exchange_manager.trading_modes = await self.build_trading_modes(trading_mode_class)
             else:
-                self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
+                no_action = "trading without using direct trading mode" if self.exchange_manager.is_trading else "trading"
+                self.logger.info(f"{self.exchange_name} exchange is online and won't be {no_action}")
 
     async def build_trading_modes(self, trading_mode_class):
         try:
