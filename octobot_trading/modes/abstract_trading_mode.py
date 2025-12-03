@@ -183,13 +183,24 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return False
 
     @classmethod
-    def get_is_trading_on_exchange(cls, exchange_name,
-                                   tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration) -> bool:
+    def get_is_trading_on_exchange(
+        cls, exchange_name, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration
+    ) -> bool:
         """
         :return: When returning false, the associated exchange_manager.is_trading will be set to false, which will
         prevent the initialization of trade related elements. Default is True
         """
         return True
+
+    @classmethod
+    def get_is_using_trading_mode_on_exchange(
+        cls, exchange_name, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration
+    ) -> bool:
+        """
+        :return: When returning false, no trading mode will be created on this exchange, even if 
+        get_is_trading_on_exchange() returns True. Default is falling back to get_is_trading_on_exchange()
+        """
+        return cls.get_is_trading_on_exchange(exchange_name, tentacles_setup_config)
 
     @classmethod
     def is_ignoring_cancelled_orders_trades(cls) -> bool:
