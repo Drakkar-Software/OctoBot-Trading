@@ -252,7 +252,8 @@ async def get_open_orders(
     if len(symbols) == 1:
         await _get_open_orders(exchange_manager, next(iter(symbols)), open_orders, ignore_unsupported_orders)
     else:
-        await asyncio.gather(*(
+        # wait all as a not-stopped exchange manager is required to parse orders
+        await asyncio_tools.gather_waiting_for_all_before_raising(*(
             _get_open_orders(exchange_manager, symbol, open_orders, ignore_unsupported_orders) for symbol in symbols
         ))
     return open_orders
@@ -294,7 +295,8 @@ async def get_cancelled_orders(
     if len(symbols) == 1:
         await _get_cancelled_orders(exchange_manager, next(iter(symbols)), cancelled_orders, ignore_unsupported_orders)
     else:
-        await asyncio.gather(*(
+        # wait all as a not-stopped exchange manager is required to parse orders
+        await asyncio_tools.gather_waiting_for_all_before_raising(*(
             _get_cancelled_orders(exchange_manager, symbol, cancelled_orders, ignore_unsupported_orders)
             for symbol in symbols
         ))
@@ -331,7 +333,8 @@ async def get_trades(
     if len(symbols) == 1:
         await _get_trades(exchange_manager, next(iter(symbols)), trades)
     else:
-        await asyncio.gather(*(
+        # wait all as a not-stopped exchange manager is required to parse trades
+        await asyncio_tools.gather_waiting_for_all_before_raising(*(
             _get_trades(exchange_manager, symbol, trades)
             for symbol in symbols
         ))
@@ -387,7 +390,8 @@ async def create_orders(
         return [
             await _create_order(exchange_manager, next(iter(orders)), order_creation_timeout, price_by_symbol)
         ]
-    return await asyncio.gather(*(
+    # wait all as a not-stopped exchange manager is required to parse orders
+    return await asyncio_tools.gather_waiting_for_all_before_raising(*(
         _create_order(exchange_manager, order_dict, order_creation_timeout, price_by_symbol)
         for order_dict in orders
     ))
