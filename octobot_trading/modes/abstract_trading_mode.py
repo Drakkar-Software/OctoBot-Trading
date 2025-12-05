@@ -683,3 +683,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             for consumer in self.consumers
             if isinstance(consumer, abstract_mode_consumer.AbstractTradingModeConsumer)
         ]
+
+    def is_first_trading_mode_on_this_matrix(self) -> bool:
+        all_trading_modes = modes_util.get_trading_modes_of_this_type_on_this_matrix(self)
+        return bool(all_trading_modes and all_trading_modes[0] is self)
