@@ -68,6 +68,80 @@ async def test_apply_inactive_orders(swap_strategy, simulated_trader):
         assert swap_strategy.is_priority_order.call_count == 3
         assert set_as_inactive_mock.call_count == 2
 
+    # Test with trigger_above_by_order_id parameter
+    swap_strategy.is_priority_order = mock.Mock(side_effect=lambda o: o.order_type is enums.TraderOrderType.STOP_LOSS)
+    with mock.patch.object(personal_data.Order, "set_as_inactive", mock.AsyncMock()) as set_as_inactive_mock, \
+         mock.patch.object(personal_data.Order, "update", mock.Mock()) as update_mock:
+        stop_loss = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                                  trader_instance, side=enums.TradeOrderSide.SELL)
+        stop_loss.trigger_above = False
+        stop_loss.order_id = "stop_loss_id"
+        stop_loss.get_filling_price = mock.Mock(return_value=decimal.Decimal("100"))
+        
+        sell_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                                   trader_instance, side=enums.TradeOrderSide.SELL)
+        sell_limit.trigger_above = True
+        sell_limit.order_id = "sell_limit_id"
+        sell_limit.get_filling_price = mock.Mock(return_value=decimal.Decimal("200"))
+        
+        buy_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.BUY_LIMIT,
+                                   trader_instance, side=enums.TradeOrderSide.SELL)
+        buy_limit.trigger_above = False
+        buy_limit.order_id = "buy_limit_id"
+        buy_limit.get_filling_price = mock.Mock(return_value=decimal.Decimal("300"))
+        
+        # Test: trigger_above_by_order_id overrides order's trigger_above
+        trigger_above_by_order_id = {
+            "stop_loss_id": True,  # Override False to True
+            "sell_limit_id": False,  # Override True to False
+            # buy_limit_id not in dict, should use its own trigger_above (False)
+        }
+        await swap_strategy.apply_inactive_orders([stop_loss, sell_limit, buy_limit], 
+                                                   trigger_above_by_order_id=trigger_above_by_order_id)
+        
+        # Verify priority order (stop_loss) gets active_trigger with overridden trigger_above=True
+        assert update_mock.call_count == 1
+        update_call_kwargs = update_mock.call_args[1]
+        assert "active_trigger" in update_call_kwargs
+        active_trigger = update_call_kwargs["active_trigger"]
+        assert active_trigger.trigger_above is True  # Overridden from False to True
+        
+        # Verify non-priority orders (sell_limit, buy_limit) get set_as_inactive with correct trigger_above
+        assert set_as_inactive_mock.call_count == 2
+        assert set_as_inactive_mock.call_args_list[0][0][0].trigger_above is False # sell_limit order's trigger_above is overridden from True to False
+        assert set_as_inactive_mock.call_args_list[0][0][0].trigger_price == decimal.Decimal("200") # sell_limit order's trigger_price
+        assert set_as_inactive_mock.call_args_list[1][0][0].trigger_above is False # buy limit order's trigger_above's origin value
+        assert set_as_inactive_mock.call_args_list[1][0][0].trigger_price == decimal.Decimal("300") # buy_limit order's trigger_price
+
+    # Test: trigger_above_by_order_id is None, should use order's trigger_above
+    swap_strategy.is_priority_order = mock.Mock(side_effect=lambda o: o.order_type is enums.TraderOrderType.STOP_LOSS)
+    with mock.patch.object(personal_data.Order, "set_as_inactive", mock.AsyncMock()) as set_as_inactive_mock, \
+         mock.patch.object(personal_data.Order, "update", mock.Mock()) as update_mock:
+        stop_loss = created_order(personal_data.StopLossLimitOrder, enums.TraderOrderType.STOP_LOSS,
+                                  trader_instance, side=enums.TradeOrderSide.SELL)
+        stop_loss.trigger_above = True
+        stop_loss.order_id = "stop_loss_id"
+        stop_loss.get_filling_price = mock.Mock(return_value=decimal.Decimal("100"))
+        
+        sell_limit = created_order(personal_data.SellLimitOrder, enums.TraderOrderType.SELL_LIMIT,
+                                   trader_instance, side=enums.TradeOrderSide.SELL)
+        sell_limit.trigger_above = False
+        sell_limit.order_id = "sell_limit_id"
+        sell_limit.get_filling_price = mock.Mock(return_value=decimal.Decimal("200"))
+        
+        await swap_strategy.apply_inactive_orders([stop_loss, sell_limit], 
+                                                   trigger_above_by_order_id=None)
+        
+        # Verify priority order uses its own trigger_above=True
+        assert update_mock.call_count == 1
+        update_call_kwargs = update_mock.call_args[1]
+        active_trigger = update_call_kwargs["active_trigger"]
+        assert active_trigger.trigger_above is True  # Uses order's own value
+        
+        # Verify non-priority order uses its own trigger_above=False
+        assert set_as_inactive_mock.call_count == 1
+        assert sell_limit.trigger_above is False  # Uses order's own value
+
 
 
 async def test_execute_no_reverse(swap_strategy, simulated_trader):

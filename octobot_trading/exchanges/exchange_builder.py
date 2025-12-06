@@ -132,8 +132,10 @@ class ExchangeBuilder:
         if self._is_using_trading_modes:
             # self.exchange_manager.trader can be None if neither simulator or real trader has be set
             if self.exchange_manager.is_trading and (
-                trading_mode_class.get_is_using_trading_mode_on_exchange(
-                    self.exchange_name, tentacles_setup_config
+                self.exchange_manager.trader is None or (
+                    trading_mode_class.get_is_using_trading_mode_on_exchange(
+                        self.exchange_name, tentacles_setup_config
+                    )
                 )
             ):
                 if self.exchange_manager.trader is None:
