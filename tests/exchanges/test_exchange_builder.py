@@ -30,23 +30,36 @@ pytestmark = pytest.mark.asyncio
 async def test_build_trading_modes_if_required(exchange_manager):
     builder = exchanges.ExchangeBuilder({}, "binanceus")
     builder.exchange_manager = exchange_manager
+    tentacles_setup_config = exchange_manager.tentacles_setup_config
 
     # no set trader: no trading mode creation attempt
     assert builder.exchange_manager.trader is None
-    await builder._build_trading_modes_if_required(None)
+    await builder._build_trading_modes_if_required(None, tentacles_setup_config)
     assert builder.exchange_manager.trader is None
 
     # with trader simulator: will attempt to create a trading mode and fail (because of the None arg)
     builder.is_simulated()
+    trading_mode_class = mock.Mock(
+        get_is_using_trading_mode_on_exchange=mock.Mock(return_value=True),
+        get_supported_exchange_types=mock.Mock(return_value=[]),
+        return_value=mock.Mock(
+            initialize=mock.AsyncMock(),
+        ),
+    )
     with mock.patch.object(
         commons_authentication.Authenticator, "has_open_source_package", mock.Mock(return_value=False)
     ) as has_open_source_package_mock:
         with pytest.raises(AttributeError):
-            await builder._build_trading_modes_if_required(None)
+            await builder._build_trading_modes_if_required(None, tentacles_setup_config)
+        has_open_source_package_mock.assert_not_called()
+        await builder._build_trading_modes_if_required(trading_mode_class, tentacles_setup_config)
+        trading_mode_class.get_is_using_trading_mode_on_exchange.assert_called_once_with(builder.exchange_name, tentacles_setup_config)
+        trading_mode_class.get_supported_exchange_types.assert_called_once()
+        trading_mode_class.return_value.initialize.assert_awaited_once()
         has_open_source_package_mock.assert_called_once()
     # raised by default has_open_source_package (which should be overriden)
     with pytest.raises(NotImplementedError):
-        await builder._build_trading_modes_if_required(None)
+        await builder._build_trading_modes_if_required(trading_mode_class, tentacles_setup_config)
 
 
 async def test_build_collector_exchange(exchange_manager):

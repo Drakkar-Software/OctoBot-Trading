@@ -35,17 +35,23 @@ class ActiveOrderSwapStrategy:
     def is_priority_order(self, order) -> bool:
         raise NotImplementedError("is_priority_order is not implemented")
 
-    async def apply_inactive_orders(self, orders: list):
+    async def apply_inactive_orders(
+        self, orders: list, 
+        trigger_above_by_order_id: typing.Optional[dict[str, bool]] = None
+    ):
         for order in orders:
+            trigger_above = trigger_above_by_order_id.get(
+                order.order_id, order.trigger_above
+            ) if trigger_above_by_order_id else order.trigger_above
             trigger_price = self._get_trigger_price(order)
             if self.is_priority_order(order):
                 # still register active trigger in case this order becomes inactive
                 order.update(
-                    active_trigger=order_util.create_order_price_trigger(order, trigger_price, order.trigger_above)
+                    active_trigger=order_util.create_order_price_trigger(order, trigger_price, trigger_above)
                 )
             else:
                 await order.set_as_inactive(
-                    order_util.create_order_price_trigger(order, trigger_price, order.trigger_above)
+                    order_util.create_order_price_trigger(order, trigger_price, trigger_above)
                 )
 
     def on_order_update(self, order, update_time):
