@@ -18,6 +18,7 @@ import asyncio
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_state as order_state
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
+import octobot_trading.personal_data.portfolios.portfolio_util as portfolio_util
 
 
 class OpenOrderState(order_state.OrderState):
@@ -55,11 +56,16 @@ class OpenOrderState(order_state.OrderState):
             # update the availability of the currency in the portfolio if order is not
             # from exchange initialization (otherwise it's already taken into account in portfolio)
             portfolio_manager = self.order.exchange_manager.exchange_personal_data.portfolio_manager
-            before_order_details = str(portfolio_manager.portfolio)
+            before_order_details = portfolio_util.filter_empty_values(
+                portfolio_util.portfolio_to_float(portfolio_manager.portfolio.portfolio)
+            )
             portfolio_manager.refresh_portfolio_available_from_order(self.order, True)
+            after_order_details = portfolio_util.filter_empty_values(
+                portfolio_util.portfolio_to_float(portfolio_manager.portfolio.portfolio)
+            )
             self.get_logger().debug(
-                f"Updated portfolio available after new open order. "
-                f"Before order: {before_order_details}. After order: {portfolio_manager.portfolio}"
+                f"Updated [{self.order.exchange_manager.exchange_name}] portfolio available after new open order. "
+                f"Before order: {before_order_details}. After order: {after_order_details}"
             )
 
         return await super().initialize_impl()

@@ -74,9 +74,13 @@ class FillOrderState(order_state.OrderState):
         can also be still pending
         or be fully filled
         """
-        if self.order.status is enums.OrderStatus.PARTIALLY_FILLED:
-            # TODO manage partially filled
-            await self.update()
+        self.get_logger().info(f"on_refresh_successful [{self.order.status}] for {self.order}")
+        if self.order.is_partially_filled():
+            self.get_logger().info(f"Partially filled order: {str(self.order)}")
+            # notify order partially filled
+            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
+                self.order, enums.OrderUpdateType.STATE_CHANGE
+            )
         elif self.order.status in constants.FILL_ORDER_STATUS_SCOPE:
             self.state = enums.OrderStates.FILLED
             await self.update()

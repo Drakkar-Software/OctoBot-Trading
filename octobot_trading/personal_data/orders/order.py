@@ -931,8 +931,9 @@ class Order(util.Initializable):
         )
         filled_price = decimal.Decimal(str(price))
         # set average price with real average price if available, use filled_price otherwise
-        average_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0)
-                                            or filled_price))
+        average_price = decimal.Decimal(str(
+            raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0) or filled_price
+        ))
 
         return self.update(
             symbol=str(raw_order.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value, None)),
@@ -1187,12 +1188,13 @@ class Order(util.Initializable):
         )
         trailing_profile = f"Trailing profile : {self.trailing_profile} | " if self.trailing_profile else ""
         cancel_policy = f"Cancel policy : {self.cancel_policy} | " if self.cancel_policy else ""
+        filled_quantity = f" ({self.filled_quantity} Filled)" if self.filled_quantity else ""
         return (
             f"{inactive}{self.symbol} | "
             f"{chained_order}"
             f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
             f"Price : {str(self.origin_price)} | "
-            f"Quantity : {str(self.origin_quantity)}{' (Reduce only)' if self.reduce_only else ''} | "
+            f"Quantity : {str(self.origin_quantity)}{filled_quantity}{' (Reduce only)' if self.reduce_only else ''} | "
             f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
             f"{trailing_profile}"
             f"{cancel_policy}"
