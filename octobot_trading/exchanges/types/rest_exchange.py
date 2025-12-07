@@ -808,7 +808,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     ) -> enums.OrderStatus:
         return await self.connector.cancel_order(exchange_order_id, symbol, order_type, **kwargs)
 
-    def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
+    def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker) -> dict:
         return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)
 
     def get_fees(self, symbol):

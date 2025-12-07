@@ -949,7 +949,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             return enums.TradeOrderType.MARKET.value
         raise RuntimeError(f"Unknown order type: {order_type}")
 
-    def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker):
+    def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker) -> dict:
         fees = self.calculate_fees(symbol, order_type, quantity, price, taker_or_maker)
         fees[enums.FeePropertyColumns.IS_FROM_EXCHANGE.value] = False
         fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(

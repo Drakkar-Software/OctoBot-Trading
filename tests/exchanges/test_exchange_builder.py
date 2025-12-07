@@ -39,16 +39,17 @@ async def test_build_trading_modes_if_required(exchange_manager):
 
     # with trader simulator: will attempt to create a trading mode and fail (because of the None arg)
     builder.is_simulated()
-    trading_mode_class = mock.Mock(
-        get_is_using_trading_mode_on_exchange=mock.Mock(return_value=True),
-        get_supported_exchange_types=mock.Mock(return_value=[]),
-        return_value=mock.Mock(
-            initialize=mock.AsyncMock(),
-        ),
-    )
     with mock.patch.object(
         commons_authentication.Authenticator, "has_open_source_package", mock.Mock(return_value=False)
     ) as has_open_source_package_mock:
+        # get_is_using_trading_mode_on_exchange returns True
+        trading_mode_class = mock.Mock(
+            get_is_using_trading_mode_on_exchange=mock.Mock(return_value=True),
+            get_supported_exchange_types=mock.Mock(return_value=[]),
+            return_value=mock.Mock(
+                initialize=mock.AsyncMock(),
+            ),
+        )
         with pytest.raises(AttributeError):
             await builder._build_trading_modes_if_required(None, tentacles_setup_config)
         has_open_source_package_mock.assert_not_called()
@@ -57,7 +58,21 @@ async def test_build_trading_modes_if_required(exchange_manager):
         trading_mode_class.get_supported_exchange_types.assert_called_once()
         trading_mode_class.return_value.initialize.assert_awaited_once()
         has_open_source_package_mock.assert_called_once()
+        trading_mode_class.reset_mock()
+        trading_mode_class.get_is_using_trading_mode_on_exchange.reset_mock()
+        trading_mode_class.get_supported_exchange_types.reset_mock()
+        trading_mode_class.return_value.initialize.reset_mock()
+
+        # get_is_using_trading_mode_on_exchange returns False
+        trading_mode_class.get_is_using_trading_mode_on_exchange.return_value = False
+        await builder._build_trading_modes_if_required(trading_mode_class, tentacles_setup_config)
+        trading_mode_class.get_is_using_trading_mode_on_exchange.assert_called_once_with(builder.exchange_name, tentacles_setup_config)
+        trading_mode_class.get_supported_exchange_types.assert_not_called()
+        trading_mode_class.return_value.initialize.assert_not_called()
+        has_open_source_package_mock.assert_called_once()
+
     # raised by default has_open_source_package (which should be overriden)
+    trading_mode_class.get_is_using_trading_mode_on_exchange.return_value = True
     with pytest.raises(NotImplementedError):
         await builder._build_trading_modes_if_required(trading_mode_class, tentacles_setup_config)
 
