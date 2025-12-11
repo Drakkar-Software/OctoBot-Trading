@@ -46,6 +46,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     NO_MESSAGE_DISCONNECTED_TIMEOUT = 4 * commons_constants.MINUTE_TO_SECONDS
     RECREATE_CLIENT_ON_DISCONNECT = False   # when True, a new ccxt websocket client will replace the previous
     # one when the exchange is disconnected
+    USE_REST_CONNECTOR_ADDITIONAL_CONFIG = False # if True, the additional config from the associated rest connector will be used
 
     IGNORED_FEED_PAIRS = {
         # When ticker or future index is available : no need to calculate mark price from recent trades
@@ -117,6 +118,11 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self.is_authenticated: bool = False
         self.adapter: ccxt_adapter.CCXTAdapter = self.get_adapter_class(adapter_class)(self)
         self.additional_config: typing.Optional[dict[str, typing.Any]] = additional_config
+        if self.USE_REST_CONNECTOR_ADDITIONAL_CONFIG:
+            self.additional_config = {
+                **(self.additional_config or {}),
+                **self.exchange_manager.exchange.get_additional_connector_config()
+            }
         self.headers: dict[str, str] = {}
         self.options: dict[str, typing.Any] = {
             "newUpdates": True,  # only get new updates from trades and ohlcv (don't return the full cached history)
