@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.237] - 2024-12-12
+### Added
+[Trades] add get_real_or_estimated_trade_fee
+[TradingMode] add is_first_trading_mode_on_this_matrix
+[TradingMode] add get_is_using_trading_mode_on_exchange
+[Websockets] add additional config support to ws exchanges
+### Updated
+[Orders] make apply_inactive_orders more flexible
+### Fixed
+[Orders] fix partially fill channel notification
+
 ## [2.4.236] - 2024-12-08
 ### Tools
 [Tools] use gather_waiting_for_all_before_raising
