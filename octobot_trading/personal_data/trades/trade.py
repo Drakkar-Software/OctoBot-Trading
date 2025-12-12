@@ -176,6 +176,9 @@ class Trade:
         trade.creation_time = trade_dict.get(enums.TradeExtraConstants.CREATION_TIME.value)
         return trade
 
+    def duplicate(self):
+        return self.__class__.from_dict(self.trader, self.to_dict())
+
     def clear(self):
         self.trader = None # type: ignore
         self.exchange_manager = None # type: ignore
