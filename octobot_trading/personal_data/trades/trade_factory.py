@@ -13,20 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+
 import octobot_commons.logging as logging
 import octobot_trading.personal_data.trades.trade as trade_class
+import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 
 
-def create_trade_instance_from_raw(trader, raw_trade):
+def create_trade_instance_from_raw(trader, raw_trade: dict[str, typing.Any]) -> "trade_class.Trade":
     order = create_closed_order_instance_from_raw_trade(trader, raw_trade)
     exchange_trade_id = raw_trade.get(enums.ExchangeConstantsOrderColumns.EXCHANGE_TRADE_ID.value)
     return create_trade_from_order(order, exchange_trade_id=exchange_trade_id)
 
 
-def create_closed_order_instance_from_raw_trade(trader, raw_trade):
+def create_closed_order_instance_from_raw_trade(trader, raw_trade: dict[str, typing.Any]) -> "order_class.Order":
     order = order_factory.create_order_from_raw(trader, raw_trade)
     order.update_from_raw(raw_trade)
     if order.status is enums.OrderStatus.CANCELED:
@@ -38,12 +41,12 @@ def create_closed_order_instance_from_raw_trade(trader, raw_trade):
     return order
 
 
-def create_trade_from_order(order,
-                            close_status=None,
-                            creation_time=0,
-                            canceled_time=0,
-                            executed_time=0,
-                            exchange_trade_id=None):
+def create_trade_from_order(order: "order_class.Order",
+                            close_status: typing.Optional[enums.OrderStatus] = None,
+                            creation_time: int = 0,
+                            canceled_time: int = 0,
+                            executed_time: int = 0,
+                            exchange_trade_id: typing.Optional[str] = None) -> "trade_class.Trade":
     if close_status is not None:
         order.status = close_status
     trade = trade_class.Trade(order.trader)
@@ -58,5 +61,5 @@ def create_trade_from_order(order,
     return trade
 
 
-def create_trade_from_dict(trader, trade_dict):
+def create_trade_from_dict(trader, trade_dict: dict[str, typing.Any]) -> "trade_class.Trade":
     return trade_class.Trade.from_dict(trader, trade_dict)

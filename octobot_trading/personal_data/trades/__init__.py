@@ -42,6 +42,7 @@ from octobot_trading.personal_data.trades.trade_pnl import (
 from octobot_trading.personal_data.trades.trades_util import (
     compute_win_rate,
     aggregate_trades_by_exchange_order_id,
+    get_real_or_estimated_trade_fee,
 )
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "TradePnl",
     "compute_win_rate",
     "aggregate_trades_by_exchange_order_id",
+    "get_real_or_estimated_trade_fee",
 ]

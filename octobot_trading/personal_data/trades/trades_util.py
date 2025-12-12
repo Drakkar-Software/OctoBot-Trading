@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 
+import octobot_commons.symbols as symbols_util
 import octobot_trading.enums as trading_enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
@@ -93,3 +94,67 @@ def aggregate_trades_by_exchange_order_id(trades: list) -> dict:
                 += trade.fee[trading_enums.FeePropertyColumns.COST.value]
             to_update.executed_time = max(to_update.executed_time, trade.executed_time)
     return aggregated_trades_by_exchange_order_id
+
+
+def get_real_or_estimated_trade_fee(trade: "personal_data.Trade") -> tuple[dict, bool]:
+    order_type = trading_enums.TraderOrderType.BUY_LIMIT if trade.side is trading_enums.TradeOrderSide.BUY else trading_enums.TraderOrderType.SELL_LIMIT
+    trading_order_fee_currency = None
+    trading_order_fee_rate = None
+    is_estimated_trading_fee = False
+    if trade.fee and all(
+        key.value in trade.fee for key in [
+            trading_enums.FeePropertyColumns.CURRENCY, trading_enums.FeePropertyColumns.RATE
+        ]
+    ):
+        trading_order_fee_currency = trade.fee[trading_enums.FeePropertyColumns.CURRENCY.value]
+        trading_order_fee_rate = trade.fee[trading_enums.FeePropertyColumns.RATE.value]
+    else:
+        # try to get fees from somewhere else
+        try:
+            # check if order has fees
+            order = trade.exchange_manager.exchange_personal_data.orders_manager.get_order(
+                None, exchange_order_id=trade.exchange_order_id
+            )
+            if not order.fee or not all(
+                key.value in order.fee for key in [
+                    trading_enums.FeePropertyColumns.CURRENCY, trading_enums.FeePropertyColumns.RATE
+                ]
+            ):
+                raise KeyError("no fee")
+            trading_order_fee_currency = order.fee[trading_enums.FeePropertyColumns.CURRENCY.value]
+            trading_order_fee_rate = order.fee[trading_enums.FeePropertyColumns.RATE.value]
+        except KeyError:
+            # try with other trades from the same order
+            trades = trade.exchange_manager.exchange_personal_data.trades_manager.get_trades(
+                None, exchange_order_id=trade.exchange_order_id
+            )
+            for other_trade in trades:
+                if not other_trade.fee or not all(
+                    key.value in other_trade.fee for key in [
+                        trading_enums.FeePropertyColumns.CURRENCY, trading_enums.FeePropertyColumns.RATE
+                    ]
+                ):
+                    continue
+                trading_order_fee_currency = other_trade.fee[trading_enums.FeePropertyColumns.CURRENCY.value]
+                trading_order_fee_rate = other_trade.fee[trading_enums.FeePropertyColumns.RATE.value]
+
+    if trading_order_fee_currency and trading_order_fee_rate:
+        base, quote = symbols_util.parse_symbol(trade.symbol).base_and_quote()
+        if trading_order_fee_currency == base:
+            trading_order_fee_cost = trading_order_fee_rate * trade.executed_quantity
+        elif trading_order_fee_currency == quote:
+            trading_order_fee_cost = trading_order_fee_rate * trade.executed_quantity * trade.executed_price
+        else:
+            # fee currency is not the base or quote of the symbol
+            trading_order_fee_cost = constants.ZERO
+        trading_fee = {
+            trading_enums.FeePropertyColumns.CURRENCY.value: trading_order_fee_currency,
+            trading_enums.FeePropertyColumns.COST.value: trading_order_fee_cost,
+        }
+    else:
+        # estimate fees
+        trading_fee = trade.exchange_manager.exchange.get_trade_fee(
+            trade.symbol, order_type, trade.executed_quantity, trade.executed_price, trade.taker_or_maker
+        )
+        is_estimated_trading_fee = True
+    return trading_fee, is_estimated_trading_fee

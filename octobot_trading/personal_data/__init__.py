@@ -223,6 +223,7 @@ from octobot_trading.personal_data.trades import (
     TradePnl,
     compute_win_rate,
     aggregate_trades_by_exchange_order_id,
+    get_real_or_estimated_trade_fee,
 )
 from octobot_trading.personal_data import transactions
 from octobot_trading.personal_data.transactions import (
@@ -458,6 +459,7 @@ __all__ = [
     "TradePnl",
     "compute_win_rate",
     "aggregate_trades_by_exchange_order_id",
+    "get_real_or_estimated_trade_fee",
     "ExchangePersonalData",
     "get_asset_price_from_converter_or_tickers",
     "resolve_sub_portfolios",
