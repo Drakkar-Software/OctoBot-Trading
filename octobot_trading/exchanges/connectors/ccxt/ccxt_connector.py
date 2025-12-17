@@ -147,8 +147,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     found_spot_markets = True
                     break
             if not found_spot_markets:
+                logged_symbols = (symbols[:3] + ["..."] + symbols[-3:]) if len(symbols) > 10 else symbols
                 raise octobot_trading.errors.FailedMarketStatusRequest(
-                    f"No spot markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
+                    f"No spot markets found for {self.exchange_manager.exchange_name}: {len(symbols)} fetched markets: {logged_symbols}"
                 )
 
     async def _filtered_if_necessary_load_markets(
