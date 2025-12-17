@@ -165,6 +165,12 @@ class NetworkError(RetriableFailedRequest):
     """
 
 
+class FailedMarketStatusRequest(RetriableFailedRequest):
+    """
+    Raised when an exchange fails to fetch its market status
+    """
+
+
 class RateLimitExceeded(OctoBotExchangeError):
     """
     Raised upon an exchange API rate limit error

@@ -65,6 +65,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self.is_authenticated: bool = False
         self.rest_name: str = rest_name or self.exchange_manager.exchange_class_string
         self.force_authentication: bool = force_auth
+        
+        self._force_next_market_reload: bool = False
 
         # used to save exchange local elements in subclasses
         self.saved_data: dict[str, typing.Any] = {}
@@ -124,6 +126,31 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         # no user input in connector
         pass
 
+    def _ensure_successful_markets_fetch(self, client):
+        if not client.markets:
+            return False
+        symbols = list[str](client.markets)
+        if self.exchange_manager.is_future:
+            found_future_markets = False
+            for symbol in symbols:
+                if commons_symbols.parse_symbol(symbol).is_future():
+                    found_future_markets = True
+                    break
+            if not found_future_markets:
+                raise octobot_trading.errors.FailedMarketStatusRequest(
+                    f"No future markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
+                )
+        if not self.exchange_manager.is_future:
+            found_spot_markets = False
+            for symbol in symbols:
+                if commons_symbols.parse_symbol(symbol).is_spot():
+                    found_spot_markets = True
+                    break
+            if not found_spot_markets:
+                raise octobot_trading.errors.FailedMarketStatusRequest(
+                    f"No spot markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
+                )
+
     async def _filtered_if_necessary_load_markets(
         self,
         client,
@@ -136,9 +163,14 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                     await client.load_markets(reload=reload)
             else:
                 await client.load_markets(reload=reload)
+                self._ensure_successful_markets_fetch(client)
             self.logger.info(
                 f"Loaded {len(client.markets) if client.markets else 0} [{self.exchange_manager.exchange_name}] markets"
             )
+        except octobot_trading.errors.FailedMarketStatusRequest as err:
+            # failed to fetch markets, force reload for next time
+            self._force_next_market_reload = True
+            raise err
         except Exception as err:
             # ensure this is not a proxy error, raise dedicated error if it is
             if proxy_error := ccxt_client_util.get_proxy_error_if_any(self, err):
@@ -163,6 +195,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         reload=False,
         market_filter: typing.Optional[typing.Callable[[dict], bool]] = None
     ):
+        if self._force_next_market_reload:
+            self.logger.info(f"Forced market reload for {self.exchange_manager.exchange_name}")
+            reload = True
+            self._force_next_market_reload = False
         authenticated_cache = self.exchange_manager.exchange.requires_authentication_for_this_configuration_only()
         force_load_markets = reload
         if not force_load_markets:
