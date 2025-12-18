@@ -514,6 +514,7 @@ class ExchangeTypes(enum.Enum):
     SPOT = "spot"
     FUTURE = "future"
     MARGIN = "margin"
+    OPTION = "option"
     UNKNOWN = "unknown"
 
 
