@@ -128,6 +128,7 @@ class TestUpbitRealExchangeTester(RealExchangeTester):
             False,
             10,
             10,
+            True
         )
 
     async def test_get_recent_trades(self):

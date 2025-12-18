@@ -171,6 +171,7 @@ class RealExchangeTester:
         supports_custom_limit: bool,
         custom_limit: typing.Optional[int],
         max_empty_book_sides: int,
+        supports_without_symbols_filter: bool,
     ):
         async with (self.get_exchange_manager() as exchange_manager):
             # with symbols filter
@@ -205,36 +206,37 @@ class RealExchangeTester:
                     f"More empty book sides than expected: {max_empty_book_sides=} {empty_book_sides=}"
                 )
             # without symbols filter
-            books_by_symbol = await exchange_manager.exchange.get_order_books(symbols=None)
-            empty_book_sides = []
-            assert len(books_by_symbol) >= expected_missing_symbol_filter_books_min_count, (
-                f"{len(books_by_symbol)=} NOT >= {expected_missing_symbol_filter_books_min_count=}"
-            )
-            for symbol, book in books_by_symbol.items():
-                assert 0 < book[trading_enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] < ref_time, (
-                    f"Invalid {symbol} book timestamp value: "
-                    f"{book[trading_enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value]}, {ref_time=}"
+            if supports_without_symbols_filter:
+                books_by_symbol = await exchange_manager.exchange.get_order_books(symbols=None)
+                empty_book_sides = []
+                assert len(books_by_symbol) >= expected_missing_symbol_filter_books_min_count, (
+                    f"{len(books_by_symbol)=} NOT >= {expected_missing_symbol_filter_books_min_count=}"
                 )
-                for side in [
-                    trading_enums.ExchangeConstantsOrderBookInfoColumns.BIDS,
-                    trading_enums.ExchangeConstantsOrderBookInfoColumns.ASKS
-                ]:
-                    if len(book[side.value]) == 0:
-                        empty_book_sides.append((symbol, side))
-                    else:
-                        assert min_book_orders_count <= len(book[side.value]) <= expected_max_orders_by_side, (
-                            f"Unexpected {symbol} {side.value} orders count: {len(book[side.value])}. Expected: "
-                            f"[{min_book_orders_count}:{expected_max_orders_by_side}]"
-                        )
-            if len(empty_book_sides) > max_empty_book_sides:
-                raise AssertionError(
-                    f"More empty book sides than expected: {max_empty_book_sides=} {len(empty_book_sides)=}"
+                for symbol, book in books_by_symbol.items():
+                    assert 0 < book[trading_enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value] < ref_time, (
+                        f"Invalid {symbol} book timestamp value: "
+                        f"{book[trading_enums.ExchangeConstantsOrderBookInfoColumns.TIMESTAMP.value]}, {ref_time=}"
+                    )
+                    for side in [
+                        trading_enums.ExchangeConstantsOrderBookInfoColumns.BIDS,
+                        trading_enums.ExchangeConstantsOrderBookInfoColumns.ASKS
+                    ]:
+                        if len(book[side.value]) == 0:
+                            empty_book_sides.append((symbol, side))
+                        else:
+                            assert min_book_orders_count <= len(book[side.value]) <= expected_max_orders_by_side, (
+                                f"Unexpected {symbol} {side.value} orders count: {len(book[side.value])}. Expected: "
+                                f"[{min_book_orders_count}:{expected_max_orders_by_side}]"
+                            )
+                if len(empty_book_sides) > max_empty_book_sides:
+                    raise AssertionError(
+                        f"More empty book sides than expected: {max_empty_book_sides=} {len(empty_book_sides)=}"
+                    )
+                # with custom limit
+                books_by_symbol = await exchange_manager.exchange.get_order_books(symbols=None, limit=custom_limit)
+                self._ensure_book_custom_limit(
+                    books_by_symbol, supports_custom_limit, expected_max_orders_by_side, custom_limit
                 )
-            # with custom limit
-            books_by_symbol = await exchange_manager.exchange.get_order_books(symbols=None, limit=custom_limit)
-            self._ensure_book_custom_limit(
-                books_by_symbol, supports_custom_limit, expected_max_orders_by_side, custom_limit
-            )
 
     def _ensure_book_custom_limit(
         self,

@@ -133,6 +133,7 @@ class TestHitBtcRealExchangeTester(RealExchangeTester):
             True,
             10,
             140,
+            True
         )
 
     async def test_get_recent_trades(self):
