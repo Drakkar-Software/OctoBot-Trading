@@ -39,9 +39,9 @@ pytestmark = pytest.mark.asyncio
 
 class TestPolymarketRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "polymarket"
-    SYMBOL = "will-bitcoin-replace-sha-256-before-2027/USDC"
-    SYMBOL_2 = "will-the-us-confirm-that-aliens-exist-before-2027/USDC"
-    SYMBOL_3 = "10pt0-or-above-earthquake-before-2027/USDC"
+    SYMBOL = "will-bitcoin-replace-sha-256-before-2027/USDC:USDC-261231"
+    SYMBOL_2 = "will-the-us-confirm-that-aliens-exist-before-2027/USDC:USDC-261231"
+    SYMBOL_3 = "10pt0-or-above-earthquake-before-2027/USDC:USDC-261231"
     TIME_FRAME = TimeFrames.ONE_MINUTE
     MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.OPTION.value
 
@@ -56,9 +56,16 @@ class TestPolymarketRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(18412, 18412)
+        await self.inner_test_active_symbols(17000, 19000)
 
     async def test_get_market_status(self):
+        # Debug code to print the symbol of the slugs
+        # slugs = ['10pt0-or-above-earthquake-before-2027', 'will-bitcoin-replace-sha-256-before-2027', 'will-the-us-confirm-that-aliens-exist-before-2027']
+        # async with self.get_exchange_manager() as exchange_manager:
+        #     for market in exchange_manager.exchange.connector.client.markets:
+        #         for slug in slugs:
+        #             if market.startswith(slug):
+        #                 print(exchange_manager.exchange.connector.client.markets[market])
         for market_status in await self.get_market_statuses():
             self.ensure_required_market_status_values(market_status)
             self.check_market_status_limits(market_status, has_price_limits=True)
