@@ -196,7 +196,9 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         """
         exchange_name = self.channel.exchange_manager.exchange_name
         self.logger.info(f"Requested update for {order} on {exchange_name}")
-        raw_order = await self.channel.exchange_manager.exchange.get_order(order.exchange_order_id, order.symbol)
+        raw_order = await self.channel.exchange_manager.exchange.get_order(
+            order.exchange_order_id, order.symbol, order_type=order.order_type
+        )
 
         if raw_order is not None:
             self.logger.info(f"Received update for {order} on {exchange_name}: {raw_order}")

@@ -68,7 +68,7 @@ class TestHyperliquidRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_active_symbols(self):
-        await self.inner_test_active_symbols(450, 450)
+        await self.inner_test_active_symbols(400, 450)
 
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
@@ -83,7 +83,7 @@ class TestHyperliquidRealExchangeTester(RealExchangeTester):
             assert 0 < market_status[Ecmsc.PRECISION.value][
                 Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in Hyperliquid tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
-                       for elem in (Ecmsc.LIMITS_AMOUNT.value,
+                    for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(

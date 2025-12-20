@@ -267,8 +267,11 @@ async def get_order(
     exchange_manager,
     exchange_order_id: str,
     symbol: str,
+    order_type: enums.TraderOrderType,
 ) -> typing.Optional[dict]:
-    return await exchange_manager.exchange.get_order(exchange_order_id, symbol=symbol)
+    return await exchange_manager.exchange.get_order(
+        exchange_order_id, symbol=symbol, order_type=order_type
+    )
 
 
 @exchanges.retried_failed_network_request(
@@ -402,7 +405,9 @@ async def wait_for_other_status(order: personal_data.Order, timeout) -> personal
     iterations = 0
     origin_status = order.status.value
     while time.time() - t0 < timeout:
-        raw_order = await order.exchange_manager.exchange.get_order(order.exchange_order_id, order.symbol)
+        raw_order = await order.exchange_manager.exchange.get_order(
+            order.exchange_order_id, order.symbol, order_type=order.order_type
+        )
         iterations += 1
         if raw_order is not None and raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value] != origin_status:
             logging.get_logger(order.get_logger_name()).info(

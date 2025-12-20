@@ -19,7 +19,7 @@ import typing
 
 import pytest
 from ccxt import Exchange
-
+import ccxt
 import octobot_commons.constants as constants
 import octobot_commons.enums as commons_enums
 import octobot_trading.enums as trading_enums
@@ -49,6 +49,7 @@ class RealExchangeTester:
     HISTORICAL_CANDLES_TO_FETCH_COUNT = 650
     DEFAULT_CUSTOM_BOOK_LIMIT = 50
     ORDER_BOOK_DESYNC_ALLOWANCE = 60    # allow 60s desync
+    USES_TENTACLE = False  # set True when an exchange tentacles should be used in this test
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -135,7 +136,7 @@ class RealExchangeTester:
             self.HISTORICAL_CANDLES_TO_FETCH_COUNT * 0.85
             < len(historical_ohlcv)
             <= self.HISTORICAL_CANDLES_TO_FETCH_COUNT
-        )
+        ), f"{len(historical_ohlcv)=} not in [{self.HISTORICAL_CANDLES_TO_FETCH_COUNT * 0.85}:{self.HISTORICAL_CANDLES_TO_FETCH_COUNT}]"
         for candle in historical_ohlcv:
             assert start <= candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] <= end
 
@@ -263,7 +264,8 @@ class RealExchangeTester:
     async def get_exchange_manager(self, market_filter=None):
         async with get_exchange_manager(
             self.EXCHANGE_NAME, config=self.get_config(),
-            authenticated=self.REQUIRES_AUTH, market_filter=market_filter
+            authenticated=self.REQUIRES_AUTH, market_filter=market_filter,
+            uses_tentacle=self.USES_TENTACLE
         ) as exchange_manager:
             yield exchange_manager
 
