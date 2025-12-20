@@ -16,6 +16,7 @@
 import contextlib
 import dotenv
 import os
+import mock
 
 import octobot_commons.constants as commons_constants
 import octobot_commons.asyncio_tools as asyncio_tools
@@ -24,13 +25,14 @@ import octobot_trading.api as api
 import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+import octobot_trading.exchanges.util.exchange_util
 
 
 LOADED_EXCHANGE_CREDS_ENV_VARIABLES = False
 
 
 @contextlib.asynccontextmanager
-async def get_exchange_manager(exchange_name, config=None, authenticated=False, market_filter=None):
+async def get_exchange_manager(exchange_name, config=None, authenticated=False, market_filter=None, uses_tentacle=False):
     config = {**test_config.load_test_config(), **config} if config else test_config.load_test_config()
     if exchange_name not in config[commons_constants.CONFIG_EXCHANGES]:
         config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {}
@@ -43,7 +45,18 @@ async def get_exchange_manager(exchange_name, config=None, authenticated=False, 
     if config[commons_constants.CONFIG_EXCHANGES][exchange_name]. \
        get(commons_constants.CONFIG_EXCHANGE_TYPE, enums.ExchangeTypes.SPOT.value) == enums.ExchangeTypes.FUTURE.value:
         exchange_manager_instance.is_future = True
-    await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
+    if not uses_tentacle:
+        # don't use exchange specific tentacles, even if they are available
+        with mock.patch.object(
+            octobot_trading.exchanges.util.exchange_util, 
+            "search_exchange_class_from_exchange_name", 
+            mock.Mock(return_value=exchanges.DefaultRestExchange)
+        ) as search_exchange_class_from_exchange_name_mock:
+            await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
+            assert search_exchange_class_from_exchange_name_mock.call_count > 0
+    else:
+        # allow the use of exchange specific tentacles
+        await exchange_manager_instance.initialize(exchange_config_by_exchange=None)
     try:
         yield exchange_manager_instance
     except errors.UnreachableExchange as err:

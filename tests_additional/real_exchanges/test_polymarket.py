@@ -25,12 +25,12 @@ import octobot_trading.enums as trading_enums
 from tests import event_loop
 
 try:
-    import tentacles.Trading.Exchange.polymarket.ccxt.polymarket_async
+    from tentacles.Trading.Exchange.polymarket.ccxt.polymarket_async import Polymarket
 except ImportError:
+    # test will be skipped if the tentacle is not installed
     pytest.skip(
-        reason=(
-            "Polymarket tentacle is not installed, skipping TestPolymarketRealExchangeTester"
-        )
+        "Polymarket tentacle is not installed, skipping TestPolymarketRealExchangeTester",
+        allow_module_level=True
     )
 
 # All test coroutines will be treated as marked.
@@ -44,6 +44,7 @@ class TestPolymarketRealExchangeTester(RealExchangeTester):
     SYMBOL_3 = "10pt0-or-above-earthquake-before-2027/USDC:USDC-261231"
     TIME_FRAME = TimeFrames.ONE_MINUTE
     MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.OPTION.value
+    USES_TENTACLE = True  # set True when an exchange tentacles should be used in this test
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()

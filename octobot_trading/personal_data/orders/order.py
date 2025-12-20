@@ -857,7 +857,9 @@ class Order(util.Initializable):
         return self.order_profitability
 
     async def default_exchange_update_order_status(self):
-        raw_order = await self.exchange_manager.exchange.get_order(self.exchange_order_id, self.symbol)
+        raw_order = await self.exchange_manager.exchange.get_order(
+            self.exchange_order_id, self.symbol, order_type=self.order_type
+        )
         new_status = order_util.parse_order_status(raw_order)
         self.is_synchronized_with_exchange = True
         if new_status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED}:

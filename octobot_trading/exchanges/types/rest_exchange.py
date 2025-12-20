@@ -370,9 +370,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 if order_exchange_id is None:
                     self.logger.error(f"No order exchange id on created order: {created_order}")
                     return None
-                params = get_order_params or {}
+                exchange_order_id = created_order[ecoc.EXCHANGE_ID.value]
+                params = self._order_request_kwargs_factory(
+                    exchange_order_id, order_type, **(get_order_params or {})
+                )
                 fetched_order = await self.get_order(
-                    created_order[ecoc.EXCHANGE_ID.value], symbol=symbol, **params
+                    exchange_order_id, symbol=symbol, **params
                 )
                 if fetched_order is None:
                     created_order[ecoc.STATUS.value] = enums.OrderStatus.PENDING_CREATION.value
@@ -688,9 +691,25 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
-    async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+    def _order_request_kwargs_factory(
+        self, 
+        exchange_order_id: str, 
+        order_type: typing.Optional[enums.TraderOrderType] = None, 
+        **kwargs
+    ) -> dict:
+        # implement if the exchange needs additional kwargs to fetch an order, like to fetch stop orders
+        return kwargs
+
+    async def get_order(
+        self,
+        exchange_order_id: str,
+        symbol: typing.Optional[str] = None,
+        order_type: typing.Optional[enums.TraderOrderType] = None,
+        **kwargs: dict
+    ) -> dict:
+        extended_kwargs = self._order_request_kwargs_factory(exchange_order_id, order_type, **(kwargs or {}))
         return await self._ensure_order_completeness(
-            await self.connector.get_order(exchange_order_id, symbol=symbol, **kwargs),
+            await self.connector.get_order(exchange_order_id, symbol=symbol, **extended_kwargs),
             symbol, **kwargs
         )
 
@@ -806,7 +825,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def cancel_order(
         self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
-        return await self.connector.cancel_order(exchange_order_id, symbol, order_type, **kwargs)
+        extended_kwargs = self._order_request_kwargs_factory(exchange_order_id, order_type, **(kwargs or {}))
+        return await self.connector.cancel_order(exchange_order_id, symbol, order_type, **extended_kwargs)
 
     def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker) -> dict:
         return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)

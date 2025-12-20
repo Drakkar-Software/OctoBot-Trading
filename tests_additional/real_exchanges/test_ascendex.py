@@ -60,6 +60,7 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             self.ensure_required_market_status_values(market_status)
+            print(f"market_status: {market_status}")
             # on AscendEx, precision is a decimal instead of a number of digits
             assert 0 < market_status[Ecmsc.PRECISION.value][
                 Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in AscendEx tentacle
