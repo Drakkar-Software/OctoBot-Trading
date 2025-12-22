@@ -809,7 +809,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType,
         side: str, quantity: float, price: float, params: dict
     ) -> dict:
-        await self.client.cancel_order(exchange_order_id, symbol)
+        extended_params = self.exchange_manager.exchange.order_request_kwargs_factory(exchange_order_id, order_type, **(params or {}))
+        await self.client.cancel_order(exchange_order_id, symbol=symbol, params=extended_params)
         price_to_use = price
         local_params = copy.copy(params)
         ccxt_order_type = self.get_ccxt_order_type(order_type)
@@ -857,7 +858,7 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             try:
                 # make sure order is canceled
                 cancelled_order = await self.exchange_manager.exchange.get_order(
-                    exchange_order_id, symbol=symbol
+                    exchange_order_id, symbol=symbol, order_type=order_type
                 )
                 if cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order):
                     return enums.OrderStatus.CANCELED

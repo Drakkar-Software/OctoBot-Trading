@@ -41,6 +41,23 @@ import octobot_trading.exchange_data.contracts as contracts
 import octobot_trading.personal_data.orders as orders
 
 
+
+def fetching_orders_request(f):
+    async def fetching_orders_request_wrapper(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        fetched_orders = await f(self, symbol=symbol, since=since, limit=limit, **kwargs)
+        if ccxt_enums.OrderFetchParams.STOP.value not in kwargs and self.fetch_stop_order_in_different_request(symbol):
+            # all order types need to be fetched and stop orders need to be fetched in a separate request
+            stop_orders = await f(self, symbol=symbol, since=since, limit=limit, **{
+                **kwargs, **{ccxt_enums.OrderFetchParams.STOP.value: True}
+            })
+            fetched_orders.extend(stop_orders)
+        return await self.ensure_orders_completeness(
+            fetched_orders, symbol, since=since, limit=limit, **kwargs
+        )
+    return fetching_orders_request_wrapper
+
+
+
 class RestExchange(abstract_exchange.AbstractExchange):
     ORDER_NON_EMPTY_FIELDS = [ecoc.EXCHANGE_ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
@@ -232,6 +249,10 @@ class RestExchange(abstract_exchange.AbstractExchange):
         # Override in tentacles when using a custom adapter
         return None
 
+    def fetch_stop_order_in_different_request(self, symbol: str) -> bool:
+        # Override in tentacles when stop orders need to be fetched in a separate request from CCXT
+        return False
+
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
@@ -371,7 +392,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
                     self.logger.error(f"No order exchange id on created order: {created_order}")
                     return None
                 exchange_order_id = created_order[ecoc.EXCHANGE_ID.value]
-                params = self._order_request_kwargs_factory(
+                params = self.order_request_kwargs_factory(
                     exchange_order_id, order_type, **(get_order_params or {})
                 )
                 fetched_order = await self.get_order(
@@ -691,7 +712,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
-    def _order_request_kwargs_factory(
+    def order_request_kwargs_factory(
         self, 
         exchange_order_id: str, 
         order_type: typing.Optional[enums.TraderOrderType] = None, 
@@ -707,7 +728,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         order_type: typing.Optional[enums.TraderOrderType] = None,
         **kwargs: dict
     ) -> dict:
-        extended_kwargs = self._order_request_kwargs_factory(exchange_order_id, order_type, **(kwargs or {}))
+        extended_kwargs = self.order_request_kwargs_factory(exchange_order_id, order_type, **(kwargs or {}))
         return await self._ensure_order_completeness(
             await self.connector.get_order(exchange_order_id, symbol=symbol, **extended_kwargs),
             symbol, **kwargs
@@ -732,23 +753,20 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return None  #OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self._ensure_orders_completeness(
-            await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs),
-            symbol, since=since, limit=limit, **kwargs
-        )
+        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs)
 
+    @fetching_orders_request
     async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self._ensure_orders_completeness(
-            await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, **kwargs),
-            symbol, since=since, limit=limit, **kwargs
-        )
+        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+
+    @fetching_orders_request
+    async def _get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs)
 
     async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        # uses connector.get_closed_orders if supported, otherwise uses recent trades
         try:
-            return await self._ensure_orders_completeness(
-                await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs),
-                symbol, since=since, limit=limit, **kwargs
-            )
+            return await self._get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs)
         except errors.NotSupported:
             if self.REQUIRE_CLOSED_ORDERS_FROM_RECENT_TRADES:
                 return await self._get_closed_orders_from_my_recent_trades(
@@ -756,15 +774,13 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 )
             raise
 
+    @fetching_orders_request
     async def get_cancelled_orders(
         self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict
     ) -> list:
         if not self.SUPPORT_FETCHING_CANCELLED_ORDERS:
             raise errors.NotSupported(f"get_cancelled_orders is not supported")
-        return await self._ensure_orders_completeness(
-            await self.connector.get_cancelled_orders(symbol=symbol, since=since, limit=limit, **kwargs),
-            symbol, since=since, limit=limit, **kwargs
-        )
+        return await self.connector.get_cancelled_orders(symbol=symbol, since=since, limit=limit, **kwargs)
 
     async def _get_closed_orders_from_my_recent_trades(
         self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict
@@ -775,7 +791,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             for trade in trades
         ]
 
-    async def _ensure_orders_completeness(
+    async def _ensure_orders_ensure_orders_completenesscompleteness(
         self, raw_orders, symbol, since=None, limit=None, trades_by_exchange_order_id=None, **kwargs
     ):
         if not self.REQUIRE_ORDER_FEES_FROM_TRADES \
@@ -825,7 +841,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def cancel_order(
         self, exchange_order_id: str, symbol: str, order_type: enums.TraderOrderType, **kwargs: dict
     ) -> enums.OrderStatus:
-        extended_kwargs = self._order_request_kwargs_factory(exchange_order_id, order_type, **(kwargs or {}))
+        extended_kwargs = self.order_request_kwargs_factory(exchange_order_id, order_type, **(kwargs or {}))
         return await self.connector.cancel_order(exchange_order_id, symbol, order_type, **extended_kwargs)
 
     def get_trade_fee(self, symbol: str, order_type: enums.TraderOrderType, quantity, price, taker_or_maker) -> dict:
