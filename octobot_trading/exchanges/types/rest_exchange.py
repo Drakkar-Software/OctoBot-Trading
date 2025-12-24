@@ -791,7 +791,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
             for trade in trades
         ]
 
-    async def _ensure_orders_ensure_orders_completenesscompleteness(
+    async def ensure_orders_completeness(
         self, raw_orders, symbol, since=None, limit=None, trades_by_exchange_order_id=None, **kwargs
     ):
         if not self.REQUIRE_ORDER_FEES_FROM_TRADES \
