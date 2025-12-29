@@ -140,7 +140,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 raise octobot_trading.errors.FailedMarketStatusRequest(
                     f"No future markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
                 )
-        if not self.exchange_manager.is_future:
+        if self.exchange_manager.is_option:
+            found_option_markets = False
+            for symbol in symbols:
+                if commons_symbols.parse_symbol(symbol).is_option():
+                    found_option_markets = True
+                    break
+            if not found_option_markets:
+                raise octobot_trading.errors.FailedMarketStatusRequest(
+                    f"No option markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
+                )
+        if not self.exchange_manager.is_future and not self.exchange_manager.is_option:
             found_spot_markets = False
             for symbol in symbols:
                 if commons_symbols.parse_symbol(symbol).is_spot():
@@ -396,6 +406,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             return self.adapter.adapt_balance(
                 await self.client.fetch_balance(params=kwargs)
             )
+    
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def get_user_balance(self, user_id: str, **kwargs: dict):
+        if not self.client.has['fetchUserBalance']:
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchUserBalance")
+        try:
+            return self.adapter.adapt_balance(
+                await self.client.fetch_user_balance(user_id=user_id, params=kwargs)
+            )
+        except ccxt.NotSupported as err:
+            raise NotImplementedError from err
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_symbol_prices(self,
@@ -622,6 +643,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
     @ccxt_client_util.converted_ccxt_common_errors
+    async def get_user_open_orders(self, user_id: str, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
+        if self.client.has['fetchUserOpenOrders']:
+            with self.error_describer():
+                return self.adapter.adapt_orders(
+                    await self.client.fetch_user_open_orders(user_id=user_id, symbol=symbol, since=since, limit=limit, params=kwargs),
+                    symbol=symbol
+                )
+
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_closed_orders(self, symbol: str = None, since: int = None,
                                 limit: int = None, **kwargs: dict) -> list:
         with self.error_describer():
@@ -665,6 +696,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 )
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
+
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def get_user_recent_trades(self, user_id: str, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
+        if self.client.has['fetchUserRecentTrades']:
+            with self.error_describer():
+                return self.adapter.adapt_trades(
+                    await self.client.fetch_user_recent_trades(user_id=user_id, symbol=symbol, since=since, limit=limit, params=kwargs)
+                )
+        else:
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchUserRecentTrades")
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
@@ -935,6 +977,41 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             raise NotImplementedError from err
 
     @ccxt_client_util.converted_ccxt_common_errors
+    async def get_closed_positions(self, symbols=None, **kwargs: dict) -> list:
+        if not self.client.has['fetchClosedPositions']:
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedPositions")
+        try:
+            return self.adapter.adapt_position(
+                await self.client.fetch_closed_positions(symbols=symbols, params=kwargs)
+            )
+        except ccxt.NotSupported as err:
+            raise NotImplementedError from err
+
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def get_user_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        if not self.client.has['fetchUserPositions']:
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchUserPositions")
+        try:
+            return [
+                self.adapter.adapt_position(position)
+                for position in await self.client.fetch_user_positions(user_id, symbols=symbols, params=kwargs)
+            ]
+        except ccxt.NotSupported as err:
+            raise NotImplementedError from err
+
+    @ccxt_client_util.converted_ccxt_common_errors
+    async def get_user_closed_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        if not self.client.has['fetchUserClosedPositions']:
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchUserClosedPositions")
+        try:
+            return [
+                self.adapter.adapt_position(position)
+                for position in await self.client.fetch_user_closed_positions(user_id, symbols=symbols, params=kwargs)
+            ]
+        except ccxt.NotSupported as err:
+            raise NotImplementedError from err
+
+    @ccxt_client_util.converted_ccxt_common_errors
     async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
         return self.adapter.adapt_position(
             self.client.parse_position({}, market=self.client.market(symbol)),
@@ -1107,12 +1184,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def has_markets(self):
         return bool(self.client.markets)
 
-    def supports_trading_type(self, symbol, trading_type: enums.FutureContractType) -> bool:
+    def supports_trading_type(self, symbol, trading_type: enums.ContractTradingTypes) -> bool:
         trading_type_to_ccxt_property = {
-            enums.FutureContractType.LINEAR_PERPETUAL: "linear",
-            enums.FutureContractType.LINEAR_EXPIRABLE: "linear",
-            enums.FutureContractType.INVERSE_PERPETUAL: "inverse",
-            enums.FutureContractType.INVERSE_EXPIRABLE: "inverse",
+            enums.ContractTradingTypes.LINEAR: "linear",
+            enums.ContractTradingTypes.INVERSE: "inverse",
         }
         return self.client.safe_string(
             self.client.market(symbol),

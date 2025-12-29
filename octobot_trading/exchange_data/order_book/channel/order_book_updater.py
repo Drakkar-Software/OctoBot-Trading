@@ -47,7 +47,7 @@ class OrderBookUpdater(order_book_channel.OrderBookProducer):
     async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
-                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                for pair in self._get_pairs_to_update():
                     order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
                     try:
                         asks, bids = order_book[enums.ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
@@ -85,6 +85,9 @@ class OrderBookUpdater(order_book_channel.OrderBookProducer):
                          bids[0][1], bids[0][0])
         except Exception as e:
             self.logger.error(f"Failed to parse order book ticker : {e}")
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def resume(self) -> None:
         await super().resume()

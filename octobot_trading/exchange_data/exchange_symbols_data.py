@@ -19,6 +19,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchange_data.exchange_symbol_data as exchange_symbol_data_import
 import octobot_trading.exchanges
+import octobot_trading.exchange_data.markets.markets_manager as markets_manager
 
 
 class ExchangeSymbolsData:
@@ -28,6 +29,8 @@ class ExchangeSymbolsData:
         self.exchange: octobot_trading.exchanges.RestExchange = exchange_manager.exchange
         self.config: dict[str, typing.Any] = exchange_manager.config
         self.exchange_symbol_data: dict[str, exchange_symbol_data_import.ExchangeSymbolData] = {}
+
+        self.markets_manager: markets_manager.MarketsManager = markets_manager.MarketsManager()
 
     async def stop(self):
         self.exchange_manager = None # type: ignore

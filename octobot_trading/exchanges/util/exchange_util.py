@@ -362,6 +362,8 @@ def get_exchange_type(exchange_manager_instance):
         return enums.ExchangeTypes.FUTURE
     if exchange_manager_instance.is_margin:
         return enums.ExchangeTypes.MARGIN
+    if exchange_manager_instance.is_option:
+        return enums.ExchangeTypes.OPTION
     return enums.ExchangeTypes.SPOT
 
 

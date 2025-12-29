@@ -38,8 +38,9 @@ from octobot_trading.personal_data.portfolios import portfolio_factory
 from octobot_trading.personal_data.portfolios import portfolio_profitability
 from octobot_trading.personal_data.portfolios import sub_portfolio
 from octobot_trading.personal_data.portfolios import portfolio_manager
-from octobot_trading.personal_data.portfolios import value_converter
 from octobot_trading.personal_data.portfolios import portfolio_value_holder
+from octobot_trading.personal_data.portfolios import portfolio_value_holder_factory
+from octobot_trading.personal_data.portfolios import value_converter
 from octobot_trading.personal_data.portfolios import types
 from octobot_trading.personal_data.portfolios import portfolio_util
 from octobot_trading.personal_data.portfolios import history
@@ -62,15 +63,26 @@ from octobot_trading.personal_data.portfolios.value_converter import (
     ValueConverter,
 )
 from octobot_trading.personal_data.portfolios.portfolio_value_holder import (
-    PortfolioValueHolder,
+    PortfolioValueHolder
+)
+from octobot_trading.personal_data.portfolios.holders import (
+    FuturesPortfolioValueHolder,
+    OptionPortfolioValueHolder,
+    MarginPortfolioValueHolder,
+    SpotPortfolioValueHolder,
+)
+from octobot_trading.personal_data.portfolios.portfolio_value_holder_factory import (
+    create_portfolio_value_holder,
 )
 from octobot_trading.personal_data.portfolios.types import (
     FuturePortfolio,
+    OptionPortfolio,
     MarginPortfolio,
     SpotPortfolio,
 )
 from octobot_trading.personal_data.portfolios.assets import (
     FutureAsset,
+    OptionAsset,
     MarginAsset,
     SpotAsset,
 )
@@ -119,10 +131,17 @@ __all__ = [
     "PortfolioManager",
     "ValueConverter",
     "PortfolioValueHolder",
+    "FuturesPortfolioValueHolder",
+    "OptionPortfolioValueHolder",
+    "MarginPortfolioValueHolder",
+    "SpotPortfolioValueHolder",
+    "create_portfolio_value_holder",
     "FuturePortfolio",
+    "OptionPortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
     "FutureAsset",
+    "OptionAsset",
     "MarginAsset",
     "SpotAsset",
     "parse_decimal_portfolio",

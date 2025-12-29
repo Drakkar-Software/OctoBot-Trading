@@ -74,6 +74,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     if self._should_maintain_candle(time_frame, pair)
                 ]
 
+    # TODO remove spec and use modify instead
+    # TODO Add OHLCV to watch_only_channels_to_notify inside update_traded_symbol_pairs
     def _get_traded_pairs(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + [
             channel_spec.symbol 
@@ -81,6 +83,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             if channel_spec.symbol not in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
         ]
 
+    # TODO Should we create a similar feature as additional_traded_pairs for time frames?
     def _get_time_frames(self):
         return self.channel.exchange_manager.exchange_config.available_time_frames + [
             channel_spec.time_frame 

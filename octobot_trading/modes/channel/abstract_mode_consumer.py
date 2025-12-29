@@ -263,10 +263,10 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         if self.exchange_manager.is_backtesting:
             # never wait in backtesting
             return True
-        if not self.exchange_manager.exchange.has_pair_future_contract(symbol):
+        if not self.exchange_manager.exchange.has_pair_contract(symbol):
             self.logger.error(f"Missing required contract for {symbol}")
             return False
-        if not self.exchange_manager.exchange.get_pair_future_contract(symbol).is_one_way_position_mode() \
+        if not self.exchange_manager.exchange.get_pair_contract(symbol).is_one_way_position_mode() \
                 and side is None:
             raise errors.NotSupported("The side parameter is required when dealing with non one-way contracts")
         position = self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(

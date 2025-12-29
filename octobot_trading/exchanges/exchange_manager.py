@@ -55,6 +55,7 @@ class ExchangeManager(util.Initializable):
         self.is_spot_only: bool = False
         self.is_margin: bool = False
         self.is_future: bool = False
+        self.is_option: bool = False
         self.is_sandboxed: bool = False
         self.is_trading: bool = True
         self.without_auth: bool = False
@@ -253,7 +254,7 @@ class ExchangeManager(util.Initializable):
         return self.exchange_symbols_data.get_exchange_symbol_data(symbol)
 
     def get_rest_pairs_refresh_threshold(self) -> enums.RestExchangePairsRefreshMaxThresholds:
-        traded_pairs_count = len(self.exchange_config.traded_symbol_pairs)
+        traded_pairs_count = len(self.exchange_config.traded_symbol_pairs) + len(self.exchange_config.additional_traded_pairs)
         if traded_pairs_count < enums.RestExchangePairsRefreshMaxThresholds.FAST.value:
             return enums.RestExchangePairsRefreshMaxThresholds.FAST
         if traded_pairs_count < enums.RestExchangePairsRefreshMaxThresholds.MEDIUM.value:
@@ -361,6 +362,7 @@ class ExchangeManager(util.Initializable):
         exchange_type = 'spot only' if self.is_spot_only else exchange_type
         exchange_type = 'margin' if self.is_margin else exchange_type
         exchange_type = 'future' if self.is_future else exchange_type
+        exchange_type = 'option' if self.is_option else exchange_type
         return f"[{self.__class__.__name__}] with {self.exchange.__class__.__name__ if self.exchange else '?'} " \
                f"exchange class on {self.get_exchange_name()} | {exchange_type} | " \
                f"{'authenticated | ' if self.exchange and self.exchange.authenticated() else 'unauthenticated | '}" \

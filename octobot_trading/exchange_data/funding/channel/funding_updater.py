@@ -47,7 +47,6 @@ class FundingUpdater(funding_channel.FundingProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-
         # create async jobs
         self.fetch_funding_job = async_job.AsyncJob(self._funding_fetch_and_push,
                                                     execution_interval_delay=self.FUNDING_REFRESH_TIME,
@@ -78,7 +77,7 @@ class FundingUpdater(funding_channel.FundingProducer):
 
     async def _funding_fetch_and_push(self) -> list:
         next_funding_times = []
-        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+        for pair in self._get_pairs_to_update():
             next_funding_time_candidate = await self.fetch_symbol_funding_rate(pair)
             if next_funding_time_candidate is not None:
                 next_funding_times.append(next_funding_time_candidate)
@@ -103,7 +102,10 @@ class FundingUpdater(funding_channel.FundingProducer):
                     last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value]
                 )
                 return next_funding_time
-        except (errors.NotSupported, NotImplementedError) as ne:
+        except errors.NotSupported:
+            self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting funding rate updates")
+            await self.pause() 
+        except NotImplementedError as ne:
             self.logger.exception(ne, True, f"get_funding_rate is not supported by "
                                             f"{self.channel.exchange_manager.exchange.name} : {ne}")
         except Exception as e:
@@ -172,6 +174,13 @@ class FundingUpdater(funding_channel.FundingProducer):
             if should_sleep_time < self.FUNDING_REFRESH_TIME_MAX
             else self.FUNDING_REFRESH_TIME
         )
+
+    async def modify(self, added_pairs=None, removed_pairs=None):
+        if added_pairs:
+            await self._funding_fetch_and_push()
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def stop(self) -> None:
         """

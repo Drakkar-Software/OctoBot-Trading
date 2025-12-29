@@ -30,6 +30,14 @@ from octobot_trading.exchange_data.kline import (
     KlineManager,
     KlineUpdater,
 )
+from octobot_trading.exchange_data import markets
+from octobot_trading.exchange_data.markets import (
+    MarketsUpdaterSimulator,
+    MarketsProducer,
+    MarketsChannel,
+    MarketsManager,
+    MarketsUpdater,
+)
 from octobot_trading.exchange_data import ohlcv
 from octobot_trading.exchange_data.ohlcv import (
     CandlesManager,
@@ -88,11 +96,16 @@ from octobot_trading.exchange_data.ticker import (
 )
 from octobot_trading.exchange_data import contracts
 from octobot_trading.exchange_data.contracts import (
+    Contract,
     MarginContract,
     FutureContract,
+    OptionContract,
+    get_contract_type_from_symbol,
     update_contracts_from_positions,
     update_future_contract_from_dict,
     create_default_future_contract,
+    create_default_option_contract,
+    create_contract,
 )
 from octobot_trading.exchange_data import exchange_symbol_data
 from octobot_trading.exchange_data.exchange_symbol_data import (
@@ -107,13 +120,14 @@ import octobot_trading.constants as trading_constants
 import octobot_backtesting.enums as backtesting_enums
 
 UNAUTHENTICATED_UPDATER_PRODUCERS = [OHLCVUpdater, OrderBookUpdater, RecentTradeUpdater, TickerUpdater,
-                                     KlineUpdater, MarkPriceUpdater, FundingUpdater]
+                                     KlineUpdater, MarkPriceUpdater, FundingUpdater, MarketsUpdater]
 UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
         trading_constants.OHLCV_CHANNEL: OHLCVUpdaterSimulator,
         trading_constants.ORDER_BOOK_CHANNEL: OrderBookUpdaterSimulator,
         trading_constants.RECENT_TRADES_CHANNEL: RecentTradeUpdaterSimulator,
         trading_constants.TICKER_CHANNEL: TickerUpdaterSimulator,
         trading_constants.KLINE_CHANNEL: KlineUpdaterSimulator,
+        trading_constants.MARKETS_CHANNEL: MarketsUpdaterSimulator,
         trading_constants.MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator,
         trading_constants.FUNDING_CHANNEL: FundingUpdaterSimulator
     }
@@ -151,6 +165,11 @@ __all__ = [
     "KlineChannel",
     "KlineManager",
     "KlineUpdater",
+    "MarketsUpdaterSimulator",
+    "MarketsProducer",
+    "MarketsChannel",
+    "MarketsManager",
+    "MarketsUpdater",
     "CandlesManager",
     "PreloadedCandlesManager",
     "get_symbol_close_candles",
@@ -192,11 +211,16 @@ __all__ = [
     "MiniTickerProducer",
     "MiniTickerChannel",
     "TickerUpdaterSimulator",
+    "Contract",
     "MarginContract",
     "FutureContract",
+    "OptionContract",
+    "get_contract_type_from_symbol",
     "update_contracts_from_positions",
     "update_future_contract_from_dict",
     "create_default_future_contract",
+    "create_default_option_contract",
+    "create_contract",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",
     "UNAUTHENTICATED_UPDATER_PRODUCERS",

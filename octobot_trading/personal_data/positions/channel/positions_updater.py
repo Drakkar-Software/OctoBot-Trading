@@ -69,16 +69,16 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         # fetch current positions from exchange
         await self.initialize_positions()
 
-        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+        for pair in self._get_pairs_to_update():
             self.channel.exchange_manager.exchange_personal_data.positions_manager.set_initialized_event(pair)
 
     async def initialize_contracts(self) -> None:
         """
         Initialize exchange FutureContracts required to manage positions
         """
-        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+        for pair in self._get_pairs_to_update():
             try:
-                await self.channel.exchange_manager.exchange.load_pair_future_contract(pair)
+                await self.channel.exchange_manager.exchange.load_pair_contract(pair)
                 await self._update_contract_settings(pair)
             except NotImplementedError as e:
                 self.logger.debug(f"Can't to load {pair} contract info from exchange: {e}. "
@@ -131,13 +131,13 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
     def _is_relevant_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
-               in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+               in self._get_pairs_to_update()
 
     async def fetch_and_push_positions(self, retry_attempts=1):
         """
         Update positions from exchange
         """
-        symbols = self.channel.exchange_manager.exchange_config.traded_symbol_pairs \
+        symbols = self._get_pairs_to_update() \
             if self.channel.exchange_manager.exchange.REQUIRES_SYMBOL_FOR_EMPTY_POSITION else None
         positions = await self.channel.exchange_manager.exchange.retry_n_time(
             retry_attempts,
@@ -166,7 +166,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
     async def _update_positions_contract_settings(self, positions):
         for position in positions:
             symbol = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
-            if symbol is not None and symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            if symbol is not None and symbol in self._get_pairs_to_update():
                 await self._update_contract_settings(symbol)
 
     async def _update_contract_settings(self, symbol):
@@ -244,6 +244,14 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 await symbol_position.update(mark_price=mark_price)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
+
+    async def modify(self, added_pairs=None, removed_pairs=None):
+        if added_pairs:
+            self.logger.info(f"Fetching positions for new traded symbols: {added_pairs}...")
+            await self.fetch_and_push_positions()
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def stop(self) -> None:
         """

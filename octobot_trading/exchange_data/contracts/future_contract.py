@@ -23,7 +23,8 @@ import octobot_trading.exchange_data.contracts.margin_contract as margin_contrac
 
 
 class FutureContract(margin_contract.MarginContract):
-    def __init__(self, pair, margin_type, contract_type,
+    def __init__(self, pair, margin_type, 
+                 contract_type: enums.FutureContractType,
                  contract_size=constants.ONE,
                  maximum_leverage=constants.ONE,
                  current_leverage=constants.ONE,

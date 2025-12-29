@@ -24,6 +24,8 @@ def create_portfolio_from_exchange_manager(exchange_manager):
     """
     if exchange_manager.is_future:
         return portfolio_types.FuturePortfolio(exchange_manager.get_exchange_name())
+    if exchange_manager.is_option:
+        return portfolio_types.OptionPortfolio(exchange_manager.get_exchange_name())
     if exchange_manager.is_margin:
         return portfolio_types.MarginPortfolio(exchange_manager.get_exchange_name())
     return portfolio_types.SpotPortfolio(exchange_manager.get_exchange_name())
