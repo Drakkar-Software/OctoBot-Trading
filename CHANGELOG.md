@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-01-05
+### Added
+[Exchange] Add public user data fetching (only available on supported exchanges)
+[Exchange] Add options trading support
+[Exchange] Add markets updater to refresh market status
+### Fixed
+[Portfolio] Fix holding ration calculation for futures holdings
+
 ## [2.4.244] - 2026-01-21
 ### Updated
 [Trader] refactor .is_enabled to allow pause mode

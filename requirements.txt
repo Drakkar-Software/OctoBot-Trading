@@ -1,10 +1,10 @@
 numpy==1.26.3
 
 # Drakkar-Software requirements
-OctoBot-Backtesting>=1.9, <1.10
+OctoBot-Backtesting>=1.10, <1.11
 Async-Channel>=2.2, <2.3
-OctoBot-Commons>=1.9.93, <1.10
-OctoBot-Tentacles-Manager>=2.9, <2.10
+OctoBot-Commons>=1.10, <1.11
+OctoBot-Tentacles-Manager>=2.10, <2.11
 trading-backend>=1.2.35
 
 # Exchange connection requirements

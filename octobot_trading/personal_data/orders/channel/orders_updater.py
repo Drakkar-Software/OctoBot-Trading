@@ -124,28 +124,39 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :param retry_till_success: retry request till it works. Should be rarely used as it might take some time
         :param retry_attempts: how many times to retry before failing
         """
-        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            if retry_till_success:
-                open_orders: list = await self.channel.exchange_manager.exchange.retry_till_success(
-                    self.OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT,
-                    self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit,
-                )
-            elif retry_attempts:
-                open_orders: list = await self.channel.exchange_manager.exchange.retry_n_time(
-                    retry_attempts,
-                    self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit,
-                )
-            else:
-                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
-                    symbol=symbol, limit=limit
-                )
-            if open_orders:
-                await self.push(open_orders, is_from_bot=is_from_bot)
-            else:
-                await self.handle_post_open_orders_update((symbol, ), open_orders, [], False, True)
+        for symbol in self._get_pairs_to_update():
+            await self._symbol_orders_fetch_and_push(symbol)
             if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
         self._is_initialized_event_set = True
+
+    async def _symbol_orders_fetch_and_push(self, symbol: str, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT, retry_till_success=False, retry_attempts=0):
+        """
+        Update open orders from exchange for a specific symbol
+        :param symbol: the symbol to update
+        :param is_from_bot: True if the order was created by OctoBot
+        :param limit: the exchange request orders count limit
+        :param retry_till_success: retry request till it works. Should be rarely used as it might take some time
+        :param retry_attempts: how many times to retry before failing
+        """
+        if retry_till_success:
+            open_orders: list = await self.channel.exchange_manager.exchange.retry_till_success(
+                self.OPEN_ORDER_INITIAL_FETCH_GIVE_UP_TIMEOUT,
+                self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit,
+            )
+        elif retry_attempts:
+            open_orders: list = await self.channel.exchange_manager.exchange.retry_n_time(
+                retry_attempts,
+                self.channel.exchange_manager.exchange.get_open_orders, symbol=symbol, limit=limit,
+            )
+        else:
+            open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
+                symbol=symbol, limit=limit
+            )
+        if open_orders:
+            await self.push(open_orders, is_from_bot=is_from_bot)
+        else:
+            await self.handle_post_open_orders_update((symbol, ), open_orders, [], False, True)
 
     def _set_initialized_event(self, symbol):
         # set init in updater as it's the only place we know if we fetched orders or not regardless of orders existence
@@ -162,7 +173,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         Update closed orders from exchange
         :param limit: the exchange request orders count limit
         """
-        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+        for symbol in self._get_pairs_to_update():
             close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
                 symbol=symbol, limit=limit)
 
@@ -208,6 +219,15 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             self.logger.info(f"Completed update for {order} on {exchange_name}")
         else:
             self.logger.info(f"Can't received update for {order} on {exchange_name}: received order is None")
+
+    async def modify(self, added_pairs=None, removed_pairs=None):
+        if added_pairs:
+            for symbol in added_pairs:
+                self.logger.info(f"Fetching orders for new traded symbol: {symbol}...")
+                await self._symbol_orders_fetch_and_push(symbol)
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def stop(self) -> None:
         """

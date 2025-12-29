@@ -205,6 +205,13 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_balance is not implemented")
 
+    async def get_user_balance(self, user_id: str, **kwargs: dict):
+        """
+        :param user_id: the user id
+        :return: current user balance from exchange
+        """
+        raise NotImplementedError("get_user_balance is not implemented")
+
     async def get_symbol_prices(self,
                                 symbol: str,
                                 time_frame: common_enums.TimeFrames,
@@ -264,6 +271,12 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_all_currencies_price_ticker is not implemented")
 
+    async def refresh_markets(self):
+        """
+        Refresh the exchange markets
+        """
+        raise NotImplementedError("refresh_markets is not implemented")
+
     async def get_order(self, exchange_order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         """
         Get the order data from the exchange
@@ -294,7 +307,19 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: the user open order list
         """
         raise NotImplementedError("get_open_orders is not implemented")
-
+    
+    async def get_user_open_orders(self, user_id: str, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
+        """
+        Get the user open order list
+        :param user_id: the user id
+        :param symbol: the order symbol
+        :param since: the starting timestamp
+        :param limit: the list limit size
+        :return: the user open order list
+        """
+        raise NotImplementedError("get_user_open_orders is not implemented")
+    
     async def get_closed_orders(self, symbol: str = None, since: int = None,
                                 limit: int = None, **kwargs: dict) -> list:
         """
@@ -327,7 +352,19 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: the user trades history list
         """
         raise NotImplementedError("get_my_recent_trades is not implemented")
-        
+    
+    async def get_user_recent_trades(self, user_id: str, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
+        """
+        Get the user recent trades
+        :param user_id: the user id
+        :param symbol: trades symbol
+        :param since: the trade history starting timestamp
+        :param limit: the history limit size
+        :return: the user trades history list
+        """
+        raise NotImplementedError("get_user_recent_trades is not implemented")
+    
     async def get_leverage_tiers(self, symbols: list = None, **kwargs: dict)-> dict:
         """
         :param symbols: the symbols or None
@@ -372,6 +409,48 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: the created order dict
         """
         raise NotImplementedError("create_order is not implemented")
+
+    async def get_position(self, symbol: str, **kwargs: dict) -> dict:
+        """
+        Get a position
+        :param symbol: the symbol
+        :return: the user position
+        """
+        raise NotImplementedError("get_position is not implemented")
+
+    async def get_positions(self, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the positions list
+        :param symbols: the symbols or None
+        :return: the user position list
+        """
+        raise NotImplementedError("get_positions is not implemented")
+    
+    async def get_closed_positions(self, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the closed position list
+        :param symbols: the symbols or None
+        :return: the closed position list
+        """
+        raise NotImplementedError("get_closed_positions is not implemented")
+    
+    async def get_user_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the user position list
+        :param user_id: the user id
+        :param symbols: the symbols or None
+        :return: the user position list
+        """
+        raise NotImplementedError("get_user_positions is not implemented")
+
+    async def get_user_closed_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the user closed position list
+        :param user_id: the user id
+        :param symbols: the symbols or None
+        :return: the user closed position list
+        """
+        raise NotImplementedError("get_user_closed_positions is not implemented")
 
     def get_order_additional_params(self, order) -> dict:
         """

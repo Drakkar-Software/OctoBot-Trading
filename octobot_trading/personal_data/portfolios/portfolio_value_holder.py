@@ -134,47 +134,18 @@ class PortfolioValueHolder:
                 self.logger.info(f"Missing {asset} price conversion, ignoring {float(asset_holdings.total)} holdings.")
         return total_value
 
-    def get_traded_assets_holdings_value(self, unit: str, coins_whitelist: typing.Optional[typing.Iterable]):
-        assets = set()
-        for symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbols:
-            if coins_whitelist is None or symbol.base in coins_whitelist:
-                assets.add(symbol.base)
-            if coins_whitelist is None or symbol.quote in coins_whitelist:
-                assets.add(symbol.quote)
-        return self.get_assets_holdings_value(
-            assets, unit
-        )
-
-    def get_holdings_ratio(
-        self, currency, traded_symbols_only=False, include_assets_in_open_orders=False, coins_whitelist=None
-    ):
-        if coins_whitelist and not traded_symbols_only:
-            total_holdings_value = self.get_assets_holdings_value(
-                coins_whitelist, self.portfolio_manager.reference_market
-            )
-        elif traded_symbols_only:
-            total_holdings_value = self.get_traded_assets_holdings_value(
-                self.portfolio_manager.reference_market, coins_whitelist
-            )
-        else:
-            # consider all assets for total_holdings_value
-            total_holdings_value = self.portfolio_current_value
-        if not total_holdings_value:
-            return constants.ZERO
-        currency_holdings = self.portfolio_manager.portfolio.get_currency_portfolio(currency).total
-        if include_assets_in_open_orders:
-            # add assets in open orders to currency_holdings
-            assets_in_open_orders = constants.ZERO
-            for order in self.portfolio_manager.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
-                symbol = symbol_util.parse_symbol(order.symbol)
-                if order.side is enums.TradeOrderSide.BUY and symbol.base == currency:
-                    assets_in_open_orders += order.origin_quantity
-                elif order.side is enums.TradeOrderSide.SELL and symbol.quote == currency:
-                    assets_in_open_orders += order.total_cost
-            currency_holdings += assets_in_open_orders
-        # compute ratio
-        current_holdings_value = self.value_converter.evaluate_value(currency, currency_holdings, init_price_fetchers=False)
-        return current_holdings_value / total_holdings_value
+    def _get_orders_delta(self, currency: str) -> decimal.Decimal:
+        """
+        Gets the orders delta for a currency.
+        """
+        assets_in_open_orders = constants.ZERO
+        for order in self.portfolio_manager.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
+            symbol = symbol_util.parse_symbol(order.symbol)
+            if order.side is enums.TradeOrderSide.BUY and symbol.base == currency:
+                assets_in_open_orders += order.origin_quantity
+            elif order.side is enums.TradeOrderSide.SELL and symbol.quote == currency:
+                assets_in_open_orders += order.total_cost
+        return assets_in_open_orders
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
@@ -416,6 +387,81 @@ class PortfolioValueHolder:
             portfolio[currency].total > constants.ZERO
             or currency in self.portfolio_manager.portfolio_profitability.valuated_currencies
         )
+
+    def _get_total_holdings_value(self, coins_whitelist=None, traded_symbols_only=False) -> decimal.Decimal:
+        """
+        Get the total holdings value
+        :param coins_whitelist: the coins whitelist
+        :param traded_symbols_only: when True, only consider traded symbols
+        :return: the total holdings value
+        """
+        if coins_whitelist and not traded_symbols_only:
+            total_holdings_value = self.get_assets_holdings_value(
+                coins_whitelist, self.portfolio_manager.reference_market
+            )
+        elif traded_symbols_only:
+            total_holdings_value = self.get_traded_assets_holdings_value(
+                self.portfolio_manager.reference_market, coins_whitelist
+            )
+        else:
+            # consider all assets for total_holdings_value
+            total_holdings_value = self.portfolio_current_value
+        if not total_holdings_value:
+            return constants.ZERO
+        return total_holdings_value
+
+    def _get_total_holdings_in_open_orders(self, currency: str) -> decimal.Decimal:
+        """
+        Get the total holdings in open orders
+        :param currency: the currency to evaluate
+        :return: the total holdings in open orders
+        """
+        assets_in_open_orders = self._get_orders_delta(currency)
+        return assets_in_open_orders
+
+    def _get_holdings_ratio_from_portfolio(self, currency, traded_symbols_only=False, include_assets_in_open_orders=False, coins_whitelist=None) -> decimal.Decimal:
+        """
+        Get the holdings ratio from the portfolio
+        :param currency: the currency to evaluate
+        :param traded_symbols_only: when True, only consider traded symbols
+        :param include_assets_in_open_orders: when True, include assets in open orders
+        :param coins_whitelist: the coins whitelist
+        :return: the holdings ratio
+        """
+        total_holdings_value = self._get_total_holdings_value(coins_whitelist=coins_whitelist, traded_symbols_only=traded_symbols_only)
+
+        currency_holdings = self.portfolio_manager.portfolio.get_currency_portfolio(currency).total
+        if include_assets_in_open_orders:
+            currency_holdings += self._get_total_holdings_in_open_orders(currency)
+
+        current_holdings_value = self.value_converter.evaluate_value(currency, currency_holdings, init_price_fetchers=False)
+        if total_holdings_value > constants.ZERO:
+            currency_holdings_ratio = current_holdings_value / total_holdings_value
+            return currency_holdings_ratio
+        return constants.ZERO
+
+    def get_traded_assets_holdings_value(self, unit: str, coins_whitelist: typing.Optional[typing.Iterable]) -> decimal.Decimal:
+        """
+        Get the traded assets holdings value
+        :param unit: the unit to evaluate
+        :param coins_whitelist: the coins whitelist
+        :return: the traded assets holdings value
+        """
+        assets = set()
+        additional_traded_symbols = [symbol_util.parse_symbol(symbol) for symbol in self.portfolio_manager.exchange_manager.exchange_config.additional_traded_pairs]
+        for symbol in self.portfolio_manager.exchange_manager.exchange_config.traded_symbols + additional_traded_symbols:
+            if coins_whitelist is None or symbol.base in coins_whitelist:
+                assets.add(symbol.base)
+            if coins_whitelist is None or symbol.quote in coins_whitelist:
+                assets.add(symbol.quote)
+        return self.get_assets_holdings_value(
+            assets, unit
+        )
+
+    def get_holdings_ratio(
+        self, currency, traded_symbols_only=False, include_assets_in_open_orders=False, coins_whitelist=None
+    ) -> typing.Optional[decimal.Decimal]:
+        raise NotImplementedError("get_holdings_ratio is not implemented")
 
     def clear(self):
         self.value_converter.clear()

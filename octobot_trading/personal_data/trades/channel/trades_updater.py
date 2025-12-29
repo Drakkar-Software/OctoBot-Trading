@@ -70,7 +70,7 @@ class TradesUpdater(trades_channel.TradesProducer):
         self.logger.debug(
             f"Updating {self.channel.exchange_manager.exchange_config.traded_symbol_pairs} trades history"
         )
-        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+        for symbol in self._get_pairs_to_update():
             if trades := await self.channel.exchange_manager.exchange.get_my_recent_trades(
                 symbol=symbol,
                 limit=self.MAX_OLD_TRADES_TO_FETCH
@@ -78,7 +78,7 @@ class TradesUpdater(trades_channel.TradesProducer):
                 await self.push(trades)
 
     def _set_all_initialized(self):
-        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+        for symbol in self._get_pairs_to_update():
             if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
         self._is_initialized_event_set = True
@@ -117,6 +117,9 @@ class TradesUpdater(trades_channel.TradesProducer):
                 self.logger.error(f"Fail to update trades : {html_util.get_html_summary_if_relevant(e)}")
 
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def resume(self) -> None:
         """

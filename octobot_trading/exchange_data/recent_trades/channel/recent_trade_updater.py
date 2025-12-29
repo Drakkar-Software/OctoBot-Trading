@@ -36,7 +36,7 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
     async def init_recent_trades(self):
         pair = None
         try:
-            for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            for pair in self._get_pairs_to_update():
                 recent_trades = await self.channel.exchange_manager.exchange.\
                     get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
                 if recent_trades:
@@ -66,7 +66,7 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
     async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
-                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                for pair in self._get_pairs_to_update():
                     recent_trades = await self.channel.exchange_manager.exchange.\
                         get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
                     if recent_trades:
@@ -92,6 +92,9 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                     True,
                     f"Fail to update recent trades : {html_util.get_html_summary_if_relevant(e)}"
                 )
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def resume(self) -> None:
         await super().resume()

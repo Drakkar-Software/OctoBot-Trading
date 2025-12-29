@@ -15,11 +15,15 @@
 #  License along with this library.
 
 from octobot_trading.personal_data.portfolios.assets import future_asset
+from octobot_trading.personal_data.portfolios.assets import option_asset
 from octobot_trading.personal_data.portfolios.assets import margin_asset
 from octobot_trading.personal_data.portfolios.assets import spot_asset
 
 from octobot_trading.personal_data.portfolios.assets.future_asset import (
     FutureAsset,
+)
+from octobot_trading.personal_data.portfolios.assets.option_asset import (
+    OptionAsset,
 )
 from octobot_trading.personal_data.portfolios.assets.margin_asset import (
     MarginAsset,
@@ -30,6 +34,7 @@ from octobot_trading.personal_data.portfolios.assets.spot_asset import (
 
 __all__ = [
     "FutureAsset",
+    "OptionAsset",
     "MarginAsset",
     "SpotAsset",
 ]

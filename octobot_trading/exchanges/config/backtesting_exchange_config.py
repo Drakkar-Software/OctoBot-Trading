@@ -19,5 +19,6 @@ import octobot_trading.constants as trading_constants
 class BacktestingExchangeConfig:
     def __init__(self):
         # future trading config data
-        self.future_contract_type = trading_constants.DEFAULT_SYMBOL_CONTRACT_TYPE
+        self.future_contract_type = trading_constants.DEFAULT_SYMBOL_FUTURE_CONTRACT_TYPE
+        self.option_contract_type = trading_constants.DEFAULT_SYMBOL_OPTION_CONTRACT_TYPE
         self.funding_rate = trading_constants.DEFAULT_SYMBOL_FUNDING_RATE

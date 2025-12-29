@@ -60,7 +60,7 @@ class KlineUpdater(kline_channel.KlineProducer):
             try:
                 started_time = time.time()
                 quick_sleep = False
-                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                for pair in self._get_pairs_to_update():
                     candle: list = await self.channel.exchange_manager.exchange.get_kline_price(pair, time_frame)
                     try:
                         candle = candle[0]
@@ -88,6 +88,9 @@ class KlineUpdater(kline_channel.KlineProducer):
                     True,
                     f"Failed to update kline data in {time_frame} : {html_util.get_html_summary_if_relevant(e)}"
                 )
+
+    def _get_pairs_to_update(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self.channel.exchange_manager.exchange_config.additional_traded_pairs
 
     async def resume(self) -> None:
         await super().resume()

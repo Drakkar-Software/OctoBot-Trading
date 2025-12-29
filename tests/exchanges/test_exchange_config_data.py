@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import mock
 
 from tests import event_loop
 from octobot_commons.tests.test_config import load_test_config
@@ -204,5 +205,56 @@ class TestExchangeConfig:
         sorted_pairs_without_redundancy = sorted(["BNB/USDT", "BNB/BTC"])
         assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == sorted_pairs_without_redundancy
 
+        cancel_ccxt_throttle_task()
+        await exchange_manager.stop()
+
+    @pytest.mark.parametrize("watch_only,added_pairs,removed_pairs", [
+        (False, ["ADA/USDT"], []),
+        (True, ["ETH/USDT"], []),
+        (False, ["ADA/USDT", "LINK/USDT"], []),
+        (False, [], ["BTC/USDT"]),
+        (True, [], ["BTC/USDT"]),
+    ])
+    async def test_update_traded_symbol_pairs(self, watch_only, added_pairs, removed_pairs):
+        config = load_test_config()
+        config[CONFIG_CRYPTO_CURRENCIES] = {
+            "Bitcoin": {
+                "pairs": ["BTC/USDT"]
+            }
+        }
+        _, exchange_manager = await self.init_default(config=config)
+        
+        # Pre-populate lists for removal tests
+        if removed_pairs:
+            for pair in removed_pairs:
+                if pair not in exchange_manager.exchange_config.traded_symbol_pairs:
+                    exchange_manager.exchange_config.traded_symbol_pairs.append(pair)
+            if watch_only:
+                exchange_manager.exchange_config.additional_traded_pairs = removed_pairs.copy()
+                exchange_manager.exchange_config.watched_pairs = removed_pairs.copy()
+            else:
+                exchange_manager.exchange_config.additional_traded_pairs = removed_pairs.copy()
+        
+        with mock.patch.object(exchange_manager.exchange_config, '_is_valid_symbol', wraps=exchange_manager.exchange_config._is_valid_symbol) as is_valid_mock:
+            await exchange_manager.exchange_config.update_traded_symbol_pairs(
+                added_pairs=added_pairs,
+                removed_pairs=removed_pairs,
+                watch_only=watch_only
+            )
+            
+            # Verify _is_valid_symbol was called for all pairs
+            assert is_valid_mock.call_count == len(added_pairs) + len(removed_pairs)
+        
+        if watch_only:
+            for pair in added_pairs:
+                assert pair in exchange_manager.exchange_config.watched_pairs
+            for pair in removed_pairs:
+                assert pair not in exchange_manager.exchange_config.watched_pairs
+        else:
+            for pair in added_pairs:
+                assert pair in exchange_manager.exchange_config.additional_traded_pairs
+            for pair in removed_pairs:
+                assert pair not in exchange_manager.exchange_config.additional_traded_pairs
+        
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()

@@ -17,6 +17,7 @@ import copy
 import typing
 
 import octobot_commons.symbols
+import octobot_commons.symbols.symbol_util as symbols_util
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as constants
 import octobot_commons.logging as logging
@@ -46,11 +47,15 @@ class ExchangeConfig(util.Initializable):
 
         # list of exchange supported enabled pairs from self.config
         self.traded_symbol_pairs: list[str] = []
+
         # Same as traded_symbol_pairs but with parsed symbols
         self.traded_symbols: list[octobot_commons.symbols.Symbol] = []
 
         # list of exchange supported pairs on which we want to collect data through updaters or websocket
         self.watched_pairs: list[str] = []
+
+        # list of exchange supported pairs on which we want to collect data through updaters or websocket
+        self.additional_traded_pairs: list[str] = []
 
         # list of required time frames from configuration that are available
         self.available_required_time_frames: list[commons_enums.TimeFrames] = []
@@ -163,24 +168,60 @@ class ExchangeConfig(util.Initializable):
         self.is_saving_cancelled_orders_as_trade = value
 
     async def add_watched_symbols(self, symbols):
-        new_valid_symbols = [
-            symbol
-            for symbol in symbols
-            if self._is_valid_symbol(symbol, []) and symbol not in self.watched_pairs
+        await self.update_traded_symbol_pairs(added_pairs=symbols, removed_pairs=[], watch_only=True)
+
+    async def update_traded_symbol_pairs(self, added_pairs: list[str], removed_pairs: list[str], watch_only: bool = False):
+        # All channels with a modify() method should be added here
+        watch_only_channels_to_notify = [trading_constants.TICKER_CHANNEL]
+        traded_channels_to_notify = watch_only_channels_to_notify + [
+            trading_constants.FUNDING_CHANNEL,
+            trading_constants.POSITIONS_CHANNEL,
+            trading_constants.ORDERS_CHANNEL,
+        ]
+        new_valid_symbol_pairs = [
+            symbol_pair
+            for symbol_pair in added_pairs
+            if symbols_util.is_symbol(symbol_pair) 
+            and self._is_valid_symbol(symbol_pair, [])
+            and symbol_pair not in self.traded_symbol_pairs 
+            and symbol_pair not in self.additional_traded_pairs 
+            and (not watch_only or symbol_pair not in self.watched_pairs)
+        ]
+        removed_valid_symbol_pairs = [
+            symbol_pair
+            for symbol_pair in removed_pairs
+            if symbols_util.is_symbol(symbol_pair) 
+            and self._is_valid_symbol(symbol_pair, [])
+            and symbol_pair in self.traded_symbol_pairs 
+            and symbol_pair in self.additional_traded_pairs 
+            and (not watch_only or symbol_pair in self.watched_pairs)
         ]
         try:
-            if new_valid_symbols:
-                self.watched_pairs += new_valid_symbols
-                self._logger.debug(f"Adding watched symbols: {new_valid_symbols}")
-                if self.exchange_manager.has_websocket:
-                    self.exchange_manager.exchange_web_socket.add_pairs(new_valid_symbols, watching_only=True)
-                    await self.exchange_manager.exchange_web_socket.handle_new_pairs(debounce_duration=1)
+            if watch_only:
+                self.watched_pairs += new_valid_symbol_pairs
+                self.watched_pairs = [pair for pair in self.watched_pairs if pair not in removed_valid_symbol_pairs]
+            else:
+                self.additional_traded_pairs += new_valid_symbol_pairs
+                self.additional_traded_pairs = [pair for pair in self.additional_traded_pairs if pair not in removed_valid_symbol_pairs]
+            self._logger.debug(f"Updated {watch_only and 'watched' or 'traded'} symbol pairs: {new_valid_symbol_pairs} and removing {removed_valid_symbol_pairs}")
+            if self.exchange_manager.has_websocket:
+                if new_valid_symbol_pairs:
+                    self.exchange_manager.exchange_web_socket.add_pairs(new_valid_symbol_pairs, watching_only=False)
+                if removed_valid_symbol_pairs:
+                    self.exchange_manager.exchange_web_socket.remove_pairs(removed_valid_symbol_pairs, watching_only=False)
+                if watch_only and self.watched_pairs:
+                    self.exchange_manager.exchange_web_socket.add_pairs(self.watched_pairs, watching_only=True)
+                await self.exchange_manager.exchange_web_socket.handle_updated_pairs(debounce_duration=1)
 
-                await exchange_channel.get_chan(trading_constants.TICKER_CHANNEL,
-                                                self.exchange_manager.id).modify(added_pairs=new_valid_symbols)
+            for channel in watch_only_channels_to_notify:
+                await exchange_channel.get_chan(channel, self.exchange_manager.id).modify(added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs)
+
+            if not watch_only:
+                for channel in traded_channels_to_notify:
+                    await exchange_channel.get_chan(channel, self.exchange_manager.id).modify(added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs)
         except Exception as e:
-            self._logger.exception(e, True, f"Failed to add new watched symbols {symbols} : {e}")
-            self._logger.error(f"Failed to add new watched symbols {symbols} : {e}")
+            self._logger.exception(e, True, f"Failed to update {watch_only and 'watched' or 'traded'} symbol pairs {added_pairs} and {removed_pairs} : {e}")
+            self._logger.error(f"Failed to update {watch_only and 'watched' or 'traded'} symbol pairs {added_pairs} and {removed_pairs} : {e}")
 
     def _set_config_traded_pairs(self):
         self.traded_cryptocurrencies = {}
@@ -263,6 +304,8 @@ class ExchangeConfig(util.Initializable):
         parsed_symbol = octobot_commons.symbols.parse_symbol(symbol)
         if exchange_type is trading_enums.ExchangeTypes.FUTURE:
             return parsed_symbol.is_future()
+        if exchange_type is trading_enums.ExchangeTypes.OPTION:
+            return parsed_symbol.is_option()
         # allow futures symbols for spot
         return True
 

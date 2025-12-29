@@ -224,6 +224,7 @@ from octobot_trading.api.contracts import (
     update_pair_contract,
     load_pair_contract,
     create_default_future_contract,
+    create_default_option_contract,
 )
 from octobot_trading.api.storage import (
     clear_trades_storage_history,
@@ -411,6 +412,7 @@ __all__ = [
     "update_pair_contract",
     "load_pair_contract",
     "create_default_future_contract",
+    "create_default_option_contract",
     "set_is_exclusively_using_exchange_position_details",
     "update_position_mark_price",
     "clear_trades_storage_history",

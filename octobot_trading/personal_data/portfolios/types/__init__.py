@@ -21,6 +21,9 @@ from octobot_trading.personal_data.portfolios.types import spot_portfolio
 from octobot_trading.personal_data.portfolios.types.future_portfolio import (
     FuturePortfolio,
 )
+from octobot_trading.personal_data.portfolios.types.option_portfolio import (
+    OptionPortfolio,
+)
 from octobot_trading.personal_data.portfolios.types.margin_portfolio import (
     MarginPortfolio,
 )
@@ -30,6 +33,7 @@ from octobot_trading.personal_data.portfolios.types.spot_portfolio import (
 
 __all__ = [
     "FuturePortfolio",
+    "OptionPortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
 ]

@@ -65,7 +65,7 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         except NotImplementedError as e:
             self.logger.error(f"Unimplemented required method: {e}")
         self.logger.error(f"Unknown contract type for {pair} on {self.channel.exchange_manager.exchange_name}. Using "
-                          f"{constants.DEFAULT_SYMBOL_CONTRACT_TYPE}")
+                          f"{constants.DEFAULT_SYMBOL_FUTURE_CONTRACT_TYPE}")
         return enums.FutureContractType.LINEAR_PERPETUAL
 
     async def handle_funding_rate(self, exchange: str,

@@ -284,8 +284,33 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
     is_spot = True
     is_margin = False
     is_future = False
+    is_option = False
     if hasattr(request, "param"):
-        config, exchange_name, is_spot, is_margin, is_future = request.param
+        if isinstance(request.param, str):
+            mode = request.param
+            if mode == "spot":
+                is_spot = True
+                is_margin = False
+                is_future = False
+                is_option = False
+            elif mode == "margin":
+                is_spot = False
+                is_margin = True
+                is_future = False
+                is_option = False
+            elif mode == "futures":
+                is_spot = False
+                is_margin = False
+                is_future = True
+                is_option = False
+                exchange_name = DEFAULT_FUTURE_EXCHANGE_NAME
+            elif mode == "options":
+                is_spot = False
+                is_margin = False
+                is_future = False
+                is_option = True
+        elif isinstance(request.param, tuple) and len(request.param) == 5:
+            config, exchange_name, is_spot, is_margin, is_future = request.param
 
     if config is None:
         config = backtesting_config
@@ -295,6 +320,7 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
     exchange_manager_instance.is_spot_only = is_spot
     exchange_manager_instance.is_margin = is_margin
     exchange_manager_instance.is_future = is_future
+    exchange_manager_instance.is_option = is_option
     exchange_manager_instance.backtesting = fake_backtesting
     exchange_manager_instance.backtesting.time_manager = backtesting_time.TimeManager(config)
     await exchange_manager_instance.initialize(exchange_config_by_exchange=None)

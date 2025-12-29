@@ -16,10 +16,14 @@
 import decimal
 
 import octobot_commons.logging as logging
+import octobot_commons.symbols as symbols_util
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.exchange_data.contracts.contract as contract_module
+import octobot_trading.exchange_data.contracts.margin_contract as margin_contract
 import octobot_trading.exchange_data.contracts.future_contract as future_contract
+import octobot_trading.exchange_data.contracts.option_contract as option_contract
 
 
 def update_contracts_from_positions(exchange_manager, positions) -> bool:
@@ -92,6 +96,79 @@ def create_default_future_contract(
         maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE
     )
 
+
+def create_default_option_contract(
+    pair: str, leverage: decimal.Decimal, contract_type: enums.OptionContractType, position_mode: enums.PositionMode
+) -> option_contract.OptionContract:
+    return option_contract.OptionContract(
+        pair=pair,
+        contract_size=constants.DEFAULT_SYMBOL_CONTRACT_SIZE,
+        margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
+        contract_type=contract_type,
+        maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE,
+        current_leverage=leverage,
+        position_mode=position_mode,
+        maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE
+    )
+
+def create_contract(
+    pair: str, 
+    current_leverage: decimal.Decimal, 
+    contract_size: decimal.Decimal, 
+    margin_type: enums.MarginType, 
+    contract_type: enums.FutureContractType | enums.OptionContractType, 
+    position_mode: enums.PositionMode, 
+    maintenance_margin_rate: decimal.Decimal, 
+    maximum_leverage: decimal.Decimal = constants.DEFAULT_SYMBOL_MAX_LEVERAGE
+) -> contract_module.Contract:
+    symbol = symbols_util.parse_symbol(pair)
+    if symbol.is_option():
+        return option_contract.OptionContract(
+            pair=pair,
+            contract_size=contract_size,
+            margin_type=margin_type,
+            contract_type=contract_type,
+            maximum_leverage=maximum_leverage,
+            current_leverage=current_leverage,
+            position_mode=position_mode,
+            maintenance_margin_rate=maintenance_margin_rate
+        )
+    if symbol.is_future():
+        return future_contract.FutureContract(
+            pair=pair,
+            contract_size=contract_size,
+            margin_type=margin_type,
+            contract_type=contract_type,
+            maximum_leverage=maximum_leverage,
+            current_leverage=current_leverage,
+            position_mode=position_mode,
+            maintenance_margin_rate=maintenance_margin_rate
+        )
+    if not symbol.is_spot():
+        return margin_contract.MarginContract(
+            pair=pair,
+            margin_type=margin_type,
+            contract_size=contract_size,
+            maximum_leverage=maximum_leverage,
+            current_leverage=current_leverage
+        )
+    raise ValueError(f"Invalid contract for symbol: {symbol}")
+
+def get_contract_type_from_symbol(symbol: str, is_linear: bool, is_inverse: bool) -> enums.FutureContractType | enums.OptionContractType:
+    parsed_symbol = symbols_util.parse_symbol(symbol)
+    if is_linear:
+        if parsed_symbol.does_expire():
+            if parsed_symbol.is_future():
+                return enums.FutureContractType.LINEAR_EXPIRABLE
+            return enums.OptionContractType.LINEAR_EXPIRABLE
+        return enums.FutureContractType.LINEAR_PERPETUAL
+    if is_inverse:
+        if parsed_symbol.does_expire():
+            if parsed_symbol.is_future():
+                return enums.FutureContractType.INVERSE_EXPIRABLE
+            return enums.OptionContractType.INVERSE_EXPIRABLE
+        return enums.FutureContractType.INVERSE_PERPETUAL
+    raise ValueError(f"Invalid contract for symbol: {symbol}")
 
 def _get_logger():
     return logging.get_logger("contract_factory")

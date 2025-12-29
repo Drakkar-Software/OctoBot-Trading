@@ -469,6 +469,7 @@ class WebsocketFeeds(enum.Enum):
     MARK_PRICE = 'mark_price'
     LAST_PRICE = 'last_price'
     ORDERS = 'orders'
+    MARKETS = 'markets'
     LEDGER = 'ledger'
     CREATE_ORDER = 'create_order'
     CANCEL_ORDER = 'cancel_order'
@@ -497,6 +498,9 @@ class TakeProfitStopLossMode(enum.Enum):
     FULL = "Full"
     PARTIAL = "Partial"
 
+class ContractTradingTypes(enum.Enum):
+    LINEAR = "linear"
+    INVERSE = "inverse"
 
 class FutureContractType(enum.Enum):
     INVERSE_PERPETUAL = "inverse_perpetual"
@@ -504,6 +508,9 @@ class FutureContractType(enum.Enum):
     INVERSE_EXPIRABLE = "inverse_expirable"
     LINEAR_EXPIRABLE = "linear_expirable"
 
+class OptionContractType(enum.Enum):
+    INVERSE_EXPIRABLE = "inverse_expirable"
+    LINEAR_EXPIRABLE = "linear_expirable"
 
 class SubAccountColumns(enum.Enum):
     ID = "id"

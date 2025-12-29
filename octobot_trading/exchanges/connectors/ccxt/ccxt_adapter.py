@@ -274,9 +274,9 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # if mode is enums.PositionMode.ONE_WAY:
         original_side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value)
         symbol = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value)
-        contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)))
+        contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0) or 0))
         contracts = constants.ZERO if force_empty \
-            else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)))
+            else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0) or 0))
         is_empty = contracts == constants.ZERO
         position_mode = (
             enums.PositionMode.HEDGE if fixed.get(ccxt_enums.ExchangePositionCCXTColumns.HEDGED.value, False)
@@ -316,7 +316,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 enums.ExchangeConstantsPositionColumns.SIZE.value:
                     contract_size * contracts if original_side == enums.PositionSide.LONG.value
                     else -contract_size * contracts,
-                enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value:
+                enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value: 
                     self.connector.exchange_manager.exchange.get_contract_type(symbol),
                 enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
                     self.safe_decimal(fixed, ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value,
@@ -345,7 +345,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0) or 0}"),
                 enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: constants.ZERO if is_empty else
                 decimal.Decimal(
-                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0)}"),
+                    f"{fixed.get(ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0) or 0}"),
             })
         except KeyError as e:
             self.logger.error(f"Fail to parse position dict ({e})")

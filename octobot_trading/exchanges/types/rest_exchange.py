@@ -691,6 +691,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
 
+    async def get_user_balance(self, user_id: str, **kwargs: dict):
+        return await self.connector.get_user_balance(user_id=user_id, **kwargs)
+
     async def get_symbol_prices(self, symbol: str, time_frame: commons_enums.TimeFrames, limit: int = None,
                                 **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_symbol_prices(symbol=symbol, time_frame=time_frame, limit=limit, **kwargs)
@@ -717,6 +720,11 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[dict[str, dict]]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
+
+    async def refresh_markets(self):
+        return await self.connector.load_symbol_markets(
+            reload=True, market_filter=self.exchange_manager.market_filter
+        )
 
     def order_request_kwargs_factory(
         self, 
@@ -828,6 +836,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         exchanges_util.apply_trades_fees(raw_order, trades_by_exchange_order_id)
         return raw_order
 
+    async def get_user_open_orders(self, user_id: str, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        return await self.connector.get_user_open_orders(user_id=user_id, symbol=symbol, since=since, limit=limit, **kwargs)
+
     async def _get_trades_by_exchange_order_id(self, symbol=None, since=None, limit=None, **kwargs):
         trades_by_exchange_order_id = {}
         for trade in await self.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs):
@@ -840,6 +851,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
+
+    async def get_user_recent_trades(self, user_id: str, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        return await self.connector.get_user_recent_trades(user_id=user_id, symbol=symbol, since=since, limit=limit, **kwargs)
 
     async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
         return await self.connector.cancel_all_orders(symbol=symbol, **kwargs)
@@ -905,7 +919,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
         raise NotImplementedError("is_authenticated_request is not implemented")
 
     # Futures
-    async def load_pair_future_contract(self, pair: str):
+    async def load_pair_contract(self, pair: str):
         """
         Load and create a new FutureContract for the pair
         :param pair: the contract pair
@@ -927,6 +941,12 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 positions = await self.get_positions(symbols=[pair])
             contracts.update_contracts_from_positions(self.exchange_manager, positions)
 
+    """
+    Deprecated: Use load_pair_contract instead
+    """
+    async def load_pair_future_contract(self, pair: str):
+        await self.load_pair_contract(pair)
+
     def create_pair_contract(self, pair, current_leverage, contract_size, margin_type,
                              contract_type, position_mode, maintenance_margin_rate, maximum_leverage=None):
         """
@@ -942,24 +962,27 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :param maximum_leverage: the contract maximum leverage
         """
         self.logger.debug(f"Creating {pair} contract...")
-        contract = contracts.FutureContract(pair=pair,
+        contract = contracts.create_contract(pair=pair,
+                                            current_leverage=current_leverage,
                                             contract_size=contract_size,
                                             margin_type=margin_type,
                                             contract_type=contract_type,
-                                            maximum_leverage=maximum_leverage,
-                                            current_leverage=current_leverage,
                                             position_mode=position_mode,
-                                            maintenance_margin_rate=maintenance_margin_rate)
+                                            maintenance_margin_rate=maintenance_margin_rate,
+                                            maximum_leverage=maximum_leverage)
         self.pair_contracts[pair] = contract
         return contract
 
-    def has_pair_future_contract(self, pair):
+    def has_pair_contract(self, pair: str) -> bool:
         """
         :param pair: the pair
         :return: True if the given pair is in local contracts
         """
         return pair in self.pair_contracts
 
+    """
+    Deprecated: Use get_pair_contract or get_pair_contract_async instead
+    """
     def get_pair_future_contract(self, pair):
         """
         Return the FutureContract instance associated to the pair
@@ -969,16 +992,45 @@ class RestExchange(abstract_exchange.AbstractExchange):
         try:
             return self.pair_contracts[pair]
         except KeyError:
-            asyncio.create_task(self.load_pair_future_contract(pair))
+            asyncio.create_task(self.load_pair_contract(pair))
             raise errors.ContractExistsError(f"{pair} future contract doesn't exist, fetching it...")
 
-    def set_pair_future_contract(self, pair, future_contract):
+    def get_pair_contract(self, pair: str) -> contracts.Contract:
         """
-        Set the future contract
+        Return the Contract (FutureContract, OptionContract, MarginContract) instance associated to the pair
         :param pair: the pair
-        :param future_contract: the future contract
+        :return: the Contract instance
         """
-        self.pair_contracts[pair] = future_contract
+        try:
+            return self.pair_contracts[pair]
+        except KeyError:
+            asyncio.create_task(self.load_pair_contract(pair))
+            raise errors.ContractExistsError(f"{pair} contract doesn't exist, fetching it...")
+
+    async def get_pair_contract_async(self, pair) -> contracts.Contract:
+        """
+        Return the Contract (FutureContract, OptionContract, MarginContract) instance associated to the pair
+        :param pair: the pair
+        :return: the Contract instance
+        """
+        try:
+            return self.pair_contracts[pair]
+        except KeyError:
+            await self.load_pair_contract(pair)
+
+    def set_pair_contract(self, pair: str, contract: contracts.Contract):
+        """
+        Set the pair contract
+        :param pair: the pair
+        :param contract: the contract
+        """
+        self.pair_contracts[pair] = contract
+
+    """
+    Deprecated: Use set_pair_contract instead
+    """
+    def set_pair_future_contract(self, pair, future_contract):
+        self.set_pair_contract(pair, future_contract)
 
     def set_contract_initialized_event(self, symbol):
         commons_tree.EventProvider.instance().trigger_event(
@@ -1021,6 +1073,32 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 for symbol in symbols
             ))
         )
+
+    async def get_closed_positions(self, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the closed position list
+        :param symbols: the symbols or None
+        :return: the closed position list
+        """
+        return await self.connector.get_closed_positions(symbols=symbols, **kwargs)
+
+    async def get_user_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the user position list
+        :param user_id: the user id
+        :param symbols: the symbols or None
+        :return: the user position list
+        """
+        return await self.connector.get_user_positions(user_id=user_id, symbols=symbols, **kwargs)
+
+    async def get_user_closed_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the user closed position list
+        :param user_id: the user id
+        :param symbols: the symbols or None
+        :return: the user closed position list
+        """
+        return await self.connector.get_user_closed_positions(user_id=user_id, symbols=symbols, **kwargs)
 
     async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
         """
@@ -1070,17 +1148,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_margin_type is not implemented")
 
-    def get_contract_type(self, symbol: str):
+    def get_contract_type(self, symbol: str) -> enums.FutureContractType | enums.OptionContractType:
         """
         :param symbol: the symbol
         :return: the contract type for the requested symbol.
-        Can be FutureContractType INVERSE_PERPETUAL or LINEAR_PERPETUAL
+        Can be FutureContractType or OptionContractType
         Requires is_inverse_symbol and is_linear_symbol to be implemented
         """
-        if self.is_linear_symbol(symbol):
-            return enums.FutureContractType.LINEAR_PERPETUAL
-        if self.is_inverse_symbol(symbol):
-            return enums.FutureContractType.INVERSE_PERPETUAL
+        return contracts.get_contract_type_from_symbol(symbol, self.is_linear_symbol(symbol), self.is_inverse_symbol(symbol))
 
     def get_contract_size(self, symbol: str):
         """
@@ -1157,26 +1232,26 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return await self.connector.set_symbol_partial_take_profit_stop_loss(symbol=symbol, inverse=inverse,
                                                                              tp_sl_mode=tp_sl_mode)
 
-    def supports_trading_type(self, symbol, trading_type: enums.FutureContractType):
+    def supports_trading_type(self, symbol, trading_type: enums.ContractTradingTypes):
         return self.connector.supports_trading_type(symbol, trading_type)
 
     def supports_native_edit_order(self, order_type: enums.TraderOrderType) -> bool:
         # return False when default edit_order can't be used and order should always be canceled and recreated instead
         return True
 
-    def is_linear_symbol(self, symbol):
+    def is_linear_symbol(self, symbol) -> bool:
         """
         :param symbol: the symbol
         :return: True if the symbol is related to a linear contract
         """
-        return self.supports_trading_type(symbol, enums.FutureContractType.LINEAR_PERPETUAL)
+        return self.supports_trading_type(symbol, enums.ContractTradingTypes.LINEAR)
 
-    def is_inverse_symbol(self, symbol):
+    def is_inverse_symbol(self, symbol) -> bool:
         """
         :param symbol: the symbol
         :return: True if the symbol is related to an inverse contract
         """
-        return self.supports_trading_type(symbol, enums.FutureContractType.INVERSE_PERPETUAL)
+        return self.supports_trading_type(symbol, enums.ContractTradingTypes.INVERSE)
 
     def is_expirable_symbol(self, symbol):
         """

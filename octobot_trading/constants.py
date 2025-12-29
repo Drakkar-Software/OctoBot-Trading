@@ -182,7 +182,8 @@ FEES_SAFETY_MARGIN = decimal.Decimal("1.25")    # allow 25% error margin when si
 DEFAULT_SYMBOL_LEVERAGE = ONE
 DEFAULT_SYMBOL_MAX_LEVERAGE = ONE_HUNDRED
 DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
-DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
+DEFAULT_SYMBOL_FUTURE_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
+DEFAULT_SYMBOL_OPTION_CONTRACT_TYPE = enums.OptionContractType.LINEAR_EXPIRABLE
 DEFAULT_SYMBOL_CONTRACT_SIZE = ONE
 DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
 DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
@@ -214,6 +215,7 @@ LIQUIDATIONS_CHANNEL = "Liquidations"
 ORDER_BOOK_CHANNEL = "OrderBook"
 ORDER_BOOK_TICKER_CHANNEL = "OrderBookTicker"
 KLINE_CHANNEL = "Kline"
+MARKETS_CHANNEL = "Markets"
 OHLCV_CHANNEL = "OHLCV"
 MARK_PRICE_CHANNEL = "MarkPrice"
 FUNDING_CHANNEL = "Funding"
@@ -245,6 +247,7 @@ WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
     ORDER_BOOK_CHANNEL: [enums.WebsocketFeeds.L2_BOOK, enums.WebsocketFeeds.L3_BOOK],
     ORDER_BOOK_TICKER_CHANNEL: [enums.WebsocketFeeds.BOOK_TICKER],
     KLINE_CHANNEL: [enums.WebsocketFeeds.KLINE],
+    MARKETS_CHANNEL: [enums.WebsocketFeeds.MARKETS],
     OHLCV_CHANNEL: [enums.WebsocketFeeds.CANDLE],
     TRADES_CHANNEL: [enums.WebsocketFeeds.TRADE],
     ORDERS_CHANNEL: [enums.WebsocketFeeds.ORDERS],
@@ -273,6 +276,7 @@ DEFAULT_INITIALIZATION_EVENT_TOPICS = [
     commons_enums.InitializationEventExchangeTopics.TRADES,
     commons_enums.InitializationEventExchangeTopics.CANDLES,
     commons_enums.InitializationEventExchangeTopics.PRICE,
+    commons_enums.InitializationEventExchangeTopics.MARKETS,
 ]
 
 DEFAULT_FUTURES_INITIALIZATION_EVENT_TOPICS = DEFAULT_INITIALIZATION_EVENT_TOPICS + [

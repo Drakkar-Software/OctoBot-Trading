@@ -348,6 +348,10 @@ class RealExchangeTester:
         async with self.get_exchange_manager(market_filter=market_filter) as exchange_manager:
             return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
 
+    async def get_user_recent_trades(self):
+        async with self.get_exchange_manager() as exchange_manager:
+            return await exchange_manager.exchange.get_user_recent_trades(self.SYMBOL)
+
     def get_market_filter(self):
         def market_filter(market):
             return (

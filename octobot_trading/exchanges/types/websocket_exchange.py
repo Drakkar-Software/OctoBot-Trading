@@ -187,7 +187,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         for websocket in self.websocket_connectors:
             await websocket.reset()
 
-    async def handle_new_pairs(self, debounce_duration=0):
+    async def handle_updated_pairs(self, debounce_duration=0):
         if self._supports_live_pair_addition():
             await self.updated_followed_pairs()
         else:
@@ -228,6 +228,10 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def add_pairs(self, pairs, watching_only=False):
         for websocket in self.websocket_connectors:
             websocket.add_pairs(pairs, watching_only=watching_only)
+
+    def remove_pairs(self, pairs, watching_only=False):
+        for websocket in self.websocket_connectors:
+            websocket.remove_pairs(pairs, watching_only=watching_only)
 
     def _has_too_many_feeds_to_handle(self) -> bool:
         if self.get_connector_max_handled_feeds() == octobot_trading.constants.NO_DATA_LIMIT:

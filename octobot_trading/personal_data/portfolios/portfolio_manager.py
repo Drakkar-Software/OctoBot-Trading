@@ -306,7 +306,7 @@ class PortfolioManager(util.Initializable):
         self._load_portfolio(False)
 
         self.reference_market = util.get_reference_market(self.config)
-        self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
+        self.portfolio_value_holder = personal_data.create_portfolio_value_holder(self.exchange_manager, self)
         self.portfolio_profitability = personal_data.PortfolioProfitability(self)
         self._is_initialized_event_set = False
 

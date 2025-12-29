@@ -204,6 +204,14 @@ class AbstractWebsocketExchange:
         """
         raise NotImplementedError("add_pairs is not implemented")
 
+    def remove_pairs(self, pairs, watching_only=False):
+        """
+        Remove pairs from self.filtered_pairs
+        :param pairs: the list of pair to remove
+        :param watching_only: if pairs are for watching or trading purpose
+        """
+        raise NotImplementedError("remove_pairs is not implemented")
+
     def get_max_handled_pair_with_time_frame(self):
         """
         :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
