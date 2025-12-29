@@ -19,13 +19,13 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
-import octobot_trading.enums as trading_enums
+from tests_additional.real_exchanges.real_option_exchange_tester import RealOptionExchangeTester
+import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 # required to catch async loop context exceptions
 from tests import event_loop
 
 try:
-    from tentacles.Trading.Exchange.polymarket.ccxt.polymarket_async import Polymarket
+    from tentacles.Trading.Exchange.polymarket.ccxt.polymarket_async import polymarket
 except ImportError:
     # test will be skipped if the tentacle is not installed
     pytest.skip(
@@ -37,14 +37,14 @@ except ImportError:
 pytestmark = pytest.mark.asyncio
 
 
-class TestPolymarketRealExchangeTester(RealExchangeTester):
+class TestPolymarketRealExchangeTester(RealOptionExchangeTester):
     EXCHANGE_NAME = "polymarket"
     SYMBOL = "will-bitcoin-replace-sha-256-before-2027/USDC:USDC-261231"
     SYMBOL_2 = "will-the-us-confirm-that-aliens-exist-before-2027/USDC:USDC-261231"
     SYMBOL_3 = "10pt0-or-above-earthquake-before-2027/USDC:USDC-261231"
     TIME_FRAME = TimeFrames.ONE_MINUTE
-    MARKET_STATUS_TYPE = trading_enums.ExchangeTypes.OPTION.value
     USES_TENTACLE = True  # set True when an exchange tentacles should be used in this test
+    PROFILE_ID = "0x16b29c50f2439faf627209b2ac0c7bbddaa8a881" # https://polymarket.com/@SeriouslySirius
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -188,3 +188,31 @@ class TestPolymarketRealExchangeTester(RealExchangeTester):
                 check_base_volume=True, 
                 check_timestamp=True
             )
+
+    async def test_fetch_user_positions(self, **kwargs):
+        positions = await self.get_user_positions(**kwargs)
+        for position in positions:
+            self._check_position(position)
+
+    async def test_fetch_user_closed_positions(self, **kwargs):
+        positions = await self.get_user_closed_positions(**kwargs)
+        for position in positions:
+            self._check_position(position, is_closed=True)
+
+    def _check_position(self, position, check_symbol=False, is_closed=False):
+        assert position
+        if check_symbol:
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value] == self.SYMBOL
+        else:
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value] is not None
+        assert position[ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value] > 0
+        if is_closed:
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.TIMESTAMP.value] > 0
+        if not is_closed:
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value] is not None # can be 0.0 on Polymarket
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value] is not None
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value] >= 0
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.NOTIONAL.value] is not None # can be 0.0
+            assert position[ccxt_enums.ExchangePositionCCXTColumns.SIDE.value] is not None
+        assert position[ccxt_enums.ExchangePositionCCXTColumns.REALISED_PNL.value] is not None # can be 0.0
+        assert ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value in position

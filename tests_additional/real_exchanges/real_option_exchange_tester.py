@@ -13,6 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.enums as enums
 
-PROJECT_NAME = "OctoBot-Trading"
-VERSION = "2.4.242"  # major.minor.revision
+from tests_additional.real_exchanges.real_futures_exchange_tester import RealFuturesExchangeTester
+
+
+class RealOptionExchangeTester(RealFuturesExchangeTester):
+    EXCHANGE_TYPE = enums.ExchangeTypes.OPTION.value
+    MARKET_STATUS_TYPE = "option"

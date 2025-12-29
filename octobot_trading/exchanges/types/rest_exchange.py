@@ -685,6 +685,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
 
+    async def get_user_balance(self, user_id: str, **kwargs: dict):
+        return await self.connector.get_user_balance(user_id=user_id, **kwargs)
+
     async def get_symbol_prices(self, symbol: str, time_frame: commons_enums.TimeFrames, limit: int = None,
                                 **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_symbol_prices(symbol=symbol, time_frame=time_frame, limit=limit, **kwargs)
@@ -822,6 +825,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
         exchanges_util.apply_trades_fees(raw_order, trades_by_exchange_order_id)
         return raw_order
 
+    async def get_user_open_orders(self, user_id: str, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        return await self.connector.get_user_open_orders(user_id=user_id, symbol=symbol, since=since, limit=limit, **kwargs)
+
     async def _get_trades_by_exchange_order_id(self, symbol=None, since=None, limit=None, **kwargs):
         trades_by_exchange_order_id = {}
         for trade in await self.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs):
@@ -834,6 +840,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
+
+    async def get_user_recent_trades(self, user_id: str, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
+        return await self.connector.get_user_recent_trades(user_id=user_id, symbol=symbol, since=since, limit=limit, **kwargs)
 
     async def cancel_all_orders(self, symbol: str = None, **kwargs: dict) -> None:
         return await self.connector.cancel_all_orders(symbol=symbol, **kwargs)
@@ -1015,6 +1024,32 @@ class RestExchange(abstract_exchange.AbstractExchange):
                 for symbol in symbols
             ))
         )
+
+    async def get_closed_positions(self, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the closed position list
+        :param symbols: the symbols or None
+        :return: the closed position list
+        """
+        return await self.connector.get_closed_positions(symbols=symbols, **kwargs)
+
+    async def get_user_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the user position list
+        :param user_id: the user id
+        :param symbols: the symbols or None
+        :return: the user position list
+        """
+        return await self.connector.get_user_positions(user_id=user_id, symbols=symbols, **kwargs)
+
+    async def get_user_closed_positions(self, user_id: str, symbols=None, **kwargs: dict) -> list:
+        """
+        Get the user closed position list
+        :param user_id: the user id
+        :param symbols: the symbols or None
+        :return: the user closed position list
+        """
+        return await self.connector.get_user_closed_positions(user_id=user_id, symbols=symbols, **kwargs)
 
     async def get_mocked_empty_position(self, symbol: str, **kwargs: dict) -> dict:
         """
