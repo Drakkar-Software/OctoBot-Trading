@@ -25,6 +25,13 @@ def is_inverse_future_contract(contract_type):
 def is_perpetual_future_contract(contract_type):
     return exchange_data.FutureContract(None, None, contract_type).is_perpetual_contract()
 
+def is_inverse_option_contract(contract_type):
+    return exchange_data.OptionContract(None, None, contract_type).is_inverse_contract()
+
+
+def is_perpetual_option_contract(contract_type):
+    return exchange_data.OptionContract(None, None, contract_type).is_perpetual_contract()
+
 
 def get_pair_contracts(exchange_manager) -> dict:
     return exchange_manager.exchange.pair_contracts
@@ -54,3 +61,8 @@ def create_default_future_contract(
     pair: str, leverage: decimal.Decimal, contract_type: enums.FutureContractType, position_mode: enums.PositionMode
 ) -> exchange_data.FutureContract:
     return exchange_data.create_default_future_contract(pair, leverage, contract_type, position_mode)
+
+def create_default_option_contract(
+    pair: str, leverage: decimal.Decimal, contract_type: enums.OptionContractType, position_mode: enums.PositionMode
+) -> exchange_data.OptionContract:
+    return exchange_data.create_default_option_contract(pair, leverage, contract_type, position_mode)
