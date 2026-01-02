@@ -15,12 +15,13 @@
 #  License along with this library.
 import pytest
 
-from octobot_commons.enums import TimeFrames, PriceIndexes
+import octobot_commons.enums as common_enums
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges.real_option_exchange_tester import RealOptionExchangeTester
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
+
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -39,21 +40,21 @@ pytestmark = pytest.mark.asyncio
 
 class TestPolymarketRealExchangeTester(RealOptionExchangeTester):
     EXCHANGE_NAME = "polymarket"
-    SYMBOL = "will-bitcoin-replace-sha-256-before-2027/USDC:USDC-261231"
-    SYMBOL_2 = "will-the-us-confirm-that-aliens-exist-before-2027/USDC:USDC-261231"
-    SYMBOL_3 = "10pt0-or-above-earthquake-before-2027/USDC:USDC-261231"
-    TIME_FRAME = TimeFrames.ONE_MINUTE
+    SYMBOL = f"will-bitcoin-replace-sha-256-before-2027/USDC:USDC-261231-0-YES"
+    SYMBOL_2 = f"will-the-us-confirm-that-aliens-exist-before-2027/USDC:USDC-261231-0-YES"
+    SYMBOL_3 = f"10pt0-or-above-earthquake-before-2027/USDC:USDC-261231-0-YES"
+    TIME_FRAME = common_enums.TimeFrames.ONE_MINUTE
     USES_TENTACLE = True  # set True when an exchange tentacles should be used in this test
     PROFILE_ID = "0x16b29c50f2439faf627209b2ac0c7bbddaa8a881" # https://polymarket.com/@SeriouslySirius
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (
-            TimeFrames.ONE_MINUTE.value,
-            TimeFrames.ONE_HOUR.value,
-            TimeFrames.SIX_HOURS.value,
-            TimeFrames.ONE_DAY.value,
-            TimeFrames.ONE_WEEK.value,
+            common_enums.TimeFrames.ONE_MINUTE.value,
+            common_enums.TimeFrames.ONE_HOUR.value,
+            common_enums.TimeFrames.SIX_HOURS.value,
+            common_enums.TimeFrames.ONE_DAY.value,
+            common_enums.TimeFrames.ONE_WEEK.value,
         ))
 
     async def test_active_symbols(self):
@@ -76,17 +77,17 @@ class TestPolymarketRealExchangeTester(RealOptionExchangeTester):
         symbol_prices = await self.get_symbol_prices()
         assert len(symbol_prices) >= 1000
         # check candles order (oldest first)
-        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        self.ensure_elements_order(symbol_prices, common_enums.PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+        assert symbol_prices[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
         # try with candles limit (used in candled updater)
         symbol_prices = await self.get_symbol_prices(limit=200)
         assert len(symbol_prices) == 200
         # check candles order (oldest first)
-        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        self.ensure_elements_order(symbol_prices, common_enums.PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
-        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+        assert symbol_prices[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
@@ -97,13 +98,13 @@ class TestPolymarketRealExchangeTester(RealOptionExchangeTester):
             else:
                 assert len(symbol_prices) > 5
             # check candles order (oldest first)
-            self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+            self.ensure_elements_order(symbol_prices, common_enums.PriceIndexes.IND_PRICE_TIME.value)
             # check that fetched candles are historical candles
             max_candle_time = self.get_time_after_time_frames(self.CANDLE_SINCE_SEC, len(symbol_prices))
             assert max_candle_time <= self.get_time()
             with pytest.raises(AssertionError):  # not supported
                 for candle in symbol_prices:
-                    assert self.CANDLE_SINCE_SEC <= candle[PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
+                    assert self.CANDLE_SINCE_SEC <= candle[common_enums.PriceIndexes.IND_PRICE_TIME.value] <= max_candle_time
 
     async def test_get_historical_ohlcv(self):
         await super().test_get_historical_ohlcv()
@@ -112,7 +113,7 @@ class TestPolymarketRealExchangeTester(RealOptionExchangeTester):
         kline_price = await self.get_kline_price()
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
-        kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
+        kline_start_time = kline_price[0][common_enums.PriceIndexes.IND_PRICE_TIME.value]
         # assert kline is the current candle
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
@@ -208,7 +209,7 @@ class TestPolymarketRealExchangeTester(RealOptionExchangeTester):
         assert position[ccxt_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value] > 0
         if is_closed:
             assert position[ccxt_enums.ExchangePositionCCXTColumns.TIMESTAMP.value] > 0
-        if not is_closed:
+        else:
             assert position[ccxt_enums.ExchangePositionCCXTColumns.MARK_PRICE.value] is not None # can be 0.0 on Polymarket
             assert position[ccxt_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value] is not None
             assert position[ccxt_enums.ExchangePositionCCXTColumns.COLLATERAL.value] >= 0

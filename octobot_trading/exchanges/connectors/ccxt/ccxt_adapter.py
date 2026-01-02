@@ -26,6 +26,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 import octobot_commons.enums as common_enums
 import octobot_commons.constants as common_constants
 import octobot_commons.number_util as number_util
+import octobot_commons.symbols as symbol_util
 
 
 class CCXTAdapter(adapters.AbstractAdapter):
@@ -274,6 +275,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
         # if mode is enums.PositionMode.ONE_WAY:
         original_side = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SIDE.value)
         symbol = fixed.get(ccxt_enums.ExchangePositionCCXTColumns.SYMBOL.value)
+        parsed_symbol = symbol_util.parse_symbol(symbol)
         contract_size = decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0) or 0))
         contracts = constants.ZERO if force_empty \
             else decimal.Decimal(str(fixed.get(ccxt_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0) or 0))
@@ -317,7 +319,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                     contract_size * contracts if original_side == enums.PositionSide.LONG.value
                     else -contract_size * contracts,
                 enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value:
-                    self.connector.exchange_manager.exchange.get_contract_type(symbol),
+                    None if parsed_symbol.is_option() else self.connector.exchange_manager.exchange.get_contract_type(symbol),
                 enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
                     self.safe_decimal(fixed, ccxt_enums.ExchangePositionCCXTColumns.LEVERAGE.value,
                                       constants.DEFAULT_SYMBOL_LEVERAGE),

@@ -140,7 +140,17 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 raise octobot_trading.errors.FailedMarketStatusRequest(
                     f"No future markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
                 )
-        if not self.exchange_manager.is_future:
+        if self.exchange_manager.is_option:
+            found_option_markets = False
+            for symbol in symbols:
+                if commons_symbols.parse_symbol(symbol).is_option():
+                    found_option_markets = True
+                    break
+            if not found_option_markets:
+                raise octobot_trading.errors.FailedMarketStatusRequest(
+                    f"No option markets found for {self.exchange_manager.exchange_name} - {len(symbols)} fetched markets: {symbols}"
+                )
+        if not self.exchange_manager.is_future and not self.exchange_manager.is_option:
             found_spot_markets = False
             for symbol in symbols:
                 if commons_symbols.parse_symbol(symbol).is_spot():
@@ -1159,12 +1169,10 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
     def has_markets(self):
         return bool(self.client.markets)
 
-    def supports_trading_type(self, symbol, trading_type: enums.FutureContractType) -> bool:
+    def supports_trading_type(self, symbol, trading_type: enums.ContractTradingTypes) -> bool:
         trading_type_to_ccxt_property = {
-            enums.FutureContractType.LINEAR_PERPETUAL: "linear",
-            enums.FutureContractType.LINEAR_EXPIRABLE: "linear",
-            enums.FutureContractType.INVERSE_PERPETUAL: "inverse",
-            enums.FutureContractType.INVERSE_EXPIRABLE: "inverse",
+            enums.ContractTradingTypes.LINEAR: "linear",
+            enums.ContractTradingTypes.INVERSE: "inverse",
         }
         return self.client.safe_string(
             self.client.market(symbol),

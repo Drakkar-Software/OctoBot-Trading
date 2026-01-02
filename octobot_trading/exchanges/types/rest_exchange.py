@@ -945,14 +945,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
         :param maximum_leverage: the contract maximum leverage
         """
         self.logger.debug(f"Creating {pair} contract...")
-        contract = contracts.FutureContract(pair=pair,
+        contract = contracts.create_contract(pair=pair,
+                                            current_leverage=current_leverage,
                                             contract_size=contract_size,
                                             margin_type=margin_type,
                                             contract_type=contract_type,
-                                            maximum_leverage=maximum_leverage,
-                                            current_leverage=current_leverage,
                                             position_mode=position_mode,
-                                            maintenance_margin_rate=maintenance_margin_rate)
+                                            maintenance_margin_rate=maintenance_margin_rate,
+                                            maximum_leverage=maximum_leverage)
         self.pair_contracts[pair] = contract
         return contract
 
@@ -1099,17 +1099,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_margin_type is not implemented")
 
-    def get_contract_type(self, symbol: str):
+    def get_contract_type(self, symbol: str) -> enums.FutureContractType | enums.OptionContractType:
         """
         :param symbol: the symbol
         :return: the contract type for the requested symbol.
-        Can be FutureContractType INVERSE_PERPETUAL or LINEAR_PERPETUAL
+        Can be FutureContractType or OptionContractType
         Requires is_inverse_symbol and is_linear_symbol to be implemented
         """
-        if self.is_linear_symbol(symbol):
-            return enums.FutureContractType.LINEAR_PERPETUAL
-        if self.is_inverse_symbol(symbol):
-            return enums.FutureContractType.INVERSE_PERPETUAL
+        return contracts.get_contract_type_from_symbol(symbol, self.is_linear_symbol(symbol), self.is_inverse_symbol(symbol))
 
     def get_contract_size(self, symbol: str):
         """
@@ -1186,26 +1183,26 @@ class RestExchange(abstract_exchange.AbstractExchange):
         return await self.connector.set_symbol_partial_take_profit_stop_loss(symbol=symbol, inverse=inverse,
                                                                              tp_sl_mode=tp_sl_mode)
 
-    def supports_trading_type(self, symbol, trading_type: enums.FutureContractType):
+    def supports_trading_type(self, symbol, trading_type: enums.ContractTradingTypes):
         return self.connector.supports_trading_type(symbol, trading_type)
 
     def supports_native_edit_order(self, order_type: enums.TraderOrderType) -> bool:
         # return False when default edit_order can't be used and order should always be canceled and recreated instead
         return True
 
-    def is_linear_symbol(self, symbol):
+    def is_linear_symbol(self, symbol) -> bool:
         """
         :param symbol: the symbol
         :return: True if the symbol is related to a linear contract
         """
-        return self.supports_trading_type(symbol, enums.FutureContractType.LINEAR_PERPETUAL)
+        return self.supports_trading_type(symbol, enums.ContractTradingTypes.LINEAR)
 
-    def is_inverse_symbol(self, symbol):
+    def is_inverse_symbol(self, symbol) -> bool:
         """
         :param symbol: the symbol
         :return: True if the symbol is related to an inverse contract
         """
-        return self.supports_trading_type(symbol, enums.FutureContractType.INVERSE_PERPETUAL)
+        return self.supports_trading_type(symbol, enums.ContractTradingTypes.INVERSE)
 
     def is_expirable_symbol(self, symbol):
         """
