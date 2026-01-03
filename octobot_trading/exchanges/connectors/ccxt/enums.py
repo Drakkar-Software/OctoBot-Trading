@@ -154,6 +154,5 @@ class ExchangeMarginTypes(enum.Enum):
     ISOLATED = "isolated"
     CROSS = "cross"
 
-
 class OrderFetchParams(enum.Enum):
     STOP = "stop" # bool: when true, is about a stop order

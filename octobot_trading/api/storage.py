@@ -51,8 +51,8 @@ async def clear_database_storage_history(storage_class, database, flush=True):
     await storage_class.clear_database_history(database, flush=flush)
 
 
-def get_account_type(is_future, is_margin, is_sandboxed, is_trader_simulated) -> str:
-    return storage.get_account_type_suffix(is_future, is_margin, is_sandboxed, is_trader_simulated)
+def get_account_type(is_future, is_margin, is_option, is_sandboxed, is_trader_simulated) -> str:
+    return storage.get_account_type_suffix(is_future, is_margin, is_option, is_sandboxed, is_trader_simulated)
 
 
 def get_account_type_from_run_metadata(run_metadata) -> str:

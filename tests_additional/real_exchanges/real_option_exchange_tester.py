@@ -13,12 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.constants as trading_constants
+import octobot_trading.enums as enums
+
+from tests_additional.real_exchanges.real_futures_exchange_tester import RealFuturesExchangeTester
 
 
-class BacktestingExchangeConfig:
-    def __init__(self):
-        # future trading config data
-        self.future_contract_type = trading_constants.DEFAULT_SYMBOL_FUTURE_CONTRACT_TYPE
-        self.option_contract_type = trading_constants.DEFAULT_SYMBOL_OPTION_CONTRACT_TYPE
-        self.funding_rate = trading_constants.DEFAULT_SYMBOL_FUNDING_RATE
+class RealOptionExchangeTester(RealFuturesExchangeTester):
+    EXCHANGE_TYPE = enums.ExchangeTypes.OPTION.value
+    MARKET_STATUS_TYPE = "option"

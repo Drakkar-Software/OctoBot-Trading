@@ -218,6 +218,8 @@ class ExchangeBuilder:
             self.is_future(True)
         elif exchange_type == commons_constants.CONFIG_EXCHANGE_MARGIN:
             self.is_margin(True)
+        elif exchange_type == commons_constants.CONFIG_EXCHANGE_OPTION:
+            self.is_option(True)
         else:
             # Use spot trading as default trading type
             self.is_spot_only(True)
@@ -227,11 +229,18 @@ class ExchangeBuilder:
         self.exchange_manager.is_margin = use_margin
         return self
 
-    def is_future(self, use_future=True, future_contract_type=constants.DEFAULT_SYMBOL_CONTRACT_TYPE):
+    def is_future(self, use_future=True, future_contract_type=constants.DEFAULT_SYMBOL_FUTURE_CONTRACT_TYPE):
         self.exchange_manager.is_future = use_future
         if self.exchange_manager.is_backtesting:
             self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type = \
                 future_contract_type
+        return self
+
+    def is_option(self, use_option=True, option_contract_type=constants.DEFAULT_SYMBOL_OPTION_CONTRACT_TYPE):
+        self.exchange_manager.is_option = use_option
+        if self.exchange_manager.is_backtesting:
+            self.exchange_manager.exchange_config.backtesting_exchange_config.option_contract_type = \
+                option_contract_type
         return self
 
     def enable_storage(self, enabled):

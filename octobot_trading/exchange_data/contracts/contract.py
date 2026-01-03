@@ -13,12 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.constants as trading_constants
+import octobot_trading.enums as enums
 
 
-class BacktestingExchangeConfig:
-    def __init__(self):
-        # future trading config data
-        self.future_contract_type = trading_constants.DEFAULT_SYMBOL_FUTURE_CONTRACT_TYPE
-        self.option_contract_type = trading_constants.DEFAULT_SYMBOL_OPTION_CONTRACT_TYPE
-        self.funding_rate = trading_constants.DEFAULT_SYMBOL_FUNDING_RATE
+class Contract:
+    def __init__(self, pair: str):
+        self.pair: str = pair
+
+    def is_handled_contract(self):
+        """
+        :return: False if this contract can't be traded in OctoBot
+        """
+        return True
+
+    def ensure_supported_configuration(self):
+        pass
+
+    def to_dict(self):
+        return {
+            enums.ExchangeConstantsMarginContractColumns.PAIR.value: self.pair
+        }
