@@ -918,6 +918,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
     def is_authenticated_request(self, url: str, method: str, headers: dict, body) -> bool:
         raise NotImplementedError("is_authenticated_request is not implemented")
 
+    async def withdraw(
+        self, asset: str, amount: decimal.Decimal, address: str, tag: str = "", params: dict = None
+    ) -> dict:
+        """
+        Withdraw funds from the exchange
+        """
+        return await self.connector.withdraw(asset, amount, address, tag=tag, params=params)
+
     # Futures
     async def load_pair_contract(self, pair: str):
         """

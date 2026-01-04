@@ -138,6 +138,7 @@ class TransactionType(enum.Enum):
 class BlockchainTypes(enum.Enum):
     UNKNOWN = "UNKNOWN"
     SIMULATED_WITHDRAWAL = "SIMULATED_WITHDRAWAL"
+    REAL_WITHDRAWAL = "REAL_WITHDRAWAL"
 
 
 class PNLTransactionSource(enum.Enum):
