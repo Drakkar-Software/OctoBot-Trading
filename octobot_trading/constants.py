@@ -108,6 +108,7 @@ STORAGE_ORIGIN_VALUE = "origin_value"
 DISPLAY_TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
 DEFAULT_SUBACCOUNT_ID = "default_subaccount_id"
 DEFAULT_ACCOUNT_ID = "default_account_id"
+ALLOW_FUNDS_TRANSFER = os_util.parse_boolean_environment_var("ALLOW_FUNDS_TRANSFER", "False")
 
 # Storage
 ENABLE_LIVE_CANDLES_STORAGE = os_util.parse_boolean_environment_var("ENABLE_LIVE_CANDLES_STORAGE", "False")
