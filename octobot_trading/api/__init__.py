@@ -25,6 +25,7 @@ from octobot_trading.api import profitability
 from octobot_trading.api import orders
 from octobot_trading.api import contracts
 from octobot_trading.api import storage
+from octobot_trading.api import blockchain_wallets
 
 from octobot_trading.api.symbol_data import (
     get_symbol_data,
@@ -239,7 +240,9 @@ from octobot_trading.api.storage import (
     get_account_type_from_run_metadata,
     get_account_type_from_exchange_manager,
 )
-
+from octobot_trading.api.blockchain_wallets import (
+    create_wallet,
+)
 __all__ = [
     "get_symbol_data",
     "get_symbol_candles_manager",
@@ -429,4 +432,5 @@ __all__ = [
     "clear_portfolio_storage_history",
     "clear_orders_storage_history",
     "get_fees_only_asset_deltas_from_orders",
+    "create_wallet",
 ]
