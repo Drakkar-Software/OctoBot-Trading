@@ -917,6 +917,29 @@ class Trader(util.Initializable):
         """
         return trade_factory.create_trade_from_order(order)
 
+    async def withdraw(
+        self, asset: str, amount: decimal.Decimal, address: str, tag: str = "", params: dict = None
+    ):
+        """
+        Withdraw funds from the exchange, requires constants.ALLOW_FUNDS_TRANSFER to be enabled (disabled by default)
+        :param asset: the asset to withdraw
+        :param amount: the amount to withdraw
+        :param address: the address to withdraw to
+        :param tag: the tag to withdraw with
+        :param params: the withdrawal request params
+        """
+        if not octobot_trading.constants.ALLOW_FUNDS_TRANSFER:
+            # always make sure to check this constant to avoid any potential security issue
+            raise errors.DisabledFundsTransferError(f"Withdraw funds is not enabled")
+        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+            if not self.simulate:
+                await self.exchange_manager.exchange.withdraw(
+                    asset, amount, address, tag=tag, params=params
+                )
+            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(
+                amount, asset, address
+            )
+
     """
     Positions
     """
@@ -976,16 +999,6 @@ class Trader(util.Initializable):
                     )
                 created_orders.append(order)
         return created_orders
-
-    @enabled_or_forced_only
-    async def withdraw(self, amount, currency):
-        """
-        Removes the given amount from the portfolio. Only works in simulated portfolios
-        :param amount: the amount to withdraw
-        :param currency: the currency to withdraw
-        """
-        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(amount, currency)
 
     @enabled_or_forced_only
     async def set_leverage(

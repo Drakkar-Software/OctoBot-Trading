@@ -575,6 +575,17 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         """
         raise NotImplementedError("get_sub_account_list is not available on this exchange")
 
+    async def withdraw(self, asset: str, amount: decimal.Decimal, address: str, tag: str = "", params: dict = None):
+        """
+        Withdraw funds from the exchange
+        :param asset: the asset to withdraw
+        :param amount: the amount to withdraw
+        :param address: the address to withdraw to
+        :param tag: the tag to withdraw with
+        :param params: the withdrawal request params
+        """
+        raise NotImplementedError("withdraw is not available on this exchange")
+    
     async def retry_till_success(self, timeout, request_func, *args, **kwargs):
         return await self._retry_until(timeout, 0, request_func, *args, **kwargs)
 

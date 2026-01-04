@@ -958,6 +958,16 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                 f"({e.__class__.__name__})")
             raise e
 
+    async def withdraw(
+        self, asset: str, amount: decimal.Decimal, address: str, tag: str = "", params: dict = None
+    ) -> dict:
+        if not constants.ALLOW_FUNDS_TRANSFER:
+            # always make sure to check this constant to avoid any potential security issue
+            raise octobot_trading.errors.DisabledFundsTransferError(
+                f"Withdraw funds is not enabled"
+            )
+        return await self.client.withdraw(asset, float(amount), address, tag=tag, params=params)
+
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_positions(self, symbols=None, **kwargs: dict) -> list:
         try:

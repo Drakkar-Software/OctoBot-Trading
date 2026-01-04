@@ -159,6 +159,18 @@ class UnSupportedSymbolError(NotSupported):
     """
 
 
+class PermissionError(Exception):
+    """
+    Raised when the permission to perform an action is denied
+    """
+
+
+class DisabledFundsTransferError(PermissionError):
+    """
+    Raised when funds transfer is disabled
+    """
+
+
 class FailedRequest(OctoBotExchangeError):
     """
     Raised upon a failed request on an exchange API

@@ -127,6 +127,22 @@ class PortfolioManager(util.Initializable):
                 return refreshed
         self.logger.error(f"Filled order has not be counted in portfolio after {time.time() - t0} seconds")
         return refreshed
+    
+    async def _refresh_real_trader_portfolio_until_withdrawal_applied(self, amount, currency) -> bool:
+        t0 = time.time()
+        previous_available_amount = self.portfolio.get_currency_portfolio(currency).available
+        refreshed = await self._refresh_real_trader_portfolio()
+        if self._has_withdrawal_been_applied(previous_available_amount, amount, currency):
+            return refreshed
+        for i in range(constants.MAX_PORTFOLIO_SYNC_ATTEMPTS):
+            await asyncio.sleep(constants.SYNC_ATTEMPTS_INTERVAL)
+            refreshed = await self._refresh_real_trader_portfolio()
+            # + 2 since 1st attempt is before looping
+            self.logger.info(f"Updated portfolio fetched after {i + 2} attempts")
+            if self._has_withdrawal_been_applied(previous_available_amount, amount, currency):
+                return refreshed
+        self.logger.error(f"Withdrawal has not be counted in portfolio after {time.time() - t0} seconds")
+        return refreshed
 
     def _has_filled_order_been_applied(self, order):
         if self.exchange_manager.is_future:
@@ -142,6 +158,13 @@ class PortfolioManager(util.Initializable):
         available_amount = self.portfolio.get_currency_portfolio(checked_asset).available
         # if available_amount > checked_amount, then the order fill is most likely taken into account in portfolio
         return available_amount > checked_amount
+
+    def _has_withdrawal_been_applied(self, previous_available_amount, amount, currency):
+        if self.exchange_manager.is_future:
+            # implement futures if necessary
+            return True
+        # consider withdrawal successful if the portfolio available amount is less than the previous available amount minus the withdrawal amount
+        return self.portfolio.get_currency_portfolio(currency).available <= previous_available_amount - (amount * decimal.Decimal("0.95"))
 
     async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
         """
@@ -169,12 +192,14 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.can_trade_if_not_paused():
+            if not self.enable_portfolio_exchange_sync:
+                self.portfolio.update_portfolio_from_withdrawal(amount, currency)
+                return True
             async with self.portfolio_history_update():
                 if self.trader.simulate:
                     self.portfolio.update_portfolio_from_withdrawal(amount, currency)
                     return True
-                # do not withdraw on real trading
-                raise errors.PortfolioOperationError("withdraw is not supported in real trading")
+                return await self._refresh_real_trader_portfolio_until_withdrawal_applied(amount, currency)
         return False
 
     def handle_balance_updated(self):

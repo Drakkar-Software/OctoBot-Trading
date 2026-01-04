@@ -135,12 +135,13 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
-    async def handle_portfolio_update_from_withdrawal(self, amount, currency, should_notify: bool = True) -> bool:
+    async def handle_portfolio_update_from_withdrawal(self, amount, currency, address, should_notify: bool = True) -> bool:
         changed = await self.portfolio_manager.handle_balance_update_from_withdrawal(amount, currency)
         transaction_factory.create_blockchain_transaction(
             self.exchange_manager, is_deposit=False, currency=currency, quantity=amount,
-            blockchain_type=enums.BlockchainTypes.SIMULATED_WITHDRAWAL.value,
-            blockchain_transaction_id=str(uuid.uuid4())
+            blockchain_type=enums.BlockchainTypes.SIMULATED_WITHDRAWAL.value if self.trader.simulate else enums.BlockchainTypes.REAL_WITHDRAWAL.value,
+            blockchain_transaction_id=str(uuid.uuid4()),
+            destination_address=address
         )
         if should_notify:
             await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
