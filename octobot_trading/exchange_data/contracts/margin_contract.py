@@ -19,13 +19,15 @@ import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.exchange_data.contracts.contract as contract
 
 
-class MarginContract:
+class MarginContract(contract.Contract):
     def __init__(self, pair, margin_type,
                  contract_size=constants.ONE,
                  maximum_leverage=constants.ONE,
                  current_leverage=constants.ONE):
+        super().__init__(pair)
         self.pair: str = pair
         self.margin_type = margin_type
 

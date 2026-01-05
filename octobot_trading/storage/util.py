@@ -22,6 +22,7 @@ def get_account_type_suffix_from_exchange_manager(exchange_manager) -> str:
     return get_account_type_suffix(
         exchange_manager.is_future,
         exchange_manager.is_margin,
+        exchange_manager.is_option,
         exchange_manager.is_sandboxed,
         exchange_manager.is_trader_simulated
     )
@@ -34,17 +35,20 @@ def get_account_type_suffix_from_run_metadata(run_metadata) -> str:
     return get_account_type_suffix(
         trading_type == enums.ExchangeTypes.FUTURE.value,
         trading_type == enums.ExchangeTypes.MARGIN.value,
+        trading_type == enums.ExchangeTypes.OPTION.value,
         is_sandboxed,
         trader_simulator
     )
 
 
-def get_account_type_suffix(is_future, is_margin, is_sandboxed, is_trader_simulated) -> str:
+def get_account_type_suffix(is_future, is_margin, is_option, is_sandboxed, is_trader_simulated) -> str:
     suffix = ""
     if is_future:
         suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_FUTURE}"
     elif is_margin:
         suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_MARGIN}"
+    elif is_option:
+        suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_OPTION}"
     else:
         suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_SPOT}"
     if is_sandboxed:

@@ -263,6 +263,8 @@ class ExchangeConfig(util.Initializable):
         parsed_symbol = octobot_commons.symbols.parse_symbol(symbol)
         if exchange_type is trading_enums.ExchangeTypes.FUTURE:
             return parsed_symbol.is_future()
+        if exchange_type is trading_enums.ExchangeTypes.OPTION:
+            return parsed_symbol.is_option()
         # allow futures symbols for spot
         return True
 
