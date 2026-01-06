@@ -14,17 +14,19 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import dataclasses
+import typing
+
 import octobot_commons.dataclasses
 
 
 @dataclasses.dataclass
 class TokenDescriptor(octobot_commons.dataclasses.FlexibleDataclass):
     """
-    Descriptor of a token
+    Descriptor of a token that is not the native coin of a blockchain
     """
-    symbol: str
-    decimals: int
-    contract_address: str
+    symbol: str # ex: "USDT" for USDT on Ethereum
+    decimals: int # ex: 18 for USDT on Ethereum
+    contract_address: str # ex: "0xdAC17F958D2ee523a2206206994597C13D831ec7" for USDT on Ethereum
 
 
 @dataclasses.dataclass
@@ -32,10 +34,15 @@ class BlockchainDescriptor(octobot_commons.dataclasses.FlexibleDataclass):
     """
     Descriptor for a blockchain
     """
-    name: str
-    native_coin_symbol: str = ""
-    network: str = ""
-    chain_id: str = ""
+    wallet_type: str # name of the BlockchainWallet subclass to use for this blockchain
+    # network: configured network of the blockchain, ex: "Ethereum" or "Polygon Mainnet".
+    # This value is used for internal references and logs.
+    # The network connection details (such as the RPC URL) are defined in the specific_config attribute.
+    network: str
+    native_coin_symbol: typing.Optional[str] = None # ex: "ETH" for Ethereum
+    specific_config: typing.Optional[dict[str, typing.Any]] = None # ex: {"rpc_url": "https://...."} for Ethereum
+    # Define tokens in case this blockchain supports it (ex: ERC20 tokens on Ethereum).
+    # A token must be defined for its balance to be tracked and to be able to transfer it.
     tokens: list[TokenDescriptor] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
@@ -46,10 +53,12 @@ class BlockchainDescriptor(octobot_commons.dataclasses.FlexibleDataclass):
 @dataclasses.dataclass
 class WalletDescriptor(octobot_commons.dataclasses.FlexibleDataclass):
     """
-    Descriptor for a wallet
+    Descriptor for a wallet to use for this blockchain
     """
-    wallet_address: str
-    wallet_private_key: str
+    address: str # public address of the wallet
+    private_key: str # private key of the wallet
+    # extra configuration for the user's wallet, notably used to initialize simulator wallets holdings
+    specific_config: typing.Optional[dict[str, typing.Any]] = None
 
 
 @dataclasses.dataclass

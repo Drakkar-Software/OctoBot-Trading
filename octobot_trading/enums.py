@@ -135,12 +135,6 @@ class TransactionType(enum.Enum):
     TRANSFER = "transfer"
 
 
-class BlockchainTypes(enum.Enum):
-    UNKNOWN = "UNKNOWN"
-    SIMULATED_WITHDRAWAL = "SIMULATED_WITHDRAWAL"
-    REAL_WITHDRAWAL = "REAL_WITHDRAWAL"
-
-
 class PNLTransactionSource(enum.Enum):
     MARKET_ORDER = "market_order"
     LIMIT_ORDER = "limit_order"
@@ -421,6 +415,32 @@ class ExchangeConstantsLeverageTiersColumns(enum.Enum):
     MAX_NOTIONAL = "max_notional"
     MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     MAX_LEVERAGE = "max_leverage"
+    INFO = "info"
+
+
+class ExchangeConstantsTransactionColumns(enum.Enum):
+    ID = "id"
+    TXID = "txid"
+    TIMESTAMP = "timestamp"
+    ADDRESS_FROM = "address_from"
+    ADDRESS_TO = "address_to"
+    TAG = "tag"
+    TYPE = "type"
+    AMOUNT = "amount"
+    CURRENCY = "currency"
+    STATUS = "status"
+    FEE = "fee"  # FeePropertyColumns
+    NETWORK = "network"
+    COMMENT = "comment"
+    INTERNAL = "internal"
+    INFO = "info"
+
+
+class ExchangeConstantsDepositAddressColumns(enum.Enum):
+    CURRENCY = "currency"
+    NETWORK = "network"
+    ADDRESS = "address"
+    TAG = "tag"
     INFO = "info"
 
 

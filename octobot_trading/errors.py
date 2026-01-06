@@ -135,6 +135,30 @@ class ClosedOrderError(UnexpectedExchangeSideOrderStateError):
     """
 
 
+class ToPropagateError(Exception):
+    """
+    Raised when an error should be propagated to the caller
+    """
+
+
+class BlockchainWalletError(ToPropagateError):
+    """
+    Raised when an error occurs in a blockchain wallet
+    """
+
+
+class BlockchainWalletConfigurationError(BlockchainWalletError):
+    """
+    Raised when a blockchain wallet configuration is invalid
+    """
+
+
+class BlockchainWalletNativeCoinSymbolUndefinedError(BlockchainWalletConfigurationError):
+    """
+    Raised when the native coin symbol is undefined in a blockchain wallet descriptor
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the required element
@@ -147,7 +171,7 @@ class UnSupportedSymbolError(NotSupported):
     """
 
 
-class PermissionError(Exception):
+class ConfigurationPermissionError(Exception):
     """
     Raised when the permission to perform an action is denied
     """

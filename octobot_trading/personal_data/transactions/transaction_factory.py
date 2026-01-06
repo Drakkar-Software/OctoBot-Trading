@@ -13,23 +13,36 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
+import decimal
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.transactions.types as transaction_types
 
+if typing.TYPE_CHECKING:
+    import octobot_trading.exchanges
+    import octobot_trading.personal_data.transactions.transaction
 
-def create_blockchain_transaction(exchange_manager, currency,
-                                  blockchain_type, blockchain_transaction_id,
-                                  blockchain_transaction_status=enums.BlockchainTransactionStatus.CREATED,
-                                  source_address=None, destination_address=None,
-                                  quantity=constants.ZERO, transaction_fee=constants.ZERO, is_deposit=False):
+
+def create_blockchain_transaction(
+    exchange_manager: "octobot_trading.exchanges.ExchangeManager",
+    currency: str,
+    quantity: decimal.Decimal,
+    blockchain_network: str,
+    blockchain_transaction_id: str,
+    transaction_type: enums.TransactionType,
+    destination_address: typing.Optional[str] = None,
+    blockchain_transaction_status: enums.BlockchainTransactionStatus = enums.BlockchainTransactionStatus.CREATED,
+    source_address: typing.Optional[str] = None,
+    transaction_fee: typing.Optional[dict] = None,
+):
     blockchain_transaction = transaction_types.BlockchainTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.BLOCKCHAIN_DEPOSIT
-        if is_deposit else enums.TransactionType.BLOCKCHAIN_WITHDRAWAL,
+        transaction_type=transaction_type,
         currency=currency,
-        blockchain_type=blockchain_type,
+        blockchain_network=blockchain_network,
         blockchain_transaction_id=blockchain_transaction_id,
         blockchain_transaction_status=blockchain_transaction_status,
         source_address=source_address,
@@ -41,17 +54,22 @@ def create_blockchain_transaction(exchange_manager, currency,
     return blockchain_transaction
 
 
-def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
-                                    realised_pnl=constants.ZERO,
-                                    is_closed_pnl=False,
-                                    closed_quantity=constants.ZERO,
-                                    cumulated_closed_quantity=constants.ZERO,
-                                    first_entry_time=0,
-                                    average_entry_price=constants.ZERO,
-                                    average_exit_price=constants.ZERO,
-                                    order_exit_price=constants.ZERO,
-                                    leverage=constants.ZERO,
-                                    trigger_source=enums.PNLTransactionSource.UNKNOWN):
+def create_realised_pnl_transaction(
+    exchange_manager: "octobot_trading.exchanges.ExchangeManager",
+    currency: str,
+    symbol: str,
+    side: enums.PositionSide,
+    realised_pnl: decimal.Decimal = constants.ZERO,
+    is_closed_pnl: bool = False,
+    closed_quantity: decimal.Decimal = constants.ZERO,
+    cumulated_closed_quantity: decimal.Decimal = constants.ZERO,
+    first_entry_time: float = 0,
+    average_entry_price: decimal.Decimal = constants.ZERO,
+    average_exit_price: decimal.Decimal = constants.ZERO,
+    order_exit_price: decimal.Decimal = constants.ZERO,
+    leverage: decimal.Decimal = constants.ZERO,
+    trigger_source: enums.PNLTransactionSource = enums.PNLTransactionSource.UNKNOWN
+):
     realised_pnl_transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
@@ -68,15 +86,20 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
         order_exit_price=order_exit_price,
         leverage=leverage,
         trigger_source=trigger_source,
-        side=side)
+        side=side
+    )
     _insert_transaction_instance(exchange_manager, realised_pnl_transaction)
     return realised_pnl_transaction
 
 
-def create_fee_transaction(exchange_manager, currency, symbol,
-                           quantity=constants.ZERO,
-                           order_id=None,
-                           funding_rate=constants.ZERO):
+def create_fee_transaction(
+    exchange_manager: "octobot_trading.exchanges.ExchangeManager",
+    currency: str,
+    symbol: str,
+    quantity: decimal.Decimal = constants.ZERO,
+    order_id: typing.Optional[str] = None,
+    funding_rate: typing.Optional[decimal.Decimal] = None
+):
     fee_transaction = transaction_types.FeeTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
@@ -85,20 +108,29 @@ def create_fee_transaction(exchange_manager, currency, symbol,
         symbol=symbol,
         quantity=quantity,
         order_id=order_id,
-        funding_rate=funding_rate)
+        funding_rate=funding_rate
+    )
     _insert_transaction_instance(exchange_manager, fee_transaction)
     return fee_transaction
 
 
-def create_transfer_transaction(exchange_manager, currency, symbol):
+def create_transfer_transaction(
+    exchange_manager: "octobot_trading.exchanges.ExchangeManager",
+    currency: str,
+    symbol: str
+):
     transfer_transaction = transaction_types.TransferTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
         currency=currency,
-        symbol=symbol)
+        symbol=symbol
+    )
     _insert_transaction_instance(exchange_manager, transfer_transaction)
     return transfer_transaction
 
 
-def _insert_transaction_instance(exchange_manager, transaction):
+def _insert_transaction_instance(
+    exchange_manager: "octobot_trading.exchanges.ExchangeManager",
+    transaction: "octobot_trading.personal_data.transactions.transaction.Transaction"
+):
     exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)

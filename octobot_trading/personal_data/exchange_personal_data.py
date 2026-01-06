@@ -15,7 +15,6 @@
 #  License along with this library.
 import asyncio
 import decimal
-import uuid
 import typing
 
 import octobot_commons.logging as logging
@@ -27,14 +26,15 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
-import octobot_trading.personal_data.orders.order as order_import  # pylint: disable=unused-import
 import octobot_trading.personal_data.orders.orders_storage_operations as orders_storage_operations
 import octobot_trading.personal_data.trades.trades_manager as trades_manager
-import octobot_trading.personal_data.trades.trade as trade_import  # pylint: disable=unused-import
 import octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
-import octobot_trading.exchanges  # pylint: disable=unused-import
+
+if typing.TYPE_CHECKING:
+    import octobot_trading.personal_data
+    import octobot_trading.exchanges
 
 
 class ExchangePersonalData(util.Initializable):
@@ -135,17 +135,62 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
-    async def handle_portfolio_update_from_withdrawal(self, amount, currency, address, should_notify: bool = True) -> bool:
-        changed = await self.portfolio_manager.handle_balance_update_from_withdrawal(amount, currency)
+    async def handle_portfolio_update_from_withdrawal(
+        self,
+        currency: str,
+        quantity: decimal.Decimal,
+        blockchain_network: str,
+        transaction_id: str,
+        destination_address: str,
+        transaction_status: enums.BlockchainTransactionStatus = enums.BlockchainTransactionStatus.CREATED,
+        source_address: typing.Optional[str] = None,
+        transaction_fee: typing.Optional[dict] = None,
+        should_notify: bool = True
+    ) -> bool:
+        changed = await self.portfolio_manager.handle_balance_update_from_withdrawal(quantity, currency)
         transaction_factory.create_blockchain_transaction(
-            self.exchange_manager, is_deposit=False, currency=currency, quantity=amount,
-            blockchain_type=enums.BlockchainTypes.SIMULATED_WITHDRAWAL.value if self.trader.simulate else enums.BlockchainTypes.REAL_WITHDRAWAL.value,
-            blockchain_transaction_id=str(uuid.uuid4()),
-            destination_address=address
+            self.exchange_manager,
+            currency, 
+            quantity,
+            blockchain_network,
+            transaction_id,
+            enums.TransactionType.BLOCKCHAIN_WITHDRAWAL,
+            destination_address,
+            blockchain_transaction_status=transaction_status,
+            source_address=source_address,
+            transaction_fee=transaction_fee,
         )
         if should_notify:
             await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
         return changed
+
+    async def handle_portfolio_update_from_deposit(
+        self,
+        currency: str,
+        quantity: decimal.Decimal,
+        blockchain_network: str,
+        transaction_id: str,
+        destination_address: str,
+        transaction_status: enums.BlockchainTransactionStatus = enums.BlockchainTransactionStatus.CREATED,
+        source_address: typing.Optional[str] = None,
+        transaction_fee: typing.Optional[dict] = None,
+        should_notify: bool = True
+    ):
+        await self.portfolio_manager.handle_balance_update_from_deposit(quantity, currency)
+        transaction_factory.create_blockchain_transaction(
+            self.exchange_manager,
+            currency,
+            quantity,
+            blockchain_network,
+            transaction_id,
+            enums.TransactionType.BLOCKCHAIN_DEPOSIT,
+            destination_address,
+            blockchain_transaction_status=transaction_status,
+            source_address=source_address,
+            transaction_fee=transaction_fee,
+        )
+        if should_notify:
+            await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
 
     async def handle_portfolio_update_notification(self, balance):
         """
@@ -183,7 +228,7 @@ class ExchangePersonalData(util.Initializable):
     async def handle_order_update_from_raw(self, exchange_order_id, raw_order,
                                            is_new_order: bool = False,
                                            should_notify: bool = True,
-                                           is_from_exchange=True) -> (bool, order_import.Order):
+                                           is_from_exchange=True) -> (bool, "octobot_trading.personal_data.Order"):
         # Orders can sometimes be out of sync between different exchange endpoints (ex: binance order API vs
         # open_orders API which is slower).
         # Always check if this order has not already been closed previously (most likely during the last
@@ -406,7 +451,7 @@ class ExchangePersonalData(util.Initializable):
             self.logger.error(f"Failed to send position update notification : {e}")
 
     def get_trade_or_open_order(self, order_id: str) -> (
-        typing.Optional[trade_import.Trade], typing.Optional[order_import.Order]
+        typing.Optional["octobot_trading.personal_data.Trade"], typing.Optional["octobot_trading.personal_data.Order"]
     ):
         trade = self.trades_manager.get_trade_from_order_id(order_id)
         try:

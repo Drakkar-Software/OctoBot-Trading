@@ -13,7 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+import time
+import uuid
+
 import octobot_trading.constants
+import octobot_trading.enums as enums
 import octobot_trading.exchanges.traders.trader as trader
 import octobot_trading.util as util
 import octobot_trading.personal_data.orders.order_util as order_util
@@ -40,3 +45,34 @@ class TraderSimulator(trader.Trader):
 
     def parse_order_id(self, order_id):
         return order_util.generate_order_id() if order_id is None else order_id
+
+    async def get_deposit_address(self, asset: str, params: dict = None) -> dict:
+        # mocked deposit address
+        return {
+            enums.ExchangeConstantsDepositAddressColumns.ADDRESS.value: f"{octobot_trading.constants.SIMULATED_DEPOSIT_ADDRESS}_{asset}",
+            enums.ExchangeConstantsDepositAddressColumns.TAG.value: "",
+            enums.ExchangeConstantsDepositAddressColumns.NETWORK.value: octobot_trading.constants.SIMULATED_BLOCKCHAIN_NETWORK,
+            enums.ExchangeConstantsDepositAddressColumns.CURRENCY.value: asset,
+        }
+
+    async def _withdraw_on_exchange(
+        self, asset: str, amount: decimal.Decimal, network: str, address: str, tag: str = "", params: dict = None
+    ) -> dict:
+        deposit_address = await self.get_deposit_address(asset)
+        transaction_id = str(uuid.uuid4())
+        return {
+            enums.ExchangeConstantsTransactionColumns.TXID.value: transaction_id,
+            enums.ExchangeConstantsTransactionColumns.TIMESTAMP.value: time.time(),
+            enums.ExchangeConstantsTransactionColumns.ADDRESS_FROM.value: deposit_address[enums.ExchangeConstantsDepositAddressColumns.ADDRESS.value],
+            enums.ExchangeConstantsTransactionColumns.ADDRESS_TO.value: address,
+            enums.ExchangeConstantsTransactionColumns.AMOUNT.value: amount,
+            enums.ExchangeConstantsTransactionColumns.CURRENCY.value: asset,
+            enums.ExchangeConstantsTransactionColumns.ID.value: transaction_id,
+            enums.ExchangeConstantsTransactionColumns.FEE.value: octobot_trading.constants.ZERO,
+            enums.ExchangeConstantsTransactionColumns.STATUS.value: enums.BlockchainTransactionStatus.SUCCESS.value,
+            enums.ExchangeConstantsTransactionColumns.TAG.value: tag,
+            enums.ExchangeConstantsTransactionColumns.TYPE.value: enums.TransactionType.BLOCKCHAIN_WITHDRAWAL.value,
+            enums.ExchangeConstantsTransactionColumns.NETWORK.value: network,
+            enums.ExchangeConstantsTransactionColumns.COMMENT.value: "",
+            enums.ExchangeConstantsTransactionColumns.INTERNAL.value: False,            
+        }

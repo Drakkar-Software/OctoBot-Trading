@@ -61,7 +61,15 @@ class SpotPortfolio(portfolio_class.Portfolio):
         :param amount: the withdrawal amount
         :param currency: the withdrawal currency
         """
-        self._update_portfolio_data(currency, total_value=-amount)
+        self._update_portfolio_data(currency, total_value=-amount, available_value=-amount)
+
+    def update_portfolio_data_from_deposit(self, amount, currency):
+        """
+        Call update_portfolio_data for order currency and market
+        :param amount: the deposit amount
+        :param currency: the deposit currency
+        """
+        self._update_portfolio_data(currency, total_value=amount, available_value=amount)
 
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
