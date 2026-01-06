@@ -14,25 +14,29 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import uuid
+import typing
 
-import octobot_commons.logging as logging
+import octobot_trading.enums as enums
 
 
 class Transaction:
 
-    def __init__(self, exchange_name, creation_time, transaction_type, currency, symbol=None, transaction_id=None):
-        self.logger = logging.get_logger(self.__class__.__name__)
-        self.transaction_id = transaction_id
-        self.transaction_type = transaction_type
-        self.creation_time = creation_time
+    def __init__(
+        self,
+        exchange_name: str,
+        creation_time: float,
+        transaction_type: enums.TransactionType,
+        currency: str,
+        symbol: typing.Optional[str] = None,
+        transaction_id: typing.Optional[str] = None
+    ):
+        self.transaction_id: str = transaction_id or str(uuid.uuid4()) # generate default transaction id if not provided
+        self.transaction_type: enums.TransactionType = transaction_type
+        self.creation_time: float = creation_time
 
-        self.exchange_name = exchange_name
-        self.symbol = symbol
-        self.currency = currency
-
-        # generate default transaction id
-        if self.transaction_id is None:
-            self.transaction_id = str(uuid.uuid4())
+        self.exchange_name: str = exchange_name
+        self.symbol: typing.Optional[str] = symbol
+        self.currency: str = currency
 
     def set_transaction_id(self, new_id):
         """

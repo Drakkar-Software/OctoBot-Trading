@@ -24,15 +24,16 @@ import octobot_commons.constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
-import octobot_commons.tentacles_management as tentacles_management
 import octobot_commons.html_util as html_util
 
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.exchanges
+import octobot_trading.accounts
 
-class AbstractExchange(tentacles_management.AbstractTentacle):
+
+class AbstractExchange(octobot_trading.accounts.AbstractAccount):
     USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.EXCHANGE
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
@@ -574,17 +575,6 @@ class AbstractExchange(tentacles_management.AbstractTentacle):
         :return: the exchange sub account list if supported by the exchange
         """
         raise NotImplementedError("get_sub_account_list is not available on this exchange")
-
-    async def withdraw(self, asset: str, amount: decimal.Decimal, address: str, tag: str = "", params: dict = None):
-        """
-        Withdraw funds from the exchange
-        :param asset: the asset to withdraw
-        :param amount: the amount to withdraw
-        :param address: the address to withdraw to
-        :param tag: the tag to withdraw with
-        :param params: the withdrawal request params
-        """
-        raise NotImplementedError("withdraw is not available on this exchange")
     
     async def retry_till_success(self, timeout, request_func, *args, **kwargs):
         return await self._retry_until(timeout, 0, request_func, *args, **kwargs)

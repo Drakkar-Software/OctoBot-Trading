@@ -23,6 +23,7 @@ from mock import patch, Mock, AsyncMock
 import octobot_commons.constants as commons_constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 from octobot_trading.personal_data import SellLimitOrder
 from octobot_trading.personal_data.orders import BuyMarketOrder, BuyLimitOrder
 
@@ -190,6 +191,175 @@ async def test_has_filled_order_been_applied(backtesting_trader):
     # always True on futures
     assert portfolio_manager._has_filled_order_been_applied(order) is True
     trader.exchange_manager.is_future = False
+
+
+async def test_refresh_real_trader_portfolio_until_withdrawal_applied(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    trader.simulate = False
+    amount = decimal.Decimal("10")
+    currency = "USDT"
+    
+    # Set initial portfolio available amount
+    initial_available = decimal.Decimal("100")
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = initial_available
+    
+    with patch.object(portfolio_manager, '_refresh_real_trader_portfolio',
+                      new=AsyncMock(return_value=True)) as _refresh_real_trader_portfolio_mock, \
+        patch.object(asyncio, 'sleep', AsyncMock()) as sleep_mock:
+        with patch.object(portfolio_manager, '_has_withdrawal_been_applied',
+                          new=Mock(return_value=True)) as _has_withdrawal_been_applied_mock:
+            assert await portfolio_manager._refresh_real_trader_portfolio_until_withdrawal_applied(amount, currency) is True
+            _has_withdrawal_been_applied_mock.assert_called_once_with(initial_available, amount, currency)
+            _refresh_real_trader_portfolio_mock.assert_called_once()
+            sleep_mock.assert_not_called()
+            _refresh_real_trader_portfolio_mock.reset_mock()
+            _has_withdrawal_been_applied_mock.reset_mock()
+        with patch.object(portfolio_manager, '_has_withdrawal_been_applied',
+                          new=Mock(return_value=False)) as _has_withdrawal_been_applied_mock:
+            assert await portfolio_manager._refresh_real_trader_portfolio_until_withdrawal_applied(amount, currency) is True
+            assert _has_withdrawal_been_applied_mock.call_count == 1 + constants.MAX_PORTFOLIO_SYNC_ATTEMPTS
+            assert _refresh_real_trader_portfolio_mock.call_count == 1 + constants.MAX_PORTFOLIO_SYNC_ATTEMPTS
+            assert sleep_mock.call_count == constants.MAX_PORTFOLIO_SYNC_ATTEMPTS
+            _has_withdrawal_been_applied_mock.reset_mock()
+            _refresh_real_trader_portfolio_mock.reset_mock()
+            sleep_mock.reset_mock()
+        calls = []
+
+        # retry once
+        def _has_withdrawal_been_applied(*args):
+            if calls:
+                return True
+            calls.append(1)
+            return False
+        with patch.object(portfolio_manager, '_has_withdrawal_been_applied',
+                          new=Mock(side_effect=_has_withdrawal_been_applied)) as _has_withdrawal_been_applied_mock:
+            assert await portfolio_manager._refresh_real_trader_portfolio_until_withdrawal_applied(amount, currency) is True
+            assert _has_withdrawal_been_applied_mock.call_count == 2
+            assert _refresh_real_trader_portfolio_mock.call_count == 2
+            assert sleep_mock.call_count == 1
+
+
+async def test_handle_balance_update_from_withdrawal(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    amount = decimal.Decimal("10")
+    currency = "USDT"
+    
+    # Test when trader is disabled
+    trader.is_enabled = False
+    initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
+    initial_total = portfolio_manager.portfolio.get_currency_portfolio(currency).total
+    assert await portfolio_manager.handle_balance_update_from_withdrawal(amount, currency) is False
+    # Portfolio should not be updated
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).available == initial_available
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).total == initial_total
+    
+    # Test when enable_portfolio_exchange_sync is False
+    trader.is_enabled = True
+    portfolio_manager.enable_portfolio_exchange_sync = False
+    trader.simulate = False
+    initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
+    initial_total = portfolio_manager.portfolio.get_currency_portfolio(currency).total
+    assert await portfolio_manager.handle_balance_update_from_withdrawal(amount, currency) is True
+    # Portfolio should be updated directly
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).available == initial_available - amount
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).total == initial_total - amount
+    
+    # Test when simulating
+    portfolio_manager.enable_portfolio_exchange_sync = True
+    trader.simulate = True
+    initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
+    initial_total = portfolio_manager.portfolio.get_currency_portfolio(currency).total
+    assert await portfolio_manager.handle_balance_update_from_withdrawal(amount, currency) is True
+    # Portfolio should be updated directly
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).available == initial_available - amount
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).total == initial_total - amount
+    
+    # Test when real trader with exchange sync enabled
+    # This will attempt to refresh from exchange
+    trader.simulate = False
+    with patch.object(
+        portfolio_manager, '_refresh_real_trader_portfolio_until_withdrawal_applied', 
+        mock.AsyncMock(return_value=True)
+    ) as _refresh_real_trader_portfolio_until_withdrawal_applied_mock:
+        assert await portfolio_manager.handle_balance_update_from_withdrawal(amount, currency) is True
+        _refresh_real_trader_portfolio_until_withdrawal_applied_mock.assert_called_once_with(amount, currency)
+
+
+async def test_has_withdrawal_been_applied(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    trader.simulate = False
+    currency = "USDT"
+    previous_available = decimal.Decimal("100")
+    amount = decimal.Decimal("10")
+    
+    # Set portfolio available amount to simulate withdrawal has been applied
+    # Threshold: previous - (amount * 0.95) = 100 - 9.5 = 90.5
+    # If current <= 90.5, withdrawal has been applied
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("90")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is True
+    
+    # Set portfolio available amount to exactly at threshold
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("90.5")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is True
+    
+    # Set portfolio available amount just above threshold (withdrawal not applied)
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("90.6")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is False
+    
+    # Set portfolio available amount much higher (withdrawal definitely not applied)
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("95")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is False
+    
+    # Test with different amounts
+    amount = decimal.Decimal("20")
+    # Threshold: 100 - (20 * 0.95) = 100 - 19 = 81
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("80")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is True
+    
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("82")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is False
+    
+    # Test futures - always returns True
+    trader.exchange_manager.is_future = True
+    portfolio_manager.portfolio.get_currency_portfolio(currency).available = decimal.Decimal("100")
+    assert portfolio_manager._has_withdrawal_been_applied(previous_available, amount, currency) is True
+    trader.exchange_manager.is_future = False
+
+
+async def test_handle_balance_update_from_deposit(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    amount = decimal.Decimal("10")
+    currency = "USDT"
+    
+    # Test when simulating - should update portfolio
+    trader.simulate = True
+    initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
+    initial_total = portfolio_manager.portfolio.get_currency_portfolio(currency).total
+    await portfolio_manager.handle_balance_update_from_deposit(amount, currency)
+    # Portfolio should be updated with deposit amount added
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).available == initial_available + amount
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).total == initial_total + amount
+    
+    # Test with different amount
+    amount = decimal.Decimal("25")
+    initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
+    initial_total = portfolio_manager.portfolio.get_currency_portfolio(currency).total
+    await portfolio_manager.handle_balance_update_from_deposit(amount, currency)
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).available == initial_available + amount
+    assert portfolio_manager.portfolio.get_currency_portfolio(currency).total == initial_total + amount
+    
+    # Test when not simulating - should raise NotSupported error
+    trader.simulate = False
+    with pytest.raises(errors.NotSupported):
+        await portfolio_manager.handle_balance_update_from_deposit(amount, currency)
 
 
 async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader):

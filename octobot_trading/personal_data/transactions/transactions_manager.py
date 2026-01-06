@@ -14,9 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import collections
+import typing
 
 import octobot_commons.logging as logging
 
+import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.util as util
 import octobot_trading.personal_data  # pylint: disable=unused-import
@@ -33,7 +35,11 @@ class TransactionsManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_transactions()
 
-    def insert_transaction_instance(self, transaction, replace_if_exists=False):
+    def insert_transaction_instance(
+        self,
+        transaction: "octobot_trading.personal_data.Transaction",
+        replace_if_exists: bool = False
+    ):
         """
         Add the transaction instance to self.transactions by its transaction_id
         Can raise DuplicateTransactionIdError if a transaction already exists
@@ -48,7 +54,7 @@ class TransactionsManager(util.Initializable):
             raise errors.DuplicateTransactionIdError(
                 f"Transaction with id '{transaction.transaction_id}' already exists")
 
-    def get_transaction(self, transaction_id):
+    def get_transaction(self, transaction_id: str) -> "octobot_trading.personal_data.Transaction":
         """
         Return the transaction instance with :transaction_id: as transaction_id
         Can raise KeyError when transaction_id doesn't exist
@@ -57,7 +63,39 @@ class TransactionsManager(util.Initializable):
         """
         return self.transactions[transaction_id]
 
-    def update_transaction_id(self, transaction_id, new_transaction_id, replace_if_exists=False):
+    def get_blockchain_transactions(
+        self,
+        blockchain_network: typing.Optional[str] = None,
+        destination_address: typing.Optional[str] = None,
+        source_address: typing.Optional[str] = None,
+        currency: typing.Optional[str] = None,
+        transaction_type: typing.Optional[enums.TransactionType] = None,
+    ) -> list["octobot_trading.personal_data.BlockchainTransaction"]:
+        """
+        Return the blockchain transactions matching the given criteria
+        :param blockchain_network: the blockchain network
+        :param destination_address: the destination address
+        :param source_address: the source address
+        :param currency: the currency
+        :param transaction_type: the transaction type
+        :return: the blockchain transactions matching the given criteria
+        """
+        return [
+            transaction for transaction in self.transactions.values() 
+            if isinstance(transaction, octobot_trading.personal_data.BlockchainTransaction)
+            and (blockchain_network is None or transaction.blockchain_network == blockchain_network)
+            and (destination_address is None or transaction.destination_address == destination_address)
+            and (source_address is None or transaction.source_address == source_address)
+            and (currency is None or transaction.currency == currency)
+            and (transaction_type is None or transaction.transaction_type == transaction_type)
+        ]
+
+    def update_transaction_id(
+        self,
+        transaction_id: str,
+        new_transaction_id: str,
+        replace_if_exists: bool = False
+    ):
         """
         Update a transaction by id
         Can raise KeyError when initial transaction doesn't exist
@@ -83,7 +121,7 @@ class TransactionsManager(util.Initializable):
     def _reset_transactions(self):
         self.transactions = collections.OrderedDict()
 
-    def _remove_oldest_transactions(self, nb_to_remove):
+    def _remove_oldest_transactions(self, nb_to_remove: int):
         for _ in range(nb_to_remove):
             self.transactions.popitem(last=False)
 

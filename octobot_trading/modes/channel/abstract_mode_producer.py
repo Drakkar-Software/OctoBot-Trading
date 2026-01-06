@@ -396,7 +396,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             if self.trading_mode.is_health_check_required() and not skip_health_check:
                 await self.trading_mode.health_check([], {})
             yield
-        except errors.InitializingError:
+        except (errors.InitializingError, errors.ToPropagateError): # pylint: disable=try-except-raise
             raise
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")
