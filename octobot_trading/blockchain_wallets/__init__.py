@@ -14,14 +14,28 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.blockchain_wallets import wallet_factory
-from octobot_trading.blockchain_wallets.wallet_factory import (
-    create_wallet,
+from octobot_trading.blockchain_wallets import adapter
+from octobot_trading.blockchain_wallets.adapter import (
+    BlockchainWalletAdapter,
+    Balance,
+    Fee,
+    Transaction,
+    DepositAddress,
+)
+
+from octobot_trading.blockchain_wallets import blockchain_wallet_factory
+from octobot_trading.blockchain_wallets.blockchain_wallet_factory import (
+    create_blockchain_wallet,
 )
 
 from octobot_trading.blockchain_wallets import blockchain_wallet
 from octobot_trading.blockchain_wallets.blockchain_wallet import (
     BlockchainWallet,
+)
+
+from octobot_trading.blockchain_wallets import simulator
+from octobot_trading.blockchain_wallets.simulator import (
+    BlockchainWalletSimulator,
 )
 
 from octobot_trading.blockchain_wallets import blockchain_wallet_parameters
@@ -32,8 +46,14 @@ from octobot_trading.blockchain_wallets.blockchain_wallet_parameters import (
     TokenDescriptor,
 )
 __all__ = [
-    "create_wallet",
+    "BlockchainWalletAdapter",
+    "Balance",
+    "Fee",
+    "Transaction",
+    "DepositAddress",
+    "create_blockchain_wallet",
     "BlockchainWallet",
+    "BlockchainWalletSimulator",
     "BlockchainWalletParameters",
     "BlockchainDescriptor",
     "WalletDescriptor",

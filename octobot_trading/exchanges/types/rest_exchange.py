@@ -100,6 +100,7 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Name of the price param to give ccxt to edit a stop loss
     STOP_LOSS_EDIT_PRICE_PARAM = ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value
     STOP_LOSS_CREATE_PRICE_PARAM = ccxt_enums.ExchangeOrderCCXTUnifiedParams.STOP_LOSS_PRICE.value
+    WITHDRAW_NETWORK_PARAM_KEY = "network" # key to use in params to specify the network to withdraw to
     """
     RestExchange is using its exchange connector to interact with the exchange.
     It should be used regardless of the exchange or the exchange library (ccxt or other)
@@ -919,12 +920,21 @@ class RestExchange(abstract_exchange.AbstractExchange):
         raise NotImplementedError("is_authenticated_request is not implemented")
 
     async def withdraw(
-        self, asset: str, amount: decimal.Decimal, address: str, tag: str = "", params: dict = None
+        self, asset: str, amount: decimal.Decimal, network: str, address: str, tag: str = "", params: dict = None
     ) -> dict:
         """
         Withdraw funds from the exchange
+        :param asset: the asset to withdraw
+        :param amount: the amount to withdraw
+        :param network: the network to withdraw to
+        :param address: the address to withdraw to
+        :param tag: the tag to withdraw with
+        :param params: the withdrawal request params
         """
-        return await self.connector.withdraw(asset, amount, address, tag=tag, params=params)
+        return await self.connector.withdraw(asset, amount, network, address, tag=tag, params=params)
+
+    async def get_deposit_address(self, asset: str, params: dict = None) -> dict:
+        return await self.connector.get_deposit_address(asset, params=params)
 
     # Futures
     async def load_pair_contract(self, pair: str):

@@ -184,7 +184,7 @@ class PortfolioManager(util.Initializable):
                 return await self._refresh_real_trader_portfolio()
         return False
 
-    async def handle_balance_update_from_withdrawal(self, amount, currency) -> bool:
+    async def handle_balance_update_from_withdrawal(self, amount: decimal.Decimal, currency: str) -> bool:
         """
         Handle a balance update from a withdrawal update
         :param amount: the amount to withdraw
@@ -201,6 +201,16 @@ class PortfolioManager(util.Initializable):
                     return True
                 return await self._refresh_real_trader_portfolio_until_withdrawal_applied(amount, currency)
         return False
+    
+    async def handle_balance_update_from_deposit(self, amount: decimal.Decimal, currency: str) -> None:
+        """
+        Handle a balance update from a deposit update
+        :param amount: the amount to deposit
+        :param currency: the currency to deposit
+        """
+        if not self.trader.simulate:
+            raise errors.NotSupported("handle_balance_update_from_deposit should not be called in real trading")
+        self.portfolio.update_portfolio_from_deposit(amount, currency)
 
     def handle_balance_updated(self):
         """

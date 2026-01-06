@@ -290,7 +290,7 @@ def get_market_status_contract_size(market_status: dict) :
     return market_status[ccxt_enums.ExchangeConstantsMarketStatusCCXTColumns.CONTRACT_SIZE.value]
 
 
-def get_fees(market_status) -> dict:
+def get_fees(market_status) -> dict[str, float]:
     return {
         enums.ExchangeConstantsMarketPropertyColumns.TAKER.value:
             market_status.get(enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,

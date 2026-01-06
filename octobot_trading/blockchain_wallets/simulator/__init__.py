@@ -13,16 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import typing
 
-import octobot_trading.blockchain_wallets as blockchain_wallets
+from octobot_trading.blockchain_wallets.simulator import blockchain_wallet_simulator
+from octobot_trading.blockchain_wallets.simulator.blockchain_wallet_simulator import (
+    BlockchainWalletSimulator,
+)
 
-if typing.TYPE_CHECKING:
-    import octobot_trading.exchanges
-
-
-def create_blockchain_wallet(
-    parameters: blockchain_wallets.BlockchainWalletParameters,
-    trader: "octobot_trading.exchanges.Trader"
-) -> blockchain_wallets.BlockchainWallet:
-    return blockchain_wallets.create_blockchain_wallet(parameters, trader)
+__all__ = [
+    "BlockchainWalletSimulator",
+]

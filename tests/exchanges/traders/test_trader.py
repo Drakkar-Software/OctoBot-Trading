@@ -25,7 +25,7 @@ from mock import AsyncMock, patch, Mock
 
 from octobot_trading.errors import (
     TooManyOpenPositionError, InvalidLeverageValue, OrderEditError,
-    ExchangeOrderCancelError, OrderNotFoundOnCancelError
+    ExchangeOrderCancelError, OrderNotFoundOnCancelError, DisabledFundsTransferError
 )
 from octobot_trading.personal_data import LinearPosition
 import octobot_commons.constants as commons_constants
@@ -35,7 +35,8 @@ from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
 import octobot_trading.errors as errors
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, \
-    ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode, ExchangeSupportedElements
+    ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode, ExchangeSupportedElements, \
+    ExchangeConstantsTransactionColumns
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
@@ -1199,6 +1200,64 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
+    async def test_withdraw(self):
+        config, exchange_manager, trader_inst = await self.init_default()
+        
+        asset = "BTC"
+        amount = decimal.Decimal("0.1")
+        address = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+        network = "bitcoin"
+        tag = ""
+        params = {}
+        
+        # Mock withdrawal data that exchange.withdraw would return
+        withdrawal_data = {
+            ExchangeConstantsTransactionColumns.CURRENCY.value: asset,
+            ExchangeConstantsTransactionColumns.AMOUNT.value: amount,
+            ExchangeConstantsTransactionColumns.NETWORK.value: "bitcoin",
+            ExchangeConstantsTransactionColumns.TXID.value: "test_tx_id_123",
+            ExchangeConstantsTransactionColumns.ADDRESS_TO.value: address,
+            ExchangeConstantsTransactionColumns.ADDRESS_FROM.value: "exchange_address",
+            ExchangeConstantsTransactionColumns.STATUS.value: "ok",
+            ExchangeConstantsTransactionColumns.FEE.value: {"BTC": decimal.Decimal("0.001")},
+        }
+        
+        portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+        
+        # Get initial BTC holdings before withdrawal
+        initial_btc_available = portfolio_manager.portfolio.get_currency_portfolio(asset).available
+        initial_btc_total = portfolio_manager.portfolio.get_currency_portfolio(asset).total
+        
+        assert constants.ALLOW_FUNDS_TRANSFER is False # default is False
+        with patch.object(trader_inst, '_withdraw_on_exchange', new=AsyncMock(return_value=withdrawal_data)) as _withdraw_on_exchange_mock:
+            with patch('octobot_trading.constants.ALLOW_FUNDS_TRANSFER', True):
+                
+                result = await trader_inst.withdraw(asset, amount, network, address, tag=tag, params=params)
+                
+                # Verify exchange.withdraw was called correctly
+                _withdraw_on_exchange_mock.assert_called_once_with(asset, amount, network, address, tag=tag, params=params)
+                
+                # Verify result matches withdrawal data
+                assert result == withdrawal_data
+                
+                # Get BTC holdings after withdrawal
+                final_btc_available = portfolio_manager.portfolio.get_currency_portfolio(asset).available
+                final_btc_total = portfolio_manager.portfolio.get_currency_portfolio(asset).total
+                
+                # Verify BTC holdings decreased by withdrawal amount
+                # Note: The withdrawal amount is deducted, fees are deducted from the withdrawal amount and should not be subtracted again
+                assert final_btc_available == initial_btc_available - amount
+                assert final_btc_total == initial_btc_total - amount
+                _withdraw_on_exchange_mock.reset_mock()
+        
+            # Test when ALLOW_FUNDS_TRANSFER is False - should raise DisabledFundsTransferError
+            with patch('octobot_trading.constants.ALLOW_FUNDS_TRANSFER', False):
+                with pytest.raises(DisabledFundsTransferError) as exc_info:
+                    await trader_inst.withdraw(asset, amount, network, address, tag=tag, params=params)
+                assert "Withdraw funds is not enabled" in str(exc_info.value)
+                _withdraw_on_exchange_mock.assert_not_called()
+        
+        await self.stop(exchange_manager)
 
 async def test_close_position(future_trader_simulator_with_default_linear):
     _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
