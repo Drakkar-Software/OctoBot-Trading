@@ -56,7 +56,7 @@ class WalletDescriptor(octobot_commons.dataclasses.FlexibleDataclass):
     Descriptor for a wallet to use for this blockchain
     """
     address: str # public address of the wallet
-    private_key: str # private key of the wallet
+    private_key: typing.Optional[str] = None # private key of the wallet
     # extra configuration for the user's wallet, notably used to initialize simulator wallets holdings
     specific_config: typing.Optional[dict[str, typing.Any]] = None
 

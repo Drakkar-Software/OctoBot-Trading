@@ -16,6 +16,7 @@
 import cachetools
 import json
 import typing
+import contextlib
 
 import octobot_commons.constants as commons_constants
 
@@ -63,3 +64,18 @@ def set_exchange_time_difference(client_key: str, time_difference: float):
 
 def _is_authenticated_cache(client_key: str) -> bool:
     return not client_key.endswith(_UNAUTHENTICATED_SUFFIX)
+
+
+@contextlib.contextmanager
+def isolated_empty_cache():
+    # temporarily use an isolated empty cache
+    global _MARKETS_BY_EXCHANGE, _AUTH_MARKETS_BY_EXCHANGE
+    previous_markets_by_exchange = _MARKETS_BY_EXCHANGE
+    previous_auth_markets_by_exchange = _AUTH_MARKETS_BY_EXCHANGE
+    _MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_CACHE_TIME)
+    _AUTH_MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_AUTH_CACHE_TIME)
+    try:
+        yield
+    finally:
+        _MARKETS_BY_EXCHANGE = previous_markets_by_exchange
+        _AUTH_MARKETS_BY_EXCHANGE = previous_auth_markets_by_exchange
