@@ -52,7 +52,7 @@ async def test_insert_transaction_instance(backtesting_trader):
         realised_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
-        first_entry_time=constants.ONE,
+        first_entry_time=1,
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
@@ -65,13 +65,16 @@ async def test_insert_transaction_instance(backtesting_trader):
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
         currency=TRANSACTION_CURRENCY,
         transaction_type=enums.TransactionType.BLOCKCHAIN_DEPOSIT,
-        blockchain_type="Test",
+        blockchain_network="Test",
         blockchain_transaction_id=t_id,
         blockchain_transaction_status=enums.BlockchainTransactionStatus.CONFIRMING,
         source_address="0x123456789",
         destination_address=None,
         quantity=decimal.Decimal(50),
-        transaction_fee=decimal.Decimal(0.1)
+        transaction_fee={
+            enums.FeePropertyColumns.COST.value: decimal.Decimal(0.1),
+            enums.FeePropertyColumns.CURRENCY.value: "BTC"
+        }
     )
     transaction_2.set_transaction_id(t_id)
 
@@ -114,7 +117,7 @@ async def test_get_transaction(backtesting_trader):
         realised_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
-        first_entry_time=constants.ONE,
+        first_entry_time=1,
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
@@ -130,7 +133,7 @@ async def test_get_transaction(backtesting_trader):
         realised_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
-        first_entry_time=constants.ONE,
+        first_entry_time=1,
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
@@ -175,7 +178,7 @@ async def test_update_transaction_id(backtesting_trader):
         realised_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
-        first_entry_time=constants.ONE,
+        first_entry_time=1,
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
@@ -192,7 +195,7 @@ async def test_update_transaction_id(backtesting_trader):
         realised_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
-        first_entry_time=constants.ONE,
+        first_entry_time=1,
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,

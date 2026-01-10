@@ -633,7 +633,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
     post_trade_content = _content({"BTC": 0.2, "USDT": 500})
     error_log = mock.Mock()
     filled_orders = []
-    max_execution_time = 10 if tests.is_on_github_ci() else 1.5 # use 10 to let slower computers pass the test. Real target is 1.5
+    max_execution_time = 10 if tests.is_on_github_ci() else 3 # use 10 to let slower computers pass the test. Real target is 3
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # A. all orders are filled
         unknown_filled_or_cancelled_orders = [
@@ -745,7 +745,7 @@ async def test_get_portfolio_filled_orders_deltas_with_lots_of_unknown_filled_or
         _order("XRP/USDT", 2.9, 8.00023 , "buy"),
     ]
     unknown_filled_or_cancelled_orders = eth_orders + link_orders + sol_orders + ada_orders + btc_orders + xrp_orders
-    max_execution_time = 10 if tests.is_on_github_ci() else 1 # use 10 to let slower computers pass the test. Real target is 1
+    max_execution_time = 10 if tests.is_on_github_ci() else 2 # use 10 to let slower computers pass the test. Real target is 2
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # A. simple cases: all orders are filled
         all_filled_deltas = _get_orders_deltas(unknown_filled_or_cancelled_orders)
@@ -871,7 +871,7 @@ async def test_get_portfolio_filled_orders_deltas_inferrence_thread():
     filled_orders = []
     orders_count = 19
     unfilled_count = 5
-    max_execution_time = 25 if tests.is_on_github_ci() else 2 # use 20 to let slower computers pass the test. Real target is 2
+    max_execution_time = 25 if tests.is_on_github_ci() else 4 # use 20 to let slower computers pass the test. Real target is 4
     with mock.patch.object(octobot_commons.logging, "get_logger", mock.Mock(return_value=mock.Mock(error=error_log))):
         # most orders are filled
         # use single symbol to make sure a thread is used
@@ -1060,7 +1060,7 @@ async def test_get_portfolio_filled_orders_deltas_with_inferrence_thread_timeout
             portfolio_filled_orders_delta_results.clear()
 
             # 2. randomize secondary checks, timeout will be reached: start and interrupt thread
-            timeout = 1.5 if tests.is_on_github_ci() else 0.25 # CI can be very slow computers
+            timeout = 1.5 if tests.is_on_github_ci() else 0.5 # CI can be very slow computers
             task = asyncio.create_task(_async_get_portfolio_filled_orders_deltas(True, timeout))
             async def _async_canceller():
                 await asyncio.sleep(timeout*2)

@@ -13,26 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import typing
 
-import octobot_trading.enums as enums
-import octobot_trading.personal_data.transactions.transaction as transaction
+from octobot_trading.blockchain_wallets.adapter import types
+from octobot_trading.blockchain_wallets.adapter.types import (
+    Balance,
+    Fee,
+    Transaction,
+    DepositAddress,
+)
 
+from octobot_trading.blockchain_wallets.adapter import blockchain_wallet_adapter
+from octobot_trading.blockchain_wallets.adapter.blockchain_wallet_adapter import (
+    BlockchainWalletAdapter,
+)
 
-class TransferTransaction(transaction.Transaction):
-    def __init__(
-        self,
-        exchange_name: str,
-        creation_time: float,
-        currency: str,
-        symbol: str,
-        transaction_id: typing.Optional[str] = None
-    ):
-        super().__init__(
-            exchange_name,
-            creation_time,
-            transaction_type=enums.TransactionType.TRANSFER,
-            currency=currency,
-            symbol=symbol,
-            transaction_id=transaction_id
-        )
+__all__ = [
+    "Balance",
+    "Fee",
+    "Transaction",
+    "DepositAddress",
+    "BlockchainWalletAdapter",
+]

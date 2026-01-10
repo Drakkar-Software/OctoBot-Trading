@@ -858,6 +858,52 @@ class Trader(util.Initializable):
         """
         return trade_factory.create_trade_from_order(order)
 
+    async def withdraw(
+        self, asset: str, amount: decimal.Decimal, network: str, address: str, tag: str = "", params: dict = None
+    ):
+        """
+        Withdraw funds from the exchange, requires constants.ALLOW_FUNDS_TRANSFER to be enabled (disabled by default)
+        :param asset: the asset to withdraw
+        :param amount: the amount to withdraw
+        :param network: the network to withdraw to
+        :param address: the address to withdraw to
+        :param tag: the tag to withdraw with
+        :param params: the withdrawal request params
+        """
+        if not octobot_trading.constants.ALLOW_FUNDS_TRANSFER:
+            # always make sure to check this constant to avoid any potential security issue
+            raise errors.DisabledFundsTransferError(f"Withdraw funds is not enabled")
+        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+            self.logger.info(
+                f"Initiating withdrawal of {amount} {asset} from {self.exchange_manager.exchange_name} "
+                f"exchange account to {address}"
+            )
+            withdrawal_data = await self._withdraw_on_exchange(
+                asset, amount, network, address, tag=tag, params=params
+            )
+            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(
+                withdrawal_data[enums.ExchangeConstantsTransactionColumns.CURRENCY.value],
+                withdrawal_data[enums.ExchangeConstantsTransactionColumns.AMOUNT.value],
+                withdrawal_data[enums.ExchangeConstantsTransactionColumns.NETWORK.value],
+                withdrawal_data[enums.ExchangeConstantsTransactionColumns.TXID.value],
+                withdrawal_data[enums.ExchangeConstantsTransactionColumns.ADDRESS_TO.value],
+                withdrawal_data[enums.ExchangeConstantsTransactionColumns.STATUS.value],
+                source_address=withdrawal_data[enums.ExchangeConstantsTransactionColumns.ADDRESS_FROM.value],
+                transaction_fee=withdrawal_data[enums.ExchangeConstantsTransactionColumns.FEE.value],
+            )
+            return withdrawal_data
+
+    async def _withdraw_on_exchange(
+        self, asset: str, amount: decimal.Decimal, network: str, address: str, tag: str = "", params: dict = None
+    ) -> dict:
+        # override in TraderSimulator
+        return await self.exchange_manager.exchange.withdraw(
+            asset, amount, network, address, tag=tag, params=params
+        )
+
+    async def get_deposit_address(self, asset: str, params: dict = None) -> dict:
+        return await self.exchange_manager.exchange.get_deposit_address(asset, params=params)
+
     """
     Positions
     """
@@ -916,15 +962,6 @@ class Trader(util.Initializable):
                     )
                 created_orders.append(order)
         return created_orders
-
-    async def withdraw(self, amount, currency):
-        """
-        Removes the given amount from the portfolio. Only works in simulated portfolios
-        :param amount: the amount to withdraw
-        :param currency: the currency to withdraw
-        """
-        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(amount, currency)
 
     async def set_leverage(
         self, symbol: str, side: typing.Optional[enums.PositionSide], leverage: decimal.Decimal
