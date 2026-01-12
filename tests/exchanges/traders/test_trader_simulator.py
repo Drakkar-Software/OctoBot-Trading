@@ -87,7 +87,11 @@ async def test_withdraw_on_exchange(trader_simulator):
     assert result[enums.ExchangeConstantsTransactionColumns.AMOUNT.value] == amount
     assert result[enums.ExchangeConstantsTransactionColumns.CURRENCY.value] == asset
     assert result[enums.ExchangeConstantsTransactionColumns.TAG.value] == tag
-    assert result[enums.ExchangeConstantsTransactionColumns.FEE.value] == constants.ZERO
+    assert result[enums.ExchangeConstantsTransactionColumns.FEE.value] == {
+        enums.FeePropertyColumns.RATE.value: constants.ZERO,
+        enums.FeePropertyColumns.COST.value: constants.ZERO,
+        enums.FeePropertyColumns.CURRENCY.value: asset,
+    }
     assert result[enums.ExchangeConstantsTransactionColumns.STATUS.value] == enums.BlockchainTransactionStatus.SUCCESS.value
     assert result[enums.ExchangeConstantsTransactionColumns.TYPE.value] == enums.TransactionType.BLOCKCHAIN_WITHDRAWAL.value
     assert result[enums.ExchangeConstantsTransactionColumns.NETWORK.value] == "bitcoin"

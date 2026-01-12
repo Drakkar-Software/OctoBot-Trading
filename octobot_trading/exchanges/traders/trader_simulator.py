@@ -68,7 +68,11 @@ class TraderSimulator(trader.Trader):
             enums.ExchangeConstantsTransactionColumns.AMOUNT.value: amount,
             enums.ExchangeConstantsTransactionColumns.CURRENCY.value: asset,
             enums.ExchangeConstantsTransactionColumns.ID.value: transaction_id,
-            enums.ExchangeConstantsTransactionColumns.FEE.value: octobot_trading.constants.ZERO,
+            enums.ExchangeConstantsTransactionColumns.FEE.value: {
+                enums.FeePropertyColumns.RATE.value: octobot_trading.constants.ZERO,
+                enums.FeePropertyColumns.COST.value: octobot_trading.constants.ZERO,
+                enums.FeePropertyColumns.CURRENCY.value: asset,
+            },
             enums.ExchangeConstantsTransactionColumns.STATUS.value: enums.BlockchainTransactionStatus.SUCCESS.value,
             enums.ExchangeConstantsTransactionColumns.TAG.value: tag,
             enums.ExchangeConstantsTransactionColumns.TYPE.value: enums.TransactionType.BLOCKCHAIN_WITHDRAWAL.value,
