@@ -47,6 +47,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     RECREATE_CLIENT_ON_DISCONNECT = False   # when True, a new ccxt websocket client will replace the previous
     # one when the exchange is disconnected
     USE_REST_CONNECTOR_ADDITIONAL_CONFIG = False # if True, the additional config from the associated rest connector will be used
+    FIX_CANDLES_TIMEZONE_IF_NEEDED: bool = False  # if True, the candles timestamps will be fixed to the UTC timezone, used when WS is returning candle timestamps in a non UTC timezone
 
     IGNORED_FEED_PAIRS = {
         # When ticker or future index is available : no need to calculate mark price from recent trades
@@ -140,6 +141,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         self._last_close_time: float = 0
         self._last_message_time: float = 0
         self.throttled_ws_updates: float = trading_constants.THROTTLED_WS_UPDATES
+
+        self.candle_delay_seconds: float = 0
 
         self._create_client()
 
@@ -273,6 +276,10 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             ccxt_client_util.set_sandbox_mode(self, self.exchange_manager.is_sandboxed)
 
     def _should_authenticate(self):
+        if self.exchange_manager.exchange.requires_authentication(
+            self.exchange_manager.exchange.tentacle_config, None, None
+        ):
+            return True
         return self._has_authenticated_channel() and super()._should_authenticate()
 
     def _has_authenticated_channel(self) -> bool:
@@ -872,6 +879,12 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         :param kwargs: the feed kwargs
         """
         time_frame = commons_enums.TimeFrames(timeframe)
+        if self.FIX_CANDLES_TIMEZONE_IF_NEEDED:
+            try:
+                candles = self._fix_candles_timestamps(candles, time_frame)
+            except ValueError as err:
+                self.logger.info(f"Skipped websocket candle({symbol} {timeframe}): {err}")
+                return
         kline = self.adapter.adapt_kline([copy.deepcopy(candles[-1])])[0]
         adapted = self.adapter.adapt_ohlcv(candles, time_frame=time_frame)
         last_candle = adapted[-1]
@@ -1075,3 +1088,32 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
                 self._errors_count[time_frame] = {}
             self._errors_count[time_frame][error_key] = 1
         return self._errors_count[time_frame][error_key]
+
+    def _fix_candles_timestamps(self, candles: list, time_frame: commons_enums.TimeFrames) -> list:
+        for candle in candles:
+            candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] = self._get_utc_candle_timestamp(
+                candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value], time_frame
+            )
+        return candles
+
+    def _get_utc_candle_timestamp(self, timestamp: float, time_frame: commons_enums.TimeFrames) -> float:
+        uniformized_timestamp = self.adapter.get_uniformized_timestamp(timestamp)
+        if self.candle_delay_seconds != 0:
+            return uniformized_timestamp + self.candle_delay_seconds
+        current_time = self.exchange_manager.exchange.get_exchange_current_time()
+        if current_time % commons_constants.MINUTE_TO_SECONDS > 20:
+            # avoid new candle side effects: if current time is less than 20 seconds older than the current minute, ignore it
+            expected_timestamp = time_frame_manager.get_last_timeframe_time(time_frame, current_time)
+            delay = expected_timestamp - uniformized_timestamp
+            hours_delay = delay / commons_constants.HOURS_TO_SECONDS
+            if int(hours_delay) != hours_delay:
+                # should not happen: raise if it does
+                raise ValueError(
+                    f"can't compute utc candle timestamp at this time (delay is not a whole number of hours, {delay=})"
+                )
+            self.candle_delay_seconds = delay
+            self.logger.info(
+                f"Applying websocket candle delay of {delay} seconds (= {hours_delay} hours)"
+            )
+            return timestamp + delay
+        raise ValueError("can't compute utc candle timestamp at this time (too close to the next minute)")
