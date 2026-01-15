@@ -90,8 +90,7 @@ class TestLBankRealExchangeTester(RealExchangeTester):
     async def test_get_historical_symbol_prices(self):
         # try with since and limit (used in data collector)
         for limit in (50, None):
-            # add "to" param to keep the same API as kucoin futures
-            symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit, to=self.get_ms_time())
+            symbol_prices = await self.get_symbol_prices(since=self.CANDLE_SINCE, limit=limit)
             if limit:
                 assert len(symbol_prices) == limit
             else:
