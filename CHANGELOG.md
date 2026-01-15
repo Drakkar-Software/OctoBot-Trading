@@ -4,26 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.241] - 2024-12-24
+## [2.4.242] - 2026-01-15
+### Added
+[Exchanges] LBank support
+
+## [2.4.241] - 2025-12-24
 ### Fixed
 [Exchange] fix typo
 
-## [2.4.240] - 2024-12-23
+## [2.4.240] - 2025-12-23
 ### Added
 [Exchanges] support builtin dedicated stop order endpoints
 ### Updated
 [CCXT] update to 4.5.28
 
-## [2.4.239] - 2024-12-19
+## [2.4.239] - 2025-12-19
 ### Added
 [Enum] Option Exchange Type
 [Exchanges] Polymarket tests
 
-## [2.4.238] - 2024-12-17
+## [2.4.238] - 2025-12-17
 ### Fixes
 [CCXT] fix failed market fetch
 
-## [2.4.237] - 2024-12-12
+## [2.4.237] - 2025-12-12
 ### Added
 [Trades] add get_real_or_estimated_trade_fee
 [TradingMode] add is_first_trading_mode_on_this_matrix
@@ -34,24 +38,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 [Orders] fix partially fill channel notification
 
-## [2.4.236] - 2024-12-08
+## [2.4.236] - 2025-12-08
 ### Tools
 [Tools] use gather_waiting_for_all_before_raising
 
-## [2.4.235] - 2024-12-02
+## [2.4.235] - 2025-12-02
 ### Added
 [Exchange] add is_successfully_authenticated
 
-## [2.4.234] - 2024-12-01
+## [2.4.234] - 2025-12-01
 ### Updated
 [CCXT] bump to 4.5.22
 
-## [2.4.233] - 2024-11-27
+## [2.4.233] - 2025-11-27
 ### Updated
 [CCXTConnector] refactor to simplify factorization in subclasses
 [CCXTExchange] improve exchange load error
 
-## [2.4.232] - 2024-11-26
+## [2.4.232] - 2025-11-26
 ### Added 
 [Requirements] [full] requirements installation
 [Exchanges] add preconfigured_exchange
