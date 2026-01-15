@@ -141,6 +141,7 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "binanceus",
     "bitmart",
     "bitmex",
+    "lbank",
 ]
 
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
@@ -164,6 +165,7 @@ TESTED_EXCHANGES = [
     "bingx",
     "coinex",
     "bitmart",
+    "lbank",
 ])
 DEFAULT_FUTURE_EXCHANGES = sorted(["bybit"])
 SIMULATOR_TESTED_EXCHANGES = sorted(["bitfinex", "bithumb", "bitstamp", "bitmex",
