@@ -1119,5 +1119,5 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
             self.logger.info(
                 f"Applying websocket candle delay of {delay} seconds (= {hours_delay} hours)"
             )
-            return timestamp + delay
+            return uniformized_timestamp + self.candle_delay_seconds
         raise ValueError("can't compute utc candle timestamp at this time (too close to the next minute)")
