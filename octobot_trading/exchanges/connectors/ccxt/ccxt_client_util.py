@@ -49,7 +49,7 @@ def create_client(
     exchange_class, exchange_manager, logger, options, headers,
     additional_config, should_authenticate, unauthenticated_exchange_fallback=None,
     keys_adapter=None, allow_request_counter: bool = True
-):
+) -> tuple[async_ccxt.Exchange, bool]:
     """
     Exchange instance creation
     :return: the created ccxt (pro, async or sync) client
