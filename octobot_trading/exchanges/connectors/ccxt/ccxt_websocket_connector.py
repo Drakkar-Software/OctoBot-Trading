@@ -122,7 +122,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         if self.USE_REST_CONNECTOR_ADDITIONAL_CONFIG:
             self.additional_config = {
                 **(self.additional_config or {}),
-                **self.exchange_manager.exchange.get_additional_connector_config()
+                **self.exchange_manager.exchange.get_extended_additional_connector_config()
             }
         self.headers: dict[str, str] = {}
         self.options: dict[str, typing.Any] = {

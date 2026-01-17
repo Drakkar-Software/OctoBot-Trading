@@ -299,6 +299,20 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         if self.client is not None:
             ccxt_client_util.add_options(self.client, options_dict)
 
+    @classmethod
+    def get_extended_additional_connector_config(
+        cls, additional_config: dict, adjust_for_time_difference: bool
+    ):
+        extended_ccxt_options = {}
+        if adjust_for_time_difference:
+            extended_ccxt_options[ccxt_constants.CCXT_ADJUST_FOR_TIME_DIFFERENCE] = True
+        if extended_ccxt_options:
+            if additional_config and ccxt_constants.CCXT_OPTIONS in additional_config:
+                additional_config[ccxt_constants.CCXT_OPTIONS].update(extended_ccxt_options)
+            else:
+                additional_config[ccxt_constants.CCXT_OPTIONS] = extended_ccxt_options
+        return additional_config
+
     @ccxt_client_util.converted_ccxt_common_errors
     async def _ensure_auth(self):
         try:
@@ -336,7 +350,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         return ccxt_client_util.create_client(
             self.exchange_type, self.exchange_manager, self.logger,
             self.options, self.headers, self.additional_config,
-            False if force_unauth else self._should_authenticate(), self.unauthenticated_exchange_fallback,
+            False if force_unauth else self._should_authenticate(),
+            self.unauthenticated_exchange_fallback,
             keys_adapter=keys_adapter
         )
 

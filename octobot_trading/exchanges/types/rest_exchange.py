@@ -168,6 +168,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
     # Therefore overriding the env var value for this exchange
     FETCH_MIN_EXCHANGE_MARKETS = constants.FETCH_MIN_EXCHANGE_MARKETS
 
+    ADJUST_FOR_TIME_DIFFERENCE = False  # set True when the client needs to adjust its requests for time difference with the server
+
     DEFAULT_CONNECTOR_CLASS = ccxt_connector.CCXTConnector
 
     def __init__(
@@ -181,11 +183,16 @@ class RestExchange(abstract_exchange.AbstractExchange):
         self.pair_contracts: dict[str, contracts.MarginContract] = {}
 
     def _create_connector(self, config, exchange_manager, connector_class):
-        return (connector_class or self.DEFAULT_CONNECTOR_CLASS)(
+        to_create_connector_class = connector_class or self.DEFAULT_CONNECTOR_CLASS
+        extended_additional_config = to_create_connector_class.get_extended_additional_connector_config(
+            self.get_additional_connector_config() or {},
+            self.ADJUST_FOR_TIME_DIFFERENCE,
+        )
+        return to_create_connector_class(
             config,
             exchange_manager,
             adapter_class=self.get_adapter_class(),
-            additional_config=self.get_additional_connector_config(),
+            additional_config=extended_additional_config,
             rest_name=self.get_rest_name(self.exchange_manager),
             force_auth=self.requires_authentication(self.tentacle_config, None, None),
         )
