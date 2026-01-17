@@ -15,6 +15,7 @@
 #  License along with this library.
 import cachetools
 import json
+import typing
 
 import octobot_commons.constants as commons_constants
 
@@ -25,6 +26,8 @@ import octobot_commons.constants as commons_constants
 # that cache ends up refreshed approximately at the same time of the day
 _CACHE_TIME = commons_constants.HOURS_TO_SECONDS * 30 + commons_constants.MINUTE_TO_SECONDS * 18
 _MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_CACHE_TIME)
+# Time difference between system clock and exchange server clock, fetched when needed when loading market statuses
+_TIME_DIFFERENCE_BY_EXCHANGE: dict[str, float] = {}
 
 # use short cache time for authenticated markets to avoid caching them for too long
 _AUTH_CACHE_TIME = 15 * commons_constants.MINUTE_TO_SECONDS
@@ -49,6 +52,13 @@ def _get_cached_markets(client_key: str) -> cachetools.TTLCache:
     if _is_authenticated_cache(client_key):
         return _AUTH_MARKETS_BY_EXCHANGE
     return _MARKETS_BY_EXCHANGE
+
+
+def get_exchange_time_difference(client_key: str) -> typing.Optional[float]:
+    return _TIME_DIFFERENCE_BY_EXCHANGE.get(client_key, None)
+
+def set_exchange_time_difference(client_key: str, time_difference: float):
+    _TIME_DIFFERENCE_BY_EXCHANGE[client_key] = time_difference
 
 
 def _is_authenticated_cache(client_key: str) -> bool:

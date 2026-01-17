@@ -38,6 +38,7 @@ import octobot_commons.logging as commons_logging
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+import octobot_trading.exchanges.connectors.ccxt.constants as ccxt_constants
 import octobot_trading.exchanges.connectors.ccxt.enums as ccxt_enums
 import octobot_trading.exchanges.connectors.ccxt.ccxt_clients_cache as ccxt_clients_cache
 import octobot_trading.exchanges.config.proxy_config as proxy_config_import
@@ -196,18 +197,24 @@ def filtered_fetched_markets(client, market_filter: typing.Callable[[dict], bool
 
 
 def load_markets_from_cache(client, authenticated_cache: bool, market_filter: typing.Union[None, typing.Callable[[dict], bool]] = None):
+    client_key = ccxt_clients_cache.get_client_key(client, authenticated_cache)
     client.set_markets(
         market
-        for market in ccxt_clients_cache.get_exchange_parsed_markets(ccxt_clients_cache.get_client_key(client, authenticated_cache))
+        for market in ccxt_clients_cache.get_exchange_parsed_markets(client_key)
         if market_filter is None or market_filter(market)
     )
+    if time_difference := ccxt_clients_cache.get_exchange_time_difference(client_key):
+        client.options[ccxt_constants.CCXT_TIME_DIFFERENCE] = time_difference
 
 
 def set_markets_cache(client, authenticated_cache: bool):
     if client.markets:
+        client_key = ccxt_clients_cache.get_client_key(client, authenticated_cache)
         ccxt_clients_cache.set_exchange_parsed_markets(
-            ccxt_clients_cache.get_client_key(client, authenticated_cache), copy.deepcopy(list(client.markets.values()))
+            client_key, copy.deepcopy(list(client.markets.values()))
         )
+        if time_difference := client.options.get(ccxt_constants.CCXT_TIME_DIFFERENCE):
+            ccxt_clients_cache.set_exchange_time_difference(client_key, time_difference)
 
 
 def get_ccxt_client_login_options(exchange_manager):
