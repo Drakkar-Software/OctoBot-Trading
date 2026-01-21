@@ -73,6 +73,7 @@ from octobot_trading.modes.modes_util import (
     get_instantly_filled_limit_order_adapted_price_and_quantity,
     notify_portfolio_optimization_complete,
     get_trading_modes_of_this_type_on_this_matrix,
+    enabled_trader_only,
 )
 
 __all__ = [
@@ -104,4 +105,5 @@ __all__ = [
     "get_instantly_filled_limit_order_adapted_price_and_quantity",
     "notify_portfolio_optimization_complete",
     "get_trading_modes_of_this_type_on_this_matrix",
+    "enabled_trader_only",
 ]

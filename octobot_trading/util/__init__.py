@@ -34,6 +34,7 @@ from octobot_trading.util.simulator_updater_utils import (
     get_time_channel,
 )
 from octobot_trading.util.config_util import (
+    is_trading_paused,
     is_trader_enabled,
     is_trader_simulator_enabled,
     is_trade_history_loading_enabled,
@@ -56,6 +57,7 @@ __all__ = [
     "resume_time_consumer",
     "get_time_channel",
     "Initializable",
+    "is_trading_paused",
     "is_trader_enabled",
     "is_trader_simulator_enabled",
     "is_trade_history_loading_enabled",

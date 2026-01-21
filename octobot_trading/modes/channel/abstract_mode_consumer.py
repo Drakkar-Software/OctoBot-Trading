@@ -96,6 +96,9 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
             self.previous_call_error_per_symbol[symbol] = err
             self.logger.error(f"Invalid cancel policy error on {self.exchange_manager.exchange_name}: {err}. "
                               f"Please make sure that the provided cancel policy is valid.")
+        except errors.TraderDisabledError as err:
+            self.previous_call_error_per_symbol[symbol] = err
+            self.logger.error(f"Impossible to execution action on a disabled trader: {err}.")
 
     def get_minimal_funds_error(self, symbol, final_note):
         if symbol is None:
@@ -145,7 +148,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                     except (
                         errors.MissingMinimalExchangeTradeVolume, errors.OrderCreationError,
                         errors.InvalidPositionSide, errors.UnsupportedContractConfigurationError, 
-                        errors.InvalidCancelPolicyError
+                        errors.InvalidCancelPolicyError, errors.TraderDisabledError
                     ):
                         raise
                     except errors.MissingFunds:

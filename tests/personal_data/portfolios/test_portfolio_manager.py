@@ -50,13 +50,15 @@ async def test_handle_balance_update(backtesting_trader):
         portfolio_manager.handle_balance_update(None)
         update_portfolio_from_balance_mock.assert_not_called()
 
-        trader.is_enabled = False
-        portfolio_manager.handle_balance_update({})
-        update_portfolio_from_balance_mock.assert_not_called()
+        with mock.patch.object(trader, 'can_trade_if_not_paused', return_value=False) as can_trade_if_not_paused_mock:
+            portfolio_manager.handle_balance_update({})
+            update_portfolio_from_balance_mock.assert_not_called()
+            can_trade_if_not_paused_mock.assert_called_once()
 
-        trader.is_enabled = True
-        portfolio_manager.handle_balance_update({})
-        update_portfolio_from_balance_mock.assert_called_once()
+        with mock.patch.object(trader, 'can_trade_if_not_paused', return_value=True) as can_trade_if_not_paused_mock:
+            portfolio_manager.handle_balance_update({})
+            update_portfolio_from_balance_mock.assert_called_once()
+            can_trade_if_not_paused_mock.assert_called_once()
 
 
 async def test_handle_balance_update_from_order(backtesting_trader):
@@ -110,10 +112,11 @@ async def test_handle_balance_update_from_order(backtesting_trader):
         await portfolio_manager.handle_balance_update_from_order(order, False, False)
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
 
-    trader.is_enabled = False
-    trader.simulate = False
-    assert not await portfolio_manager.handle_balance_update_from_order(order, True, False)
-    assert not await portfolio_manager.handle_balance_update_from_order(order, False, False)
+    with mock.patch.object(trader, 'can_trade_if_not_paused', return_value=False) as can_trade_if_not_paused_mock:
+        trader.simulate = False
+        assert not await portfolio_manager.handle_balance_update_from_order(order, True, False)
+        assert not await portfolio_manager.handle_balance_update_from_order(order, False, False)
+        assert can_trade_if_not_paused_mock.call_count == 2
 
 
 async def test_refresh_real_trader_portfolio_until_order_update_applied(backtesting_trader):

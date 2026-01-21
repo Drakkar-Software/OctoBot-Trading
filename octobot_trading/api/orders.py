@@ -34,7 +34,9 @@ async def create_order(exchange_manager,
                        quantity: float,
                        price: float,
                        wait_for_creation=True,
-                       creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> personal_data.Order:
+                       creation_timeout=constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
+                       force_if_disabled=True
+    ) -> personal_data.Order:
     return await exchange_manager.trader.create_order(
         exchange_manager.trader.create_order_instance(order_type=order_type,
                                                       symbol=symbol,
@@ -42,7 +44,8 @@ async def create_order(exchange_manager,
                                                       quantity=quantity,
                                                       price=price),
         wait_for_creation=wait_for_creation,
-        creation_timeout=creation_timeout
+        creation_timeout=creation_timeout,
+        force_if_disabled=force_if_disabled
     )
 
 
@@ -58,23 +61,27 @@ def get_pending_creation_orders(exchange_manager) -> list:
     return exchange_manager.exchange_personal_data.orders_manager.pending_creation_orders
 
 
-async def cancel_all_open_orders(exchange_manager, emit_trading_signals=True) -> tuple[bool, list]:
-    return await exchange_manager.trader.cancel_all_open_orders(emit_trading_signals=emit_trading_signals)
+async def cancel_all_open_orders(
+    exchange_manager, emit_trading_signals=True, force_if_disabled=True
+) -> tuple[bool, list]:
+    return await exchange_manager.trader.cancel_all_open_orders(
+        emit_trading_signals=emit_trading_signals, force_if_disabled=force_if_disabled
+    )
 
 
 async def cancel_all_open_orders_with_currency(
-    exchange_manager, currency, emit_trading_signals=True, dependencies=None
+    exchange_manager, currency, emit_trading_signals=True, dependencies=None, force_if_disabled=True
 ) -> tuple[bool, signals.SignalDependencies]:
     return await exchange_manager.trader.cancel_all_open_orders_with_currency(
-        currency, emit_trading_signals=emit_trading_signals, dependencies=dependencies
+        currency, emit_trading_signals=emit_trading_signals, dependencies=dependencies, force_if_disabled=force_if_disabled
     )
 
 
 async def cancel_order_with_id(
-    exchange_manager, order_id, emit_trading_signals=True, wait_for_cancelling=True, dependencies=None
+    exchange_manager, order_id, emit_trading_signals=True, wait_for_cancelling=True, dependencies=None, force_if_disabled=True
 ) -> tuple[bool, typing.Optional[signals.SignalDependencies]]:
     return await exchange_manager.trader.cancel_order_with_id(
-        order_id, emit_trading_signals=emit_trading_signals, wait_for_cancelling=wait_for_cancelling, dependencies=dependencies
+        order_id, emit_trading_signals=emit_trading_signals, wait_for_cancelling=wait_for_cancelling, dependencies=dependencies, force_if_disabled=force_if_disabled
     )
 
 

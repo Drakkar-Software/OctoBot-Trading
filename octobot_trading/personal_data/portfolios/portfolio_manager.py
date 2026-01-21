@@ -80,7 +80,7 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         changed = False
-        if self.trader.is_enabled and balance is not None:
+        if self.trader.can_trade_if_not_paused() and balance is not None:
             changed = self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
         if not self._is_initialized_event_set:
             self._set_initialized_event()
@@ -97,7 +97,7 @@ class PortfolioManager(util.Initializable):
         portfolio changes using order data (as in trading simulator)
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled:
+        if self.trader.can_trade_if_not_paused():
             if not self.enable_portfolio_exchange_sync:
                 return self._refresh_simulated_trader_portfolio_from_order(order)
 
@@ -152,7 +152,7 @@ class PortfolioManager(util.Initializable):
         portfolio changes using position data (as in trading simulator)
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled:
+        if self.trader.can_trade_if_not_paused():
             async with self.portfolio_history_update():
                 if self.trader.simulate or not require_exchange_update:
                     self.portfolio.update_portfolio_from_funding(position, funding_rate)
@@ -168,7 +168,7 @@ class PortfolioManager(util.Initializable):
         :param currency: the currency to withdraw
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled:
+        if self.trader.can_trade_if_not_paused():
             async with self.portfolio_history_update():
                 if self.trader.simulate:
                     self.portfolio.update_portfolio_from_withdrawal(amount, currency)
@@ -344,7 +344,7 @@ class PortfolioManager(util.Initializable):
         """
         Load simulated portfolio from config if required
         """
-        if self.trader.is_enabled:
+        if self.trader.can_trade_if_not_paused():
             if self.trader.simulate:
                 if reset_from_config \
                         or self.historical_portfolio_value_manager is None \

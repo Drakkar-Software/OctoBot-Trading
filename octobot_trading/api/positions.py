@@ -22,8 +22,11 @@ def get_positions(exchange_manager) -> list:
     return exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions()
 
 
-async def close_position(exchange_manager, symbol: str, side: enums.PositionSide,
-                         limit_price: decimal.Decimal = None, emit_trading_signals=True) -> int:
+async def close_position(
+    exchange_manager, symbol: str, side: enums.PositionSide,
+    limit_price: decimal.Decimal = None, emit_trading_signals=True, 
+    force_if_disabled=False
+) -> int:
     for position in exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(symbol):
         if position.side is side:
             if position.is_idle():
@@ -31,7 +34,8 @@ async def close_position(exchange_manager, symbol: str, side: enums.PositionSide
             return 1 if await exchange_manager.trader.close_position(
                 position,
                 limit_price=limit_price,
-                emit_trading_signals=emit_trading_signals
+                emit_trading_signals=emit_trading_signals,
+                force_if_disabled=force_if_disabled
             ) else 0
     return 0
 

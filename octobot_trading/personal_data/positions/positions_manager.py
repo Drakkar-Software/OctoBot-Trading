@@ -148,7 +148,7 @@ class PositionsManager(util.Initializable):
         position changes using order data (as in trading simulator)
         :return: True if the position was updated
         """
-        if self.trader.is_enabled and self._enable_position_update_from_order:
+        if self.trader.can_trade_if_not_paused() and self._enable_position_update_from_order:
             # portfolio might be updated when refreshing the position
             async with self.trader.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_history_update():
                 if self.trader.simulate or not require_exchange_update:

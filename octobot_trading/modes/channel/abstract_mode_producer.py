@@ -42,6 +42,7 @@ import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.modes.mode_activity as mode_activity
 import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
+import octobot_trading.modes.modes_util as modes_util
 import octobot_trading.storage.util as storage_util
 
 
@@ -324,6 +325,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                                 symbol=symbol, time_frame=time_frame,
                                 trigger_source=common_enums.TriggerSource.EVALUATION_MATRIX.value)
 
+    @modes_util.enabled_trader_only()
     async def finalize(self, exchange_name: str,
                        matrix_id: str,
                        cryptocurrency: str = None,
@@ -334,7 +336,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Finalize evaluation
         """
-        if exchange_name != self.exchange_name or not self.exchange_manager.trader.is_enabled:
+        if exchange_name != self.exchange_name:
             # Do nothing if not its exchange
             return
         await self.trigger(matrix_id, cryptocurrency, symbol, time_frame, trigger_source)
@@ -469,6 +471,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 failed_to_cancel = True
         return (cancelled and not failed_to_cancel), cancelled_dependencies or None
 
+    @modes_util.enabled_trader_only(disabled_return_value=(False, None))
     async def cancel_symbol_open_orders(
         self, symbol, side=None, tag=None, active=None, exchange_order_ids=None,
         dependencies: typing.Optional[commons_signals.SignalDependencies] = None
@@ -476,14 +479,13 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Cancel all symbol open orders
         """
-        if self.exchange_manager.trader.is_enabled:
-            return await self._cancel_orders(
-                self._get_to_cancel_orders(
-                    symbol=symbol, side=side, tag=tag, active=active, exchange_order_ids=exchange_order_ids
-                ), dependencies
-            )
-        return False, None
+        return await self._cancel_orders(
+            self._get_to_cancel_orders(
+                symbol=symbol, side=side, tag=tag, active=active, exchange_order_ids=exchange_order_ids
+            ), dependencies
+        )
 
+    @modes_util.enabled_trader_only(disabled_return_value=(False, None))
     async def apply_cancel_policies(
         self, symbol=None, side=None, tag=None, exchange_order_ids=None, active=None,
         dependencies: typing.Optional[commons_signals.SignalDependencies] = None
@@ -491,14 +493,13 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Cancel all orders that should be according to their cancel policies
         """
-        if self.exchange_manager.trader.is_enabled:
-            if to_cancel_orders := self.exchange_manager.exchange_personal_data.orders_manager.get_orders_to_cancel_from_policies(
-                self._get_to_cancel_orders(
-                    symbol=symbol, side=side, tag=tag, active=active, exchange_order_ids=exchange_order_ids
-                )
-            ):
-                self.logger.info(f"Cancelling {len(to_cancel_orders)} orders from cancel policies")
-                return await self._cancel_orders(to_cancel_orders, dependencies)
+        if to_cancel_orders := self.exchange_manager.exchange_personal_data.orders_manager.get_orders_to_cancel_from_policies(
+            self._get_to_cancel_orders(
+                symbol=symbol, side=side, tag=tag, active=active, exchange_order_ids=exchange_order_ids
+            )
+        ):
+            self.logger.info(f"Cancelling {len(to_cancel_orders)} orders from cancel policies")
+            return await self._cancel_orders(to_cancel_orders, dependencies)
         return False, None
 
     def all_databases(self):

@@ -57,7 +57,7 @@ class ExchangePersonalData(util.Initializable):
     async def initialize_impl(self):
         self.trader = self.exchange_manager.trader
         self.exchange = self.exchange_manager.exchange
-        if self.trader.is_enabled:
+        if self.trader.can_trade_if_not_paused():
             try:
                 self.portfolio_manager = portfolio_manager.PortfolioManager(
                     self.config, self.trader, self.exchange_manager

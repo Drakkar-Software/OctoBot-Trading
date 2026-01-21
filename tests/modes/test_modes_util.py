@@ -22,6 +22,7 @@ import octobot_commons.asyncio_tools as asyncio_tools
 
 import octobot_trading.constants as constants
 import octobot_trading.enums as trading_enums
+import octobot_trading.errors as errors
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.modes.modes_util as modes_util
 import octobot_trading.signals as signals
@@ -372,6 +373,67 @@ async def test_convert_asset_to_target_asset(backtesting_trader):
         trading_mode.create_order.reset_mock()
 
 
+async def test_enabled_trader_only(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    
+    # Create a mock trading mode class with decorated method
+    class TestTradingMode:
+        def __init__(self, exchange_manager):
+            self.exchange_manager = exchange_manager
+            self.logger = mock.Mock()
+        
+        @modes_util.enabled_trader_only()
+        async def default_decorated_method(self, arg1, arg2=None):
+            return f"executed with {arg1} and {arg2}"
+        
+        @modes_util.enabled_trader_only(raise_when_disabled=True)
+        async def raise_when_disabled_method(self, arg1):
+            return f"executed with {arg1}"
+        
+        @modes_util.enabled_trader_only(disabled_return_value="custom_return")
+        async def custom_return_method(self):
+            return "executed"
+    
+    trading_mode = TestTradingMode(exchange_manager)
+    
+    # Test 1: Trader enabled - function should execute normally
+    trader.set_is_enabled(True)
+    result = await trading_mode.default_decorated_method("test", arg2="value")
+    assert result == "executed with test and value"
+    trading_mode.logger.warning.assert_not_called()
+    
+    # Test 2: Trader disabled with default decorator - should log warning and return None
+    trader.set_is_enabled(False)
+    result = await trading_mode.default_decorated_method("test", arg2="value")
+    assert result is None
+    trading_mode.logger.warning.assert_called_once()
+    warning_message = trading_mode.logger.warning.call_args[0][0]
+    assert "Trading on" in warning_message
+    assert "has been paused" in warning_message
+    assert "skipping TestTradingMode execution" in warning_message
+    assert exchange_manager.exchange_name in warning_message
+    trading_mode.logger.warning.reset_mock()
+    
+    # Test 3: Trader disabled with raise_when_disabled=True - should raise TraderDisabledError
+    trader.set_is_enabled(False)
+    with pytest.raises(errors.TraderDisabledError, match="has been paused"):
+        await trading_mode.raise_when_disabled_method("test")
+    trading_mode.logger.warning.assert_not_called()
+    
+    # Test 4: Trader disabled with custom disabled_return_value - should return custom value
+    trader.set_is_enabled(False)
+    result = await trading_mode.custom_return_method()
+    assert result == "custom_return"
+    trading_mode.logger.warning.assert_called_once()
+    trading_mode.logger.warning.reset_mock()
+    
+    # Test 5: Trader enabled with custom_return_method - should execute normally
+    trader.set_is_enabled(True)
+    result = await trading_mode.custom_return_method()
+    assert result == "executed"
+    trading_mode.logger.warning.assert_not_called()
+
+
 def _get_trading_mode(exchange_manager):
     async def _create_order(order, dependencies=None):
         return await signals.create_order(
@@ -382,3 +444,5 @@ def _get_trading_mode(exchange_manager):
         exchange_manager=exchange_manager,
         create_order=mock.AsyncMock(side_effect=_create_order)
     )
+
+
