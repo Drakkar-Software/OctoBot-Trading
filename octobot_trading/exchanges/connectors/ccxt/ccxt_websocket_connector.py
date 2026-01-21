@@ -105,7 +105,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     def __init__(self, config, exchange_manager, adapter_class=None, additional_config=None, websocket_name=None):
         super().__init__(config, exchange_manager)
         self.filtered_pairs: list[str] = []
-        self.watched_pairs: list[str] = []
+        self.watched_pairs: set[str] = set()
         self.min_timeframe: typing.Optional[commons_enums.TimeFrames] = None
         self._previous_open_candles: dict[str, dict[str, dict]] = {}
         self._subsequent_unordered_candles_count: dict[str, dict[str, tuple[int, float]]] = {}   # dict values: tuple(candle_count, candle_time)
@@ -725,7 +725,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         :param watching_only: when True add pair to watched_pairs else to filtered_pairs
         """
         if watching_only:
-            self.watched_pairs.append(pair)
+            self.watched_pairs.add(pair)
         else:
             self.filtered_pairs.append(pair)
 
@@ -735,15 +735,17 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         """
         for pair in self.pairs:
             self._add_pair(pair, watching_only=False)
+        for pair in self.watch_only_pairs:
+            self._add_pair(pair, watching_only=True)
         self._filter_exchange_symbols()
 
     def _filter_exchange_symbols(self):
         pre_filter_watched_pairs = copy.copy(self.watched_pairs)
-        self.watched_pairs = [
+        self.watched_pairs = set(
             pair
             for pair in pre_filter_watched_pairs
             if self._is_supported_pair(pair)
-        ]
+        )
         pre_filter_filtered_pairs = copy.copy(self.filtered_pairs)
         self.filtered_pairs = [
             pair
@@ -752,8 +754,8 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         ]
         unsupported_pairs = []
         for pairs, pre_filter_pairs in (
-                (self.watched_pairs, pre_filter_watched_pairs),
-                (self.filtered_pairs, pre_filter_filtered_pairs)
+            (self.watched_pairs, pre_filter_watched_pairs),
+            (self.filtered_pairs, pre_filter_filtered_pairs)
         ):
             if len(pre_filter_filtered_pairs) > len(pairs):
                 unsupported_pairs += [

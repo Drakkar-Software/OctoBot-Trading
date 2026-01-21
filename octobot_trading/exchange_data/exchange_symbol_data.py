@@ -58,13 +58,15 @@ class ExchangeSymbolData:
         self.exchange_manager = None # type: ignore
 
     # candle functions
-    async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False, partial=False,
-                                    upsert=False):
+    async def handle_candles_update(
+        self, time_frame, new_symbol_candles_data, replace_all=False, partial=False, upsert=False
+    ):
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
-            self.symbol_candles[time_frame] = await self._create_candles_manager(time_frame, new_symbol_candles_data,
-                                                                                 replace_all)
+            self.symbol_candles[time_frame] = await self._create_candles_manager(
+                time_frame, new_symbol_candles_data, replace_all
+            )
             self._set_initialized_event(
                 commons_enums.InitializationEventExchangeTopics.CANDLES.value,
                 time_frame.value

@@ -17,12 +17,18 @@
 
 import abc
 import asyncio
+import typing
 
 import octobot_commons.logging as logging
+import octobot_commons.enums as commons_enums
 import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchange_data as exchange_data
+
+if typing.TYPE_CHECKING:
+    import octobot_trading.exchanges.config.channel_specs as channel_specs_import
+    import octobot_tentacles_manager.configuration as tm_configuration
 
 
 class AbstractWebsocketExchange:
@@ -46,30 +52,37 @@ class AbstractWebsocketExchange:
     MAX_HANDLED_FEEDS = octobot_trading.constants.NO_DATA_LIMIT
 
     def __init__(self, config, exchange_manager):
-        self.config = config
+        self.config: dict[str, typing.Any] = config
 
         self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
-        self.exchange_id = self.exchange_manager.id
+        self.exchange_id: str = self.exchange_manager.id
 
-        self.bot_mainloop = asyncio.get_event_loop()
+        self.bot_mainloop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
-        self.currencies = []
-        self.pairs = []
-        self.time_frames = []
-        self.channels = []
+        self.currencies: list[str] = []
+        self.pairs: list[str] = []
+        self.watch_only_pairs: set[str] = set()
+        self.time_frames: list[commons_enums.TimeFrames] = []
+        self.channels: list[octobot_trading.enums.WebsocketFeeds] = []
 
-        self.books = {}
+        self.books: dict[str, exchange_data.OrderBookManager] = {}
 
         self.client = None
-        self.name = self.get_name()
-        self.logger = logging.get_logger(self._get_logger_name())
+        self.name: str = self.get_name()
+        self.logger: logging.BotLogger = logging.get_logger(self._get_logger_name())
 
     def _get_logger_name(self):
         return f"WebSocket - {self.name}"
 
-    def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
+    def initialize(
+        self, currencies=None, pairs=None, time_frames=None, channels=None, watch_only_pairs=None
+    ):
         self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
+        self.watch_only_pairs = (
+            set(self.get_exchange_pair(pair) for pair in watch_only_pairs)
+            if watch_only_pairs else set()
+        )
         # inner list required for cythonization
         self.channels = list(set([self.feed_to_exchange(channel) for channel in channels])) if channels else []
         self.time_frames = [
@@ -112,7 +125,13 @@ class AbstractWebsocketExchange:
         raise NotImplementedError("has_name not implemented")
 
     @abc.abstractmethod
-    async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
+    async def init_websocket(
+        self,
+        time_frames: list[commons_enums.TimeFrames],
+        trader_pairs: list[str],
+        forced_updater_channels: set["channel_specs_import.ChannelSpecs"],
+        tentacles_setup_config: "tm_configuration.TentaclesSetupConfiguration",
+    ):
         raise NotImplementedError("init_websocket not implemented")
 
     @abc.abstractmethod

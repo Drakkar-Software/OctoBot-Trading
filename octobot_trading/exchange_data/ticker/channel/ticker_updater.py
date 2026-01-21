@@ -131,7 +131,12 @@ class TickerUpdater(ticker_channel.TickerProducer):
             return False
 
     def _get_pairs_to_update(self):
-        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self._added_pairs
+        pairs = self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self._added_pairs
+        return pairs + [
+            channel_spec.symbol 
+            for channel_spec in self.forced_specs
+            if channel_spec.symbol not in pairs
+        ]
 
 
     def _should_loop(self):

@@ -73,6 +73,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     for pair in self._get_traded_pairs()
                     if self._should_maintain_candle(time_frame, pair)
                 ]
+                self.logger.info(f"Starting {len(self.tasks)} OHLCV update tasks for {self.channel.exchange_manager.exchange_name}")
 
     def _get_traded_pairs(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + [

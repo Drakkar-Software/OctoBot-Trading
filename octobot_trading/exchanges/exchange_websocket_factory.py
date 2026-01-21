@@ -82,9 +82,12 @@ async def _create_websocket(exchange_manager, websocket_class_name, ws_exchange_
 
 
 async def _init_websocket(exchange_manager):
-    await exchange_manager.exchange_web_socket.init_websocket(exchange_manager.exchange_config.available_time_frames,
-                                                              exchange_manager.exchange_config.traded_symbol_pairs,
-                                                              exchange_manager.tentacles_setup_config)
+    await exchange_manager.exchange_web_socket.init_websocket(
+        exchange_manager.exchange_config.available_time_frames,
+        exchange_manager.exchange_config.traded_symbol_pairs,
+        exchange_manager.exchange_config.forced_updater_channels,
+        exchange_manager.tentacles_setup_config
+    )
 
     await exchange_manager.exchange_web_socket.start_sockets()
 

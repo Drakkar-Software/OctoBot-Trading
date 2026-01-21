@@ -13,8 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import typing
+import asyncio
 import sys
 import concurrent.futures as futures
 
@@ -25,6 +25,10 @@ import octobot_commons.thread_util as thread_util
 import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
+
+if typing.TYPE_CHECKING:
+    import octobot_trading.exchanges.config.channel_specs as channel_specs_import
+    import octobot_tentacles_manager.configuration as tm_configuration
 
 
 class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
@@ -40,6 +44,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.websocket_connector = None # type: ignore
 
         self.pairs: list[str] = []
+        self.watch_only_pairs: set[str] = set()
         self.time_frames: list[commons_enums.TimeFrames] = []
 
         self.channels: list[octobot_trading.enums.WebsocketFeeds] = []
@@ -58,11 +63,18 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def create_feeds(self):
         raise NotImplementedError("create_feeds is not implemented")
 
-    async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
+    async def init_websocket(
+        self,
+        time_frames: list[commons_enums.TimeFrames],
+        trader_pairs: list[str],
+        forced_updater_channels: set["channel_specs_import.ChannelSpecs"],
+        tentacles_setup_config: "tm_configuration.TentaclesSetupConfiguration",
+    ):
         self.websocket_connector = self.get_exchange_connector_class(self.exchange_manager)
         self.websocket_connector.update_exchange_feeds(self.exchange_manager)
         self.pairs = trader_pairs
         self.time_frames = time_frames
+        self.extend_pairs_from_forced_updater_channels(forced_updater_channels)
 
         if self.pairs:
             if self._has_too_many_feeds_to_handle():
@@ -107,6 +119,20 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             self.logger.warning(
                 f"{self.exchange_manager.exchange_name.title()}'s websocket has no symbol to feed"
             )
+
+    def extend_pairs_from_forced_updater_channels(self, forced_updater_channels: set["channel_specs_import.ChannelSpecs"]):
+        for channel_spec in forced_updater_channels:
+            if channel_spec.channel == octobot_trading.constants.TICKER_CHANNEL:
+                if channel_spec.symbol not in self.pairs:
+                    self.watch_only_pairs.add(channel_spec.symbol)
+            elif channel_spec.channel == octobot_trading.constants.RECENT_TRADES_CHANNEL:
+                if channel_spec.symbol not in self.pairs:
+                    self.watch_only_pairs.add(channel_spec.symbol)
+            elif channel_spec.channel == octobot_trading.constants.OHLCV_CHANNEL:
+                if channel_spec.symbol not in self.pairs:
+                    self.pairs.append(channel_spec.symbol)
+                if channel_spec.time_frame not in self.time_frames:
+                    self.time_frames.append(channel_spec.time_frame)
 
     async def add_feed(self, feed_name):
         if self.is_feed_available(feed_name):

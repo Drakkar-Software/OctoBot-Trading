@@ -37,7 +37,12 @@ class DefaultWebSocketExchange(exchanges_types.WebSocketExchange):
                 exchange_manager=self.exchange_manager,
                 websocket_name=self.websocket_connector.get_name()
             )
-            connector.initialize(pairs=self.pairs, time_frames=self.time_frames, channels=self.channels)
+            connector.initialize(
+                pairs=self.pairs,
+                time_frames=self.time_frames,
+                channels=self.channels,
+                watch_only_pairs=self.watch_only_pairs,
+            )
             self.websocket_connectors.append(connector)
 
         except ValueError as e:
