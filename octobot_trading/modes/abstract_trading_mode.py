@@ -359,6 +359,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     def is_health_check_required(self) -> bool:
         return self.SUPPORTS_HEALTH_CHECK and self.is_health_check_enabled and self._health_check_interval_expired()
 
+    @modes_util.enabled_trader_only(disabled_return_value=[])
     async def health_check(self, chained_orders: list, tickers: dict) -> list:
         self._last_health_check_time = self.exchange_manager.exchange.get_exchange_current_time()
         if not self.producers:

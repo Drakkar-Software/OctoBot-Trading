@@ -53,8 +53,8 @@ def is_trader_simulator_enabled_in_config(config) -> bool:
     return util.is_trader_simulator_enabled(config)
 
 
-def set_trading_enabled(exchange_manager, enabled) -> None:
-    exchange_manager.trader.is_enabled = enabled
+def set_trading_enabled(exchange_manager, enabled: bool) -> None:
+    exchange_manager.trader.set_is_enabled(enabled)
 
 
 def is_trader_simulated(exchange_manager) -> bool:
@@ -69,12 +69,16 @@ def set_trader_risk(exchange_manager, risk: decimal.Decimal) -> float:
     return exchange_manager.trader.set_risk(decimal.Decimal(risk))
 
 
-async def sell_all_everything_for_reference_market(exchange_manager) -> list:
-    return await exchange_manager.trader.sell_all()
+async def sell_all_everything_for_reference_market(
+    exchange_manager, force_if_disabled: bool = True
+) -> list:
+    return await exchange_manager.trader.sell_all(force_if_disabled=force_if_disabled)
 
 
-async def sell_currency_for_reference_market(exchange_manager, currency) -> list:
-    return await exchange_manager.trader.sell_all([currency])
+async def sell_currency_for_reference_market(
+    exchange_manager, currency: str, force_if_disabled: bool = True
+) -> list:
+    return await exchange_manager.trader.sell_all([currency], force_if_disabled=force_if_disabled)
 
 
 def get_current_bot_live_id(config):

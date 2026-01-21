@@ -15,7 +15,13 @@
 #  License along with this library.
 
 
-class OctoBotExchangeError(Exception):
+class OctoBotTradingError(Exception):
+    """
+    Parent class of local exceptions raised by OctoBot Trading
+    """
+
+
+class OctoBotExchangeError(OctoBotTradingError):
     """
     Parent class of local exceptions raised when communicating with exchanges
     """
@@ -45,9 +51,15 @@ class RetriableExchangeProxyError(ExchangeProxyError):
     """
 
 
-class TradingModeIncompatibility(Exception):
+class TradingModeIncompatibility(OctoBotTradingError):
     """
     Raised when a trading mode is incompatible with the current situation
+    """
+
+
+class TraderDisabledError(OctoBotTradingError):
+    """
+    Raised when a trader is disabled
     """
 
 
@@ -105,7 +117,7 @@ class OrderNotFoundOnCancelError(ExchangeOrderCancelError):
     """
 
 
-class UnexpectedExchangeSideOrderStateError(Exception):
+class UnexpectedExchangeSideOrderStateError(OctoBotTradingError):
     """
     Raised when an order is in an unexpected state when fetched from exchange
     """
@@ -135,7 +147,7 @@ class ClosedOrderError(UnexpectedExchangeSideOrderStateError):
     """
 
 
-class NotSupported(Exception):
+class NotSupported(OctoBotTradingError):
     """
     Raised when an exchange doesn't support the required element
     """
@@ -235,68 +247,68 @@ class ExchangeOrderInstantTriggerError(OctoBotExchangeError):
     """
 
 
-class StoppedExchangeManagerError(Exception):
+class StoppedExchangeManagerError(OctoBotTradingError):
     """
     Raised when an exchange manager has been stopped and the current operation should be interrupted
     """
 
 
-class PortfolioNegativeValueError(Exception):
+class PortfolioNegativeValueError(OctoBotTradingError):
     """
     Raised when the portfolio is being updated with a negative value
     """
 
 
-class PortfolioOperationError(Exception):
+class PortfolioOperationError(OctoBotTradingError):
     """
     Raised when an invalid portfolio operation is asked for
     """
 
 
-class InvalidOrderState(Exception):
+class InvalidOrderState(OctoBotTradingError):
     """
     Raised when an order state is handled on a previously cleared order
     (cleared orders should never be touched)
     """
 
 
-class InvalidCancelPolicyError(Exception):
+class InvalidCancelPolicyError(OctoBotTradingError):
     """
     Raised when a cancel policy is invalid
     """
 
 
-class InvalidLeverageValue(Exception):
+class InvalidLeverageValue(OctoBotTradingError):
     """
     Raised when a leverage is being updated with an invalid value
     """
 
 
-class InvalidPositionSide(Exception):
+class InvalidPositionSide(OctoBotTradingError):
     """
     Raised when an order with an invalid position side is triggering a position update
     """
 
 
-class InvalidPosition(Exception):
+class InvalidPosition(OctoBotTradingError):
     """
     Raised when an invalid position is created
     """
 
 
-class ContractExistsError(Exception):
+class ContractExistsError(OctoBotTradingError):
     """
     Raised when asking for a contract that doesn't exist
     """
 
 
-class UnhandledContractError(Exception):
+class UnhandledContractError(OctoBotTradingError):
     """
     Raised when trying to use a contract that is not supported / implemented
     """
 
 
-class UnsupportedContractConfigurationError(Exception):
+class UnsupportedContractConfigurationError(OctoBotTradingError):
     """
     Raised when a contract configuration is not supported
     """
@@ -308,109 +320,109 @@ class UnsupportedHedgeContractError(UnsupportedContractConfigurationError):
     """
 
 
-class TooManyOpenPositionError(Exception):
+class TooManyOpenPositionError(OctoBotTradingError):
     """
     Raised when changing future contract attributes without closing positions first
     """
 
 
-class DuplicateTransactionIdError(Exception):
+class DuplicateTransactionIdError(OctoBotTradingError):
     """
     Raised when trying to add a new transaction with a duplicate id
     """
 
 
-class LiquidationPriceReached(Exception):
+class LiquidationPriceReached(OctoBotTradingError):
     """
     Raised when the liquidation price has been reach
     """
 
 
-class ConflictingOrdersError(Exception):
+class ConflictingOrdersError(OctoBotTradingError):
     """
     Raised when an order is that would create an order conflict is created
     """
 
 
-class OrderGroupTriggerArgumentError(Exception):
+class OrderGroupTriggerArgumentError(OctoBotTradingError):
     """
     Raised when an order triggered with invalid arguments
     """
 
 
-class ConflictingOrderGroupError(Exception):
+class ConflictingOrderGroupError(OctoBotTradingError):
     """
     Raised when creating a group with an existing name
     """
 
 
-class MissingPriceDataError(Exception):
+class MissingPriceDataError(OctoBotTradingError):
     """
     Raised when a price info is missing
     """
 
 
-class PendingPriceDataError(Exception):
+class PendingPriceDataError(OctoBotTradingError):
     """
     Raised when a price info is waiting to be updated
     """
 
 
-class UnreachableExchange(Exception):
+class UnreachableExchange(OctoBotTradingError):
     """
     Raised when an exchange cant be reached (likely when it's offline)
     """
 
 
-class InvalidArgumentError(Exception):
+class InvalidArgumentError(OctoBotTradingError):
     """
     Raised when a keyword is called with invalid arguments
     """
 
 
-class OrderDescriptionNotFoundError(Exception):
+class OrderDescriptionNotFoundError(OctoBotTradingError):
     """
     Raised when an order description is not found
     """
 
 
-class PositionDescriptionNotFoundError(Exception):
+class PositionDescriptionNotFoundError(OctoBotTradingError):
     """
     Raised when a position description is not found
     """
 
 
-class AdapterError(Exception):
+class AdapterError(OctoBotTradingError):
     """
     Raised when an error occurs in an adapter
     """
 
 
-class UnexpectedAdapterError(Exception):
+class UnexpectedAdapterError(OctoBotTradingError):
     """
     Raised when an unexpected error occurs in an adapter
     """
 
 
-class IncompletePNLError(Exception):
+class IncompletePNLError(OctoBotTradingError):
     """
     Raised when a pnl computation is asked on a invalid pnl
     """
 
 
-class InitializingError(Exception):
+class InitializingError(OctoBotTradingError):
     """
     Raised when OctoBot is still in initialization
     """
 
 
-class ExhaustedTrailingProfileError(Exception):
+class ExhaustedTrailingProfileError(OctoBotTradingError):
     """
     Raised when a trailing profile has no new price to produce anymore
     """
 
 
-class MissingFeeDetailsError(Exception):
+class MissingFeeDetailsError(OctoBotTradingError):
     """
     Raised when fee info are not available
     """

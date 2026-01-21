@@ -271,3 +271,21 @@ def get_trading_modes_of_this_type_on_this_matrix(trading_mode) -> list:
             if isinstance(other_trading_mode, type(trading_mode))
         )
     return other_trading_modes
+
+
+def enabled_trader_only(raise_when_disabled=False, disabled_return_value=None):
+    # inner level to allow passing params to the decorator
+    def inner_enabled_trader_only(func):
+        async def enabled_trader_only_wrapper(self, *args, **kwargs):
+            if self.exchange_manager.trader.is_enabled:
+                return await func(self, *args, **kwargs)
+            message = (
+                f"Trading on {self.exchange_manager.exchange_name} has been paused, "
+                f"skipping {self.__class__.__name__} execution"
+            )
+            if raise_when_disabled:
+                raise errors.TraderDisabledError(message)
+            self.logger.warning(message)
+            return disabled_return_value
+        return enabled_trader_only_wrapper
+    return inner_enabled_trader_only

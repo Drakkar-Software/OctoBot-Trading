@@ -34,6 +34,27 @@ import octobot_trading.util as util
 import octobot_trading.signals as signals
 
 
+def enabled_or_forced_only(func):
+    """
+    Decorator to raise errors.TraderDisabledError if this method is called on a disabled trader.
+    Call with force_if_disabled=True to force the execution of the method even if the trader is disabled.
+    """
+    def enabled_or_forced_only_wrapper(self, *args, force_if_disabled=False, **kwargs):
+        if not self.is_enabled:
+            if force_if_disabled:
+                self.logger.info(
+                    f"[{self.exchange_manager.exchange_name}] trader disabled: {func.__name__} "
+                    f"execution is forced"
+                )
+                return func(self, *args, **kwargs)
+            raise errors.TraderDisabledError(
+                f"[{self.exchange_manager.exchange_name}] trader disabled: {func.__name__} "
+                f"is not allowed on disabled trader"
+            )
+        return func(self, *args, **kwargs)
+    return enabled_or_forced_only_wrapper
+
+
 class Trader(util.Initializable):
     NO_HISTORY_MESSAGE = "Starting a fresh new trading session using the current portfolio as a profitability " \
                          "reference."
@@ -58,14 +79,32 @@ class Trader(util.Initializable):
 
         if not hasattr(self, 'simulate'):
             self.simulate: bool = False
-        self.is_enabled: bool = self.__class__.enabled(self.config)
+        self.is_enabled: bool = self.__class__.enabled(self.config) and not self.__class__.is_paused(self.config)
         self.enable_inactive_orders: bool = not self.simulate
 
+    def can_trade_if_not_paused(self) -> bool:
+        """
+        return True if the trader is enabled (not paused) or if the trading is paused but might be resumed
+        """
+        return self.is_enabled or (self.__class__.enabled(self.config) and self.exchange_manager.is_trading)
+
     async def initialize_impl(self):
+        # is_enabled depends on the config (enabled and paused setting) and the exchange manager
         self.is_enabled = self.is_enabled and self.exchange_manager.is_trading
-        if self.is_enabled:
+        if self.can_trade_if_not_paused():
+            # still register the trader if trading is just paused (and could be resumed)
             await self.exchange_manager.register_trader(self)
-        self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange_name}")
+            if self.__class__.is_paused(self.config):
+                self.logger.warning(f"Trading on {self.exchange_manager.exchange_name} is paused, it won't be trading")
+        self.logger.debug(
+            f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange_name}"
+        )
+
+    def set_is_enabled(self, enabled: bool):
+        self.logger.info(
+            f"Setting [{self.exchange_manager.exchange_name}] trader is_enabled to {enabled} (was {self.is_enabled})"
+        )
+        self.is_enabled = enabled
 
     def clear(self):
         self.exchange_manager = None
@@ -73,6 +112,10 @@ class Trader(util.Initializable):
     @classmethod
     def enabled(cls, config):
         return util.is_trader_enabled(config)
+
+    @classmethod
+    def is_paused(cls, config):
+        return util.is_trading_paused(config)
 
     def set_enable_inactive_orders(self, enabled: bool):
         self.enable_inactive_orders = enabled
@@ -92,6 +135,7 @@ class Trader(util.Initializable):
     Orders
     """
 
+    @enabled_or_forced_only
     async def create_order(
         self, order, loaded: bool = False, params: dict = None, wait_for_creation=True, raise_all_creation_error=False,
         creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
@@ -140,6 +184,7 @@ class Trader(util.Initializable):
 
         return created_order
 
+    @enabled_or_forced_only
     async def create_artificial_order(
         self, order_type, symbol, current_price, quantity, price, reduce_only, close_position,
         emit_trading_signals=False, wait_for_creation=True,
@@ -170,6 +215,7 @@ class Trader(util.Initializable):
                 dependencies=dependencies
             )
 
+    @enabled_or_forced_only
     async def edit_order(self, order,
                          edited_quantity: decimal.Decimal = None,
                          edited_price: decimal.Decimal = None,
@@ -420,6 +466,7 @@ class Trader(util.Initializable):
         order.add_chained_order(chained_order)
         self.logger.info(f"Added chained order [{chained_order}] to [{order}] order.")
 
+    @enabled_or_forced_only
     async def update_order_as_inactive(
         self, order, ignored_order=None, wait_for_cancelling=True,
         cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT
@@ -437,6 +484,7 @@ class Trader(util.Initializable):
             self.logger.error(f"Can't update order as inactive: {order} is not open on exchange.")
         return cancelled
 
+    @enabled_or_forced_only
     async def update_order_as_active(
         self, order, params: dict = None, wait_for_creation=True, raise_all_creation_error=False,
         creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
@@ -450,6 +498,7 @@ class Trader(util.Initializable):
                 raise_all_creation_error=raise_all_creation_error, creation_timeout=creation_timeout
             )
 
+    @enabled_or_forced_only
     async def cancel_order(self, order, ignored_order=None,
                            wait_for_cancelling=True,
                            cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT) -> bool:
@@ -604,6 +653,7 @@ class Trader(util.Initializable):
             return True
         return False
 
+    @enabled_or_forced_only
     async def cancel_all_orders(
         self,
         symbol: str,
@@ -661,6 +711,7 @@ class Trader(util.Initializable):
         await order.state.wait_for_terminate(cancelling_timeout)
         self.logger.debug(f"Completed order cancelling, order: {order}")
 
+    @enabled_or_forced_only
     async def cancel_order_with_id(
         self, exchange_order_id, emit_trading_signals=False,
         wait_for_cancelling=True,
@@ -684,11 +735,13 @@ class Trader(util.Initializable):
                     order,
                     wait_for_cancelling=wait_for_cancelling,
                     cancelling_timeout=cancelling_timeout,
-                    dependencies=dependencies
+                    dependencies=dependencies,
+                    force_if_disabled=True
                 )
         except KeyError:
             return False, None
 
+    @enabled_or_forced_only
     async def cancel_open_orders(
         self, symbol, cancel_loaded_orders=True, side=None,
         emit_trading_signals=False,
@@ -724,7 +777,8 @@ class Trader(util.Initializable):
                             order,
                             wait_for_cancelling=wait_for_cancelling,
                             cancelling_timeout=cancelling_timeout,
-                            dependencies=dependencies
+                            dependencies=dependencies,
+                            force_if_disabled=True
                         )
                     if cancelled:
                         cancelled_orders.append(order)
@@ -733,6 +787,7 @@ class Trader(util.Initializable):
                     self.logger.warning(f"Skipping order cancel: {err} ({err.__class__.__name__})")
         return all_cancelled, cancelled_orders
 
+    @enabled_or_forced_only
     async def cancel_all_open_orders_with_currency(
         self, currency, emit_trading_signals=False,
         wait_for_cancelling=True,
@@ -752,15 +807,17 @@ class Trader(util.Initializable):
         cancelled_dependencies = commons_signals.SignalDependencies()
         if symbols:
             for symbol in symbols:
-                new_all_cancelled, cancelled_orders = await self.cancel_open_orders(
+                new_all_cancelled, cancelled_orders = await self.cancel_open_orders( # pylint: disable=unexpected-keyword-arg
                     symbol, emit_trading_signals=emit_trading_signals,
                     wait_for_cancelling=wait_for_cancelling,
-                    cancelling_timeout=cancelling_timeout
+                    cancelling_timeout=cancelling_timeout,
+                    force_if_disabled=True
                 )
                 all_cancelled = new_all_cancelled and all_cancelled
                 cancelled_dependencies.extend(signals.get_orders_dependencies(cancelled_orders))
         return all_cancelled, cancelled_dependencies
 
+    @enabled_or_forced_only
     async def cancel_all_open_orders(
         self, emit_trading_signals=False,
         wait_for_cancelling=True,
@@ -788,7 +845,8 @@ class Trader(util.Initializable):
                             order,
                             wait_for_cancelling=wait_for_cancelling,
                             cancelling_timeout=cancelling_timeout,
-                            dependencies=dependencies
+                            dependencies=dependencies,
+                            force_if_disabled=True
                         )
                         if cancelled:
                             dependencies.extend(new_dependencies)
@@ -822,9 +880,10 @@ class Trader(util.Initializable):
                                                                     quantity=order_quantity,
                                                                     price=order_price)
                 created_orders.append(
-                    await self.create_order(current_order))
+                    await self.create_order(current_order, force_if_disabled=True)) # pylint: disable=unexpected-keyword-arg
         return created_orders
 
+    @enabled_or_forced_only
     async def sell_all(self, currencies_to_sell=None, timeout=None):
         """
         Sell every currency in portfolio for reference market using market orders.
@@ -862,9 +921,9 @@ class Trader(util.Initializable):
     Positions
     """
 
+    @enabled_or_forced_only
     async def close_position(
-        self, position, limit_price=None, timeout=1, emit_trading_signals=False,
-        wait_for_creation=True,
+        self, position, limit_price=None, timeout=1, emit_trading_signals=False, wait_for_creation=True,
         creation_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT,
         dependencies: typing.Optional[commons_signals.SignalDependencies] = None
     ):
@@ -912,11 +971,13 @@ class Trader(util.Initializable):
                         current_order,
                         wait_for_creation=wait_for_creation,
                         creation_timeout=creation_timeout,
-                        dependencies=dependencies
+                        dependencies=dependencies,
+                        force_if_disabled=True
                     )
                 created_orders.append(order)
         return created_orders
 
+    @enabled_or_forced_only
     async def withdraw(self, amount, currency):
         """
         Removes the given amount from the portfolio. Only works in simulated portfolios
@@ -926,6 +987,7 @@ class Trader(util.Initializable):
         async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
             await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(amount, currency)
 
+    @enabled_or_forced_only
     async def set_leverage(
         self, symbol: str, side: typing.Optional[enums.PositionSide], leverage: decimal.Decimal
     ) -> bool:
@@ -949,6 +1011,7 @@ class Trader(util.Initializable):
             return True
         return False
 
+    @enabled_or_forced_only
     async def set_symbol_take_profit_stop_loss_mode(self, symbol, new_mode: enums.TakeProfitStopLossMode):
         """
         Updates the take profit and stop loss mode for the given symbol
@@ -966,6 +1029,7 @@ class Trader(util.Initializable):
             )
             contract.set_take_profit_stop_loss_mode(new_mode)
 
+    @enabled_or_forced_only
     async def set_margin_type(self, symbol, side, margin_type):
         """
         Updates the symbol contract margin type
@@ -987,6 +1051,7 @@ class Trader(util.Initializable):
                 is_cross=margin_type is enums.MarginType.CROSS
             )
 
+    @enabled_or_forced_only
     async def set_position_mode(self, symbol, position_mode):
         """
         Updates the symbol contract position mode

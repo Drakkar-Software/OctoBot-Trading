@@ -20,6 +20,13 @@ import octobot_trading.enums as trading_enums
 import octobot_commons.symbols as symbol_util
 
 
+def is_trading_paused(config) -> bool:
+    try:
+        return config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_PAUSED]
+    except KeyError:
+        return False
+
+
 def is_trader_enabled(config) -> bool:
     return _is_trader_enabled(config, commons_constants.CONFIG_TRADER)
 

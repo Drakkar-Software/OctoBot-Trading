@@ -42,7 +42,7 @@ from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, 
 from octobot_trading.personal_data.orders.types.market.sell_market_order import SellMarketOrder
 import octobot_trading.personal_data.portfolios.assets as portfolio_assets
 import octobot_trading.personal_data.orders.groups as order_groups
-from octobot_trading.exchanges.traders.trader import Trader
+from octobot_trading.exchanges.traders.trader import Trader, enabled_or_forced_only
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 from tests.exchanges.traders import get_default_future_inverse_contract, DEFAULT_FUTURE_SYMBOL
@@ -76,6 +76,10 @@ class TestTrader:
 
         # set afterwards backtesting attribute to force orders instant initialization
         exchange_manager.is_backtesting = True
+        assert exchange_manager.trader is trader
+        assert trader.enabled(config) is True
+        assert trader.is_paused(config) is False
+        assert trader.is_enabled is True
 
         return config, exchange_manager, trader
 
@@ -86,6 +90,27 @@ class TestTrader:
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
 
+    async def test_init_paused(simulated=True, is_future=False):
+        config = load_test_config()
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_PAUSED] = True
+        exchange_manager = ExchangeManager(config,
+                                           DEFAULT_FUTURE_EXCHANGE_NAME if is_future else DEFAULT_EXCHANGE_NAME)
+        exchange_manager.is_simulated = simulated
+        exchange_manager.is_future = is_future
+        await exchange_manager.initialize(exchange_config_by_exchange=None)
+
+        trader = TraderSimulator(config, exchange_manager)
+        await trader.initialize()
+
+        # set afterwards backtesting attribute to force orders instant initialization
+        exchange_manager.is_backtesting = True
+        assert trader.enabled(config) is True
+        assert trader.is_paused(config) is True
+        assert exchange_manager.trader is trader # trader is registered
+        assert trader.is_enabled is False # trader is paused
+
+        return config, exchange_manager, trader
+
     async def test_enabled(self):
         config, exchange_manager, trader_inst = await self.init_default()
         await self.stop(exchange_manager)
@@ -95,6 +120,45 @@ class TestTrader:
 
         config[commons_constants.CONFIG_TRADER][commons_constants.CONFIG_ENABLED_OPTION] = False
         assert not Trader.enabled(config)
+        await self.stop(exchange_manager)
+
+    async def test_is_paused(self):
+        config, exchange_manager, trader_inst = await self.init_default()
+        await self.stop(exchange_manager)
+
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_PAUSED] = True
+        assert Trader.is_paused(config) is True
+
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_PAUSED] = False
+        assert Trader.is_paused(config) is False
+
+    async def test_can_trade_if_not_paused(self):
+        config, exchange_manager, trader_inst = await self.init_default()
+
+        trader_inst.set_is_enabled(True)
+        assert trader_inst.can_trade_if_not_paused() is True
+
+        exchange_manager.is_trading = False
+        assert trader_inst.can_trade_if_not_paused() is True # trader is enabled
+
+        trader_inst.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_ENABLED_OPTION] = False
+        assert trader_inst.can_trade_if_not_paused() is True  # trader is enabled
+        exchange_manager.is_trading = True
+        assert trader_inst.can_trade_if_not_paused() is True  # trader is enabled
+
+        trader_inst.set_is_enabled(False)
+        trader_inst.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_ENABLED_OPTION] = True
+        exchange_manager.is_trading = False
+        assert trader_inst.can_trade_if_not_paused() is False # trader disabled but enabled in config (just paused) but exchange is not trading
+
+        exchange_manager.is_trading = True
+        assert trader_inst.can_trade_if_not_paused() is True # trader disabled but enabled in config (just paused) and exchange is trading: trader might unpause
+
+        trader_inst.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_ENABLED_OPTION] = False
+        assert trader_inst.can_trade_if_not_paused() is False # trader disabled and disabled in config
+        exchange_manager.is_trading = True
+        assert trader_inst.can_trade_if_not_paused() is False # trader disabled and disabled in config, even if exchange is trading, trader won't be able to trade
+
         await self.stop(exchange_manager)
 
     async def test_get_risk(self):
@@ -114,6 +178,112 @@ class TestTrader:
         config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 0.5
         trader_2 = TraderSimulator(config, exchange_manager)
         assert trader_2.risk == decimal.Decimal(str(0.5))
+        await self.stop(exchange_manager)
+
+    async def test_enabled_or_forced_only_methods(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        trader_inst.set_is_enabled(False)
+        methods = [
+            trader_inst.create_order,
+            trader_inst.create_artificial_order,
+            trader_inst.edit_order,
+            trader_inst.update_order_as_inactive,
+            trader_inst.update_order_as_active,
+            trader_inst.cancel_order,
+            trader_inst.cancel_all_orders,
+            trader_inst.cancel_order_with_id,
+            trader_inst.cancel_open_orders,
+            trader_inst.cancel_all_open_orders_with_currency,
+            trader_inst.cancel_all_open_orders,
+            trader_inst.sell_all,
+            trader_inst.withdraw,
+            trader_inst.close_position,
+            trader_inst.set_leverage,
+            trader_inst.set_symbol_take_profit_stop_loss_mode,
+            trader_inst.set_margin_type,
+            trader_inst.set_position_mode,
+        ]
+        for method in methods:
+            with pytest.raises(errors.TraderDisabledError, match="disabled"):
+                await method()
+            # ensure method is called when force_if_disabled=True
+            args = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            kwargs = {"a": 1, "b": 2, "c": 3,}
+            with pytest.raises(TypeError, match="unexpected keyword argument"):
+                await method(*args, force_if_disabled=True, **kwargs)
+
+    async def test_enabled_or_forced_only(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        
+        # Create a mock class with decorated methods that mimics Trader structure
+        class MockTraderClass:
+            def __init__(self, exchange_manager):
+                self.exchange_manager = exchange_manager
+                self.logger = mock.Mock()
+                self.is_enabled = True
+            
+            @enabled_or_forced_only
+            def test_method(self, arg1, arg2=None, **kwargs):
+                return f"executed with {arg1}, {arg2}, {kwargs}"
+            
+            @enabled_or_forced_only
+            def no_args_method(self):
+                return "no_args_result"
+        
+        mock_trader = MockTraderClass(exchange_manager)
+        
+        # Test 1: Trader enabled - function should execute normally
+        mock_trader.is_enabled = True
+        result = mock_trader.test_method("test", arg2="value", extra="data")
+        assert result == "executed with test, value, {'extra': 'data'}"
+        mock_trader.logger.info.assert_not_called()
+        
+        # Test 2: Trader disabled without force - should raise TraderDisabledError
+        mock_trader.is_enabled = False
+        with pytest.raises(errors.TraderDisabledError, match="trader disabled.*test_method.*is not allowed on disabled trader"):
+            mock_trader.test_method("test", arg2="value")
+        mock_trader.logger.info.assert_not_called()
+        
+        # Test 3: Trader disabled with force_if_disabled=True - should log info and execute
+        mock_trader.is_enabled = False
+        result = mock_trader.test_method("test", arg2="value", force_if_disabled=True, extra="data")
+        # force_if_disabled should not be passed to the method
+        assert result == "executed with test, value, {'extra': 'data'}"
+        mock_trader.logger.info.assert_called_once()
+        info_message = mock_trader.logger.info.call_args[0][0]
+        assert exchange_manager.exchange_name in info_message
+        assert "trader disabled" in info_message
+        assert "test_method" in info_message
+        assert "execution is forced" in info_message
+        mock_trader.logger.info.reset_mock()
+        
+        # Test 4: Trader enabled with force_if_disabled=True - should execute normally (force is ignored)
+        mock_trader.is_enabled = True
+        result = mock_trader.test_method("test", arg2="value", force_if_disabled=True)
+        assert result == "executed with test, value, {}"
+        mock_trader.logger.info.assert_not_called()
+        
+        # Test 5: Method with no arguments - trader enabled
+        mock_trader.is_enabled = True
+        result = mock_trader.no_args_method()
+        assert result == "no_args_result"
+        mock_trader.logger.info.assert_not_called()
+        
+        # Test 6: Method with no arguments - trader disabled without force
+        mock_trader.is_enabled = False
+        with pytest.raises(errors.TraderDisabledError, match="trader disabled.*no_args_method"):
+            mock_trader.no_args_method()
+        mock_trader.logger.info.assert_not_called()
+        
+        # Test 7: Method with no arguments - trader disabled with force
+        mock_trader.is_enabled = False
+        result = mock_trader.no_args_method(force_if_disabled=True)
+        assert result == "no_args_result"
+        mock_trader.logger.info.assert_called_once()
+        info_message = mock_trader.logger.info.call_args[0][0]
+        assert "no_args_method" in info_message
+        assert "execution is forced" in info_message
+        
         await self.stop(exchange_manager)
 
     async def test_cancel_limit_order(self):
