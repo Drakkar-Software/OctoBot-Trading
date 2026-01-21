@@ -917,6 +917,7 @@ class Trader(util.Initializable):
         """
         return trade_factory.create_trade_from_order(order)
 
+    @enabled_or_forced_only
     async def withdraw(
         self, asset: str, amount: decimal.Decimal, network: str, address: str, tag: str = "", params: dict = None
     ):
