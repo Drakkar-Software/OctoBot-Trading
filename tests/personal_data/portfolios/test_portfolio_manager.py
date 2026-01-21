@@ -248,8 +248,9 @@ async def test_handle_balance_update_from_withdrawal(backtesting_trader):
     amount = decimal.Decimal("10")
     currency = "USDT"
     
-    # Test when trader is disabled
+    # Test when trader is disabled in config
     trader.is_enabled = False
+    trader.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_ENABLED_OPTION] = False
     initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
     initial_total = portfolio_manager.portfolio.get_currency_portfolio(currency).total
     assert await portfolio_manager.handle_balance_update_from_withdrawal(amount, currency) is False
@@ -259,6 +260,7 @@ async def test_handle_balance_update_from_withdrawal(backtesting_trader):
     
     # Test when enable_portfolio_exchange_sync is False
     trader.is_enabled = True
+    trader.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_ENABLED_OPTION] = True
     portfolio_manager.enable_portfolio_exchange_sync = False
     trader.simulate = False
     initial_available = portfolio_manager.portfolio.get_currency_portfolio(currency).available
