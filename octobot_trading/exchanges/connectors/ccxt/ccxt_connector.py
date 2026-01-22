@@ -159,6 +159,9 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
         market_filter: typing.Optional[typing.Callable[[dict], bool]]
     ):
         try:
+            if self.exchange_manager.exchange.ADJUST_FOR_TIME_DIFFERENCE:
+                # load time difference before loading markets in case a signature is needed to load markets
+                await client.load_time_difference()
             if self.exchange_manager.exchange.FETCH_MIN_EXCHANGE_MARKETS and market_filter:
                 with ccxt_client_util.filtered_fetched_markets(client, market_filter):
                     await client.load_markets(reload=reload)
@@ -300,12 +303,8 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             ccxt_client_util.add_options(self.client, options_dict)
 
     @classmethod
-    def get_extended_additional_connector_config(
-        cls, additional_config: dict, adjust_for_time_difference: bool
-    ):
+    def get_extended_additional_connector_config(cls, additional_config: dict):
         extended_ccxt_options = {}
-        if adjust_for_time_difference:
-            extended_ccxt_options[ccxt_constants.CCXT_ADJUST_FOR_TIME_DIFFERENCE] = True
         if extended_ccxt_options:
             if additional_config and ccxt_constants.CCXT_OPTIONS in additional_config:
                 additional_config[ccxt_constants.CCXT_OPTIONS].update(extended_ccxt_options)
