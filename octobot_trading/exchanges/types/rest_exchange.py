@@ -186,7 +186,6 @@ class RestExchange(abstract_exchange.AbstractExchange):
         to_create_connector_class = connector_class or self.DEFAULT_CONNECTOR_CLASS
         extended_additional_config = to_create_connector_class.get_extended_additional_connector_config(
             self.get_additional_connector_config() or {},
-            self.ADJUST_FOR_TIME_DIFFERENCE,
         )
         return to_create_connector_class(
             config,
