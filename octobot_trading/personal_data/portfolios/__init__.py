@@ -113,6 +113,11 @@ from octobot_trading.personal_data.portfolios.sub_portfolio_data import (
 from octobot_trading.personal_data.portfolios.resolved_orders_portfolio_delta import (
     ResolvedOrdersPortoflioDelta,
 )
+from octobot_trading.personal_data.portfolios.update_events import (
+    FilledOrderUpdateEvent,
+    TransactionUpdateEvent,
+    PortfolioUpdateEvent,
+)
     
 __all__ = [
     "BalanceUpdaterSimulator",
@@ -164,4 +169,7 @@ __all__ = [
     "HistoricalPortfolioValueManager",
     "SubPortfolioData",
     "ResolvedOrdersPortoflioDelta",
+    "FilledOrderUpdateEvent",
+    "TransactionUpdateEvent",
+    "PortfolioUpdateEvent",
 ]

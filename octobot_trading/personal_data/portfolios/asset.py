@@ -135,3 +135,10 @@ class Asset:
             logging.get_logger(self.__class__.__name__).info("Restoring after PortfolioNegativeValueError...")
             self.restore(previous_asset)
             raise
+    
+    def get_total_holdings(self):
+        """
+        Get the total holdings of the asset
+        :return: the total holdings
+        """
+        return self.total

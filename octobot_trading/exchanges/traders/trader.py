@@ -938,20 +938,11 @@ class Trader(util.Initializable):
                 f"Initiating withdrawal of {amount} {asset} from {self.exchange_manager.exchange_name} "
                 f"exchange account to {address}"
             )
-            withdrawal_data = await self._withdraw_on_exchange(
+            transaction = await self._withdraw_on_exchange(
                 asset, amount, network, address, tag=tag, params=params
             )
-            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(
-                withdrawal_data[enums.ExchangeConstantsTransactionColumns.CURRENCY.value],
-                withdrawal_data[enums.ExchangeConstantsTransactionColumns.AMOUNT.value],
-                withdrawal_data[enums.ExchangeConstantsTransactionColumns.NETWORK.value],
-                withdrawal_data[enums.ExchangeConstantsTransactionColumns.TXID.value],
-                withdrawal_data[enums.ExchangeConstantsTransactionColumns.ADDRESS_TO.value],
-                withdrawal_data[enums.ExchangeConstantsTransactionColumns.STATUS.value],
-                source_address=withdrawal_data[enums.ExchangeConstantsTransactionColumns.ADDRESS_FROM.value],
-                transaction_fee=withdrawal_data[enums.ExchangeConstantsTransactionColumns.FEE.value],
-            )
-            return withdrawal_data
+            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(transaction, expect_withdrawal_update=True)
+            return transaction
 
     async def _withdraw_on_exchange(
         self, asset: str, amount: decimal.Decimal, network: str, address: str, tag: str = "", params: dict = None
