@@ -20,6 +20,7 @@ import decimal
 import octobot_commons.logging as logging
 import octobot_commons.html_util as html_util
 
+import octobot_commons.async_job as async_job
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.channel.balance as portfolios_channel
@@ -34,45 +35,83 @@ class BalanceUpdater(portfolios_channel.BalanceProducer):
     """
     The default balance update refresh time in seconds
     """
-    BALANCE_REFRESH_TIME = 666
+    REGULAR_PORTFOLIO_UPDATE_TIME = 666
+    EXPECTED_PORTFOLIO_UPDATE_TIME = 20
+    TIME_BETWEEN_PORTFOLIO_UPDATES = 10
 
     """
     The updater related channel name
     """
     CHANNEL_NAME = constants.BALANCE_CHANNEL
 
+    def __init__(self, channel):
+        super().__init__(channel)
+        # regular_portfolio_update_job should always run
+        self.regular_portfolio_update_job = async_job.AsyncJob(
+            self._fetch_and_push_portfolio,
+            execution_interval_delay=self.REGULAR_PORTFOLIO_UPDATE_TIME,
+            min_execution_delay=self.TIME_BETWEEN_PORTFOLIO_UPDATES
+        )
+        # temporary_expected_portfolio_update_job should run only when expected portfolio update is needed
+        self.temporary_expected_portfolio_update_job = async_job.AsyncJob(
+            self._fetch_and_push_portfolio,
+            execution_interval_delay=self.EXPECTED_PORTFOLIO_UPDATE_TIME,
+            min_execution_delay=self.TIME_BETWEEN_PORTFOLIO_UPDATES
+        )
+        self.temporary_expected_portfolio_update_job.add_job_dependency(self.regular_portfolio_update_job)
+        self.regular_portfolio_update_job.add_job_dependency(self.temporary_expected_portfolio_update_job)
+
     async def start(self) -> None:
         """
         Starts the balance updating process
         """
-        while not self.should_stop:
-            try:
-                await self.fetch_and_push()
-                await asyncio.sleep(self.BALANCE_REFRESH_TIME)
-            except errors.FailedRequest as e:
-                self.logger.warning(html_util.get_html_summary_if_relevant(e))
-                # avoid spamming on disconnected situation
-                await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
-            except errors.NotSupported:
-                self.logger.warning(
-                    f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
+        await self.regular_portfolio_update_job.run()
+
+    async def set_expected_portfolio_update(self, expected_portfolio_update: bool):
+        if expected_portfolio_update:
+            if not self.temporary_expected_portfolio_update_job.is_started:
+                # expected portfolio update is now True: start the associated job as it is not running yet
+                self.logger.info(
+                    f"Starting temporary expected portfolio update job on {self.channel.exchange_manager.exchange_name}"
                 )
-                await self.pause()
-            except errors.AuthenticationError as err:
-                self.logger.exception(
-                    err,
-                    True,
-                    f"Authentication error when fetching balance: {html_util.get_html_summary_if_relevant(err)}. "
-                    f"Retrying in the next update cycle"
-                )
-                await asyncio.sleep(self.BALANCE_REFRESH_TIME)
-            except Exception as e:
-                self.logger.exception(
-                    e,
-                    True,
-                    f"Failed to update balance : {html_util.get_html_summary_if_relevant(e)}"
-                )
-                await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
+                await self.temporary_expected_portfolio_update_job.run()
+        elif self.temporary_expected_portfolio_update_job.is_started:
+            # expected portfolio update is now False: stop the associated job
+            self.logger.info(
+                f"Stopping temporary expected portfolio update job on {self.channel.exchange_manager.exchange_name}"
+            )
+            self.temporary_expected_portfolio_update_job.stop()
+
+    async def _fetch_and_push_portfolio(self):
+        try:
+            await self.fetch_and_push()
+        except errors.FailedRequest as e:
+            self.logger.warning(html_util.get_html_summary_if_relevant(e))
+            # avoid spamming on disconnected situation
+            await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
+            # schedule expected portfolio update to fallback on this failed request (after a delay to avoid spamming)
+            await self.set_expected_portfolio_update(True)
+        except errors.NotSupported:
+            self.logger.warning(
+                f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
+            )
+            await self.pause()
+        except errors.AuthenticationError as err:
+            self.logger.exception(
+                err,
+                True,
+                f"Authentication error when fetching balance: {html_util.get_html_summary_if_relevant(err)}. "
+                f"Retrying in the next update cycle"
+            )
+        except Exception as e:
+            self.logger.exception(
+                e,
+                True,
+                f"Failed to update balance : {html_util.get_html_summary_if_relevant(e)}"
+            )
+            await asyncio.sleep(constants.FAILED_NETWORK_REQUEST_RETRY_ATTEMPTS)
+            # schedule expected portfolio update to fallback on this failed request (after a delay to avoid spamming)
+            await self.set_expected_portfolio_update(True)
 
     async def fetch_and_push(self):
         await self.push((await self.fetch_portfolio()))
@@ -82,6 +121,14 @@ class BalanceUpdater(portfolios_channel.BalanceProducer):
         Fetch portfolio from exchange
         """
         return await self.channel.exchange_manager.exchange.get_balance()
+
+    async def stop(self) -> None:
+        """
+        Stop the balance updater
+        """
+        await super().stop()
+        self.regular_portfolio_update_job.stop()
+        self.temporary_expected_portfolio_update_job.stop()
 
     async def resume(self) -> None:
         """

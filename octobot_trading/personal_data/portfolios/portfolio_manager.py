@@ -16,14 +16,11 @@
 import contextlib
 import copy
 import decimal
-import time
-import asyncio
 import typing
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
 import octobot_commons.tree as commons_tree
-import octobot_commons.symbols as commons_symbols
 import octobot_commons.enums as commons_enums
 
 import octobot_trading.exchange_channel as exchange_channel
@@ -32,7 +29,10 @@ import octobot_trading.errors as errors
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 import octobot_trading.enums as enums
-import octobot_trading.exchanges  # pylint: disable=unused-import
+import octobot_trading.personal_data.portfolios.update_events as update_events
+
+if typing.TYPE_CHECKING:
+    import octobot_trading.exchanges
 
 
 class PortfolioManager(util.Initializable):
@@ -57,6 +57,7 @@ class PortfolioManager(util.Initializable):
         self._enable_portfolio_total_update_from_order: bool = True
         self.enable_portfolio_exchange_sync: bool = True
         self.enable_portfolio_available_update_from_order: bool = self.trader.simulate
+        self.pending_portfolio_update_events: list[update_events.PortfolioUpdateEvent] = []
 
     async def initialize_impl(self):
         """
@@ -89,7 +90,7 @@ class PortfolioManager(util.Initializable):
 
     async def handle_balance_update_from_order(
         self, order, require_exchange_update: bool, expect_filled_order_update: bool
-    ) -> bool:
+    ) -> tuple[bool, typing.Optional[update_events.PortfolioUpdateEvent]]:
         """
         Handle a balance update from an order update
         :param order: the order
@@ -99,72 +100,16 @@ class PortfolioManager(util.Initializable):
         """
         if self.trader.can_trade_if_not_paused():
             if not self.enable_portfolio_exchange_sync:
-                return self._refresh_simulated_trader_portfolio_from_order(order)
+                return self._refresh_simulated_trader_portfolio_from_order(order), None
 
             async with self.portfolio_history_update():
                 if (self.trader.simulate or not order.is_active) or not require_exchange_update:
-                    return self._refresh_simulated_trader_portfolio_from_order(order)
-                # on real trading only:
-                # reload portfolio to ensure portfolio sync
-                return await self._refresh_real_trader_portfolio_until_order_update_applied(
-                    order, expect_filled_order_update
+                    return self._refresh_simulated_trader_portfolio_from_order(order), None
+                return await self._refresh_real_trader_portfolio_and_init_event_checker_if_needed(
+                    update_events.FilledOrderUpdateEvent(order),
+                    expect_filled_order_update
                 )
-        return False
-
-    async def _refresh_real_trader_portfolio_until_order_update_applied(self, order, expect_filled_order_update):
-        t0 = time.time()
-        refreshed = await self._refresh_real_trader_portfolio()
-        if not expect_filled_order_update:
-            return refreshed
-        if self._has_filled_order_been_applied(order):
-            return refreshed
-        for i in range(constants.MAX_PORTFOLIO_SYNC_ATTEMPTS):
-            await asyncio.sleep(constants.SYNC_ATTEMPTS_INTERVAL)
-            refreshed = await self._refresh_real_trader_portfolio()
-            # + 2 since 1st attempt is before looping
-            self.logger.info(f"Updated portfolio fetched after {i + 2} attempts")
-            if self._has_filled_order_been_applied(order):
-                return refreshed
-        self.logger.error(f"Filled order has not be counted in portfolio after {time.time() - t0} seconds")
-        return refreshed
-    
-    async def _refresh_real_trader_portfolio_until_withdrawal_applied(self, amount, currency) -> bool:
-        t0 = time.time()
-        previous_available_amount = self.portfolio.get_currency_portfolio(currency).available
-        refreshed = await self._refresh_real_trader_portfolio()
-        if self._has_withdrawal_been_applied(previous_available_amount, amount, currency):
-            return refreshed
-        for i in range(constants.MAX_PORTFOLIO_SYNC_ATTEMPTS):
-            await asyncio.sleep(constants.SYNC_ATTEMPTS_INTERVAL)
-            refreshed = await self._refresh_real_trader_portfolio()
-            # + 2 since 1st attempt is before looping
-            self.logger.info(f"Updated portfolio fetched after {i + 2} attempts")
-            if self._has_withdrawal_been_applied(previous_available_amount, amount, currency):
-                return refreshed
-        self.logger.error(f"Withdrawal has not be counted in portfolio after {time.time() - t0} seconds")
-        return refreshed
-
-    def _has_filled_order_been_applied(self, order):
-        if self.exchange_manager.is_future:
-            # implement futures if necessary
-            return True
-        # in spot, consider order fill if the portfolio contains at least the order's executed amount
-        base, quote = commons_symbols.parse_symbol(order.symbol).base_and_quote()
-        checked_asset = base if order.side == enums.TradeOrderSide.BUY else quote
-        checked_amount = (
-            order.origin_quantity
-            if order.side == enums.TradeOrderSide.BUY else (order.origin_quantity * order.origin_price)
-        ) * decimal.Decimal("0.95") # consider a 5% error margin
-        available_amount = self.portfolio.get_currency_portfolio(checked_asset).available
-        # if available_amount > checked_amount, then the order fill is most likely taken into account in portfolio
-        return available_amount > checked_amount
-
-    def _has_withdrawal_been_applied(self, previous_available_amount, amount, currency):
-        if self.exchange_manager.is_future:
-            # implement futures if necessary
-            return True
-        # consider withdrawal successful if the portfolio available amount is less than the previous available amount minus the withdrawal amount
-        return self.portfolio.get_currency_portfolio(currency).available <= previous_available_amount - (amount * decimal.Decimal("0.95"))
+        return False, None
 
     async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
         """
@@ -184,23 +129,30 @@ class PortfolioManager(util.Initializable):
                 return await self._refresh_real_trader_portfolio()
         return False
 
-    async def handle_balance_update_from_withdrawal(self, amount: decimal.Decimal, currency: str) -> bool:
+    async def handle_balance_update_from_withdrawal(
+        self, transaction: dict, expect_withdrawal_update: bool
+    ) -> tuple[bool, typing.Optional[update_events.PortfolioUpdateEvent]]:
         """
         Handle a balance update from a withdrawal update
         :param amount: the amount to withdraw
         :param currency: the currency to withdraw
         :return: True if the portfolio was updated
         """
+        amount = transaction[enums.ExchangeConstantsTransactionColumns.AMOUNT.value]
+        currency = transaction[enums.ExchangeConstantsTransactionColumns.CURRENCY.value]
         if self.trader.can_trade_if_not_paused():
             if not self.enable_portfolio_exchange_sync:
                 self.portfolio.update_portfolio_from_withdrawal(amount, currency)
-                return True
+                return True, None
             async with self.portfolio_history_update():
                 if self.trader.simulate:
                     self.portfolio.update_portfolio_from_withdrawal(amount, currency)
-                    return True
-                return await self._refresh_real_trader_portfolio_until_withdrawal_applied(amount, currency)
-        return False
+                    return True, None
+                return await self._refresh_real_trader_portfolio_and_init_event_checker_if_needed(
+                    update_events.TransactionUpdateEvent(self.portfolio, transaction, False),
+                    expect_withdrawal_update
+                )
+        return False, None
     
     async def handle_balance_update_from_deposit(self, amount: decimal.Decimal, currency: str) -> None:
         """
@@ -312,6 +264,22 @@ class PortfolioManager(util.Initializable):
         return await exchange_channel.get_chan(
             constants.BALANCE_CHANNEL, self.exchange_manager.id
         ).get_internal_producer().refresh_real_trader_portfolio()
+
+    async def start_expected_portfolio_update_checker(self) -> None:
+        if not await exchange_channel.get_chan(
+            constants.BALANCE_CHANNEL, self.exchange_manager.id
+        ).get_internal_producer().start_expected_portfolio_update_checker():
+            self.logger.error(
+                f"Impossible to start expected portfolio update checker for {self.exchange_manager.exchange_name}"
+            )
+
+    async def stop_expected_portfolio_update_checker(self) -> None:
+        if not await exchange_channel.get_chan(
+            constants.BALANCE_CHANNEL, self.exchange_manager.id
+        ).get_internal_producer().stop_expected_portfolio_update_checker():
+            self.logger.error(
+                f"Impossible to stop expected portfolio update checker for {self.exchange_manager.exchange_name}"
+            )
 
     async def reset_history(self):
         if self.trader.simulate:
@@ -428,6 +396,42 @@ class PortfolioManager(util.Initializable):
             )
         )
 
+    async def resolve_pending_portfolio_update_events_if_any(self):
+        unresolved_events = []
+        for event in self.pending_portfolio_update_events:
+            if event.is_resolved(self.portfolio):
+                event.set()
+            else:
+                unresolved_events.append(event)
+        self.pending_portfolio_update_events = unresolved_events
+        if self.pending_portfolio_update_events:
+            self.logger.info(
+                f"{len(self.pending_portfolio_update_events)} pending portfolio update events: "
+                f"{self.pending_portfolio_update_events}"
+            )
+        else:
+            self.logger.info("No pending portfolio update events: stopping expected portfolio update checker")
+            await self.stop_expected_portfolio_update_checker()
+
+    def has_pending_portfolio_update_events(self) -> bool:
+        return bool(self.pending_portfolio_update_events)
+
+    async def _refresh_real_trader_portfolio_and_init_event_checker_if_needed(
+        self, event: update_events.PortfolioUpdateEvent, update_expected: bool
+    ) -> tuple[bool, typing.Optional[update_events.PortfolioUpdateEvent]]:
+        # for real trading only:
+        # reload portfolio to ensure portfolio sync
+        self.pending_portfolio_update_events.append(event)
+        refreshed = await self._refresh_real_trader_portfolio()
+        if not update_expected:
+            return refreshed, None
+        # refreshing real trader portfolio might have set the event,
+        # if so, no need to start the expected portfolio update checker
+        if not event.is_set():
+            # portfolio has not yet been updated: event will be set when portfolio is updated
+            await self.start_expected_portfolio_update_checker()
+        return refreshed, event
+
     async def stop(self):
         if self.historical_portfolio_value_manager is not None:
             await self.historical_portfolio_value_manager.stop()
@@ -440,3 +444,4 @@ class PortfolioManager(util.Initializable):
         self.portfolio_value_holder.clear()
         self.portfolio_value_holder = None # type: ignore
         self.historical_portfolio_value_manager = None # type: ignore
+        self.pending_portfolio_update_events = []

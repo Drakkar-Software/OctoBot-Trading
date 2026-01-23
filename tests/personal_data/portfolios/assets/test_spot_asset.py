@@ -77,3 +77,8 @@ def test_restore():
     with pytest.raises(errors.PortfolioNegativeValueError):
         asset.update(available=-decimal.Decimal(96))
     assert asset.available == decimal.Decimal(95)
+
+
+def test_get_total_holdings():
+    asset = spot_asset.SpotAsset(ASSET_CURRENCY_NAME, available=decimal.Decimal(12), total=constants.ONE_HUNDRED)
+    assert asset.get_total_holdings() == constants.ONE_HUNDRED

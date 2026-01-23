@@ -146,3 +146,8 @@ def test_restore():
         asset.update(position_margin=decimal.Decimal(46))
     assert asset.position_margin == decimal.Decimal(5)
     assert asset.available == decimal.Decimal(45)
+
+
+def test_get_total_holdings():
+    asset = future_asset.FutureAsset(ASSET_CURRENCY_NAME, available=decimal.Decimal(12), total=constants.ONE_HUNDRED, wallet_balance=decimal.Decimal(42))
+    assert asset.get_total_holdings() == decimal.Decimal(42)

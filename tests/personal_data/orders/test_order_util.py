@@ -505,7 +505,7 @@ async def test_create_as_chained_order_bundled_order_no_open_order(trader_simula
 
 
 @pytest.mark.asyncio
-async def test_create_as_chained_order_bundled_order_no_open_order(trader_simulator):
+async def test_create_as_chained_order_bundled_order_with_open_orders(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 
     open_order_1 = personal_data.SellLimitOrder(trader_inst)

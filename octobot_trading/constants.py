@@ -53,7 +53,7 @@ INCLUDE_DUSTS_IN_SELL_ORDERS_WHEN_POSSIBLE = os_util.parse_boolean_environment_v
 
 # Portfolio
 MAX_PORTFOLIO_SYNC_ATTEMPTS = 1
-SYNC_ATTEMPTS_INTERVAL = 20
+EXPECTED_PORTFOLIO_UPDATE_TIMEOUT = 1 * commons_constants.MINUTE_TO_SECONDS
 SUB_PORTFOLIO_ALLOWED_MISSING_RATIO = decimal.Decimal("0.01")   # Allow 1% missing funds
 SUB_PORTFOLIO_ALLOWED_DELTA_RATIO = decimal.Decimal("0.05")   # Allow 5% delta compared to filled orders
 MAX_ORDER_INFERENCE_QUICK_CHECK_COMBINATIONS_COUNT = 10000
@@ -123,6 +123,7 @@ ZERO = decimal.Decimal(0)
 ONE = decimal.Decimal(1)
 ONE_HUNDRED = decimal.Decimal(100)
 NaN = decimal.Decimal("nan")
+NINETY_FIVE_PERCENT = decimal.Decimal("0.95")
 
 # exchanges where test_get_historical_symbol_prices is successful can be listed here
 FULL_CANDLE_HISTORY_EXCHANGES = [

@@ -69,7 +69,7 @@ def _is_authenticated_cache(client_key: str) -> bool:
 @contextlib.contextmanager
 def isolated_empty_cache():
     # temporarily use an isolated empty cache
-    global _MARKETS_BY_EXCHANGE, _AUTH_MARKETS_BY_EXCHANGE
+    global _MARKETS_BY_EXCHANGE, _AUTH_MARKETS_BY_EXCHANGE  # pylint: disable=global-statement
     previous_markets_by_exchange = _MARKETS_BY_EXCHANGE
     previous_auth_markets_by_exchange = _AUTH_MARKETS_BY_EXCHANGE
     _MARKETS_BY_EXCHANGE = cachetools.TTLCache(maxsize=50, ttl=_CACHE_TIME)

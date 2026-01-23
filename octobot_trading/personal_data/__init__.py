@@ -190,6 +190,9 @@ from octobot_trading.personal_data.portfolios import (
     HistoricalPortfolioValueManager,
     SubPortfolioData,
     ResolvedOrdersPortoflioDelta,
+    FilledOrderUpdateEvent,
+    TransactionUpdateEvent,
+    PortfolioUpdateEvent,
 )
 from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
@@ -502,4 +505,7 @@ __all__ = [
     "OrderCancelPolicy",
     "ExpirationTimeOrderCancelPolicy",
     "ChainedOrderFillingPriceOrderCancelPolicy",
+    "FilledOrderUpdateEvent",
+    "TransactionUpdateEvent",
+    "PortfolioUpdateEvent",
 ]

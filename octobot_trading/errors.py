@@ -189,7 +189,7 @@ class ConfigurationPermissionError(OctoBotTradingError):
     """
 
 
-class DisabledFundsTransferError(PermissionError):
+class DisabledFundsTransferError(ConfigurationPermissionError):
     """
     Raised when funds transfer is disabled
     """

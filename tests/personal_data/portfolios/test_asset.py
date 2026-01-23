@@ -59,3 +59,8 @@ def test__ensure_not_negative():
     assert asset._ensure_not_negative(decimal.Decimal(1)) == decimal.Decimal(1)
     assert asset._ensure_not_negative(constants.ZERO) == constants.ZERO
     assert asset._ensure_not_negative(decimal.Decimal(-1)) == constants.ZERO
+
+
+def test_get_total_holdings():
+    asset = assets.Asset(ASSET_CURRENCY_NAME, available=decimal.Decimal(12), total=constants.ONE_HUNDRED)
+    assert asset.get_total_holdings() == constants.ONE_HUNDRED

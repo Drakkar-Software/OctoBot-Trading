@@ -80,6 +80,10 @@ class ExchangePersonalData(util.Initializable):
         try:
             async with self.portfolio_manager.portfolio_history_update():
                 changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
+                # this function is called after a new balance has been fetched from the exchange
+                # so we can resolve pending portfolio update events
+                # other calls will call "_refresh_real_trader_portfolio" if needed, which will end up calling this function
+                await self.resolve_pending_portfolio_update_events()
                 if should_notify:
                     await self.handle_portfolio_update_notification(balance)
                 return changed
@@ -87,14 +91,26 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
+    async def resolve_pending_portfolio_update_events(self):
+        await self.portfolio_manager.resolve_pending_portfolio_update_events_if_any()
+
     async def handle_portfolio_and_position_update_from_order(
         self, order, require_exchange_update: bool = True, expect_filled_order_update: bool = False,
         should_notify: bool = True
     ) -> bool:
         try:
-            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(
+            changed, event = await self.portfolio_manager.handle_balance_update_from_order(
                 order, require_exchange_update, expect_filled_order_update
             )
+            if event is not None and not event.is_set() and expect_filled_order_update:
+                try:
+                    await asyncio.wait_for(event.wait(), timeout=constants.EXPECTED_PORTFOLIO_UPDATE_TIMEOUT)
+                    changed = True
+                except asyncio.TimeoutError:
+                    self.logger.error(
+                        f"Expected portfolio update timed out after {constants.EXPECTED_PORTFOLIO_UPDATE_TIMEOUT} "
+                        f"seconds when waiting for filled order update. Order: {order}"
+                    )
             if self.exchange_manager.is_future:
                 changed = await self.positions_manager.handle_position_update_from_order(
                     order, require_exchange_update
@@ -136,29 +152,31 @@ class ExchangePersonalData(util.Initializable):
             return False
 
     async def handle_portfolio_update_from_withdrawal(
-        self,
-        currency: str,
-        quantity: decimal.Decimal,
-        blockchain_network: str,
-        transaction_id: str,
-        destination_address: str,
-        transaction_status: enums.BlockchainTransactionStatus = enums.BlockchainTransactionStatus.CREATED,
-        source_address: typing.Optional[str] = None,
-        transaction_fee: typing.Optional[dict] = None,
-        should_notify: bool = True
+        self, transaction: dict, expect_withdrawal_update: bool = False, should_notify: bool = True
     ) -> bool:
-        changed = await self.portfolio_manager.handle_balance_update_from_withdrawal(quantity, currency)
+        changed, event = await self.portfolio_manager.handle_balance_update_from_withdrawal(
+            transaction, expect_withdrawal_update
+        )
+        if event is not None and not event.is_set() and expect_withdrawal_update:
+            try:
+                await asyncio.wait_for(event.wait(), timeout=constants.EXPECTED_PORTFOLIO_UPDATE_TIMEOUT)
+                changed = True
+            except asyncio.TimeoutError:
+                self.logger.error(
+                    f"Expected portfolio update timed out after {constants.EXPECTED_PORTFOLIO_UPDATE_TIMEOUT} "
+                    f"seconds when waiting for withdrawal update. Transaction: {transaction}"
+                )
         transaction_factory.create_blockchain_transaction(
             self.exchange_manager,
-            currency, 
-            quantity,
-            blockchain_network,
-            transaction_id,
+            transaction[enums.ExchangeConstantsTransactionColumns.CURRENCY.value], 
+            transaction[enums.ExchangeConstantsTransactionColumns.AMOUNT.value],
+            transaction[enums.ExchangeConstantsTransactionColumns.NETWORK.value],
+            transaction[enums.ExchangeConstantsTransactionColumns.TXID.value],
             enums.TransactionType.BLOCKCHAIN_WITHDRAWAL,
-            destination_address,
-            blockchain_transaction_status=transaction_status,
-            source_address=source_address,
-            transaction_fee=transaction_fee,
+            destination_address=transaction[enums.ExchangeConstantsTransactionColumns.ADDRESS_TO.value],
+            blockchain_transaction_status=transaction[enums.ExchangeConstantsTransactionColumns.STATUS.value],
+            source_address=transaction[enums.ExchangeConstantsTransactionColumns.ADDRESS_FROM.value],
+            transaction_fee=transaction[enums.ExchangeConstantsTransactionColumns.FEE.value],
         )
         if should_notify:
             await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)

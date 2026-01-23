@@ -76,6 +76,13 @@ class FutureAsset(asset_class.Asset):
             self.position_margin = self.position_margin + other_asset.position_margin
         if other_asset.order_margin != constants.ZERO:
             self.order_margin = self.order_margin + other_asset.order_margin
+    
+    def get_total_holdings(self):
+        """
+        Get the total holdings of the asset: in futures, this is the wallet balance
+        :return: the total holdings
+        """
+        return self.wallet_balance
 
 
     def restore(self, old_asset):

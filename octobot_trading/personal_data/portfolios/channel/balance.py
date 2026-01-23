@@ -51,9 +51,11 @@ class BalanceProducer(exchanges_channel.ExchangeChannelProducer):
     async def refresh_real_trader_portfolio(self, force_manual_refresh=False) -> bool:
         if self.channel.exchange_manager.is_simulated:
             # simulated portfolio can't be out of sync
+            await self.channel.exchange_manager.exchange_personal_data.resolve_pending_portfolio_update_events()
             return True
-        if force_manual_refresh or exchanges.requires_refresh_trigger(self.channel.exchange_manager,
-                                                                      constants.BALANCE_CHANNEL):
+        if force_manual_refresh or exchanges.requires_refresh_trigger(
+            self.channel.exchange_manager, constants.BALANCE_CHANNEL
+        ):
             self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
             return await self._update_portfolio_from_exchange()
         else:
@@ -69,7 +71,23 @@ class BalanceProducer(exchanges_channel.ExchangeChannelProducer):
         """
         balance = await self.channel.exchange_manager.exchange.get_balance()
         return await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(
-            balance=balance, should_notify=should_notify, is_diff_update=False)
+            balance=balance, should_notify=should_notify, is_diff_update=False
+        )
+
+    async def start_expected_portfolio_update_checker(self) -> bool:
+        if self._has_updater():
+            await self.channel.producers[-1].set_expected_portfolio_update(True)
+            return True
+        return False
+
+    async def stop_expected_portfolio_update_checker(self) -> bool:
+        if self._has_updater():
+            await self.channel.producers[-1].set_expected_portfolio_update(False)
+            return True
+        return False
+
+    def _has_updater(self) -> bool:
+        return bool(self.channel.producers)
 
 
 class BalanceChannel(exchanges_channel.ExchangeChannel):
