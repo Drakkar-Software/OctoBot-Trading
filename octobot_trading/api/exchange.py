@@ -16,14 +16,15 @@
 #  License along with this library.
 import asyncio
 import contextlib
+import typing
 
 import trading_backend
 
 import octobot_commons.symbols as commons_symbols
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.constants
 import octobot_trading.enums
-import octobot_trading.exchanges.connectors.ccxt.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
 
@@ -156,6 +157,27 @@ def get_all_exchange_ids_with_same_matrix_id(exchange_name: str, exchange_id: st
     """
     return get_all_exchange_ids_from_matrix_id(
         get_exchange_configuration_from_exchange(exchange_name, exchange_id).matrix_id)
+
+
+async def register_new_pairs_on_exchange(
+    exchange_name: str, matrix_id: str, pairs: list[str],
+    watch_only: bool, time_frames: typing.Optional[list[commons_enums.TimeFrames]] = None
+) -> None:
+    for exchange_id in get_all_exchange_ids_from_matrix_id(matrix_id):
+        exchange_manager = get_exchange_manager_from_exchange_id(exchange_id)
+        if exchange_name == exchange_manager.exchange_name:
+            await register_new_pairs_on_exchange_manager(exchange_manager, pairs, watch_only, time_frames=time_frames)
+            return
+
+
+async def register_new_pairs_on_exchange_manager(
+    exchange_manager, pairs: list[str],
+    watch_only: bool, time_frames: typing.Optional[list[commons_enums.TimeFrames]] = None
+) -> None:
+    if watch_only:
+        await exchange_manager.exchange_config.add_watched_symbols(pairs)
+    else:
+        await exchange_manager.exchange_config.add_traded_symbols(pairs, time_frames or [])
 
 
 def get_exchange_names() -> list:

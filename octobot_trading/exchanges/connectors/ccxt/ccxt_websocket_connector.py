@@ -431,10 +431,28 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         """
         Subscribes a new candle feed for each time frame
         """
+        self._subscribe_additional_pairs_special_time_frames_candle_feed()
         for time_frame in self.time_frames:
+            # regular time frames are subscribed for all pairs (both configured and additional)
             self._subscribe_feed(
                 Feeds.CANDLE,
                 symbols=self.filtered_pairs,
+                time_frame=time_frame.value,
+            )
+
+    def _subscribe_additional_pairs_special_time_frames_candle_feed(self):
+        """
+        Additional pairs may require special time frames: support it for them
+        """
+        additionnal_pairs = [
+            pair
+            for pair in self.filtered_pairs
+            if pair in self.exchange_manager.exchange_config.additional_traded_pairs
+        ]
+        for time_frame in self.exchange_manager.exchange_config.additional_time_frames:
+            self._subscribe_feed(
+                Feeds.CANDLE,
+                symbols=additionnal_pairs,
                 time_frame=time_frame.value,
             )
 
@@ -778,7 +796,7 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
     def _create_task_if_necessary(self, feed, feed_callback, feed_generator, **kwargs):
         identifier = self._get_feed_identifier(feed_generator, kwargs)
         if identifier not in self.feed_tasks:
-            self.logger.debug(
+            self.logger.info(
                 f"Subscribing to {feed.value} with {kwargs} ({len(self.feed_tasks)} total feeds)"
             )
             self.feed_tasks[identifier] = asyncio.create_task(
@@ -840,7 +858,9 @@ class CCXTWebsocketConnector(abstract_websocket_exchange.AbstractWebsocketExchan
         return is_initialized_func()
 
     def _get_feed_identifier(self, feed_generator, kwargs):
-        return f"{feed_generator.__name__}{kwargs}"
+        # since is not part of the identifier as it depends on the start time
+        kwargs_str = ", ".join([f"{k}: {v}" for k, v in kwargs.items() if k != "since"])
+        return f"{feed_generator.__name__}{kwargs_str}"
 
     def _filter_exchange_pairs_and_timeframes(self):
         """

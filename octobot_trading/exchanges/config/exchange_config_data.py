@@ -28,16 +28,16 @@ import octobot_commons.tree as commons_tree
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config
 import octobot_trading.exchanges.util as exchange_util
+import octobot_trading.exchanges.exchange_websocket_factory as exchange_websocket_factory
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.util as util
-import octobot_trading.exchanges.config.channel_specs as channel_specs_import
 
 
 class ExchangeConfig(util.Initializable):
     def __init__(self, exchange_manager):
         super().__init__()
-        self._logger = logging.get_logger(self.__class__.__name__)
+        self._logger = logging.get_logger(f"{self.__class__.__name__}[{exchange_manager.exchange_name}]")
 
         self.exchange_manager = exchange_manager
         self.config: dict[str, typing.Any] = exchange_manager.config
@@ -69,11 +69,11 @@ class ExchangeConfig(util.Initializable):
         # list of exchange supported time frames that are traded (config + real time) and that are used for display only
         self.available_time_frames: list[commons_enums.TimeFrames] = []
 
+        # list of potential additional time frames to be used by additional_traded_pairs only
+        self.additional_time_frames: list[commons_enums.TimeFrames] = []
+
         # number of required historical candles
         self.required_historical_candles_count: int = constants.DEFAULT_IGNORED_VALUE
-
-        # periodic updaters that should always be started for this configuration
-        self.forced_updater_channels: set[channel_specs_import.ChannelSpecs] = set()
 
         # When False, cancelled orders won't be saved in trades history
         self.is_saving_cancelled_orders_as_trade: bool = True
@@ -154,30 +154,45 @@ class ExchangeConfig(util.Initializable):
         # If required timeframes: use those. Use traded timeframes otherwise
         return self.available_required_time_frames or self.traded_time_frames
 
-    def get_forced_updater_channel_specs(self, channel: str) -> list[channel_specs_import.ChannelSpecs]:
-        return [
-            channel_spec 
-            for channel_spec in self.forced_updater_channels 
-            if channel_spec.channel == channel
-        ]
-
-    def add_forced_updater_channels(self, channel_specs: set[channel_specs_import.ChannelSpecs]):
-        self.forced_updater_channels.update(channel_specs)
-
     def set_is_saving_cancelled_orders_as_trade(self, value: bool):
         self.is_saving_cancelled_orders_as_trade = value
 
-    async def add_watched_symbols(self, symbols):
-        await self.update_traded_symbol_pairs(added_pairs=symbols, removed_pairs=[], watch_only=True)
+    async def add_watched_symbols(self, symbols: list[str]):
+        await self.update_traded_symbol_pairs(
+            added_pairs=symbols, removed_pairs=[], added_time_frames=[], watch_only=True
+        )
 
-    async def update_traded_symbol_pairs(self, added_pairs: list[str], removed_pairs: list[str], watch_only: bool = False):
+    async def add_traded_symbols(self, symbols: list[str], time_frames: list[commons_enums.TimeFrames]):
+        await self.update_traded_symbol_pairs(
+            added_pairs=symbols, removed_pairs=[], added_time_frames=time_frames, watch_only=False
+        )
+
+    async def update_traded_symbol_pairs(
+        self,
+        added_pairs: list[str],
+        removed_pairs: list[str],
+        added_time_frames: list[commons_enums.TimeFrames],
+        watch_only: bool = False,
+    ):
         # All channels with a modify() method should be added here
         watch_only_channels_to_notify = [trading_constants.TICKER_CHANNEL]
-        traded_channels_to_notify = watch_only_channels_to_notify + [
-            trading_constants.FUNDING_CHANNEL,
-            trading_constants.POSITIONS_CHANNEL,
-            trading_constants.ORDERS_CHANNEL,
-        ]
+        traded_channels_to_notify_when_no_websocket = exchange_channel.get_to_notify_on_traded_symbols_update_channels(
+            self.exchange_manager.id
+        )
+        traded_channels_to_notify = {
+            name: channel 
+            for name, channel in traded_channels_to_notify_when_no_websocket.items()
+            if (
+                not exchange_websocket_factory.is_channel_managed_by_websocket(
+                    self.exchange_manager, name
+                )
+            ) or (
+                exchange_websocket_factory.is_channel_managed_by_websocket(
+                    self.exchange_manager, name
+                )
+                and exchange_websocket_factory.is_websocket_feed_requiring_init(self.exchange_manager, name) 
+            )
+        }
         new_valid_symbol_pairs = [
             symbol_pair
             for symbol_pair in added_pairs
@@ -196,32 +211,65 @@ class ExchangeConfig(util.Initializable):
             and symbol_pair in self.additional_traded_pairs 
             and (not watch_only or symbol_pair in self.watched_pairs)
         ]
+        new_valid_time_frames = [
+            time_frame
+            for time_frame in added_time_frames
+            if time_frame not in self.additional_time_frames
+            and time_frame not in self.available_time_frames
+            and self.exchange_manager.time_frame_exists(time_frame.value)
+        ]
+        if not (new_valid_symbol_pairs or removed_valid_symbol_pairs):
+            # nothing to do
+            if new_valid_time_frames:
+                self._logger.error(
+                    f"Ignored additional time frames for watched pairs: {new_valid_time_frames} "
+                    f"(no traded or watched pairs to add)"
+                )
+            return
         try:
             if watch_only:
                 self.watched_pairs += new_valid_symbol_pairs
                 self.watched_pairs = [pair for pair in self.watched_pairs if pair not in removed_valid_symbol_pairs]
+                if new_valid_time_frames:
+                    self._logger.error(
+                        f"Ignored additional time frames for watched pairs: {new_valid_time_frames} "
+                        f"(watched pairs are not bound to any time frame)"
+                    )
             else:
                 self.additional_traded_pairs += new_valid_symbol_pairs
                 self.additional_traded_pairs = [pair for pair in self.additional_traded_pairs if pair not in removed_valid_symbol_pairs]
-            self._logger.debug(f"Updated {watch_only and 'watched' or 'traded'} symbol pairs: {new_valid_symbol_pairs} and removing {removed_valid_symbol_pairs}")
+                if new_valid_time_frames:
+                    self.additional_time_frames += new_valid_time_frames
+                    self._logger.debug(f"Adding additional time frames: {new_valid_time_frames}")
+                elif not self.available_time_frames:
+                    # if no available time frames, use a default time as at least one is required
+                    self.additional_time_frames.append(commons_enums.TimeFrames.ONE_HOUR)
+                    self._logger.info(
+                        f"No available time frames found for {self.exchange_manager.exchange_name}, using default time frame: {self.additional_time_frames[0]}"
+                    )
+            removing = f" and removing {removed_valid_symbol_pairs}" if removed_valid_symbol_pairs else ""
+            self._logger.debug(
+                f"Updated {'watched' if watch_only else 'traded'} symbol pairs: adding {new_valid_symbol_pairs}{removing}"
+            )
             if self.exchange_manager.has_websocket:
                 if new_valid_symbol_pairs:
-                    self.exchange_manager.exchange_web_socket.add_pairs(new_valid_symbol_pairs, watching_only=False)
+                    self.exchange_manager.exchange_web_socket.add_pairs(new_valid_symbol_pairs, watching_only=watch_only)
                 if removed_valid_symbol_pairs:
-                    self.exchange_manager.exchange_web_socket.remove_pairs(removed_valid_symbol_pairs, watching_only=False)
-                if watch_only and self.watched_pairs:
-                    self.exchange_manager.exchange_web_socket.add_pairs(self.watched_pairs, watching_only=True)
+                    self.exchange_manager.exchange_web_socket.remove_pairs(removed_valid_symbol_pairs, watching_only=watch_only)
                 await self.exchange_manager.exchange_web_socket.handle_updated_pairs(debounce_duration=1)
 
             for channel in watch_only_channels_to_notify:
-                await exchange_channel.get_chan(channel, self.exchange_manager.id).modify(added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs)
+                await exchange_channel.get_chan(channel, self.exchange_manager.id).modify(
+                    added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs
+                )
 
             if not watch_only:
-                for channel in traded_channels_to_notify:
-                    await exchange_channel.get_chan(channel, self.exchange_manager.id).modify(added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs)
+                for channel in traded_channels_to_notify.values():
+                    await channel.modify(
+                        added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs
+                    )
         except Exception as e:
-            self._logger.exception(e, True, f"Failed to update {watch_only and 'watched' or 'traded'} symbol pairs {added_pairs} and {removed_pairs} : {e}")
-            self._logger.error(f"Failed to update {watch_only and 'watched' or 'traded'} symbol pairs {added_pairs} and {removed_pairs} : {e}")
+            self._logger.exception(e, True, f"Failed to update {'watched' if watch_only else 'traded'} symbol pairs {added_pairs} and {removed_pairs} : {e}")
 
     def _set_config_traded_pairs(self):
         self.traded_cryptocurrencies = {}

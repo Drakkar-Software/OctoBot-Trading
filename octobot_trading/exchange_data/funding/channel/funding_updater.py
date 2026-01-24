@@ -29,6 +29,8 @@ import octobot_trading.errors as errors
 
 
 class FundingUpdater(funding_channel.FundingProducer):
+    # set True if this channels should be notified when traded symbols are updated
+    TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE: bool = True
     """
     The Funding Update fetch the exchange funding rate and send it to the Funding Channel
     """
@@ -176,6 +178,8 @@ class FundingUpdater(funding_channel.FundingProducer):
         )
 
     async def modify(self, added_pairs=None, removed_pairs=None):
+        if not self._should_run():
+            return
         if added_pairs:
             await self._funding_fetch_and_push()
 

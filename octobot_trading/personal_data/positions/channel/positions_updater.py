@@ -28,6 +28,8 @@ import octobot_trading.exchange_data as exchange_data
 
 
 class PositionsUpdater(positions_channel.PositionsProducer):
+    # set True if this channels should be notified when traded symbols are updated
+    TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE: bool = True
     """
     Update positions from exchange
     Can also be used to update a specific positions from exchange
@@ -246,6 +248,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
 
     async def modify(self, added_pairs=None, removed_pairs=None):
+        if not self._should_run():
+            return
         if added_pairs:
             self.logger.info(f"Fetching positions for new traded symbols: {added_pairs}...")
             await self.fetch_and_push_positions()

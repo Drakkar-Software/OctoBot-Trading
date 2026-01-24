@@ -46,8 +46,6 @@ def is_channel_fully_managed_by_websocket(exchange_manager, channel):
                 exchange_manager.exchange_web_socket.is_time_frame_supported(time_frame)
                 for time_frame in exchange_manager.exchange_config.available_time_frames
             ])
-        ) and (
-            not exchange_manager.exchange_config.get_forced_updater_channel_specs(channel)
         )
     )
 
