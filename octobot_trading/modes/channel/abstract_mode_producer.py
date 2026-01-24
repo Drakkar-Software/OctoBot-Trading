@@ -306,8 +306,19 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                              time_frame, kline: dict):
         self.logger.error(f"kline_callback is registered but not implemented")
 
-    async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
-                              eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame) -> None:
+    async def matrix_callback(self, 
+        matrix_id: str, 
+        evaluator_name: str, 
+        evaluator_type: typing.Any,
+        eval_note: float, 
+        eval_note_type: typing.Optional[typing.Any] = None, 
+        eval_note_description: typing.Optional[str] = None, 
+        eval_note_metadata: typing.Optional[typing.Any] = None,
+        exchange_name: typing.Optional[str] = None, 
+        cryptocurrency: typing.Optional[str] = None, 
+        symbol: typing.Optional[str] = None, 
+        time_frame: typing.Optional[typing.Any] = None
+    ) -> None:
         """
         Called when a strategy updates the matrix
         :param matrix_id: the matrix_id
@@ -315,6 +326,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         :param evaluator_type: the evaluator type, should be EvaluatorMatrixTypes.STRATEGIES.value
         :param eval_note: the eval note, should be the strategy eval note
         :param eval_note_type: the eval note type
+        :param eval_note_description: the eval note description
+        :param eval_note_metadata: the eval note metadata
         :param exchange_name: the exchange name
         :param cryptocurrency: the cryptocurrency
         :param symbol: the symbol
