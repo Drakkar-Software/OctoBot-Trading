@@ -178,9 +178,11 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             else:
                 await client.load_markets(reload=reload)
                 self._ensure_successful_markets_fetch(client)
-            self.logger.info(
-                f"Loaded {len(client.markets) if client.markets else 0} [{self.exchange_manager.exchange_name}] markets"
-            )
+            message = f"Loaded {len(client.markets) if client.markets else 0} [{self.exchange_manager.exchange_name}] markets"
+            if reload:
+                self.logger.debug(message)
+            else:
+                self.logger.info(message)
         except octobot_trading.errors.FailedMarketStatusRequest as err:
             # failed to fetch markets, force reload for next time
             self._force_next_market_reload = True
