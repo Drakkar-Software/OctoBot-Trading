@@ -44,7 +44,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
 
     async def start(self):
         if not self.is_initialized:
-            await self._initialize(False)
+            await self._initialize(self.traded_pairs, False)
         await self.resume()
 
     async def handle_timestamp(self, timestamp, **kwargs):
@@ -136,7 +136,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
     def _get_traded_pairs(self):
         return api.get_available_symbols(self.exchange_data_importer)
 
-    def _get_time_frames(self):
+    def _get_time_frames(self, *_):
         return self.channel.exchange_manager.exchange.get_time_frames(self.exchange_data_importer)
 
     async def _initialize_candles(self, time_frame, pair, should_retry):

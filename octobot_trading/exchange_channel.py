@@ -50,13 +50,13 @@ class ExchangeChannelProducer(producers.Producer):
     Producer adapted for ExchangeChannel
     """
     CHANNEL_NAME = None
+    # set True if this channels should be notified when traded symbols are updated
+    TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE: bool = False
 
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{channel.exchange_manager.exchange_name}]")
         self.single_update_task = None
-        self.forced_specs: list = []
-        self.update_forced_specs()
 
     async def fetch_and_push(self):
         self.logger.error("self.fetch_and_push() is not implemented")
@@ -73,15 +73,6 @@ class ExchangeChannelProducer(producers.Producer):
             ):
                 return False
         return True
-
-    def update_forced_specs(self):
-        if self.CHANNEL_NAME is None:
-            return
-        self.forced_specs = self.channel.exchange_manager.exchange_config.get_forced_updater_channel_specs(
-            self.CHANNEL_NAME
-        )
-        if self.forced_specs:
-            self.logger.info(f"Using forced specs for channel {self.CHANNEL_NAME}: {self.forced_specs}")
 
 
 class ExchangeChannel(channels.Channel):
@@ -107,9 +98,9 @@ class ExchangeChannel(channels.Channel):
                            symbol: str = channel_constants.CHANNEL_WILDCARD,
                            cryptocurrency: str = channel_constants.CHANNEL_WILDCARD,
                            **kwargs) -> ExchangeChannelConsumer:
-        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback,
-                                                                                   size=size,
-                                                                                   priority_level=priority_level)
+        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(
+            callback, size=size, priority_level=priority_level
+        )
         await self._add_new_consumer_and_run(consumer,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
@@ -184,27 +175,38 @@ def set_chan(chan, name) -> None:
         raise ValueError(f"Channel {chan_name} already exists.")
 
 
-def get_exchange_channels(exchange_id) -> dict:
+def get_exchange_channels(exchange_id) -> dict[str, ExchangeChannel]:
     try:
         return channels.ChannelInstances.instance().channels[exchange_id]
-    except KeyError:
-        raise KeyError(f"Channels not found on exchange with id: {exchange_id}")
+    except KeyError as err:
+        raise KeyError(f"Channels not found on exchange with id: {exchange_id}") from err
 
+
+def get_to_notify_on_traded_symbols_update_channels(exchange_id) -> dict[str, ExchangeChannel]:
+    return {
+        name: channel
+        for name, channel in get_exchange_channels(exchange_id).items()
+        if (
+            isinstance(channel.get_internal_producer(), ExchangeChannelProducer)
+            and channel.get_internal_producer().TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE
+        ) or any(
+            isinstance(producer, ExchangeChannelProducer) and producer.TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE 
+            for producer in channel.producers
+        )
+    }
 
 def del_exchange_channel_container(exchange_id):
     try:
         channels.ChannelInstances.instance().channels.pop(exchange_id, None)
-    except KeyError:
-        raise KeyError(f"Channels not found on exchange with id: {exchange_id}")
+    except KeyError as err:
+        raise KeyError(f"Channels not found on exchange with id: {exchange_id}") from err
 
 
 def get_chan(chan_name, exchange_id) -> ExchangeChannel:
     try:
         return channels.ChannelInstances.instance().channels[exchange_id][chan_name]
-    except KeyError:
-        # get_logger(ExchangeChannel.__name__).error(f"Channel {chan_name} not found on exchange with id: "
-        #                                            f"{exchange_id}")
-        raise KeyError(f"Channel {chan_name} not found on exchange with id: {exchange_id}")
+    except KeyError as err:
+        raise KeyError(f"Channel {chan_name} not found on exchange with id: {exchange_id}") from err
 
 
 def del_chan(chan_name, exchange_id) -> None:

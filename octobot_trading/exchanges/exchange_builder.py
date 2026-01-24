@@ -116,14 +116,6 @@ class ExchangeBuilder:
             self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT],
             modes.get_required_candles_count(trading_mode_class, tentacles_setup_config)
         )
-        # register forced updaters if any
-        self.exchange_manager.exchange_config.add_forced_updater_channels(
-            await trading_mode_class.get_forced_updater_channels(
-                self.exchange_manager, 
-                tentacles_setup_config,
-                self.trading_config_by_trading_mode.get(trading_mode_class.get_name()) if self.trading_config_by_trading_mode else None
-            )
-        )
         self.exchange_manager.exchange_config.set_is_saving_cancelled_orders_as_trade(
             not trading_mode_class.is_ignoring_cancelled_orders_trades()
         )

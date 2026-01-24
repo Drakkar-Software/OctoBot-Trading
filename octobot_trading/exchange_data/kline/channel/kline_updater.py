@@ -26,6 +26,8 @@ import octobot_trading.enums as enums
 
 
 class KlineUpdater(kline_channel.KlineProducer):
+    # set True if this channels should be notified when traded symbols are updated
+    TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE: bool = True
     CHANNEL_NAME = constants.KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
     QUICK_KLINE_REFRESH_TIME = 3

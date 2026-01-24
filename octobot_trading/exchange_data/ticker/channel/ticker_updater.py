@@ -27,6 +27,8 @@ import octobot_trading.exchanges.exchange_websocket_factory as exchange_websocke
 
 
 class TickerUpdater(ticker_channel.TickerProducer):
+    # set True if this channels should be notified when traded symbols are updated
+    TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE: bool = True
     CHANNEL_NAME = constants.TICKER_CHANNEL
     TICKER_REFRESH_TIME = 64
     TICKER_FUTURE_REFRESH_TIME = 14
@@ -162,10 +164,13 @@ class TickerUpdater(ticker_channel.TickerProducer):
             if to_add_pairs:
                 self._added_pairs += to_add_pairs
                 self.logger.info(f"Added pairs : {to_add_pairs}")
+                for pair in to_add_pairs:
+                    # ensure pair symbol data and ticker are initialized
+                    await self.trigger_ticker_update(pair)
                 self._update_refresh_time()
 
         if removed_pairs:
-            self._added_pairs -= removed_pairs
+            self._added_pairs = [pair for pair in self._added_pairs if pair not in removed_pairs]
             self.logger.info(f"Removed pairs : {removed_pairs}")
             self._update_refresh_time()
 

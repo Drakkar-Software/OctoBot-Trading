@@ -343,15 +343,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             # when self.trading_config is None, should not happen
             return False
 
-    @classmethod
-    async def get_forced_updater_channels(
-        cls, 
-        exchange_manager: "octobot_trading.exchanges.ExchangeManager",
-        tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration, 
-        trading_config: typing.Optional[dict]
-    ) -> set[str]:
-        return set()
-
     def _health_check_interval_expired(self) -> bool:
         return self.exchange_manager.exchange.get_exchange_current_time() - self._last_health_check_time \
             > self.HEALTH_CHECK_INTERVAL

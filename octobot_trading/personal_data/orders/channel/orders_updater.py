@@ -27,6 +27,8 @@ import octobot_trading.constants as constants
 
 
 class OrdersUpdater(orders_channel.OrdersProducer):
+    # set True if this channels should be notified when traded symbols are updated
+    TO_NOTIFY_ON_TRADED_SYMBOLS_UPDATE: bool = True
     """
     Update open and close orders from exchange
     Can also be used to update a specific order from exchange
@@ -220,7 +222,12 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         else:
             self.logger.info(f"Can't received update for {order} on {exchange_name}: received order is None")
 
+    def _should_run(self):
+        return self.channel.exchange_manager.exchange.is_successfully_authenticated()
+
     async def modify(self, added_pairs=None, removed_pairs=None):
+        if not self._should_run():
+            return
         if added_pairs:
             for symbol in added_pairs:
                 self.logger.info(f"Fetching orders for new traded symbol: {symbol}...")

@@ -130,6 +130,9 @@ async def _create_producer(exchange_manager, producer) -> channel_producer.Produ
             f"is updated by {producer_instance.__class__.__name__}"
         )
         await producer_instance.run()
+    else:
+        # register producer to be able to reach it later on in modify() if needed
+        await producer_instance.channel.register_producer(producer_instance)
     return producer_instance
 
 
