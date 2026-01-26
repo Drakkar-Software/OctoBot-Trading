@@ -30,6 +30,7 @@ import binascii
 import copy
 
 import octobot_commons.enums
+import octobot_commons.tree as commons_tree
 import octobot_commons.symbols as commons_symbols
 import octobot_commons.html_util as html_util
 
@@ -284,6 +285,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                             await unauth_client.close()
                 else:
                     raise
+        # markets are now loaded, trigger event
+        commons_tree.EventProvider.instance().trigger_event(
+            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.exchange_manager.exchange_name,
+                octobot_commons.enums.InitializationEventExchangeTopics.MARKETS.value
+            )
+        )
 
     def get_client_symbols(self, active_only=True) -> set[str]:
         return ccxt_client_util.get_symbols(self.client, active_only)
