@@ -274,12 +274,9 @@ class PortfolioManager(util.Initializable):
             )
 
     async def stop_expected_portfolio_update_checker(self) -> None:
-        if not await exchange_channel.get_chan(
+        await exchange_channel.get_chan(
             constants.BALANCE_CHANNEL, self.exchange_manager.id
-        ).get_internal_producer().stop_expected_portfolio_update_checker():
-            self.logger.error(
-                f"Impossible to stop expected portfolio update checker for {self.exchange_manager.exchange_name}"
-            )
+        ).get_internal_producer().stop_expected_portfolio_update_checker()
 
     async def reset_history(self):
         if self.trader.simulate:
