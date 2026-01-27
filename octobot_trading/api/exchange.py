@@ -246,8 +246,11 @@ def get_all_exchange_time_frames(exchange_manager) -> list:
     return exchange_manager.client_time_frames
 
 
-def get_trading_symbols(exchange_manager) -> list[commons_symbols.Symbol]:
-    return exchange_manager.exchange_config.traded_symbols
+def get_trading_symbols(exchange_manager, include_additional_pairs: bool = False) -> list[commons_symbols.Symbol]:
+    if include_additional_pairs:
+        return exchange_manager.exchange_config.traded_symbols + exchange_manager.exchange_config.additional_traded_pairs
+    else:
+        return exchange_manager.exchange_config.traded_symbols
 
 
 def get_trading_timeframes(exchange_manager) -> list:
