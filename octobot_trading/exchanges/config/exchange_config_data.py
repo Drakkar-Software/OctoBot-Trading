@@ -57,6 +57,9 @@ class ExchangeConfig(util.Initializable):
         # list of exchange supported pairs on which we want to collect data through updaters or websocket
         self.additional_traded_pairs: list[str] = []
 
+        # list of exchange supported pairs that have been removed from the traded_symbol_pairs or additional_traded_pairs
+        self.removed_traded_pairs: list[str] = []
+
         # list of required time frames from configuration that are available
         self.available_required_time_frames: list[commons_enums.TimeFrames] = []
 
@@ -167,6 +170,11 @@ class ExchangeConfig(util.Initializable):
             added_pairs=symbols, removed_pairs=[], added_time_frames=time_frames, watch_only=False
         )
 
+    async def remove_traded_symbols(self, symbols: list[str]):
+        await self.update_traded_symbol_pairs(
+            added_pairs=[], removed_pairs=symbols, added_time_frames=[], watch_only=False
+        )
+
     async def update_traded_symbol_pairs(
         self,
         added_pairs: list[str],
@@ -200,6 +208,7 @@ class ExchangeConfig(util.Initializable):
             and self._is_valid_symbol(symbol_pair, [])
             and symbol_pair not in self.traded_symbol_pairs 
             and symbol_pair not in self.additional_traded_pairs 
+            and symbol_pair not in self.removed_traded_pairs
             and (not watch_only or symbol_pair not in self.watched_pairs)
         ]
         removed_valid_symbol_pairs = [
@@ -207,9 +216,8 @@ class ExchangeConfig(util.Initializable):
             for symbol_pair in removed_pairs
             if symbols_util.is_symbol(symbol_pair) 
             and self._is_valid_symbol(symbol_pair, [])
-            and symbol_pair in self.traded_symbol_pairs 
-            and symbol_pair in self.additional_traded_pairs 
-            and (not watch_only or symbol_pair in self.watched_pairs)
+            and (symbol_pair in self.traded_symbol_pairs or symbol_pair in self.additional_traded_pairs or (not watch_only or symbol_pair in self.watched_pairs))
+            and symbol_pair not in self.removed_traded_pairs
         ]
         new_valid_time_frames = [
             time_frame
@@ -268,6 +276,12 @@ class ExchangeConfig(util.Initializable):
                     await channel.modify(
                         added_pairs=new_valid_symbol_pairs, removed_pairs=removed_valid_symbol_pairs
                     )
+
+            if removed_valid_symbol_pairs:
+                self.traded_symbol_pairs = [pair for pair in self.traded_symbol_pairs if pair not in removed_valid_symbol_pairs]
+                self.additional_traded_pairs = [pair for pair in self.additional_traded_pairs if pair not in removed_valid_symbol_pairs]
+                self.watched_pairs = [pair for pair in self.watched_pairs if pair not in removed_valid_symbol_pairs]
+                self.removed_traded_pairs += removed_valid_symbol_pairs
         except Exception as e:
             self._logger.exception(e, True, f"Failed to update {'watched' if watch_only else 'traded'} symbol pairs {added_pairs} and {removed_pairs} : {e}")
 
