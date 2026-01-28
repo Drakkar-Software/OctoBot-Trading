@@ -336,7 +336,32 @@ class TestExchangeConfig:
                 assert f"Ignored additional time frames for watched pairs" in logger_mock.error.call_args[0][0]
             else:
                 assert logger_mock.error.call_count == 0
-            
+
+            # Test removed_traded_pairs
+            if removed_pairs:
+                # removed pairs should be tracked
+                assert exchange_manager.exchange_config.removed_traded_pairs == removed_pairs
+
+                # calling again with the same pairs should not change state for removed pairs
+                before_second_call_removed = list(exchange_manager.exchange_config.removed_traded_pairs)
+                await exchange_manager.exchange_config.update_traded_symbol_pairs(
+                    added_pairs=removed_pairs,
+                    removed_pairs=removed_pairs,
+                    added_time_frames=added_time_frames,
+                    watch_only=watch_only,
+                )
+                # removed_traded_pairs should remain unchanged
+                assert exchange_manager.exchange_config.removed_traded_pairs == before_second_call_removed
+                for pair in removed_pairs:
+                    # removed pairs should not re-appear in additional_traded_pairs
+                    assert pair not in exchange_manager.exchange_config.additional_traded_pairs
+                    # and should not re-appear in watched_pairs for watch_only mode
+                    if watch_only:
+                        assert pair not in exchange_manager.exchange_config.watched_pairs
+            else:
+                # no removed pairs: tracking list must stay empty
+                assert exchange_manager.exchange_config.removed_traded_pairs == []
+
             cancel_ccxt_throttle_task()
         finally:
             await exchange_manager.stop()
