@@ -407,7 +407,7 @@ class PortfolioManager(util.Initializable):
                 f"{self.pending_portfolio_update_events}"
             )
         else:
-            self.logger.info("No pending portfolio update events: stopping expected portfolio update checker")
+            self.logger.debug("No pending portfolio update events: stopping expected portfolio update checker")
             await self.stop_expected_portfolio_update_checker()
 
     def has_pending_portfolio_update_events(self) -> bool:

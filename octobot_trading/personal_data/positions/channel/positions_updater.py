@@ -129,7 +129,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         await asyncio.sleep(self.TIME_BETWEEN_POSITIONS_REFRESH)
 
     def _should_run(self):
-        return self.channel.exchange_manager.is_future
+        return self.channel.exchange_manager.is_future or self.channel.exchange_manager.is_option
 
     def _is_relevant_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
