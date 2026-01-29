@@ -28,7 +28,7 @@ class MarketsUpdater(markets_channel.MarketsProducer):
     CHANNEL_NAME = constants.MARKETS_CHANNEL
     SPOT_MARKETS_REFRESH_TIME = 86400 # 1 time per day
     FUTURES_MARKETS_REFRESH_TIME = 86400 # 1 time per day
-    OPTION_MARKETS_REFRESH_TIME = 150 # every 2.5 minutes
+    OPTION_MARKETS_REFRESH_TIME = 600 # every 10 minutes
 
     def __init__(self, channel):
         super().__init__(channel)
