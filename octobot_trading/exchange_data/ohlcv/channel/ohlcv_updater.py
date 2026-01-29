@@ -390,7 +390,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         # For now only remove the pair from the traded pairs if it's an option exchange
         if self.channel.exchange_manager.is_option:
             self.logger.warning(f"Removing {pair} from traded pairs...")
-            self.channel.exchange_manager.exchange_config.remove_traded_symbols([pair])
+            await self.channel.exchange_manager.exchange_config.remove_traded_symbols([pair])
 
     async def resume(self) -> None:
         await super().resume()
