@@ -279,6 +279,9 @@ async def test_get_holdings_ratio(backtesting_trader):
     exchange_manager.client_symbols = [symbol]
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
         value_converter.last_prices_by_trading_pair[symbol] = decimal.Decimal("1000")
+    # Also add the futures symbol price for value conversion
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
+        value_converter.last_prices_by_trading_pair["BTC/USDT:USDT"] = decimal.Decimal("1000")
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
         portfolio_current_value = decimal.Decimal("11")
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {}
@@ -295,7 +298,8 @@ async def test_get_holdings_ratio(backtesting_trader):
                 mock_pos.margin = constants.ZERO
                 mock_pos.is_idle.return_value = True
             else:
-                mock_pos.margin = decimal.Decimal("1")
+                # margin in USDT (settlement currency), which converts to 1 BTC at 1000 USDT/BTC
+                mock_pos.margin = decimal.Decimal("1000")
                 mock_pos.is_idle.return_value = False
         elif symbol == "BTC/XYZ:XYZ":
             mock_pos.margin = decimal.Decimal("0")
@@ -395,13 +399,13 @@ async def test_get_holdings_ratio_with_include_assets_in_open_orders(backtesting
             mock_pos.margin = decimal.Decimal("10") # equivalent to the 10 BTC in the spot portfolio
             mock_pos.is_idle.return_value = False
         if symbol == "BTC/USDT:USDT":
-            mock_pos.margin = decimal.Decimal("1") # equivalent to the 1000 USDT vs BTC in the spot portfolio
+            mock_pos.margin = decimal.Decimal("1000") # 1000 USDT margin, converts to 1 BTC at 1000 USDT/BTC
             mock_pos.is_idle.return_value = False
         elif symbol == "ETH/USDT:BTC":
-            mock_pos.margin = decimal.Decimal("100") if has_eth_position else constants.ZERO # equivalent to the 10 ETH vs BTC in the spot portfolio
+            mock_pos.margin = decimal.Decimal("1") if has_eth_position else constants.ZERO # 1 BTC margin (settlement is BTC)
             mock_pos.is_idle.return_value = False
         elif symbol == "ETH/BTC:BTC":
-            mock_pos.margin = decimal.Decimal("1") if has_eth_position else constants.ZERO # equivalent to the 10 ETH vs BTC in the spot portfolio
+            mock_pos.margin = decimal.Decimal("1") if has_eth_position else constants.ZERO # 1 BTC margin (settlement is BTC)
             mock_pos.is_idle.return_value = False
         else:
             raise errors.ContractExistsError(f"Contract {symbol} does not exist")
