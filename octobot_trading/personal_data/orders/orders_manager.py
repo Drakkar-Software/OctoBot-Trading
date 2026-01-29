@@ -150,7 +150,7 @@ class OrdersManager(util.Initializable):
 
     async def upsert_order_from_raw(self, exchange_order_id: str, raw_order: dict, is_from_exchange: bool) -> tuple[bool, order_class.Order]:
         if not self.has_order(None, exchange_order_id=exchange_order_id):
-            self.logger.info(f"Including new order fetched from exchange: {raw_order}")
+            self.logger.debug(f"Including new order fetched from exchange: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
             # replace new_order by previously created pending_order if any relevant pending_order
             new_order = await self.get_and_update_pending_order(new_order) or new_order

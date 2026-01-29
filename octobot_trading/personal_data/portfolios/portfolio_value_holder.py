@@ -147,6 +147,25 @@ class PortfolioValueHolder:
                 assets_in_open_orders += order.total_cost
         return assets_in_open_orders
 
+    def _get_open_orders_value_for_symbol(self, symbol: str) -> decimal.Decimal:
+        """
+        Get the net pending order value for a specific symbol.
+        For options/futures, orders are matched by their full symbol.
+        Buy orders increase the value (pending acquisition), sell orders decrease it (pending disposal).
+        :param symbol: the full symbol (e.g., 'BTC/USDC:USDC')
+        :return: the net pending order value in the settlement currency
+        """
+        total_order_value = constants.ZERO
+        orders_manager = self.portfolio_manager.exchange_manager.exchange_personal_data.orders_manager
+        for order in orders_manager.get_open_orders(symbol=symbol):
+            pending_quantity = order.origin_quantity - order.filled_quantity
+            order_value = pending_quantity * order.origin_price
+            if order.side is enums.TradeOrderSide.BUY:
+                total_order_value += order_value
+            elif order.side is enums.TradeOrderSide.SELL:
+                total_order_value -= order_value
+        return total_order_value
+
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
         Initialize values required by portfolio profitability to perform its profitability calculation

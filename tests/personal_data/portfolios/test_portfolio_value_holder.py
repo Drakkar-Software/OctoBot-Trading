@@ -637,3 +637,85 @@ async def test_get_orders_delta(backtesting_trader, currency, order_symbol, orde
         
         assert isinstance(result, decimal.Decimal)
         assert result == expected_delta
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", ["spot", "margin", "futures", "options"], indirect=True)
+@pytest.mark.parametrize("order_side,order_quantity,filled_quantity,order_price,expected_value", [
+    # Buy order: (quantity - filled) * price = (10 - 0) * 50 = 500
+    (enums.TradeOrderSide.BUY, decimal.Decimal("10"), decimal.Decimal("0"), decimal.Decimal("50"), decimal.Decimal("500")),
+    # Buy order partially filled: (10 - 3) * 50 = 350
+    (enums.TradeOrderSide.BUY, decimal.Decimal("10"), decimal.Decimal("3"), decimal.Decimal("50"), decimal.Decimal("350")),
+    # Sell order: decreases value by (quantity - filled) * price = -500
+    (enums.TradeOrderSide.SELL, decimal.Decimal("10"), decimal.Decimal("0"), decimal.Decimal("50"), decimal.Decimal("-500")),
+    # Sell order partially filled: -(10 - 5) * 50 = -250
+    (enums.TradeOrderSide.SELL, decimal.Decimal("10"), decimal.Decimal("5"), decimal.Decimal("50"), decimal.Decimal("-250")),
+])
+async def test_get_open_orders_value_for_symbol(backtesting_trader, order_side, order_quantity, filled_quantity, order_price, expected_value):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+    
+    test_symbol = "slug/USDC:USDC-260331-0-YES"
+    
+    # Create a real order object based on the side
+    if order_side == enums.TradeOrderSide.BUY:
+        order = personal_data.BuyLimitOrder(trader)
+    else:
+        order = personal_data.SellLimitOrder(trader)
+    
+    order.update(order_type=enums.TraderOrderType.BUY_LIMIT if order_side == enums.TradeOrderSide.BUY else enums.TraderOrderType.SELL_LIMIT,
+                 symbol=test_symbol,
+                 current_price=order_price,
+                 quantity=order_quantity,
+                 price=order_price)
+    order.filled_quantity = filled_quantity
+    
+    with mock.patch.object(
+        portfolio_manager.exchange_manager.exchange_personal_data.orders_manager,
+        "get_open_orders",
+        return_value=[order]
+    ):
+        result = portfolio_value_holder._get_open_orders_value_for_symbol(test_symbol)
+        
+        assert isinstance(result, decimal.Decimal)
+        assert result == expected_value
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", ["spot", "margin", "futures", "options"], indirect=True)
+async def test_get_open_orders_value_for_symbol_multiple_orders(backtesting_trader):
+    """Test that multiple orders for the same symbol are summed correctly."""
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+    
+    test_symbol = "slug/USDC:USDC-260331-0-YES"
+    
+    # Buy order: 10 * 50 = 500
+    buy_order = personal_data.BuyLimitOrder(trader)
+    buy_order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                     symbol=test_symbol,
+                     current_price=decimal.Decimal("50"),
+                     quantity=decimal.Decimal("10"),
+                     price=decimal.Decimal("50"))
+    buy_order.filled_quantity = decimal.Decimal("0")
+    
+    # Sell order: -5 * 40 = -200
+    sell_order = personal_data.SellLimitOrder(trader)
+    sell_order.update(order_type=enums.TraderOrderType.SELL_LIMIT,
+                      symbol=test_symbol,
+                      current_price=decimal.Decimal("40"),
+                      quantity=decimal.Decimal("5"),
+                      price=decimal.Decimal("40"))
+    sell_order.filled_quantity = decimal.Decimal("0")
+    
+    # Net value: 500 - 200 = 300
+    with mock.patch.object(
+        portfolio_manager.exchange_manager.exchange_personal_data.orders_manager,
+        "get_open_orders",
+        return_value=[buy_order, sell_order]
+    ):
+        result = portfolio_value_holder._get_open_orders_value_for_symbol(test_symbol)
+        
+        assert isinstance(result, decimal.Decimal)
+        assert result == decimal.Decimal("300")
+

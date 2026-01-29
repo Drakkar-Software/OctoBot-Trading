@@ -320,7 +320,9 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             except errors.UnSupportedSymbolError as err:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting {pair} on {time_frame.value}: {err}")
-                await self._remove_unsupported_pairs(pair)
+                if await self._remove_unsupported_pairs(pair):                    
+                    # Exit the loop after removing the pair to avoid endless retries
+                    return
             except errors.NotSupported as err:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates: {err}")
@@ -386,11 +388,13 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             self.initialized_candles_by_tf_by_symbol[pair] = {}
         self.initialized_candles_by_tf_by_symbol[pair][time_frame] = initialized
 
-    async def _remove_unsupported_pairs(self, pair: str):
+    async def _remove_unsupported_pairs(self, pair: str) -> bool:
         # For now only remove the pair from the traded pairs if it's an option exchange
         if self.channel.exchange_manager.is_option:
             self.logger.warning(f"Removing {pair} from traded pairs...")
             await self.channel.exchange_manager.exchange_config.remove_traded_symbols([pair])
+            return True
+        return False
 
     async def resume(self) -> None:
         await super().resume()
