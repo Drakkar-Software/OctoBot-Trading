@@ -38,8 +38,9 @@ class FuturesPortfolioValueHolder(portfolio_value_holder.PortfolioValueHolder):
                 self.portfolio_manager.reference_market, traded_symbols_only=traded_symbols_only, coins_whitelist=coins_whitelist, include_assets_in_open_orders=include_assets_in_open_orders
             )
 
+        currency_is_full_symbol = symbol_util.is_symbol(currency)
         symbol = currency
-        if not symbol_util.is_symbol(symbol):
+        if not currency_is_full_symbol:
             try:
                 symbol = symbol_util.merge_currencies(currency, self.portfolio_manager.reference_market, settlement_asset=self.portfolio_manager.reference_market)
                 position = positions_manager.get_symbol_position(symbol, enums.PositionSide.BOTH)
@@ -64,8 +65,16 @@ class FuturesPortfolioValueHolder(portfolio_value_holder.PortfolioValueHolder):
             )
 
         if include_assets_in_open_orders:
-            assets_in_open_orders = self._get_total_holdings_in_open_orders(currency)
-            current_in_order_value = self.value_converter.evaluate_value(currency, assets_in_open_orders, init_price_fetchers=False)
-            position_value += current_in_order_value
+            if currency_is_full_symbol:
+                # For full symbols get orders by exact symbol
+                pending_order_value = self._get_open_orders_value_for_symbol(symbol)
+                position_value += pending_order_value
+            else:
+                # For simple currencies (e.g., "ETH"), use currency-based matching
+                pending_order_holdings = self._get_total_holdings_in_open_orders(currency)
+                pending_order_value = self.value_converter.evaluate_value(
+                    currency, pending_order_holdings, init_price_fetchers=False
+                )
+                position_value += pending_order_value
 
         return position_value / total_portfolio_value if total_portfolio_value > constants.ZERO else constants.ZERO
