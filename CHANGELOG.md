@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.10] - 2026-01-29
+### Fixed
+[PositionsUpdater] Missing is_option is should_run check
+
 ## [2.5.9] - 2026-01-29
 ### Fixed
 [PositionValueHolder] Fix futures get_holdings_ratio position margin handling
