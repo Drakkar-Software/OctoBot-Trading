@@ -319,6 +319,10 @@ class ExchangeBuilder:
         self.auto_start_trading_modes = auto_start_trading_modes
         return self
 
+    def enable_realtime_data_fetching(self, enabled: bool = True):
+        self.exchange_manager.exchange_config.realtime_data_fetching = enabled
+        return self
+
 
 def create_exchange_builder_instance(config, exchange_name):
     return ExchangeBuilder(config, exchange_name)

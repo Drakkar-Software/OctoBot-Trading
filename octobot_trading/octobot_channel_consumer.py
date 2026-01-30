@@ -49,6 +49,7 @@ class OctoBotChannelTradingDataKeys(enum.Enum):
     BACKTESTING = "backtesting"
     MATRIX_ID = "matrix_id"
     TENTACLES_SETUP_CONFIG = "tentacles_setup_config"
+    ENABLE_REALTIME_DATA_FETCHING = "enable_realtime_data_fetching"
 
 
 async def octobot_channel_callback(bot_id, subject, action, data) -> None:
@@ -70,6 +71,7 @@ async def _handle_creation(bot_id, action, data):
             config = data[OctoBotChannelTradingDataKeys.EXCHANGE_CONFIG.value]
             exchange_builder = exchanges.create_exchange_builder_instance(config, exchange_name) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
+                .enable_realtime_data_fetching(data.get(OctoBotChannelTradingDataKeys.ENABLE_REALTIME_DATA_FETCHING.value, False)) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
                 .set_bot_id(bot_id)
             try:

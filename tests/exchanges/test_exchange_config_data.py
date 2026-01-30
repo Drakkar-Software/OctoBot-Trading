@@ -37,7 +37,7 @@ class TestExchangeConfig:
             config = load_test_config()
 
         exchange_manager = ExchangeManager(config, TestExchangeConfig.EXCHANGE_NAME)
-
+        exchange_manager.exchange_config.realtime_data_fetching = True
         await exchange_manager.initialize(exchange_config_by_exchange=None)
         return config, exchange_manager
 
