@@ -81,6 +81,9 @@ class ExchangeConfig(util.Initializable):
         # When False, cancelled orders won't be saved in trades history
         self.is_saving_cancelled_orders_as_trade: bool = True
 
+        # When True, short timeframes will be added for real-time evaluators
+        self.realtime_data_fetching: bool = False
+
         self.backtesting_exchange_config = None
 
     async def initialize_impl(self):
@@ -396,10 +399,12 @@ class ExchangeConfig(util.Initializable):
         for time_frame in time_frame_manager.get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.available_required_time_frames.append(time_frame)
-        if (
-            not self.exchange_manager.is_backtesting or
-            (self.exchange_manager.is_backtesting and self.exchange_manager.exchange.use_accurate_price_time_frame())
-        ) or not self.available_required_time_frames:
+        if self.realtime_data_fetching and (
+            (
+                not self.exchange_manager.is_backtesting or
+                (self.exchange_manager.is_backtesting and self.exchange_manager.exchange.use_accurate_price_time_frame())
+            ) or not self.available_required_time_frames
+        ):
             # add shortest time frame for realtime evaluators
             client_shortest_time_frame = time_frame_manager.find_min_time_frame(
                 self.exchange_manager.client_time_frames,
